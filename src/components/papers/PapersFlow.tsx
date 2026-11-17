@@ -1134,23 +1134,6 @@ export function PapersResult({
           </h1>
         </>
       )}
-      {patch && naming ? (
-        <div className="bw-names-card">
-          <p className="bw-names-card__title">Les prénoms sur votre récap</p>
-          <NamesEditor travellers={answers.travellers} onChange={(travellers) => patch({ travellers })} />
-          <button type="button" onClick={() => setNaming(false)} className="bw-names-card__ok">
-            <Check size={15} aria-hidden /> C'est bon
-          </button>
-        </div>
-      ) : patch && !named && answers.travellers.length > 1 ? (
-        <button type="button" onClick={() => setNaming(true)} className="bw-names-hint">
-          <Pencil size={15} aria-hidden />
-          <span>
-            <b>Personnaliser le récap</b>
-            Ajoutez les prénoms : « pour Sarah » plutôt que « Adulte 2 ».
-          </span>
-        </button>
-      ) : null}
       <RecapSheet
         tasks={all}
         notes={notes}
@@ -1186,6 +1169,27 @@ export function PapersResult({
               <Pencil size={14} aria-hidden /> Modifier
             </button>
           )
+        }
+        namesSlot={
+          patch && naming ? (
+            <div className="bw-names-card">
+              <p className="bw-names-card__title">Les prénoms sur votre récap</p>
+              <NamesEditor
+                travellers={answers.travellers}
+                onChange={(travellers) => patch({ travellers })}
+              />
+              <button type="button" onClick={() => setNaming(false)} className="bw-names-card__ok">
+                <Check size={14} aria-hidden /> C'est bon
+              </button>
+            </div>
+          ) : patch && !named && answers.travellers.length > 1 ? (
+            <button type="button" onClick={() => setNaming(true)} className="bw-names-hint">
+              <Pencil size={14} aria-hidden />
+              <span>
+                <b>Ajouter les prénoms</b> « pour Sarah » plutôt que « Adulte 2 »
+              </span>
+            </button>
+          ) : null
         }
         checkedOn={displayDate(FORMALITES_CHECKED)}
       />
@@ -1285,6 +1289,16 @@ export function TaskRow({
               {task.detail.split("\n").map((p) => (
                 <p key={p}>{p}</p>
               ))}
+              {task.link ? (
+                <a
+                  href={task.link.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="bw-task-link"
+                >
+                  {task.link.label} <ExternalLink size={13} aria-hidden />
+                </a>
+              ) : null}
               {task.sources.length ? (
                 <SourceLinks ids={task.sources} />
               ) : (

@@ -75,7 +75,8 @@ export const prepItems: PrepItem[] = [
     id: "admission",
     phase: "papers",
     label: "Je fais mon TPD",
-    tip: "En ligne sur ALCES avant le voyage, pour un véhicule immatriculé à l’étranger.",
+    // Première fois qu'on croise le sigle : on dit ce que c'est.
+    tip: "Le titre de passage en douane : le document qui laisse entrer en Algérie, le temps du séjour, une voiture immatriculée à l’étranger. Il se fait en ligne sur ALCES, avant le voyage.",
     href: "https://alces.douane.gov.dz",
     linkLabel: "Portail ALCES",
     only: "vehicle",

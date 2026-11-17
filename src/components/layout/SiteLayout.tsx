@@ -12,6 +12,7 @@ import {
   familyIsActive,
   familyItems,
   menuFamilies,
+  NEWS_LINK,
   PrepareBadge,
   MenuItemLink,
   openSearchFromHeader,
@@ -213,7 +214,9 @@ export function SiteHeader() {
             <CalendarCheck size={16} aria-hidden />
             {t("menu.book")}
           </Link>
-          {desktopFamilies.slice(1).map(renderFamily)}
+          {desktopFamilies.slice(1, 2).map(renderFamily)}
+          <Link to={NEWS_LINK.to}>{t(NEWS_LINK.labelKey)}</Link>
+          {desktopFamilies.slice(2).map(renderFamily)}
         </nav>
         <div className="bw-header-actions">
           {/* Sur mobile, le compte est l'onglet « Moi » de la barre du bas. */}

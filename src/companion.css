@@ -584,6 +584,8 @@
 .bw-recap--papers .bw-recap__head > div:first-child { grid-area: text; }
 .bw-recap--papers .bw-recap__kicker {
   margin: 0;
+  /* Sur le dégradé vert : blanc adouci (le vert-gris par défaut y était invisible). */
+  color: #fff;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.09em;
@@ -1016,6 +1018,13 @@
 .dark .bw-recap-sheet__people small { color: #6ee7b7; }
 .bw-recap-sheet__text { display: grid; gap: 8px; font-size: 0.92rem; line-height: 1.55; color: var(--muted-foreground); }
 .bw-recap-sheet__text p { margin: 0; }
+/* Un service en ligne pour faire la démarche (réserver un hôtel…). */
+.bw-task-link {
+  display: inline-flex; min-height: 40px; width: fit-content; align-items: center; gap: 6px; padding: 0 14px;
+  border: 1px solid color-mix(in oklab, var(--primary) 35%, transparent); border-radius: 12px;
+  color: var(--primary); font-size: 0.875rem; font-weight: 700; text-decoration: none;
+}
+.bw-task-link:hover { background: color-mix(in oklab, var(--primary) 6%, transparent); }
 .bw-recap-sheet__foot {
   margin: 0 -18px;
   padding: 12px 18px calc(12px + env(safe-area-inset-bottom));
@@ -1250,6 +1259,37 @@
   box-shadow: 0 0 0 4px color-mix(in oklab, var(--primary) 20%, transparent);
 }
 .bw-chapbreak .bw-prepintro__steps > li[data-state="later"] { opacity: 0.55; }
+/* Faits et à venir : une ligne discrète. Le suivant : une carte, plus grande. */
+.bw-chapbreak .bw-prepintro__steps > li:not([data-state="next"]) {
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  padding-left: 8px;
+}
+.bw-chapbreak .bw-prepintro__steps > li:not([data-state="next"]) .bw-prepintro__dot {
+  width: 28px; height: 28px; border-radius: 9px; box-shadow: none;
+}
+.bw-chapbreak .bw-prepintro__steps > li:not([data-state="next"]) .bw-prepintro__dot svg { width: 14px; height: 14px; }
+.bw-chapbreak .bw-prepintro__steps > li:not([data-state="next"]) > span:last-child {
+  display: flex; align-items: baseline; gap: 6px; min-width: 0;
+}
+.bw-chapbreak .bw-prepintro__steps > li:not([data-state="next"]) small { flex: none; font-size: 10px; }
+.bw-chapbreak .bw-prepintro__steps > li:not([data-state="next"]) b {
+  overflow: hidden; font-size: 0.85rem; font-weight: 600; white-space: nowrap; text-overflow: ellipsis;
+  color: var(--muted-foreground);
+}
+.bw-chapbreak .bw-prepintro__steps > li[data-state="next"] {
+  grid-template-columns: 52px minmax(0, 1fr);
+  padding: 14px;
+  border: 1px solid color-mix(in oklab, var(--primary) 30%, transparent);
+  border-radius: 18px;
+  background: var(--card, #fff);
+  box-shadow: 0 10px 28px rgb(8 50 34 / 0.12);
+}
+.bw-chapbreak .bw-prepintro__steps > li[data-state="next"] .bw-prepintro__dot { width: 52px; height: 52px; border-radius: 16px; }
+.bw-chapbreak .bw-prepintro__steps > li[data-state="next"] b { font-size: 1.2rem; }
+.bw-chapbreak .bw-prepintro__steps > li[data-state="next"] span > span { display: block !important; }
+/* Le fil vertical relie des ronds de tailles différentes : on le retire ici. */
+.bw-chapbreak .bw-prepintro__steps::before { display: none; }
 .bw-chapbreak .bw-prepintro__steps > li.is-fresh .bw-prepintro__dot { animation: bw-rprev-dot 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0.25s both; }
 .bw-chapbreak h1 { font-size: clamp(1.5rem, 3.6dvh, 2.1rem); }
 @media (min-width: 900px) and (min-height: 600px) {
@@ -1262,7 +1302,6 @@
 @media (max-width: 899px) {
   .bw-chapbreak .bw-prepintro__lead { display: none; }
   .bw-chapbreak .bw-prepintro__steps { gap: 10px; }
-  .bw-chapbreak .bw-prepintro__steps > li[data-state="done"] b { font-size: 0.95rem; }
 }
 
 /* « À faire » : une seule frise datée, la couleur dit l'urgence. */
@@ -1400,18 +1439,24 @@
 .bw-names__row small { display: block; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted-foreground); }
 .bw-names__row input { width: 100%; background: transparent; font-size: 1rem; font-weight: 600; outline: none; }
 .bw-names__row input::placeholder { font-weight: 400; color: color-mix(in oklab, var(--muted-foreground) 60%, transparent); }
-.bw-names-card { margin-bottom: 12px; padding: 12px; border: 1px solid color-mix(in oklab, var(--primary) 30%, transparent); border-radius: 16px; background: color-mix(in oklab, var(--primary) 4%, var(--card)); }
-.bw-names-card__title { margin-bottom: 8px; font-weight: 800; }
+.bw-names-card { margin: 10px 0; padding: 10px; border: 1px solid color-mix(in oklab, var(--primary) 30%, transparent); border-radius: 16px; background: color-mix(in oklab, var(--primary) 4%, var(--card)); }
+.bw-names-card__title { margin-bottom: 6px; font-size: 0.85rem; font-weight: 800; }
+/* Dans le récap : compact, deux prénoms par ligne dès que la place le permet. */
+.bw-names-card .bw-names { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.bw-names-card .bw-names__row { gap: 8px; padding: 4px 10px; }
+.bw-names-card .bw-names__icon { width: 24px; height: 24px; }
+.bw-names-card .bw-names__row small { font-size: 0.6rem; }
+.bw-names-card .bw-names__row input { font-size: 0.95rem; }
 .bw-names-card__ok {
-  display: inline-flex; min-height: 40px; margin-top: 10px; align-items: center; gap: 6px; padding: 0 16px;
+  display: inline-flex; min-height: 36px; margin-top: 8px; align-items: center; gap: 6px; padding: 0 14px;
   border-radius: 12px; background: var(--primary); color: var(--primary-foreground); font-size: 0.875rem; font-weight: 700;
 }
 .bw-names-hint {
-  display: flex; width: 100%; margin-bottom: 10px; align-items: center; gap: 10px; padding: 9px 12px;
+  display: flex; width: 100%; margin: 10px 0; align-items: center; gap: 8px; padding: 6px 12px;
   border: 1px dashed color-mix(in oklab, var(--primary) 40%, transparent); border-radius: 14px; text-align: left; color: var(--primary);
 }
-.bw-names-hint span { display: grid; font-size: 0.8rem; color: var(--muted-foreground); }
-.bw-names-hint b { font-size: 0.875rem; color: var(--primary); }
+.bw-names-hint span { min-width: 0; font-size: 0.8rem; color: var(--muted-foreground); }
+.bw-names-hint b { margin-right: 4px; font-size: 0.85rem; color: var(--primary); }
 
 /* Les chiffres du récap : l'urgent d'abord, une tuile par rubrique, toutes cliquables. */
 .bw-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 6px; margin: 10px 0 4px; }

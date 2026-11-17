@@ -20,7 +20,7 @@ export function ChapterBreak({
 }: {
   /** L'index du chapitre qui vient de se terminer. */
   finished: number;
-  chapters: { title: string; hint: string; icon: LucideIcon }[];
+  chapters: { title: string; hint: string; headline: string; icon: LucideIcon }[];
   rows: PreviewRow[];
   title: string;
   subtitle: string;
@@ -59,25 +59,20 @@ export function ChapterBreak({
             <ArrowLeft size={20} aria-hidden />
           </button>
           <span className="bw-prepintro__eyebrow">
-            Chapitre {finished + 1} terminé
+            Chapitre {finished + 1} sur {chapters.length} terminé
           </span>
           <span className="size-10" aria-hidden />
         </div>
 
         <div className="bw-prepintro__body">
           <h1 id="bw-chapbreak-title" className="bw-prepintro__in" style={step(0)}>
-            {next ? (
-              <>
-                Suite&nbsp;: {next.title.charAt(0).toLowerCase() + next.title.slice(1)}
-              </>
-            ) : (
-              "Tout est prêt"
-            )}
+            {next ? next.headline : "Tout est prêt"}
           </h1>
           <p className="bw-prepintro__lead bw-prepintro__in" style={step(1)}>
             {next ? next.hint : "Votre récap est complet : il ne reste qu'à le partager."}
           </p>
 
+          {/* Le chapitre qui vient, en grand ; ceux faits et ceux d'après, sur une ligne. */}
           <ol className="bw-prepintro__steps">
             {chapters.map((chapter, index) => {
               const Icon = chapter.icon;
@@ -102,7 +97,7 @@ export function ChapterBreak({
                       {state === "done" ? " · fait" : state === "next" ? " · à suivre" : ""}
                     </small>
                     <b>{chapter.title}</b>
-                    <span>{chapter.hint}</span>
+                    {state === "next" ? <span>{chapter.hint}</span> : null}
                   </span>
                 </li>
               );

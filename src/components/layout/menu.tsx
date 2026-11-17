@@ -157,7 +157,6 @@ export const menuFamilies: MenuFamily[] = [
         items: [
           { to: "/", labelKey: "menu.liveMap", icon: MapIcon },
           { to: "/horaires", labelKey: "nav.departuresArrivals", icon: Clock },
-          { to: "/actualites", labelKey: "nav.news", icon: Newspaper },
         ],
       },
     ],
@@ -192,6 +191,12 @@ export const menuFamilies: MenuFamily[] = [
     ],
   },
 ];
+
+/**
+ * Les actualités : un lien direct au premier niveau (en-tête PC, menu ☰), pas rangé dans une
+ * famille où on ne le trouvait pas.
+ */
+export const NEWS_LINK = { to: "/actualites", labelKey: "nav.news", icon: Newspaper } as const;
 
 export const familyById = (id: MenuFamily["id"]) =>
   menuFamilies.find((family) => family.id === id)!;

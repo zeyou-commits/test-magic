@@ -144,6 +144,7 @@ export function RecapSheet({
   consulat,
   consulateSlot,
   editSlot,
+  namesSlot,
   checkedOn,
 }: {
   /** Toutes les tâches, conseils compris (ils vont dans « Points d'attention »). */
@@ -164,6 +165,8 @@ export function RecapSheet({
   /** Dans le volet d'une démarche au consulat : la fiche du consulat, ou de quoi le trouver. */
   consulateSlot: ReactNode;
   editSlot: ReactNode;
+  /** Les prénoms des voyageurs, en compact, entre les chiffres et le filtre par personne. */
+  namesSlot?: ReactNode;
   checkedOn: string;
 }) {
   const [who, setWho] = useState<string | null>(null);
@@ -345,6 +348,8 @@ export function RecapSheet({
           block.classList.add("is-flash");
         }}
       />
+
+      {namesSlot}
 
       {travellers.length > 2 ? (
         <div className="bw-recap__who" role="radiogroup" aria-label="Voir ce qui concerne">
@@ -675,6 +680,11 @@ function DetailSheet({
               <p key={p}>{p}</p>
             ))}
           </div>
+          {task.link ? (
+            <a href={task.link.href} target="_blank" rel="noreferrer" className="bw-task-link">
+              {task.link.label} <ExternalLink size={13} aria-hidden />
+            </a>
+          ) : null}
           {task.sources.length ? (
             <SourceLinks ids={[...new Set(item.tasks.flatMap((t) => t.sources))]} />
           ) : (

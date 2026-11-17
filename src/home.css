@@ -97,6 +97,12 @@ html {
   color: #0e7a43;
   background: #edf6ef;
 }
+/* PC étroit : les libellés restent sur une ligne (Actualités est au premier niveau). */
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .bw-desktop-nav { gap: 2px; }
+  .bw-desktop-nav > a,
+  .bw-explore-trigger { gap: 6px; padding-inline: 9px; font-size: 13px; white-space: nowrap; }
+}
 /* « Réserver » : une entrée comme les autres (seule la rubrique où l'on est passe en vert). */
 .bw-desktop-nav > a.bw-book-button {
   margin-right: 6px;

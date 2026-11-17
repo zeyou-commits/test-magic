@@ -29,6 +29,7 @@ import {
   familyIsActive,
   menuFamilies,
   MenuItemLink,
+  NEWS_LINK,
   openSearchFromHeader,
   type MenuFamily,
 } from "./menu";
@@ -273,6 +274,10 @@ function RootLevel({
       </Link>
 
       {familyRow(familyById("live"))}
+
+      <Link to={NEWS_LINK.to} onClick={onNavigate} className="bw-menu-link">
+        <NEWS_LINK.icon size={18} aria-hidden /> {t(NEWS_LINK.labelKey)}
+      </Link>
 
       <button type="button" className="bw-menu-link" onClick={openSalons}>
         <MessagesSquare size={18} aria-hidden /> {t("menu.salons")}

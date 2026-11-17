@@ -361,7 +361,15 @@ export interface Task {
   advice?: boolean;
   /** Ce que coûte la démarche, d'après la source officielle (eur : pour le total). */
   cost?: { label: string; eur: number };
+  /** Où le faire, quand c'est un service en ligne et pas une source officielle. */
+  link?: { label: string; href: string };
 }
+
+/** Le site proposé pour réserver un hôtel en Algérie (à changer ici seulement). */
+export const HOTEL_BOOKING_LINK = {
+  label: "Chercher un hôtel sur Booking.com",
+  href: "https://www.booking.com/country/dz.fr.html",
+};
 
 /** Le total des frais connus (visas…), pour l'annoncer en tête du bilan. */
 export const totalCost = (tasks: Task[]) => tasks.reduce((sum, t) => sum + (t.cost?.eur ?? 0), 0);
@@ -771,6 +779,7 @@ export function tasksFor(a: Answers): Task[] {
         "Pour un séjour à l'hôtel, la réservation remplace le certificat d'hébergement dans le dossier de visa.",
       who: foreigners.map(label),
       sources: ["justice-algerie"],
+      link: HOTEL_BOOKING_LINK,
     });
   /* Couple marié : le livret de famille prouve le mariage, à l'hôtel comme au consulat. */
   if (adults.length >= 2 && a.couple === "married")

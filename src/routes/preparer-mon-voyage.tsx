@@ -191,7 +191,8 @@ const stepArt: Record<
   car: {
     icon: Car,
     short: "Voiture",
-    benefit: "Carte grise, assurance, TPD : rien d'oublié pour la douane.",
+    benefit:
+      "Carte grise, assurance, TPD (le titre de passage en douane de la voiture) : rien d'oublié pour la douane.",
     scene: "/illustrations/voyage/dernier-sac.webp",
     sceneAlt: "Le dernier sac entre dans le coffre de la 504",
   },
@@ -321,24 +322,29 @@ function StepFrieze({
 const chapters: {
   title: string;
   hint: string;
+  /** Le titre de l'écran qui annonce ce chapitre, entre deux chapitres. */
+  headline: string;
   icon: LucideIcon;
   steps: CompanionStep[];
 }[] = [
   {
     title: "Vous et votre départ",
     hint: "Quand vous partez, qui part, avec quelle voiture.",
+    headline: "On fait connaissance",
     icon: Users,
     steps: ["profile"],
   },
   {
     title: "Vos papiers et votre voiture",
     hint: "La liste de chacun, avec les dates à tenir.",
+    headline: "Maintenant, les papiers de chacun",
     icon: FileText,
     steps: ["papers"],
   },
   {
     title: "Votre route, votre budget, votre billet",
     hint: "Les ports les plus adaptés, le coût, la réservation.",
+    headline: "Dernière étape : la traversée",
     icon: RouteIcon,
     steps: ["route", "budget", "book"],
   },
@@ -1140,6 +1146,8 @@ function ProfileStep({
         next={{
           label: index + 1 < profileQuestions.length ? "Continuer" : "Continuer : mes papiers",
           onClick: next,
+          // Pas de départ sans date : c'est elle qui fait le compte à rebours.
+          disabled: question === "when" && !plan.date && !plan.window,
         }}
       />
     </div>
@@ -2157,8 +2165,9 @@ function WhenQuestion({
           backDays={backDays}
           pairLabel={pairLabel}
           today={today}
-          // Le calendrier s'ouvre sur la période annoncée sous lui, pas sur le mois en cours.
-          initialDay={earliestDay(plan)}
+          // Rien de choisi : le mois en cours (un mois imposé passerait pour un choix déjà fait).
+          // Sinon, la date ou la période annoncée sous le calendrier.
+          initialDay={plan.date || plan.window ? earliestDay(plan) : today}
           onChange={(change) => {
             const date = change.date === undefined ? plan.date : (change.date ?? "");
             const days = change.flexDays ?? flex;
@@ -2189,22 +2198,29 @@ function WhenQuestion({
         aria-live="polite"
       >
         <CalendarDays size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
-        <span>
-          Départ {planWhenLabel(plan)}
-          {countdown > 0
-            ? countdown > 60
-              ? `, dans ${Math.round(countdown / 7)} semaines : le temps de tout préparer sans stress.`
-              : countdown > 28
-                ? `, dans ${Math.round(countdown / 7)} semaines : les papiers longs sont à lancer maintenant.`
-                : `, dans ${countdown} jour${countdown > 1 ? "s" : ""} : l'essentiel est à faire tout de suite.`
-            : "."}
-          {plan.date ? (
-            <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              <SeasonTag day={plan.date} />
-              {plan.returnDate ? <SeasonTag day={plan.returnDate} /> : null}
-            </span>
-          ) : null}
-        </span>
+        {!plan.date && !plan.window ? (
+          <span>
+            Touchez votre jour de départ dans le calendrier, ou passez par vos vacances scolaires :
+            le compte à rebours de vos démarches part de cette date.
+          </span>
+        ) : (
+          <span>
+            Départ {planWhenLabel(plan)}
+            {countdown > 0
+              ? countdown > 60
+                ? `, dans ${Math.round(countdown / 7)} semaines : le temps de tout préparer sans stress.`
+                : countdown > 28
+                  ? `, dans ${Math.round(countdown / 7)} semaines : les papiers longs sont à lancer maintenant.`
+                  : `, dans ${countdown} jour${countdown > 1 ? "s" : ""} : l'essentiel est à faire tout de suite.`
+              : "."}
+            {plan.date ? (
+              <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                <SeasonTag day={plan.date} />
+                {plan.returnDate ? <SeasonTag day={plan.returnDate} /> : null}
+              </span>
+            ) : null}
+          </span>
+        )}
       </p>
       <div className="mt-4">
         <Bw504Note title="Pourquoi la date d'abord ?">

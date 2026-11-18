@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { tr } from "@/lib/i18n";
+import type { CarLoad, CarModel } from "@/lib/directferries/quote";
+import { CarModelPicker } from "./CarModelPicker";
 
 export type VehicleKind = "none" | "city" | "sedan" | "suv" | "van" | "utility";
 export type Accessory = "roofbox" | "trailer" | "bikes";
@@ -30,6 +32,10 @@ export interface TripProfileValue {
   vehicle: VehicleKind;
   accessories: Accessory[];
   passengers: Passengers;
+  /** Modèle exact (catalogue Direct Ferries), pour un prix et une catégorie justes. */
+  car?: CarModel | null;
+  /** Hauteur/longueur ajoutées corrigées par le voyageur (galerie chargée, porte-vélos…). */
+  load?: CarLoad | null;
 }
 
 export const defaultTripProfile: TripProfileValue = {
@@ -127,6 +133,8 @@ export function TripProfile({
                     ...value,
                     vehicle: id,
                     accessories: id === "none" ? [] : value.accessories,
+                    // Un autre gabarit : le modèle exact choisi avant ne vaut plus.
+                    car: id === value.vehicle ? (value.car ?? null) : null,
                   })
                 }
                 className={`rounded-xl border px-1.5 py-2 text-center transition ${selected ? "border-primary bg-primary/10 text-primary shadow-sm" : "border-border bg-background hover:bg-muted"}`}
@@ -160,6 +168,8 @@ export function TripProfile({
           })}
         </div>
       ) : null}
+
+      {value.vehicle !== "none" ? <CarModelPicker value={value} onChange={onChange} /> : null}
 
       <div>
         <p className="mb-1.5 text-xs font-semibold text-muted-foreground">{tr("ui.tripProfile.voyageurs")}</p>
@@ -227,7 +237,12 @@ export function VehicleChips({
             aria-checked={selected}
             title={hint}
             onClick={() =>
-              onChange({ ...value, vehicle: id, accessories: id === "none" ? [] : value.accessories })
+              onChange({
+                ...value,
+                vehicle: id,
+                accessories: id === "none" ? [] : value.accessories,
+                car: id === value.vehicle ? (value.car ?? null) : null,
+              })
             }
             className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition active:scale-95 ${selected ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-card text-foreground hover:border-primary/50 hover:bg-primary/5"}`}
           >

@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { formatDuration, capitalizeFirst, formatShortDay } from "@/lib/ferry/format";
 import { relativeDay, type Sailing } from "@/lib/ferry/trips";
-import { bookingSite, bookingUrl } from "@/lib/ferry/booking";
+import { AGGREGATOR, bookingSite, bookingUrl, partnerBookingUrl } from "@/lib/ferry/booking";
 import {
   formatAge,
   formatDelay,
@@ -29,6 +29,7 @@ import { FLASH_SELECT_EVENT } from "./FlashCenter";
 import { SeaChip } from "./SeaForecast";
 import { ShareButtons } from "./ShareButtons";
 import { CompanyBadge } from "./CompanyBadge";
+import { LiveFare, useLiveFare } from "./LiveFare";
 import {
   estimateFerryFare,
   formatEuro,
@@ -79,6 +80,10 @@ export function SailingCard({
   const departure = sailing.departure;
   const panelId = `sailing-${departure.id}`;
   const fare = estimateFerryFare(sailing, profile);
+  // Prix réel déjà obtenu en dépliant la carte : il remplace l'estimation sur le bouton.
+  const liveFare = useLiveFare(sailing, profile, false).query.data;
+  const liveTotal =
+    liveFare?.status === "ok" && liveFare.sameSailing ? Math.ceil(liveFare.total) : null;
   // Navire en alerte : un prix laisserait croire que ce départ se réserve normalement.
   const alert = useVesselAlert(sailing.vessel?.id);
 
@@ -225,23 +230,33 @@ export function SailingCard({
         )}
         {href && !alert ? (
           <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
+            // Prix réel : on reste dans le même onglet, vers la réservation du partenaire.
+            href={liveTotal != null ? partnerBookingUrl(sailing, profile) : href}
+            {...(liveTotal != null ? {} : { target: "_blank", rel: "noopener noreferrer" })}
             onClick={() => {
-              track("booking_click", sailing.company?.name);
-              markBookingLeave(bookingSite(sailing));
+              track("booking_click", liveTotal != null ? "direct-ferries" : sailing.company?.name);
+              markBookingLeave(liveTotal != null ? AGGREGATOR.name : bookingSite(sailing));
             }}
             className="ml-auto inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-cta px-3 md:ml-0 text-xs font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
             title={`Voir l’offre sur ${bookingSite(sailing)} · budget estimé ${formatEuro(fare.amount)} (${formatFareRange(fare)})`}
           >
-            <span className="tabular-nums">≈ {formatEuro(fare.amount)}</span>
-            <ArrowUpRight className="size-3.5" aria-hidden />
-            <span className="sr-only">
-              {tr("ui.sailingCard.sur")}
-              {bookingSite(sailing)}
-              {tr("ui.sailingCard.nouvelOnglet")}
+            <span className="tabular-nums">
+              {liveTotal != null
+                ? `${liveTotal.toLocaleString("fr-FR")} €`
+                : `≈ ${formatEuro(fare.amount)}`}
             </span>
+            {liveTotal != null ? (
+              <span className="sr-only"> : réserver ce départ</span>
+            ) : (
+              <>
+                <ArrowUpRight className="size-3.5" aria-hidden />
+                <span className="sr-only">
+                  {tr("ui.sailingCard.sur")}
+                  {bookingSite(sailing)}
+                  {tr("ui.sailingCard.nouvelOnglet")}
+                </span>
+              </>
+            )}
           </a>
         ) : null}
         {/* Suivre sans déplier : le cœur, comme dans la liste du trafic. */}
@@ -293,6 +308,8 @@ export function SailingDetail({
   const departure = sailing.departure;
   const profile = useFareProfile();
   const bookingHref = showBooking ? bookingUrl(sailing, profile) : null;
+  // Prix réel affiché : « Réserver » devient l'action principale, la fiche passe au second plan.
+  const livePrice = useLiveFare(sailing, profile, false).query.data?.status === "ok";
   return (
     <div className="space-y-2.5 border-t bg-card px-3.5 py-3 text-xs">
       <dl className={`grid gap-2 ${sailing.route.distance_km ? "grid-cols-3" : "grid-cols-2"}`}>
@@ -310,6 +327,9 @@ export function SailingDetail({
           <Fact label={tr("ui.sailingCard.distance")} value={`${sailing.route.distance_km} km`} />
         ) : null}
       </dl>
+
+      {/* Prix réel du partenaire pour ce départ et ce profil (rien s'il n'est pas branché). */}
+      <LiveFare sailing={sailing} profile={profile} />
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         {sailing.vessel ? (
@@ -345,7 +365,11 @@ export function SailingDetail({
               }),
             );
           }}
-          className="inline-flex h-8 items-center gap-1 rounded-full bg-primary px-3 font-semibold text-primary-foreground hover:brightness-110"
+          className={
+            livePrice
+              ? "inline-flex h-8 items-center gap-1 rounded-full border border-border px-3 font-semibold hover:bg-secondary"
+              : "inline-flex h-8 items-center gap-1 rounded-full bg-primary px-3 font-semibold text-primary-foreground hover:brightness-110"
+          }
         >
           {tr("ui.sailingCard.voirLaTraversee")}
           <ChevronRight className="size-3.5" aria-hidden />

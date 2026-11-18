@@ -34,6 +34,14 @@ function passengerList(profile: TripProfileValue): string {
 /** Agrégateur utilisé quand aucun lien direct n'existe (ou aller/retour sur deux compagnies). */
 export const AGGREGATOR = { name: "Direct Ferries", url: "https://www.directferries.fr/" };
 
+/**
+ * Page de réservation du partenaire pour un prix « en direct ». Aujourd'hui le site Direct Ferries ;
+ * à remplacer par la marque blanche BledWay (et ses paramètres pré-remplis) dès qu'elle est fournie.
+ */
+export function partnerBookingUrl(_out: Sailing, _profile: TripProfileValue): string {
+  return AGGREGATOR.url;
+}
+
 /** URL de réservation pour un aller simple ou un aller-retour : jamais nulle. */
 export function bookingUrl(
   out: Sailing,

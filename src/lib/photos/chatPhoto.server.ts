@@ -62,6 +62,19 @@ export async function isExplicitJpeg(bytes: Uint8Array) {
   }
 }
 
+export const VISITOR_PHOTO_REFUSAL =
+  "Les photos sont réservées aux passagers de ce navire. En invité, vous pouvez écrire.";
+
+/** Invité d'une autre traversée dans ce salon ? Sans le script en base, la réponse est non. */
+async function isRoomVisitor(user: SupabaseClient, room: string): Promise<boolean> {
+  try {
+    const { data, error } = await user.rpc("bw_room_visit_mine", { p_departure: room });
+    return !error && data === true;
+  } catch {
+    return false;
+  }
+}
+
 export type ChatPhotoInput = {
   pendingPath: string;
   roomKind: string;
@@ -87,6 +100,11 @@ export async function publishChatPhoto(
       .from(PENDING_BUCKET)
       .remove([input.pendingPath])
       .catch(() => undefined);
+  // Invité venu d'une autre traversée : il écrit, mais les photos restent aux passagers du navire.
+  if (input.roomKind === "crossing" && (await isRoomVisitor(user, input.room))) {
+    await dropPending();
+    return { ok: false, reason: VISITOR_PHOTO_REFUSAL };
+  }
 
   const file = await admin.storage.from(PENDING_BUCKET).download(input.pendingPath);
   if (file.error || !file.data) return { ok: false, reason: "Photo introuvable." };

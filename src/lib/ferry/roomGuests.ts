@@ -100,3 +100,42 @@ export function clearRoomInvite() {
     /* stockage facultatif */
   }
 }
+
+/**
+ * Rejoindre en invité le salon d'une autre traversée, pour y poser une question.
+ * La base décide : 3 salons à la fois, 1 message par minute et 10 par heure, retrait après un
+ * message masqué, fin 24 h après l'arrivée. Pas de photo, pas de message privé.
+ */
+export type VisitState = {
+  open: boolean;
+  joined?: boolean;
+  until?: string;
+  refused?: "removed" | "expired" | "too_many";
+};
+
+const VISIT_REFUSED: Record<string, string> = {
+  account: "Connectez-vous pour rejoindre ce salon en invité.",
+  charter: "Acceptez d'abord la charte du salon.",
+  banned: "Votre compte ne peut pas écrire dans les salons pour le moment.",
+  muted: "Trop de messages refusés aujourd'hui : réessayez demain.",
+  removed: "Un de vos messages a été masqué dans ce salon : vous ne pouvez plus y écrire.",
+  expired: "Cette traversée est terminée : le salon n'accueille plus d'invités.",
+  too_many: "Vous êtes déjà invité dans 3 salons. Quittez-en un pour rejoindre celui-ci.",
+  room: "Ce salon n'existe plus.",
+};
+export const visitRefusal = (code: string | undefined) =>
+  VISIT_REFUSED[code ?? ""] ?? "Impossible de rejoindre ce salon pour le moment. Réessayez.";
+
+export async function joinRoomAsVisitor(departureId: string): Promise<"visitor" | "member"> {
+  const { data, error } = await supabase.rpc("bw_room_visit_join", { p_departure: departureId });
+  if (error) throw new Error(visitRefusal(undefined));
+  const result = data as { ok: boolean; refused?: string; status?: "visitor" | "member" };
+  if (!result.ok) throw new Error(visitRefusal(result.refused));
+  return result.status ?? "visitor";
+}
+
+export async function leaveRoomVisit(departureId: string): Promise<void> {
+  const { data, error } = await supabase.rpc("bw_room_visit_leave", { p_departure: departureId });
+  if (error || !(data as { ok?: boolean } | null)?.ok)
+    throw new Error("Impossible de quitter le salon pour le moment. Réessayez.");
+}

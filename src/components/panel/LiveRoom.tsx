@@ -31,7 +31,9 @@ import {
   PENDING_INVITE_EVENT,
   pendingRoomInvite,
   roomInviteInfoQuery,
+  type VisitState,
 } from "@/lib/ferry/roomGuests";
+import { RoomVisitBar, RoomVisitJoin } from "./RoomVisit";
 import { useAuth } from "@/hooks/useAuth";
 import { useTravelAction } from "@/hooks/useTravelAction";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
@@ -89,7 +91,7 @@ type RoomKind = "crossing" | "port";
 type Message = {
   id: string;
   body: string;
-  place: "aboard" | "port" | "trip" | "staff" | "guest";
+  place: "aboard" | "port" | "trip" | "staff" | "guest" | "visitor";
   /** Fil du port : la traversée d'où vient le message. */
   crossing?: string | null;
   edited?: boolean;
@@ -103,7 +105,9 @@ type Message = {
   reacted: boolean;
 };
 type Feed = {
-  access: "read" | "member" | "position" | "staff" | "guest";
+  access: "read" | "member" | "position" | "staff" | "guest" | "visitor";
+  /** Salon d'une autre traversée : rejoindre en invité (possible, fait, ou refusé). */
+  visit?: VisitState | null;
   /** La personne fait partie de l'équipe : outils de modération et message officiel. */
   staff?: boolean;
   /** Charte déjà acceptée par ce compte. */
@@ -125,6 +129,7 @@ const PLACE = {
   trip: "passager",
   staff: "équipe BledWay",
   guest: "invité",
+  visitor: "invité · autre traversée",
 } as const;
 const missing = (code?: string) => code === "PGRST202" || code === "42883";
 /** En dessous, on considère que la personne suit le direct : le fil descend tout seul. */
@@ -252,6 +257,8 @@ function LiveChat({
   myPseudo,
   staff = false,
   guest = false,
+  visitor = false,
+  visit,
   charter,
   muted = false,
   onAskLine,
@@ -270,6 +277,9 @@ function LiveChat({
   staff?: boolean;
   /** Invité par un passager : écrit ici, sans messages privés. */
   guest?: boolean;
+  /** Invité venu d'une autre traversée : écrit ici, sans photo ni message privé, et peut sortir. */
+  visitor?: boolean;
+  visit?: VisitState | null | undefined;
   charter?: boolean | undefined;
   muted?: boolean;
   /** Salon du port, hors du port : passer la question aux voyageurs d'une ligne. */
@@ -339,7 +349,13 @@ function LiveChat({
   }, [user, inbox === null, client]);
   // Les passagers peuvent s'écrire : seulement sur une traversée, et en étant soi-même passager.
   const canDm =
-    kind === "crossing" && canWrite && !guest && !closed && Boolean(user) && inbox !== null;
+    kind === "crossing" &&
+    canWrite &&
+    !guest &&
+    !visitor &&
+    !closed &&
+    Boolean(user) &&
+    inbox !== null;
   // Invitation reçue par lien, pas encore acceptée (pas de compte) : on écrit, le compte se crée à l'envoi.
   const [invite, setInvite] = useState(() => (kind === "crossing" ? pendingRoomInvite() : null));
   useEffect(() => {
@@ -1046,6 +1062,7 @@ function LiveChat({
       ) : reader ? (
         <div className="bw-chat__closed bw-chat__reader">
           <p>{tr("ui.liveRoom.salonEnLectureVousSuivez")}</p>
+          <RoomVisitJoin room={room} visit={visit} guard={gate.guard} onDone={refresh} />
           <DialogClose asChild>
             <button type="button" onClick={() => leaveFor(OPEN_MY_ROOM_EVENT)}>
               {tr("ui.liveRoom.revenirAMonSalon")}
@@ -1054,6 +1071,10 @@ function LiveChat({
         </div>
       ) : (
         <div className="bw-chat__write">
+          {visitor ? <RoomVisitBar room={room} onDone={refresh} /> : null}
+          {!canWrite && user && kind === "crossing" && visit && !invitedHere ? (
+            <RoomVisitJoin room={room} visit={visit} guard={gate.guard} onDone={refresh} />
+          ) : null}
           {replyTo ? (
             <p className="bw-chat__replying">
               <Reply size={13} aria-hidden />
@@ -1136,7 +1157,7 @@ function LiveChat({
               ))}
             </ul>
           ) : null}
-          {(showPhoto || chatPhotos.length) && canWrite && user ? (
+          {(showPhoto || chatPhotos.length) && canWrite && user && !visitor ? (
             <div className="bw-chat__photo">
               <PhotoPicker
                 max={1}
@@ -1184,7 +1205,7 @@ function LiveChat({
             >
               <Smile size={20} aria-hidden />
             </button>
-            {canWrite && user ? (
+            {canWrite && user && !visitor ? (
               <label
                 className="bw-chat__emote-toggle"
                 aria-label={tr("ui.liveRoom.ajouterUnePhoto")}
@@ -1302,6 +1323,7 @@ export function LiveRoom({
     feed.data?.access === "member" ||
     feed.data?.access === "position" ||
     feed.data?.access === "guest" ||
+    feed.data?.access === "visitor" ||
     feed.data?.access === "staff";
   const closed = kind === "crossing" && moment === "over";
   const preview = messages.slice(0, PREVIEW_MESSAGES).reverse();
@@ -1338,6 +1360,8 @@ export function LiveRoom({
         }
         staff={Boolean(feed.data?.staff)}
         guest={feed.data?.access === "guest"}
+        visitor={feed.data?.access === "visitor"}
+        visit={feed.data?.visit}
       />
     </RoomSheet>
   );
@@ -1402,6 +1426,7 @@ export function EmbeddedRoom({
     feed.data?.access === "member" ||
     feed.data?.access === "position" ||
     feed.data?.access === "guest" ||
+    feed.data?.access === "visitor" ||
     feed.data?.access === "staff";
   // LiveChat pose son titre comme celui d'une fenêtre : le contexte suffit, sans rien ouvrir.
   return (
@@ -1423,6 +1448,8 @@ export function EmbeddedRoom({
           starterContext={starterContext}
           staff={Boolean(feed.data?.staff)}
           guest={feed.data?.access === "guest"}
+          visitor={feed.data?.access === "visitor"}
+          visit={feed.data?.visit}
         />
       </Dialog>
     </div>

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import jpeg from "jpeg-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { isExplicitJpeg, publishChatPhoto } from "./chatPhoto.server";
+import { isExplicitJpeg, publishChatPhoto, VISITOR_PHOTO_REFUSAL } from "./chatPhoto.server";
 
 const USER = "11111111-2222-3333-4444-555555555555";
 const ID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
@@ -83,5 +83,23 @@ describe("contrôle serveur des photos de salon", () => {
     );
     expect(result).toEqual({ ok: false, reason: "rpc:Une seule photo par personne" });
     expect(admin.removed).toContain(`salons/${USER}/${ID}.jpg`);
+  });
+  it("refuse la photo d'un invité venu d'une autre traversée, sans rien publier", async () => {
+    const admin = fakeAdmin(plainJpeg());
+    const user = {
+      rpc: vi.fn(async (name: string) =>
+        name === "bw_room_visit_mine" ? { data: true, error: null } : { error: null },
+      ),
+    } as unknown as SupabaseClient;
+    const result = await publishChatPhoto(
+      admin.client,
+      user,
+      USER,
+      input(`${USER}/salon-${ID}.jpg`),
+    );
+    expect(result).toEqual({ ok: false, reason: VISITOR_PHOTO_REFUSAL });
+    expect(admin.uploaded).toEqual([]);
+    expect(admin.removed).toEqual([`${USER}/salon-${ID}.jpg`]);
+    expect(user.rpc).not.toHaveBeenCalledWith("bw_photo_chat", expect.anything());
   });
 });

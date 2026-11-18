@@ -1,0 +1,87 @@
+/* Rejoindre en invité le salon d'une autre traversée : l'entrée, la mention et la sortie. */
+.bw-chat__line small[data-place="visitor"] {
+  background: #fff1e0;
+  color: #8a4a00;
+}
+.bw-visit {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  margin: 0 0 4px;
+}
+.bw-visit .bw-visit__join {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1.5px solid #0e7a43;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #0e7a43;
+  font-size: 14px;
+  font-weight: 700;
+}
+.bw-visit .bw-visit__join:disabled {
+  opacity: 0.6;
+}
+.bw-visit__note {
+  margin: 0;
+  color: #5b6b66;
+  font-size: 12.5px;
+  line-height: 1.35;
+  text-align: center;
+}
+.bw-visit__error {
+  margin: 0;
+  color: #a5300f;
+  font-size: 12.5px;
+  text-align: center;
+}
+.bw-visit__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  padding: 6px 10px;
+  border: 1px solid #f3d9b5;
+  border-radius: 12px;
+  background: #fff8ee;
+  color: #5c3b00;
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+.bw-visit__bar > svg {
+  flex: none;
+}
+.bw-visit__bar > span:first-of-type {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+.bw-visit__leave,
+.bw-visit__confirm button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid #e0c08f;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #5c3b00;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.bw-visit__confirm {
+  display: inline-flex;
+  gap: 6px;
+}
+.bw-visit__confirm button:first-child {
+  border-color: #a5300f;
+  background: #a5300f;
+  color: #ffffff;
+}
+.bw-visit__bar .bw-visit__error {
+  flex-basis: 100%;
+  text-align: left;
+}

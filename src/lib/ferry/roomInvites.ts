@@ -41,7 +41,8 @@ const STAGE_TEXT: Record<VoyageStage, { title: string; body: string; examples: s
     examples: ["La file avance ?", "L’embarquement a commencé ?"],
   },
   sea: {
-    title: "Vous voilà en mer",
+    // Être en mer ne se suppose pas : la fenêtre demande d'abord « à bord ? » (RoomInvite).
+    title: "Le navire a pris la mer",
     body: "Échangez avec les autres passagers pendant la traversée.",
     examples: ["Le restaurant est ouvert ?", "La mer bouge de votre côté ?"],
   },

@@ -1431,6 +1431,7 @@ function Index() {
           {/* VOLET : tiroir en bas sur mobile, carte flottante à gauche sur ordinateur */}
           <aside
             ref={asideRef}
+            data-level={panelLevel}
             style={
               {
                 ...(dragHeight !== null ? { height: dragHeight } : {}),

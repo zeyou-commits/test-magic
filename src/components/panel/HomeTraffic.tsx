@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Anchor, ArrowDownLeft, ArrowUpRight, MapPin } from "lucide-react";
 import { TrafficCard } from "./TrafficCard";
+import { LivePeek } from "./LivePeek";
 import {
   companiesQuery,
   fleetDeparturesQuery,
@@ -90,6 +91,17 @@ export function HomeTraffic({
   // Ma traversée est déjà suivie dans son bloc, en tête : pas de doublon dans la liste.
   const sailing = allSailing.filter((c) => c.departure.id !== trip?.departure.id);
   const mineSailing = sailing.length !== allSailing.length;
+  // Tiroir replié : la première traversée en mer, sinon le prochain départ connu.
+  const peekSea = sailing[0] ?? null;
+  const peekNext = peekSea
+    ? null
+    : (crossings
+        .filter(
+          (c) => c.departure.status !== "cancelled" && Date.parse(c.departure.departure_at) > now,
+        )
+        .sort(
+          (a, b) => Date.parse(a.departure.departure_at) - Date.parse(b.departure.departure_at),
+        )[0] ?? null);
   // À quai : les navires identifiés amarrés (signal AIS ou horaire), avec leur prochain départ.
   const docked = fleet
     .filter((ship) => ship.state === "docked" && ship.vesselId)
@@ -141,7 +153,15 @@ export function HomeTraffic({
       {mineSailing && !sailing.length ? null : (
       <section aria-label={tr("ui.homeTraffic.traverseesEnNavigation")}>
         {/* Le direct commence par ce qui bouge : combien de navires sont en mer, maintenant. */}
-        <h2 className="bw-live-head">
+        {peekSea || peekNext ? (
+          <LivePeek
+            crossing={(peekSea ?? peekNext)!}
+            kind={peekSea ? "sea" : "next"}
+            count={sailing.length}
+            onSelect={onSelect}
+          />
+        ) : null}
+        <h2 className="bw-live-head bw-live-head--sea">
           <span className="bw-live-head__dot" aria-hidden />
           {mineSailing
             ? tr("ui.homeTraffic.autresNaviresEnRoute")

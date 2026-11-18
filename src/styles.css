@@ -12,6 +12,7 @@
 @import "./chatpins.css";
 @import "./room-visit.css";
 @import "./backoffice.css";
+@import "./ligne-direct.css";
 
 @custom-variant dark (&:is(.dark *));
 

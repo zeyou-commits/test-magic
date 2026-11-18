@@ -17,6 +17,9 @@ import { Button } from "@/components/ui/button";
 import { BookingLink, DemoBadge, EmptyNote, PanelHeader, Section } from "./shared";
 import { QuestionHelp } from "@/components/questions/QuestionHelp";
 import { RoomPicker } from "./RoomPicker";
+import { LineFigures, LineHero, VesselThumb, durationRange } from "./LineOverview";
+import { lineStats } from "@/lib/ferry/lineStats";
+import { CompanyBadge } from "./CompanyBadge";
 import { ReportButton } from "./ReportButton";
 import { tr } from "@/lib/i18n";
 
@@ -49,6 +52,8 @@ export function RouteView({
       lineDepartures.some((departure) => departure.company_id === company.id),
   );
   const routeDepartures = lineDepartures.slice(0, 8);
+  // Les chiffres de la ligne, tirés des départs publiés : rien d'estimé.
+  const stats = lineStats({ departures: lineDepartures, companies, vessels });
   // Sens inverse : indispensable pour préparer le retour (Algérie → Europe ou l'inverse).
   const reverse = routes.find(
     (item) =>
@@ -58,20 +63,43 @@ export function RouteView({
 
   return (
     <div className="flex flex-col gap-6 pb-12">
-      <PanelHeader
-        overline={tr("ui.routeView.ligne")}
-        title={`${from?.name ?? "—"} → ${to?.name ?? "—"}`}
-        subtitle={
-          <span className="flex flex-wrap items-center gap-2">
-            <span>
-              {tr("ui.routeView.dureeTypique")}{formatDuration(route.typical_duration_minutes)}
-              {route.distance_km ? ` · ${route.distance_km} km` : ""}
+      {from && to ? (
+        // En-tête resserré : le titre, puis le trajet en image (durée et distance dans le médaillon).
+        <div className="flex flex-col gap-3">
+          <header className="px-4 pt-3 md:px-6 md:pt-5">
+            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {tr("ui.routeView.ligne")}
+              {route.is_demo ? <DemoBadge /> : null}
+            </div>
+            <h1 className="font-display text-2xl font-bold leading-tight tracking-tight text-foreground">
+              {from.name} → {to.name}
+            </h1>
+          </header>
+          <LineHero
+            from={from}
+            to={to}
+            typicalMinutes={route.typical_duration_minutes}
+            distanceKm={route.distance_km}
+            vessel={stats.vessels[0] ?? null}
+            onSelect={onSelect}
+          />
+        </div>
+      ) : (
+        <PanelHeader
+          overline={tr("ui.routeView.ligne")}
+          title={`${from?.name ?? "—"} → ${to?.name ?? "—"}`}
+          subtitle={
+            <span className="flex flex-wrap items-center gap-2">
+              <span>
+                {tr("ui.routeView.dureeTypique")}{formatDuration(route.typical_duration_minutes)}
+                {route.distance_km ? ` · ${route.distance_km} km` : ""}
+              </span>
+              {route.is_demo ? <DemoBadge /> : null}
             </span>
-            {route.is_demo ? <DemoBadge /> : null}
-          </span>
-        }
-        actions={<ReportButton targetType="route" targetId={route.id} />}
-      />
+          }
+          actions={<ReportButton targetType="route" targetId={route.id} />}
+        />
+      )}
 
       <div className="grid gap-2 px-4 md:px-6">
         {onPlanRoute ? (
@@ -99,6 +127,10 @@ export function RouteView({
             {tr("ui.routeView.aucuneLigneConnueDansLe")}{to?.name} → {from?.name}).
           </p>
         )}
+      </div>
+
+      <div className="px-4 md:px-6">
+        <LineFigures stats={stats} timeZone={timeZone} />
       </div>
 
       <Section title={`Prochains départs · ${zoneLabel(timeZone)}`}>
@@ -156,19 +188,48 @@ export function RouteView({
         ) : (
           <div className="flex flex-col gap-3">
             <LineAlertNotice departures={lineDepartures} vessels={vessels} />
-            {operators.map((company) => (
-              <div key={company.id} className="rounded-xl border border-border p-3">
-                <button
-                  type="button"
-                  onClick={() => onSelect({ type: "company", id: company.id })}
-                  className="group mb-2 flex w-full items-center justify-between text-left text-sm font-semibold"
-                >
-                  {company.name}
-                  <ChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
-                </button>
-                <BookingLink company={company} compact />
-              </div>
-            ))}
+            {operators.map((company) => {
+              // Ce que fait cette compagnie sur la ligne : départs, durée publiée, navires.
+              const own = stats.operators.find((item) => item.company.id === company.id);
+              const duration = own ? durationRange(own.minMinutes, own.maxMinutes) : null;
+              return (
+                <div key={company.id} className="bw-line-operator">
+                  <button
+                    type="button"
+                    onClick={() => onSelect({ type: "company", id: company.id })}
+                    className="group flex w-full items-center gap-3 text-left"
+                  >
+                    <CompanyBadge name={company.name} logoUrl={company.logo_url} size={30} />
+                    <span className="min-w-0 flex-1">
+                      <strong className="block truncate text-sm">{company.name}</strong>
+                      {own ? (
+                        <small className="block text-xs text-muted-foreground">
+                          {own.count} {own.count > 1 ? "départs à venir" : "départ à venir"}
+                          {duration ? ` · ${duration} de traversée` : ""}
+                        </small>
+                      ) : null}
+                    </span>
+                    <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1" />
+                  </button>
+                  {own?.vessels.length ? (
+                    <div className="bw-line-operator__vessels">
+                      {own.vessels.map((vessel) => (
+                        <button
+                          key={vessel.id}
+                          type="button"
+                          className="bw-line-vessel"
+                          onClick={() => onSelect({ type: "vessel", id: vessel.id })}
+                        >
+                          <VesselThumb vessel={vessel} width={56} />
+                          <span>{vessel.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                  <BookingLink company={company} compact />
+                </div>
+              );
+            })}
           </div>
         )}
       </Section>
@@ -204,6 +265,11 @@ export function RouteView({
         <Section title={tr("ui.routeView.informationsComplementaires")}>
           <div className="text-sm text-muted-foreground">{route.notes}</div>
         </Section>
+      ) : null}
+      {from && to ? (
+        <div className="px-4 md:px-6">
+          <ReportButton targetType="route" targetId={route.id} variant="link" />
+        </div>
       ) : null}
     </div>
   );

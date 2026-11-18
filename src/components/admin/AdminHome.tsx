@@ -8,10 +8,13 @@ import {
   Send,
   Ship,
   Star,
+  Users,
   type LucideIcon,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminCounts } from "@/hooks/useAdminCounts";
+import { userAdminAction, type UsersStats } from "@/lib/admin/users";
 import type { AdminFilter } from "@/lib/admin/navigation";
 
 type Tile = {
@@ -38,6 +41,13 @@ export function AdminHome({
 }) {
   const { profile, user } = useAuth();
   const { data, isPending, isError } = useAdminCounts();
+  // Les comptes : mêmes chiffres (et même cache) que la rubrique Utilisateurs, réservés à l'admin.
+  const users = useQuery({
+    queryKey: ["admin", "users", "stats", user?.id],
+    queryFn: () => userAdminAction<UsersStats>({ action: "stats" }),
+    enabled: Boolean(user) && can("users"),
+    retry: false,
+  });
   const first = (profile?.display_name || user?.email || "").split(/[ @]/)[0];
   const today = new Intl.DateTimeFormat("fr-FR", {
     weekday: "long",
@@ -47,6 +57,15 @@ export function AdminHome({
   }).format(new Date());
   const tiles: Tile[] = (
     [
+      {
+        tab: "users",
+        label: "Utilisateurs",
+        value: users.data?.total,
+        icon: Users,
+        hint: users.data
+          ? `${users.data.active7} actifs sur 7 jours · voir la liste`
+          : "Voir la liste des comptes",
+      },
       {
         tab: "departures",
         filter: "today",
@@ -104,6 +123,7 @@ export function AdminHome({
     .filter((tile) => tile.todo)
     .reduce((sum, tile) => sum + (tile.value ?? 0), 0);
   const shortcuts = [
+    { tab: "users", label: "Utilisateurs", icon: Users },
     { tab: "notifications", label: "Écrire aux voyageurs", icon: Send },
     { tab: "flash", label: "Publier un Flash info", icon: MessageSquare },
     { tab: "import", label: "Importer un planning", icon: FileSpreadsheet },

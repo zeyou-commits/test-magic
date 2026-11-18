@@ -26,6 +26,10 @@ export const PHOTO_ACCEPT = "image/*,text/plain";
 export const PHOTO_CONSENT =
   "J’ai vérifié l’aperçu : aucun visage ni plaque ne reste lisible, et j’ai le droit de publier cette photo.";
 
+/** L'accord demandé pour une photo de profil : le visage reste visible, c'est son but. */
+export const PROFILE_PHOTO_CONSENT =
+  "C’est bien moi (ou une image que j’ai le droit d’utiliser) et j’accepte que cette photo soit visible des autres voyageurs, une fois validée par l’équipe.";
+
 /**
  * Joindre jusqu'à `max` photos : réduites, visages floutés et sans métadonnées (position GPS
  * comprise) dès le choix. L'aperçu flouté reste sous les yeux jusqu'à l'envoi.
@@ -41,6 +45,7 @@ export function PhotoPicker({
   incoming,
   onIncomingDone,
   hideSources = false,
+  profile = false,
 }: {
   max: number;
   photos: PreparedPhoto[];
@@ -56,6 +61,11 @@ export function PhotoPicker({
   onIncomingDone?: () => void;
   /** Les boutons « Prendre une photo / Galerie » sont ailleurs (salon). */
   hideSources?: boolean;
+  /**
+   * Photo de profil : recadrée en carré, visage gardé (seule exception au floutage), plaques
+   * floutées, filtre de contenu explicite et accord de l'auteur comme pour toutes les photos.
+   */
+  profile?: boolean;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -75,7 +85,10 @@ export function PhotoPicker({
     if (max === 1) photos.forEach((photo) => URL.revokeObjectURL(photo.url));
     for (const file of [...files].slice(0, max - next.length)) {
       try {
-        const photo = await preparePhoto(file);
+        const photo = await preparePhoto(
+          file,
+          profile ? { blurFaces: false, square: 640 } : undefined,
+        );
         // Contenu explicite refusé partout, avant tout envoi (le serveur recontrôle les salons).
         const verdict = await (await import("@/lib/photos/nsfw")).checkChatPhoto(photo.url);
         const refused = verdict.ok ? (check ? await check(photo) : null) : verdict.reason;
@@ -133,17 +146,18 @@ export function PhotoPicker({
               checked={consent}
               onChange={(event) => onConsent(event.target.checked)}
             />
-            <span>{PHOTO_CONSENT}</span>
+            <span>{profile ? PROFILE_PHOTO_CONSENT : PHOTO_CONSENT}</span>
           </label>
           <small>
-            {blurredLabel(photos)}
+            {profile ? "" : blurredLabel(photos)}
             {note}{tr("ui.photos.positionGpsEtInfosDe")}
           </small>
         </>
       ) : null}
       {busy ? (
         <p className="bw-photo-picker__busy" role="status">
-          <LoaderCircle size={15} className="animate-spin" aria-hidden />{tr("ui.photos.floutageDesVisagesEtPlaques")}
+          <LoaderCircle size={15} className="animate-spin" aria-hidden />
+          {profile ? "Préparation de la photo…" : tr("ui.photos.floutageDesVisagesEtPlaques")}
         </p>
       ) : null}
       {/* Un seul bouton : le téléphone propose lui-même « Appareil photo » ou « Galerie ». */}

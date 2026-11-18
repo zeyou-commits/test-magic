@@ -16,6 +16,7 @@ import {
 import { LibraryPicker } from "./LibraryPicker";
 import { EditableAvatar, focusAvatarPicker } from "./EditableAvatar";
 import { MoodPicker } from "./MoodPicker";
+import { ProfilePhotoField } from "./ProfilePhotoField";
 import { TravellerAvatar } from "./TravellerAvatar";
 import { tr } from "@/lib/i18n";
 
@@ -84,6 +85,8 @@ export function MyTravellerEditor() {
           </div>
         </div>
       </div>
+
+      <ProfilePhotoField />
 
       <fieldset id="mon-avatar" className="scroll-mt-20">
         <legend>{tr("ui.myTravellerEditor.votreAvatar")}</legend>

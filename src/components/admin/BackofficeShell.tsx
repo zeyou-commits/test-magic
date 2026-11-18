@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
-  ArrowUpRight,
+  ArrowLeft,
   ChevronDown,
   CornerDownLeft,
   Ellipsis,
@@ -253,6 +253,15 @@ export function BackofficeShell({
         <nav className="bo-nav" aria-label="Espaces">
           {spaceList(rail)}
         </nav>
+        <Link
+          to="/"
+          className="bo-back"
+          aria-label={rail ? "Retour au site" : undefined}
+          title={rail ? "Retour au site" : undefined}
+        >
+          <ArrowLeft aria-hidden />
+          {rail ? null : <span>Retour au site</span>}
+        </Link>
         <button
           type="button"
           className="bo-rail"
@@ -267,6 +276,11 @@ export function BackofficeShell({
 
       <div className="bo-main">
         <header className="bo-top">
+          {/* Sur téléphone, le retour au site est à gauche, à la place du fil d'Ariane. */}
+          <Link to="/" className="bo-back-top" aria-label="Retour au site">
+            <ArrowLeft aria-hidden />
+            <span>Site</span>
+          </Link>
           <p className="bo-crumb">
             <span>{currentSpace?.label}</span>
             <i aria-hidden>/</i>
@@ -283,7 +297,7 @@ export function BackofficeShell({
             </button>
             {topActions}
             <Link to="/" className="bo-site">
-              Voir le site <ArrowUpRight aria-hidden />
+              <ArrowLeft aria-hidden /> Retour au site
             </Link>
             <UserMenu compact iconOnly />
           </div>
@@ -361,6 +375,10 @@ export function BackofficeShell({
             </button>
           </header>
           {brandSub}
+          <Link to="/" className="bo-back bo-back--sheet">
+            <ArrowLeft aria-hidden />
+            <span>Retour au site</span>
+          </Link>
           <div className="bo-sheet__grid">
             {visibleSpaces.map((space) => (
               <section key={space.id}>

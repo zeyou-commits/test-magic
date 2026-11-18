@@ -7,7 +7,7 @@ const db = typedSupabase as unknown as SupabaseClient;
 
 export const PENDING_BUCKET = "bledway-photos-attente";
 export const PUBLIC_BUCKET = "bledway-photos";
-export type PhotoKind = "report" | "vessel_review" | "port_review" | "chat";
+export type PhotoKind = "report" | "vessel_review" | "port_review" | "chat" | "profile";
 
 /**
  * Une photo prête à l'envoi : réduite, visages floutés, réencodée (sans aucune métadonnée,
@@ -37,7 +37,11 @@ const MAX_SIDE = 1600;
  * Réduit la photo à 1 600 px au plus et la réencode : l'image redessinée ne garde ni l'EXIF, ni la
  * position GPS, ni le modèle de l'appareil. L'orientation du téléphone est appliquée avant.
  */
-export async function preparePhoto(file: File): Promise<PreparedPhoto> {
+export async function preparePhoto(
+  file: File,
+  options: { blurFaces?: boolean; square?: number } = {},
+): Promise<PreparedPhoto> {
+  const { blurFaces: hideFaces = true, square } = options;
   if (!file.type.startsWith("image/")) throw new Error("Choisissez une image.");
   if (file.size > 25 * 1024 * 1024) throw new Error("Image trop lourde (25 Mo au plus).");
   let bitmap: ImageBitmap;
@@ -46,17 +50,23 @@ export async function preparePhoto(file: File): Promise<PreparedPhoto> {
   } catch {
     throw new Error("Image illisible : essayez une photo en JPG ou PNG.");
   }
-  const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
-  const width = Math.max(1, Math.round(bitmap.width * scale));
-  const height = Math.max(1, Math.round(bitmap.height * scale));
+  // Photo de profil : recadrée au centre, en carré.
+  const side = Math.min(bitmap.width, bitmap.height);
+  const source = square
+    ? { x: (bitmap.width - side) / 2, y: (bitmap.height - side) / 2, w: side, h: side }
+    : { x: 0, y: 0, w: bitmap.width, h: bitmap.height };
+  const scale = Math.min(1, (square ?? MAX_SIDE) / Math.max(source.w, source.h));
+  const width = Math.max(1, Math.round(source.w * scale));
+  const height = Math.max(1, Math.round(source.h * scale));
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
   const context = canvas.getContext("2d")!;
   context.imageSmoothingQuality = "high";
-  context.drawImage(bitmap, 0, 0, width, height);
+  context.drawImage(bitmap, source.x, source.y, source.w, source.h, 0, 0, width, height);
   bitmap.close();
   // Visages et plaques floutés avant tout envoi. Sans vérification possible, la photo ne part pas.
+  // Seule exception : la photo de profil garde le visage (c'est son but) ; les plaques restent floutées.
   let faces: number;
   let plates: number;
   try {
@@ -64,7 +74,7 @@ export async function preparePhoto(file: File): Promise<PreparedPhoto> {
       import("./faces"),
       import("./plates"),
     ]);
-    faces = await blurFaces(canvas);
+    faces = hideFaces ? await blurFaces(canvas) : 0;
     plates = await blurPlates(canvas);
   } catch {
     throw new Error(
@@ -115,6 +125,44 @@ export async function submitPhoto(
     throw new Error(readable(error.message, "La photo n’a pas pu être jointe."));
   }
 }
+
+/**
+ * Photo de profil : déposée en attente ; l'équipe la valide avant qu'elle remplace l'avatar.
+ * Une nouvelle photo remplace celle qui attendait encore.
+ */
+export async function submitProfilePhoto(userId: string, photo: PreparedPhoto) {
+  const path = `${userId}/profil-${crypto.randomUUID()}.${extension(photo.blob)}`;
+  await upload(PENDING_BUCKET, path, photo.blob);
+  const { error } = await db.rpc("bw_profile_photo_submit", {
+    p_path: path,
+    p_width: photo.width,
+    p_height: photo.height,
+  });
+  if (error) {
+    await db.storage.from(PENDING_BUCKET).remove([path]);
+    throw new Error(readable(error.message, "La photo n’a pas pu être envoyée."));
+  }
+}
+
+export type MyProfilePhoto = {
+  approved: { id: string; path: string } | null;
+  pending: { id: string } | null;
+};
+// Sous la clé commune des photos : une validation de l'équipe rafraîchit aussi cette lecture.
+export const myProfilePhotoKey = ["photos", "profile", "me"] as const;
+/** Ma photo de profil (validée, en attente). `null` : script pas encore exécuté. */
+export const myProfilePhotoQuery = (userId?: string) =>
+  queryOptions({
+    queryKey: [...myProfilePhotoKey, userId],
+    enabled: Boolean(userId),
+    retry: false,
+    staleTime: 30_000,
+    queryFn: async (): Promise<MyProfilePhoto | null> => {
+      const { data, error } = await db.rpc("bw_my_profile_photo");
+      if (error) return null;
+      return data as MyProfilePhoto;
+    },
+  });
 
 /** Le serveur relit les photos de salon en JPEG : une photo WebP est réencodée avant l'envoi. */
 async function asJpeg(photo: PreparedPhoto) {
@@ -203,7 +251,8 @@ export async function removePublicFiles(paths: string[]) {
 export async function deletePhoto(photo: { id: string; path: string }) {
   const { data, error } = await db.rpc("bw_photo_delete", { p_id: photo.id });
   if (error || data === false) throw new Error("Photo non retirée. Réessayez.");
-  await removePublicFiles([photo.path]);
+  // Photo encore en attente (pas de fichier public) : le ménage de nuit efface son dépôt.
+  await removePublicFiles(photo.path ? [photo.path] : []);
 }
 
 export async function reportPhoto(id: string) {

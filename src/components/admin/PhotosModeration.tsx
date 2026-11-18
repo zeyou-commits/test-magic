@@ -13,7 +13,7 @@ const QUEUE_KEY = ["admin", "photos-queue"];
 
 type QueuedPhoto = {
   id: string;
-  kind: "report" | "vessel_review" | "port_review" | "chat";
+  kind: "report" | "vessel_review" | "port_review" | "chat" | "profile";
   parent_id: string;
   pending_path: string | null;
   public_path: string | null;
@@ -28,6 +28,7 @@ const KIND_LABEL: Record<QueuedPhoto["kind"], string> = {
   vessel_review: "Avis sur un navire",
   port_review: "Avis sur un port",
   chat: "Salon (signalée)",
+  profile: "Photo de profil",
 };
 
 /**
@@ -102,7 +103,9 @@ export function PhotosModeration() {
       </h3>
       <p className="mt-1 text-xs text-muted-foreground">
         À refuser : visage reconnaissable, plaque lisible, document, contenu choquant ou hors sujet.
-        Une photo refusée est effacée.
+        Exception, la photo de profil : le visage y est permis ; à refuser si elle montre un
+        document, une plaque lisible, un contenu choquant ou hors sujet. Une photo refusée est
+        effacée.
       </p>
       {queue.isPending ? (
         <p className="mt-3 text-sm text-muted-foreground">Chargement…</p>
@@ -122,7 +125,8 @@ export function PhotosModeration() {
               <div className="grid gap-1 p-3 text-xs">
                 <strong className="text-sm">{KIND_LABEL[item.kind]}</strong>
                 <span className="text-muted-foreground">
-                  {item.place ?? "—"} · {item.author ?? "Voyageur"} ·{" "}
+                  {item.kind === "profile" ? "Profil" : (item.place ?? "—")} ·{" "}
+                  {item.author ?? "Voyageur"} ·{" "}
                   {new Date(item.created_at).toLocaleDateString("fr-FR")}
                 </span>
                 {item.reports ? (

@@ -1,4 +1,7 @@
 import { CabasImg } from "@/components/CabasImg";
+import { TravellerAvatar } from "@/components/community/TravellerAvatar";
+import { photoUrl } from "@/lib/photos/photos";
+import type { AvatarColor } from "@/lib/community/travellers";
 import { AdminRequestError } from "@/lib/admin/request";
 import { useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
@@ -12,6 +15,12 @@ import {
   ChevronRight,
   Download,
   Smartphone,
+  Users as UsersIcon,
+  Activity,
+  BellRing,
+  ShieldAlert,
+  Clock,
+  type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -74,6 +83,120 @@ const when = (value: string) =>
     minute: "2-digit",
   });
 
+/** « 18/11/2026 à 14:32 » : date et heure, à l'heure de Paris. */
+const signInLabel = (value: string | null) =>
+  value
+    ? new Date(value)
+        .toLocaleString("fr-FR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          timeZone: "Europe/Paris",
+        })
+        .replace(" ", " à ")
+    : null;
+
+type StatGroup = {
+  title: string;
+  icon: LucideIcon;
+  warn?: boolean;
+  items: [label: string, value: number | string, hint: string][];
+};
+
+/** Tuiles groupées par thème : comptes, activité, notifications, équipe et sécurité. */
+function StatsTiles({ stats }: { stats: UsersStats }) {
+  const share = stats.total ? Math.round((stats.active7 / stats.total) * 100) : 0;
+  const groups: StatGroup[] = [
+    {
+      title: "Comptes",
+      icon: UsersIcon,
+      items: [
+        ["Inscrits", stats.total, "au total"],
+        ["Nouveaux", stats.new7, "cette semaine"],
+      ],
+    },
+    {
+      title: "Activité",
+      icon: Activity,
+      items: [
+        ["Actifs", stats.active7, "sur 7 jours"],
+        ["Part active", `${share} %`, "des inscrits"],
+      ],
+    },
+    {
+      title: "Notifications",
+      icon: BellRing,
+      items: [
+        ["Voyageurs", stats.push_users, "abonnés"],
+        ["Téléphones", stats.push_devices, "abonnés"],
+      ],
+    },
+    {
+      title: "Équipe et sécurité",
+      icon: ShieldAlert,
+      warn: stats.banned > 0,
+      items: [
+        ["Équipe", stats.team, "avec un rôle"],
+        ["Suspendus", stats.banned, "en ce moment"],
+      ],
+    },
+  ];
+  return (
+    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Chiffres clés">
+      {groups.map((group) => (
+        <div
+          key={group.title}
+          className={`rounded-2xl border p-3 ${group.warn ? "border-amber-200 bg-amber-50/60" : "border-border bg-white"}`}
+        >
+          <h3 className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+            <group.icon className="size-3.5" aria-hidden /> {group.title}
+          </h3>
+          <dl className="mt-2 grid grid-cols-2 gap-2">
+            {group.items.map(([label, value, hint]) => (
+              <div key={label} className="rounded-xl bg-muted/40 px-2.5 py-2">
+                <dt className="text-[11px] font-medium text-muted-foreground">{label}</dt>
+                <dd className="text-2xl font-bold leading-tight tabular-nums">{value}</dd>
+                <dd className="text-[11px] text-muted-foreground">{hint}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+/** Le visage d'un compte : photo de profil, sinon avatar voyageur, sinon initiale. */
+function MemberAvatar({ member, size = 44 }: { member: ManagedUser; size?: number }) {
+  if (member.avatar)
+    return (
+      <TravellerAvatar
+        static
+        mood={false}
+        size={size}
+        card={{
+          handle: member.id,
+          pseudo: member.pseudo ?? "",
+          avatar: member.avatar,
+          color: (member.color ?? "menthe") as AvatarColor,
+          mood: null,
+          photo: member.photo ?? null,
+        }}
+      />
+    );
+  return (
+    <span
+      aria-hidden
+      className="grid shrink-0 place-items-center rounded-full bg-primary/10 font-bold text-primary"
+      style={{ width: size, height: size }}
+    >
+      {(member.pseudo || member.display_name || member.email || "?").slice(0, 1).toUpperCase()}
+    </span>
+  );
+}
+
 type Change = {
   action: "ban" | "unban" | "delete" | "role";
   member: ManagedUser;
@@ -97,6 +220,7 @@ export function UsersAdmin() {
   const [reason, setReason] = useState("");
   const [duration, setDuration] = useState("168h");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [openMember, setOpenMember] = useState<ManagedUser | null>(null);
   const filter = tab === "team" ? "team" : onlyBanned ? "banned" : "travellers";
   const result = useQuery({
     queryKey: ["admin", "users", user?.id, query, filter, page],
@@ -157,29 +281,7 @@ export function UsersAdmin() {
 
   return (
     <div className="space-y-5">
-      {stats.data && (
-        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" aria-label="Chiffres clés">
-          {(
-            [
-              ["Comptes", stats.data.total, `${stats.data.new7} nouveau(x) cette semaine`],
-              ["Actifs sur 7 jours", stats.data.active7, "connectés au moins une fois"],
-              [
-                "Notifications",
-                stats.data.push_users,
-                `${stats.data.push_devices} téléphone(s) abonné(s)`,
-              ],
-              ["Équipe", stats.data.team, "comptes avec un rôle"],
-              ["Suspendus", stats.data.banned, "en ce moment"],
-            ] as const
-          ).map(([label, value, hint]) => (
-            <div key={label} className="rounded-xl border border-border bg-white p-3">
-              <p className="text-xs text-muted-foreground">{label}</p>
-              <p className="text-2xl font-bold tabular-nums">{value}</p>
-              <p className="text-[11px] text-muted-foreground">{hint}</p>
-            </div>
-          ))}
-        </section>
-      )}
+      {stats.data && <StatsTiles stats={stats.data} />}
       {stats.error && (
         <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
           {stats.error.message}
@@ -264,12 +366,12 @@ export function UsersAdmin() {
             }}
           >
             <label className="relative min-w-60 flex-1">
-              <span className="sr-only">Rechercher par nom ou e-mail</span>
+              <span className="sr-only">Rechercher par pseudo, nom ou e-mail</span>
               <Search className="absolute left-3 top-3 size-4 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Nom ou e-mail"
+                placeholder="Pseudo, nom ou e-mail"
                 maxLength={150}
                 className="pl-9"
               />
@@ -328,30 +430,49 @@ export function UsersAdmin() {
                       key={member.id}
                       className="flex flex-wrap items-center gap-3 rounded-xl border bg-card p-3"
                     >
-                      <span
-                        aria-hidden
-                        className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 font-bold text-primary"
-                      >
-                        {(member.display_name || member.email || "?").slice(0, 1).toUpperCase()}
-                      </span>
-                      <div className="min-w-48 flex-1">
-                        <p className="break-words text-sm font-semibold">
-                          {member.display_name || "Voyageur"}
-                          {self ? " · vous" : ""}
+                      <MemberAvatar member={member} />
+                      <div className="min-w-0 flex-1 basis-48">
+                        {/* Le pseudo d'abord : c'est le nom que voient les voyageurs. */}
+                        <p className="flex flex-wrap items-baseline gap-x-1.5 break-words text-base font-bold leading-tight">
+                          {member.pseudo || member.display_name || "Sans pseudo"}
+                          {self ? (
+                            <span className="text-xs font-semibold text-primary">vous</span>
+                          ) : null}
+                          {member.photo_pending ? (
+                            <span className="rounded-full bg-amber-100 px-1.5 text-[10px] font-semibold text-amber-900">
+                              photo à valider
+                            </span>
+                          ) : null}
                         </p>
                         <p className="break-all text-xs text-muted-foreground">
+                          {member.pseudo && member.display_name ? `${member.display_name} · ` : ""}
                           {member.email || member.id}
                         </p>
-                        <p className="text-[11px] text-muted-foreground">
-                          {banned(member)
-                            ? "Suspendu"
-                            : member.email_confirmed_at
-                              ? "Actif"
-                              : "E-mail à confirmer"}{" "}
-                          · inscrit le {new Date(member.created_at).toLocaleDateString("fr-FR")}
+                        <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-[11px] text-muted-foreground">
+                          <span
+                            className={
+                              banned(member)
+                                ? "font-semibold text-destructive"
+                                : member.email_confirmed_at
+                                  ? "font-semibold text-primary"
+                                  : "font-semibold text-amber-800"
+                            }
+                          >
+                            {banned(member)
+                              ? "Suspendu"
+                              : member.email_confirmed_at
+                                ? "Actif"
+                                : "E-mail à confirmer"}
+                          </span>
+                          <span>
+                            · inscrit le {new Date(member.created_at).toLocaleDateString("fr-FR")}
+                          </span>
+                        </p>
+                        <p className="mt-0.5 flex items-center gap-1 text-xs font-medium">
+                          <Clock className="size-3.5 text-muted-foreground" aria-hidden />
                           {member.last_sign_in_at
-                            ? ` · vu le ${new Date(member.last_sign_in_at).toLocaleDateString("fr-FR")}`
-                            : ""}
+                            ? `Dernière connexion le ${signInLabel(member.last_sign_in_at)}`
+                            : "Jamais connecté"}
                         </p>
                       </div>
                       {tab === "team" && (
@@ -382,7 +503,14 @@ export function UsersAdmin() {
                           ))}
                         </div>
                       )}
-                      <Button size="sm" variant="outline" onClick={() => setOpenId(member.id)}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setOpenId(member.id);
+                          setOpenMember(member);
+                        }}
+                      >
                         Voir la fiche
                       </Button>
                     </article>
@@ -421,6 +549,7 @@ export function UsersAdmin() {
         <UserSheet
           userId={openId}
           self={openId === user?.id}
+          member={openMember}
           onClose={() => setOpenId(null)}
           onChange={(next) => openChange(next)}
           busy={mutation.isPending}
@@ -599,12 +728,15 @@ export function UsersAdmin() {
 function UserSheet({
   userId,
   self,
+  member,
   busy,
   onClose,
   onChange,
 }: {
   userId: string;
   self: boolean;
+  /** La ligne de la liste : pseudo, avatar et photo du profil voyageur. */
+  member?: ManagedUser | null;
   busy: boolean;
   onClose: () => void;
   onChange: (change: Change) => void;
@@ -650,7 +782,13 @@ function UserSheet({
       ) : account ? (
         <div className="grid gap-5">
           <section className="flex items-center gap-3">
-            {detail.data?.traveller?.avatar ? (
+            {member?.photo ? (
+              <img
+                src={photoUrl(member.photo)}
+                alt="Photo de profil"
+                className="size-14 rounded-full object-cover"
+              />
+            ) : detail.data?.traveller?.avatar ? (
               <CabasImg
                 src={`/cabas/persos/${detail.data.traveller.avatar}.webp`}
                 alt=""
@@ -668,7 +806,7 @@ function UserSheet({
               <p className="text-xs text-muted-foreground">
                 Inscrit le {new Date(account.created_at).toLocaleDateString("fr-FR")}
                 {account.last_sign_in_at
-                  ? ` · dernière connexion ${when(account.last_sign_in_at)}`
+                  ? ` · dernière connexion le ${signInLabel(account.last_sign_in_at)}`
                   : " · jamais connecté"}
                 {account.roles.length
                   ? ` · ${account.roles.map((r) => roleLabels[r as Role] ?? r).join(", ")}`

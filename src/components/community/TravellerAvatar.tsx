@@ -1,6 +1,7 @@
 import { CabasImg } from "@/components/CabasImg";
 import { MessageCircle } from "lucide-react";
 import { useAvatarImage } from "@/lib/community/avatars";
+import { photoUrl } from "@/lib/photos/photos";
 import {
   avatarColors,
   moodIcon,
@@ -9,7 +10,8 @@ import {
 } from "@/lib/community/travellers";
 
 /**
- * L'avatar d'un voyageur : son cabas sur sa couleur, et la petite bulle de son humeur du moment.
+ * L'avatar d'un voyageur : sa photo de profil validée s'il en a une, sinon son cabas sur sa
+ * couleur ; et la petite bulle de son humeur du moment.
  * Un toucher ouvre son profil public (sauf `static`).
  */
 export function TravellerAvatar({
@@ -19,7 +21,7 @@ export function TravellerAvatar({
   moodLabel = false,
   static: isStatic = false,
 }: {
-  card: Pick<TravellerCard, "handle" | "pseudo" | "avatar" | "color" | "mood">;
+  card: Pick<TravellerCard, "handle" | "pseudo" | "avatar" | "color" | "mood" | "photo">;
   size?: number;
   /** Bulle d'humeur (image seule). */
   mood?: boolean;
@@ -34,7 +36,20 @@ export function TravellerAvatar({
         className="bw-tavatar__disc"
         style={{ background: avatarColors[card.color] ?? "#eef3ef" }}
       >
-        <CabasImg src={image} alt="" width={size} height={size} loading="lazy" />
+        {card.photo ? (
+          <img
+            className="bw-tavatar__photo"
+            src={photoUrl(card.photo)}
+            alt=""
+            width={size}
+            height={size}
+            loading="lazy"
+            // Plein disque (le cabas, lui, est posé un peu plus bas) ; style ici pour ne pas toucher flash.css.
+            style={{ width: "100%", height: "100%", margin: 0, objectFit: "cover" }}
+          />
+        ) : (
+          <CabasImg src={image} alt="" width={size} height={size} loading="lazy" />
+        )}
       </span>
       {mood && card.mood ? (
         <span

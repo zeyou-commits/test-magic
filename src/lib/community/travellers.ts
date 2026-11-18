@@ -82,6 +82,8 @@ export type TravellerCard = {
   avatar: PersonaId;
   color: AvatarColor;
   mood: Mood | null;
+  /** Photo de profil validée par l'équipe : affichée à la place de l'avatar (script du 18/11/2026). */
+  photo?: string | null;
 };
 export type MyTraveller = TravellerCard & {
   show_on_trip: boolean;

@@ -9,6 +9,14 @@ export type ManagedUser = {
   last_sign_in_at: string | null;
   email_confirmed_at: string | null;
   banned_until: string | null;
+  /** Profil voyageur (script du 18/11/2026) : absent tant que le script n'est pas exécuté. */
+  pseudo?: string | null;
+  avatar?: string | null;
+  color?: string | null;
+  /** Photo de profil validée (chemin dans l'espace public des photos). */
+  photo?: string | null;
+  /** Une photo de profil attend la validation de l'équipe. */
+  photo_pending?: boolean;
 };
 export type UsersPage = {
   total: number;

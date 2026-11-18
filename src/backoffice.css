@@ -421,6 +421,43 @@
   width: 15px;
   height: 15px;
 }
+/* Retour au site : en bas du menu (ordinateur), dans la feuille « Plus » et en haut à gauche
+   (téléphone). */
+.bo-back {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  margin: 8px 0 4px;
+  padding: 0 12px;
+  border: 1px solid rgb(255 255 255 / 0.18);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.1);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+.bo-back:hover {
+  background: rgb(255 255 255 / 0.18);
+}
+.bo-back svg {
+  flex: none;
+  width: 17px;
+  height: 17px;
+}
+.bo[data-rail] .bo-back {
+  justify-content: center;
+  padding: 0;
+}
+.bo-back--sheet {
+  margin: 0 0 14px;
+  border-color: var(--bo-line);
+  background: #eaf4ee;
+  color: var(--bo-accent-ink);
+}
+.bo-back-top {
+  display: none;
+}
 
 /* ── Contenu ── */
 .bo-content {
@@ -915,8 +952,13 @@ a.bo-kpi:hover {
   .bo-side .bo-space__chev,
   .bo-side .bo-space__head > .bo-badge,
   .bo-side .bo-space__items,
+  .bo-side .bo-back span,
   .bo-side .bo-rail {
     display: none;
+  }
+  .bo-side .bo-back {
+    justify-content: center;
+    padding: 0;
   }
   .bo-side .bo-find,
   .bo-side .bo-space__head {
@@ -940,6 +982,27 @@ a.bo-kpi:hover {
   .bo-crumb i,
   .bo-site {
     display: none;
+  }
+  .bo-back-top {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 3px;
+    min-height: 38px;
+    padding: 0 11px 0 8px;
+    border: 1px solid var(--bo-line);
+    border-radius: 999px;
+    background: #ffffff;
+    color: var(--bo-ink);
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .bo-back-top svg {
+    width: 16px;
+    height: 16px;
+  }
+  .bo-crumb {
+    flex: 1;
   }
   .bo-crumb strong {
     font-size: 16px;

@@ -1254,6 +1254,9 @@ export function LiveRoom({
   moment = "before",
   onAskLine,
   starterContext,
+  solo = false,
+  open: openProp,
+  onOpenChange,
 }: {
   kind: RoomKind;
   room: string;
@@ -1262,9 +1265,22 @@ export function LiveRoom({
   onAskLine?: (routeId: string) => void;
   /** Ports, navire, compagnie : de quoi contextualiser les phrases d'amorce. */
   starterContext?: StarterContext;
+  /**
+   * Le salon seul, sans l'aperçu de la fiche (ouvert depuis « Discussions ») : on n'ouvre pas la
+   * fiche de la traversée derrière, et la fermeture rend la carte telle qu'elle était.
+   */
+  solo?: boolean;
+  /** Ouverture pilotée par le parent (salon seul). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const { user } = useAuth();
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = (next: boolean) => {
+    if (onOpenChange) onOpenChange(next);
+    else setOpenState(next);
+  };
   const feed = useQuery(chatFeedQuery(kind, room, user?.id));
   const card = useQuery(myTravellerQuery(user?.id)).data ?? null;
   const people = useRoomChannel(kind, room, open, card);
@@ -1289,6 +1305,43 @@ export function LiveRoom({
     feed.data?.access === "staff";
   const closed = kind === "crossing" && moment === "over";
   const preview = messages.slice(0, PREVIEW_MESSAGES).reverse();
+  const sheet = (
+    <RoomSheet
+      open={open}
+      onOpenChange={setOpen}
+      kind={kind}
+      room={room}
+      title={title}
+      canInvite={feed.data?.access === "member" || feed.data?.access === "staff"}
+    >
+      <LiveChat
+        kind={kind}
+        room={room}
+        title={title}
+        moment={moment}
+        messages={messages}
+        canWrite={canWrite}
+        closed={closed}
+        people={people}
+        myHandle={card?.handle}
+        myPseudo={card?.pseudo}
+        charter={feed.data?.charter}
+        muted={Boolean(feed.data?.muted)}
+        starterContext={starterContext}
+        onAskLine={
+          onAskLine
+            ? (routeId) => {
+                setOpen(false);
+                afterOverlayClose(() => onAskLine(routeId));
+              }
+            : undefined
+        }
+        staff={Boolean(feed.data?.staff)}
+        guest={feed.data?.access === "guest"}
+      />
+    </RoomSheet>
+  );
+  if (solo) return sheet;
   return (
     <section className="bw-room" aria-label={title}>
       <header>
@@ -1317,40 +1370,7 @@ export function LiveRoom({
         <MessagesSquare size={18} aria-hidden />
         {tr("ui.liveRoom.rejoindreLeSalon")}
       </button>
-      <RoomSheet
-        open={open}
-        onOpenChange={setOpen}
-        kind={kind}
-        room={room}
-        title={title}
-        canInvite={feed.data?.access === "member" || feed.data?.access === "staff"}
-      >
-        <LiveChat
-          kind={kind}
-          room={room}
-          title={title}
-          moment={moment}
-          messages={messages}
-          canWrite={canWrite}
-          closed={closed}
-          people={people}
-          myHandle={card?.handle}
-          myPseudo={card?.pseudo}
-          charter={feed.data?.charter}
-          muted={Boolean(feed.data?.muted)}
-          starterContext={starterContext}
-          onAskLine={
-            onAskLine
-              ? (routeId) => {
-                  setOpen(false);
-                  afterOverlayClose(() => onAskLine(routeId));
-                }
-              : undefined
-          }
-          staff={Boolean(feed.data?.staff)}
-          guest={feed.data?.access === "guest"}
-        />
-      </RoomSheet>
+      {sheet}
     </section>
   );
 }

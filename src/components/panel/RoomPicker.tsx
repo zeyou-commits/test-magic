@@ -40,6 +40,16 @@ export function useRoomCounts(ids: string[]) {
   });
 }
 
+export type RoomPickerDeparture = {
+  id: string;
+  departure_at: string;
+  route_id: string;
+  company_id?: string | null;
+  vessel_id?: string | null;
+  /** Connue : une traversée partie et pas encore arrivée est rangée « En mer en ce moment ». */
+  arrival_at?: string | null;
+};
+
 /** Un seul bouton Salon : on choisit sa traversée, ou on passe aux questions de la ligne. */
 export function RoomPicker({
   departures,
@@ -51,14 +61,9 @@ export function RoomPicker({
   start,
   title,
   intro,
+  onPick,
 }: {
-  departures: {
-    id: string;
-    departure_at: string;
-    route_id: string;
-    company_id?: string | null;
-    vessel_id?: string | null;
-  }[];
+  departures: RoomPickerDeparture[];
   currentId?: string | undefined;
   onSelect: (selection: Selection) => void;
   open: boolean;
@@ -70,6 +75,11 @@ export function RoomPicker({
   /** Titre et phrase d'accueil propres (ex. « Les salons en cours » quand on suit une traversée). */
   title?: string | undefined;
   intro?: string | undefined;
+  /**
+   * Choix d'une traversée : à la place de « fiche + salon », le parent ouvre le salon seul
+   * (bouton « Discussions » : rien ne s'ouvre derrière le salon).
+   */
+  onPick?: ((departure: RoomPickerDeparture) => void) | undefined;
 }) {
   const [text, setText] = useState("");
   // Deux faces : les salons, ou « Une question ? » (réponses de BledWay puis bons contacts).
@@ -136,26 +146,36 @@ export function RoomPicker({
     }).format(new Date(`${key}T12:00:00Z`));
     return label.charAt(0).toUpperCase() + label.slice(1);
   };
+  // Les traversées en mer d'abord (leur salon vit en ce moment), puis les départs jour par jour.
+  const SEA = "sea";
+  const now = Date.now();
   const days = new Map<string, { row: (typeof shown)[number]; time: string }[]>();
   for (const row of shown) {
     const departure = departureOf.get(row.id);
     if (!departure) continue;
     const route = routeOf.get(departure.route_id);
     const zone = portTimeZone(ports.find((port) => port.id === route?.departure_port_id));
-    const key = dateKeyInZone(departure.departure_at, zone);
+    const atSea =
+      Date.parse(departure.departure_at) <= now &&
+      Boolean(departure.arrival_at && Date.parse(departure.arrival_at) > now);
+    const key = atSea ? SEA : dateKeyInZone(departure.departure_at, zone);
     days.set(key, [
       ...(days.get(key) ?? []),
       { row, time: formatDateParts(departure.departure_at, zone).time },
     ]);
   }
+  const sections = [...days.entries()].sort(([a], [b]) => (a === SEA ? -1 : b === SEA ? 1 : 0));
   const lines = [...new Map(rows.map((row) => [row.routeId, row.line])).entries()];
   useBackClose(open, () => {
     onOpenChange(false);
     setText("");
   });
-  if (!departures.length) return null;
   const close = () => {
     onOpenChange(false);
+    setText("");
+    setCompanyId(null);
+  };
+  const clearSearch = () => {
     setText("");
     setCompanyId(null);
   };
@@ -168,7 +188,7 @@ export function RoomPicker({
               ? " bw-room-picker--questions max-w-none"
               : mode === "choose"
                 ? " bw-room-picker--choose max-w-none"
-                : ""
+                : " bw-room-picker--salons"
           }`}
           // Le champ de recherche ne prend pas le focus : le clavier ne cache pas la liste.
           onOpenAutoFocus={(event) => event.preventDefault()}
@@ -238,22 +258,32 @@ export function RoomPicker({
             </>
           ) : (
             <>
-          <DialogHeader>
+          {/* À quoi sert la fenêtre, avant la liste : un titre, une phrase, puis la recherche. */}
+          <DialogHeader className="bw-room-picker__head">
             {back}
-            <DialogTitle>{title ?? tr("ui.roomPicker.choisirVotreTraversee")}</DialogTitle>
-            <p className="bw-room-picker__intro">
-              {intro ?? tr("ui.roomPicker.rejoignezLeSalonDesVoyageurs")}
-            </p>
+            <div className="bw-room-picker__hero">
+              <span className="bw-room-picker__hero-icon" aria-hidden>
+                <MessagesSquare size={20} />
+              </span>
+              <div>
+                <DialogTitle>{title ?? tr("ui.roomPicker.discussionsEntrePassagers")}</DialogTitle>
+                <p className="bw-room-picker__intro">
+                  {intro ?? tr("ui.roomPicker.choisissezVotreTraverseePourRejoindre")}
+                </p>
+              </div>
+            </div>
           </DialogHeader>
-          <label className="bw-room-picker__search">
-            <Search size={16} aria-hidden />
-            <input
-              value={text}
-              onChange={(event) => setText(event.target.value)}
-              placeholder={tr("ui.roomPicker.portDateCompagnieOuNavire")}
-              aria-label={tr("ui.roomPicker.rechercherUneTraversee")}
-            />
-          </label>
+          {departures.length ? (
+            <label className="bw-room-picker__search">
+              <Search size={16} aria-hidden />
+              <input
+                value={text}
+                onChange={(event) => setText(event.target.value)}
+                placeholder={tr("ui.roomPicker.portDateCompagnieOuNavire")}
+                aria-label={tr("ui.roomPicker.rechercherUneTraversee")}
+              />
+            </label>
+          ) : null}
           {present.length > 1 ? (
             <div
               className="bw-room-picker__companies"
@@ -276,11 +306,26 @@ export function RoomPicker({
               ))}
             </div>
           ) : null}
-          {shown.length ? (
+          {!departures.length ? (
+            <div className="bw-room-picker__empty" role="status">
+              <span className="bw-room-picker__empty-icon" aria-hidden>
+                <MessagesSquare size={22} />
+              </span>
+              <strong>{tr("ui.roomPicker.aucuneTraverseeEnCours")}</strong>
+              <p>{tr("ui.roomPicker.lesSalonsOuvrentAvecLes")}</p>
+            </div>
+          ) : shown.length ? (
             <div className="bw-room-picker__list">
-              {[...days.entries()].map(([key, items]) => (
-                <section key={key}>
-                  <h3>{dayLabel(key)}</h3>
+              {sections.map(([key, items]) => (
+                <section key={key} data-sea={key === SEA || undefined}>
+                  <h3>
+                    {key === SEA ? tr("ui.roomPicker.enMerEnCeMoment") : dayLabel(key)}
+                    <small>
+                      {items.length > 1
+                        ? tr("ui.roomPicker.nTraversees", { n: items.length })
+                        : tr("ui.roomPicker.uneTraversee")}
+                    </small>
+                  </h3>
                   <ul>
                     {items.map(({ row, time }) => {
                       const count = counts.data?.get(row.id) ?? 0;
@@ -291,7 +336,12 @@ export function RoomPicker({
                             aria-current={row.id === currentId || undefined}
                             onClick={() => {
                               close();
+                              const picked = departureOf.get(row.id);
                               afterOverlayClose(() => {
+                                if (onPick && picked) {
+                                  onPick(picked);
+                                  return;
+                                }
                                 onSelect({ type: "departure", id: row.id });
                                 enterRoom("crossing", row.id);
                               });
@@ -299,6 +349,11 @@ export function RoomPicker({
                           >
                             <time>{time}</time>
                             <span className="bw-room-picker__what">
+                              {row.id === currentId ? (
+                                <em className="bw-room-picker__mine">
+                                  {tr("ui.roomPicker.votreTraversee")}
+                                </em>
+                              ) : null}
                               <strong>{row.line}</strong>
                               <small>
                                 {row.company ? (
@@ -313,7 +368,7 @@ export function RoomPicker({
                               </small>
                             </span>
                             {count ? (
-                              <b>
+                              <b aria-label={tr("ui.roomPicker.nMessages", { n: count })}>
                                 <MessagesSquare size={12} aria-hidden /> {count}
                               </b>
                             ) : null}
@@ -326,7 +381,20 @@ export function RoomPicker({
               ))}
             </div>
           ) : (
-            <p className="bw-room__empty">{tr("ui.roomPicker.aucuneTraverseeNeCorrespond")}</p>
+            <div className="bw-room-picker__empty" role="status">
+              <span className="bw-room-picker__empty-icon" aria-hidden>
+                <Search size={22} />
+              </span>
+              <strong>
+                {text.trim()
+                  ? tr("ui.roomPicker.aucuneTraverseePour", { q: text.trim() })
+                  : tr("ui.roomPicker.aucuneTraverseeNeCorrespond")}
+              </strong>
+              <p>{tr("ui.roomPicker.essayezUnPortUneDate")}</p>
+              <button type="button" onClick={clearSearch}>
+                {tr("ui.roomPicker.effacerLaRecherche")}
+              </button>
+            </div>
           )}
           <button
             type="button"

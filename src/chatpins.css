@@ -115,87 +115,88 @@
   font-weight: 800;
 }
 
-/* Le fil du lieu. */
+/* Le fil du lieu : une bulle compacte, posée dans le calque de la carte au-dessus des filtres
+   (z-index donné par liftAboveMapControls). Règles téléphone dans mobile.css. */
 .bw-pin-sheet {
   position: absolute;
-  z-index: 1000;
+  z-index: 40;
   /* PC : à droite, à côté des boutons de la carte, loin du panneau de gauche. */
   right: 76px;
   bottom: 24px;
-  width: min(380px, calc(100% - 92px));
-  padding: 12px 14px 14px;
-  border-radius: 22px;
+  width: min(300px, calc(100% - 92px));
+  padding: 9px 10px 10px 12px;
+  border-radius: 16px;
   background: #fff;
   color: #16324a;
-  box-shadow: 0 -6px 30px rgb(22 50 74 / 0.25);
-  animation: bw-pin-sheet-in 0.22s ease-out both;
-}
-@media (max-width: 639px) {
-  .bw-pin-sheet {
-    left: 10px;
-    right: 10px;
-    width: auto;
-    bottom: calc(var(--bw-pin-sheet-inset, 0px) + 76px);
-  }
+  box-shadow: 0 6px 22px rgb(22 50 74 / 0.24);
+  animation: bw-pin-sheet-in 0.18s ease-out both;
 }
 @keyframes bw-pin-sheet-in {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-pin-sheet {
+    animation: none;
   }
 }
 .bw-pin-sheet__head {
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
+  align-items: center;
+  gap: 6px;
 }
 .bw-pin-sheet__head p {
   flex: 1;
   min-width: 0;
   margin: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  column-gap: 8px;
+  display: grid;
+  line-height: 1.2;
 }
 .bw-pin-sheet__head b {
-  font-size: 15.5px;
+  overflow: hidden;
+  font-size: 13.5px;
   font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .bw-pin-sheet__head small {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: #6b7a74;
 }
 .bw-pin-sheet__close {
   flex: none;
-  width: 32px;
-  height: 32px;
-  margin: -4px -4px 0 0;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: -2px -2px 0 0;
   border: 0;
   border-radius: 50%;
   background: #f2efe7;
   color: #16324a;
-  font-size: 13px;
+  font-size: 11px;
   cursor: pointer;
 }
 .bw-pin-sheet ul {
   list-style: none;
-  margin: 10px 0 0;
+  margin: 7px 0 0;
   padding: 0;
   display: grid;
-  gap: 9px;
+  gap: 6px;
 }
 .bw-pin-sheet li {
   display: grid;
-  grid-template-columns: 30px 1fr;
-  gap: 9px;
-  font-size: 13px;
-  line-height: 1.35;
+  grid-template-columns: 22px 1fr;
+  gap: 7px;
+  font-size: 12px;
+  line-height: 1.3;
 }
 .bw-pin-sheet li img {
-  width: 30px;
-  height: 30px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   object-fit: cover;
   background: #e3f3ea;
@@ -209,24 +210,30 @@
 }
 .bw-pin-sheet li small {
   margin-left: 5px;
+  font-size: 10.5px;
   color: #6b7a74;
 }
+/* Le message : deux lignes au plus, la suite est dans le salon. */
 .bw-pin-sheet li span span {
-  display: block;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 .bw-pin-sheet__actions {
   display: flex;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 6px;
+  margin-top: 8px;
 }
 .bw-pin-sheet__actions button {
   flex: 1;
-  min-height: 42px;
-  padding: 8px 10px;
+  min-height: 34px;
+  padding: 6px 8px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 10px;
   font: inherit;
-  font-size: 13.5px;
+  font-size: 12.5px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -237,4 +244,64 @@
 .bw-pin-sheet__second {
   background: #f2efe7;
   color: #16324a;
+}
+
+/* Bulle d'un signalement (popup MapLibre, styles de base dans flash.css) : compacte, et posée
+   au-dessus des filtres par liftAboveMapControls. */
+.bw-map-canvas > .bw-signal-bubble {
+  z-index: 40;
+}
+.bw-signal-bubble .bw-signal-bubble__card {
+  min-width: 0;
+  width: max-content;
+  max-width: 100%;
+  padding: 8px 10px 7px;
+}
+.bw-signal-bubble .bw-signal-bubble__head {
+  margin-bottom: 5px;
+}
+.bw-signal-bubble .bw-signal-bubble__head small {
+  font-size: 10px;
+}
+.bw-signal-bubble .bw-signal-bubble__head strong {
+  font-size: 13px;
+  line-height: 1.2;
+}
+.bw-signal-bubble .bw-signal-bubble__list {
+  gap: 5px;
+}
+.bw-signal-bubble .bw-signal-bubble__list li {
+  gap: 6px;
+}
+.bw-signal-bubble .bw-signal-bubble__list li > span:last-child {
+  font-size: 12px;
+  line-height: 1.25;
+}
+.bw-signal-bubble .bw-signal-bubble__list small {
+  font-size: 10.5px;
+}
+.bw-signal-bubble .bw-signal-bubble__icon {
+  width: 20px;
+  height: 20px;
+}
+.bw-signal-bubble .bw-signal-bubble__more {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6a7873;
+}
+.bw-signal-bubble .bw-signal-bubble__cta {
+  margin-top: 6px;
+  padding-top: 5px;
+  font-size: 12px;
+}
+.bw-signal-bubble .bw-signal-bubble__note {
+  margin-top: 5px;
+  padding: 4px 6px;
+  font-size: 10.5px;
+}
+.bw-signal-bubble .maplibregl-popup-content {
+  border-radius: 12px;
+  box-shadow: 0 6px 20px #16324a33;
 }

@@ -165,3 +165,14 @@
     inset: -10px 0;
   }
 }
+
+/* Carte : la bulle des messages d'un lieu, sur toute la largeur, au-dessus du tiroir et du bouton Signaler.
+   Compacte (deux messages au plus) ; elle passe au-dessus de la colonne des filtres. */
+@media (max-width: 639px) {
+  .bw-pin-sheet[class] {
+    left: 10px;
+    right: 10px;
+    width: auto;
+    bottom: calc(var(--bw-pin-sheet-inset, 0px) + 76px);
+  }
+}

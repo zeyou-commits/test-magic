@@ -2399,6 +2399,20 @@ export const ui = {
     compagnieAConfirmer: "Compagnie à confirmer",
     aucuneTraverseeNeCorrespond: "Aucune traversée ne correspond.",
     papiersHorairesPrixTrouvezLa: "Papiers, horaires, prix… trouvez la réponse tout de suite.",
+    discussionsEntrePassagers: "Discussions entre passagers",
+    choisissezVotreTraverseePourRejoindre:
+      "Choisissez votre traversée pour rejoindre le salon de discussion de ses passagers.",
+    enMerEnCeMoment: "En mer en ce moment",
+    uneTraversee: "1 traversée",
+    nTraversees: "{n} traversées",
+    nMessages: "{n} messages dans ce salon",
+    votreTraversee: "Votre traversée",
+    aucuneTraverseePour: "Aucune traversée ne correspond à « {q} »",
+    essayezUnPortUneDate: "Essayez un port, une date, une compagnie ou un navire.",
+    effacerLaRecherche: "Effacer la recherche",
+    aucuneTraverseeEnCours: "Aucune traversée en mer ni à venir pour le moment",
+    lesSalonsOuvrentAvecLes:
+      "Chaque traversée programmée ouvre son salon. En attendant, posez votre question : BledWay vous répond.",
   },
   roundTripCard: {
     nuit: " Nuit",

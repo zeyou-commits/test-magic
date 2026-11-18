@@ -3,16 +3,23 @@ import { useQuery } from "@tanstack/react-query";
 import { MessagesSquare, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyTrip } from "@/lib/ferry/myTrip";
-import { fleetDeparturesQuery, upcomingDeparturesQuery } from "@/lib/ferry/queries";
+import {
+  companiesQuery,
+  fleetDeparturesQuery,
+  portsQuery,
+  routesQuery,
+  upcomingDeparturesQuery,
+  vesselsQuery,
+} from "@/lib/ferry/queries";
+import { roomMoment } from "@/lib/ferry/portPassage";
 import type { Selection } from "@/lib/ferry/types";
-import { enterRoom } from "@/lib/ferry/chat";
 import {
   CHAT_INVITE_EVENT,
   OPEN_MY_ROOM_EVENT,
   OPEN_ROOM_PICKER_EVENT,
 } from "@/lib/ferry/chatDemo";
-import { chatFeedQuery } from "./LiveRoom";
-import { RoomPicker } from "./RoomPicker";
+import { chatFeedQuery, LiveRoom } from "./LiveRoom";
+import { RoomPicker, type RoomPickerDeparture } from "./RoomPicker";
 import { tr } from "@/lib/i18n";
 
 const DISMISS_KEY = "bledway:chat-preview-dismissed";
@@ -35,6 +42,13 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
   }).data;
   const count = room?.messages.length ?? 0;
   const [invite, setInvite] = useState(false);
+  // Le salon ouvert depuis ce bouton : seul, sans la fiche de la traversée derrière.
+  const [solo, setSolo] = useState<RoomPickerDeparture | null>(null);
+  const [soloOpen, setSoloOpen] = useState(false);
+  const openSolo = (departure: RoomPickerDeparture) => {
+    setSolo(departure);
+    setSoloOpen(true);
+  };
   const [dismissed, setDismissed] = useState(() => {
     try {
       return sessionStorage.getItem(DISMISS_KEY) === "1";
@@ -70,8 +84,8 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
       setOpen(true);
       return;
     }
-    onSelect({ type: "departure", id: trip.departure.id });
-    enterRoom("crossing", trip.departure.id);
+    // Le salon seul : la carte reste comme elle était, aucune fiche ne s'ouvre derrière.
+    openSolo(trip.departure);
   };
   const openMineRef = useRef(openMine);
   openMineRef.current = openMine;
@@ -126,7 +140,14 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
           </button>
         </div>
       ) : null}
-      <SalonsPicker onSelect={onSelect} open={open} onOpenChange={setOpen} start={start} />
+      <SalonsPicker
+        onSelect={onSelect}
+        open={open}
+        onOpenChange={setOpen}
+        start={start}
+        onPick={openSolo}
+      />
+      {solo ? <SoloCrossingRoom departure={solo} open={soloOpen} onOpenChange={setSoloOpen} /> : null}
     </div>
   );
 }
@@ -140,11 +161,13 @@ function SalonsPicker({
   open,
   onOpenChange,
   start,
+  onPick,
 }: {
   onSelect: (selection: Selection) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   start?: "choose" | "salons" | undefined;
+  onPick?: ((departure: RoomPickerDeparture) => void) | undefined;
 }) {
   const { trip } = useMyTrip();
   const upcoming = useQuery(upcomingDeparturesQuery()).data ?? [];
@@ -161,7 +184,6 @@ function SalonsPicker({
     <RoomPicker
       departures={rooms.slice(0, 80)}
       currentId={trip?.departure.id}
-      title={trip ? tr("ui.messagesFab.lesSalonsEnCours") : undefined}
       intro={
         trip
           ? tr("ui.messagesFab.votreSalonEtLesAutres")
@@ -171,6 +193,45 @@ function SalonsPicker({
       open={open}
       onOpenChange={onOpenChange}
       start={start}
+      onPick={onPick}
+    />
+  );
+}
+
+/** Le salon d'une traversée, seul (même contenu que dans la fiche, sans la fiche autour). */
+function SoloCrossingRoom({
+  departure,
+  open,
+  onOpenChange,
+}: {
+  departure: RoomPickerDeparture;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const { data: routes = [] } = useQuery(routesQuery);
+  const { data: ports = [] } = useQuery(portsQuery);
+  const { data: vessels = [] } = useQuery(vesselsQuery);
+  const { data: companies = [] } = useQuery(companiesQuery);
+  const route = routes.find((item) => item.id === departure.route_id);
+  const from = ports.find((port) => port.id === route?.departure_port_id);
+  const to = ports.find((port) => port.id === route?.arrival_port_id);
+  const vessel = vessels.find((item) => item.id === departure.vessel_id);
+  const company = companies.find((item) => item.id === departure.company_id);
+  return (
+    <LiveRoom
+      solo
+      open={open}
+      onOpenChange={onOpenChange}
+      kind="crossing"
+      room={departure.id}
+      title={from && to ? `Salon · ${from.name} → ${to.name}` : "Salon de la traversée"}
+      moment={roomMoment(departure.departure_at, departure.arrival_at ?? null, Date.now())}
+      starterContext={{
+        depart: from?.name,
+        arrivee: to?.name,
+        navire: vessel?.name,
+        compagnie: company?.name,
+      }}
     />
   );
 }

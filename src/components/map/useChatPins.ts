@@ -27,6 +27,7 @@ import { useMyTrip } from "@/lib/ferry/myTrip";
 import type { Port, RouteLine, Selection } from "@/lib/ferry/types";
 import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
 import { dockSpread, shipShiftY, vesselScreenHeight } from "./shipIcons";
+import { liftAboveMapControls } from "./tooltipStack";
 import { MY_TRIP_TAG_SPACE } from "./useMyTripMarker";
 
 /** À partir de ce zoom, chaque pastille montre son dernier message sur une ligne. */
@@ -182,7 +183,7 @@ export function useChatPins(
         meta.textContent = formatAge(age);
       }
       const body = document.createElement("span");
-      body.textContent = shortBody(message.body, 140) || "…";
+      body.textContent = shortBody(message.body, 110) || "…";
       text.append(who, meta, body);
       li.append(face, text);
       return li;
@@ -217,7 +218,8 @@ export function useChatPins(
       close.addEventListener("click", closeSheet);
       head.append(title, close);
       const list = document.createElement("ul");
-      group.messages.slice(0, 3).forEach((message) => list.append(messageRow(message)));
+      // Compacte : les deux derniers messages, le reste est dans le salon.
+      group.messages.slice(0, 2).forEach((message) => list.append(messageRow(message)));
       const actions = document.createElement("div");
       actions.className = "bw-pin-sheet__actions";
       const main = document.createElement("button");
@@ -240,7 +242,9 @@ export function useChatPins(
         actions.append(second);
       }
       box.append(head, list, actions);
+      // Dans le calque de la carte, au-dessus des filtres (sinon la colonne des filtres la masque).
       map.getContainer().append(box);
+      liftAboveMapControls(map.getContainer(), box);
       sheet = box;
     };
 
@@ -357,7 +361,10 @@ export function useChatPins(
   }, [signature]);
 
   useEffect(() => {
-    mapRef.current?.getContainer().style.setProperty("--bw-pin-sheet-inset", `${Math.round(bottomInset)}px`);
+    // Posé sur le calque de la carte : le volet y vit (voir liftAboveMapControls).
+    const container = mapRef.current?.getContainer();
+    const layer = container?.closest<HTMLElement>(".bw-map-canvas") ?? container;
+    layer?.style.setProperty("--bw-pin-sheet-inset", `${Math.round(bottomInset)}px`);
   }, [bottomInset, mapRef, ready]);
 
   // Une fiche ou un trajet occupe l'écran : le fil se referme, les pastilles restent.

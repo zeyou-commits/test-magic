@@ -2,7 +2,7 @@ import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
 import { arcGap, dockSpread, shipShiftY, vesselScreenHeight } from "./shipIcons";
 import { createElement, useEffect, useRef, type RefObject } from "react";
 import { requestSignalFocus } from "@/components/panel/LivePulse";
-import { bringTooltipToFront } from "./tooltipStack";
+import { bringTooltipToFront, liftAboveMapControls } from "./tooltipStack";
 import { createRoot, type Root } from "react-dom/client";
 import { useQuery } from "@tanstack/react-query";
 import { Marker, Popup, type Map as MapLibreMap } from "maplibre-gl";
@@ -109,7 +109,8 @@ export function useTravelMarkers(
       closeOnClick: true,
       // Toujours au-dessus de la pastille : en dessous, le volet mobile la cacherait.
       anchor: "bottom",
-      maxWidth: "290px",
+      // Compacte : la largeur du texte, jamais plus que l'écran du téléphone.
+      maxWidth: "min(250px, calc(100vw - 32px))",
       className: "bw-signal-bubble",
     });
     let disposed = false;
@@ -215,7 +216,8 @@ export function useTravelMarkers(
         );
         card.append(head);
         const list = el("ul", "bw-signal-bubble__list");
-        for (const item of alerts) {
+        // Compacte : les deux plus récents, les autres sont dans la fiche.
+        for (const item of alerts.slice(0, 2)) {
           const row = el("li", "");
           row.dataset["tone"] = item.category === "fluid" ? "good" : "warn";
           const mark = el("span", "bw-signal-bubble__icon");
@@ -234,6 +236,14 @@ export function useTravelMarkers(
           list.append(row);
         }
         card.append(list);
+        if (alerts.length > 2)
+          card.append(
+            el(
+              "span",
+              "bw-signal-bubble__more",
+              `+ ${alerts.length - 2} autre${alerts.length > 3 ? "s" : ""} dans la fiche`,
+            ),
+          );
         if (demo)
           card.append(
             el(
@@ -256,16 +266,27 @@ export function useTravelMarkers(
           : south
             ? 14
             : 46;
-        // Pas assez de place au-dessus : la carte glisse vers le bas le temps de lire la bulle.
-        const room = map.project(point).y + shift[1] - above;
-        const needed = 70 + 64 * alerts.length + 40;
-        if (room < needed) map.panBy([0, room - needed], { duration: 250 });
         bubble
           .setLngLat(point)
           .setDOMContent(card)
           .setOffset([shift[0] + lift, shift[1] - above])
           .addTo(map);
-        bringTooltipToFront(bubble.getElement());
+        // Au-dessus des filtres de la carte (colonne de gauche sur téléphone, de droite sur PC).
+        liftAboveMapControls(map.getContainer(), bubble.getElement());
+        // Coupée par un bord de la carte (pas assez de place au-dessus, ou sur un côté) : la carte
+        // glisse d'autant, en un seul mouvement, et la bulle suit sa pastille.
+        const frame = map.getContainer().getBoundingClientRect();
+        const box = bubble.getElement()?.getBoundingClientRect();
+        const margin = 8;
+        const dx = !box
+          ? 0
+          : box.left < frame.left + margin
+            ? box.left - frame.left - margin
+            : box.right > frame.right - margin
+              ? box.right - frame.right + margin
+              : 0;
+        const dy = box && box.top < frame.top + margin ? box.top - frame.top - margin : 0;
+        if (dx || dy) map.panBy([dx, dy], { duration: 250 });
         openKey.current = key;
       };
       showers.set(key, show);

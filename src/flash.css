@@ -17378,3 +17378,158 @@ button.bw-delay-badge:focus-visible {
   max-height: 92dvh;
   overflow-y: auto;
 }
+
+/* Fenêtre « Discussions » (choix de la traversée) : on comprend à quoi elle sert avant la liste.
+   Un en-tête net (icône, titre, phrase), la recherche, puis la liste qui défile seule. */
+.bw-room-picker--salons[class] {
+  display: flex;
+  flex-direction: column;
+}
+.bw-room-picker--salons .bw-room-picker__list {
+  flex: 1 1 auto;
+}
+.bw-room-picker--salons > * {
+  flex: none;
+}
+.bw-room-picker--salons > .bw-room-picker__list,
+.bw-room-picker--salons > .bw-room-picker__empty {
+  flex: 1 1 auto;
+}
+.bw-room-picker__head {
+  text-align: left;
+}
+.bw-room-picker__hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 2px 34px 12px 0;
+  border-bottom: 1px solid #e6eeea;
+}
+.bw-room-picker__hero-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #0e7a43;
+  color: #ffffff;
+}
+.bw-room-picker__hero h2 {
+  margin: 0;
+  color: #16324a;
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: left;
+}
+.bw-room-picker__hero .bw-room-picker__intro {
+  margin: 4px 0 0;
+  color: #3f5560;
+  font-size: 13.5px;
+  line-height: 1.4;
+  text-align: left;
+}
+.bw-room-picker__list h3 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.bw-room-picker__list h3 small {
+  color: #6b7a74;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+/* En mer : le salon vit en ce moment, la section est mise en avant. */
+.bw-room-picker__list section[data-sea] h3 {
+  color: #0e7a43;
+}
+.bw-room-picker__list section[data-sea] h3::before {
+  content: "";
+  flex: none;
+  align-self: center;
+  width: 8px;
+  height: 8px;
+  margin-right: -2px;
+  border-radius: 50%;
+  background: #22a35a;
+  box-shadow: 0 0 0 3px #22a35a33;
+}
+.bw-room-picker__list section[data-sea] h3 {
+  justify-content: flex-start;
+}
+.bw-room-picker__list section[data-sea] h3 small {
+  margin-left: auto;
+}
+.bw-room-picker__mine {
+  justify-self: start;
+  margin-bottom: 2px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #0e7a43;
+  color: #ffffff;
+  font-size: 10.5px;
+  font-style: normal;
+  font-weight: 800;
+}
+/* État vide : ce qui se passe, et quoi faire. */
+.bw-room-picker__empty {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 6px;
+  min-height: 180px;
+  padding: 20px 16px;
+  border-radius: 16px;
+  background: #f6f9f7;
+  color: #16324a;
+  text-align: center;
+}
+.bw-room-picker__empty-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 4px;
+  border-radius: 50%;
+  background: #e3f3ea;
+  color: #0e7a43;
+}
+.bw-room-picker__empty strong {
+  max-width: 32ch;
+  font-size: 14.5px;
+  font-weight: 800;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.bw-room-picker__empty p {
+  max-width: 36ch;
+  margin: 0;
+  color: #4f6360;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.bw-room-picker__empty button {
+  margin-top: 6px;
+  min-height: 38px;
+  padding: 0 16px;
+  border: 1px solid #b7dcc6;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #0e6b3b;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* Salon en volet sur téléphone (même seuil que les règles du volet plus haut) : le volet est
+   préparé pour bouger en transform seulement, sur sa propre couche (glissé suivi au doigt par
+   RoomSheet, transition coupée pendant le glissé via data-dragging). */
+@media (max-width: 767px) {
+  .bw-chat-window.bw-chat-sheet {
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+}

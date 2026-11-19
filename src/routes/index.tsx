@@ -253,6 +253,15 @@ function Index() {
   const [companionWidth, setCompanionWidth] = useState(0);
   // Le résultat du trajet porte à porte prend la moitié de l'écran sur PC.
   const [journeyWide, setJourneyWide] = useState(false);
+  // Grand écran : Réserver s'étale à l'horizontale (barre de recherche + résultats en colonnes).
+  const [largeDesktop, setLargeDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1180px)");
+    const sync = () => setLargeDesktop(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
   const resizingPanel = useRef(false);
   const [focusTarget, setFocusTarget] = useState<{ center: [number, number]; key: number } | null>(
     null,
@@ -1021,9 +1030,18 @@ function Index() {
     onPointerCancel: () => finishPanelDrag(),
   };
 
-  const panelWidth = journeyWide
-    ? Math.max(desktopPanelWidth, Math.min(720, Math.round(window.innerWidth * 0.5)))
-    : desktopPanelWidth;
+  const wideSearch =
+    largeDesktop &&
+    !voyage &&
+    !selection &&
+    companionWidth === 0 &&
+    (panelMode === "search" || panelMode === "departures");
+  const panelWidth = wideSearch
+    ? // Résultats à gauche, la carte reste utilisable à droite (au moins 45 % de l'écran).
+      Math.max(desktopPanelWidth, Math.min(820, Math.round(window.innerWidth * 0.55)))
+    : journeyWide
+      ? Math.max(desktopPanelWidth, Math.min(720, Math.round(window.innerWidth * 0.5)))
+      : desktopPanelWidth;
 
   // Espace masqué par le tiroir mobile : la carte se recentre au-dessus de lui.
   const isPeekSelection =
@@ -1408,6 +1426,7 @@ function Index() {
           className="bw-map-stage"
           data-panel-open={true}
           data-panel-full={panelLevel === 2}
+          data-wide-search={wideSearch}
           ref={mapStageRef}
           style={
             {
@@ -1513,6 +1532,7 @@ function Index() {
                 onHighlightRoute={setHighlightRouteId}
                 onFocusRoute={setFocusedRouteId}
                 homeMode={homeMode}
+                wideSearch={wideSearch}
                 onTrafficPreview={setTrafficPreview}
                 onOpenSearch={() => {
                   if (panelMode === "itinerary") applyItineraryChoice();
@@ -2038,6 +2058,7 @@ function Index() {
                     desktopPanelOpen ? panelWidth + 80 + (voyage ? 0 : companionWidth) : 50
                   }
                   desktopRightInset={voyage && !isMobile && salonOpen ? 400 : 0}
+                  desktopTopInset={wideSearch ? 110 : 0}
                   desktopBottomInset={voyage && !isMobile ? 150 : 0}
                 />
               </Suspense>

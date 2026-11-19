@@ -53,7 +53,10 @@ export type LiveFare =
   | { status: "unavailable"; reason: string }
   | {
       status: "ok";
+      /** Prix à payer : couchage obligatoire compris quand la compagnie en impose un. */
       total: number;
+      /** Prix du devis, sans couchage. */
+      baseTotal: number;
       currency: string;
       /** Le devis porte bien sur l'heure de départ affichée (à 90 minutes près). */
       sameSailing: boolean;
@@ -68,12 +71,15 @@ export type LiveFare =
       checkInMinutes: number | null;
       vehicle: string | null;
       quotedAt: string;
-      /** Couchage en supplément (fauteuil, cabine), du moins cher au plus cher. */
+      /** Couchage obligatoire déjà inclus dans `total` (null si aucun, ou s'il est inconnu). */
+      included: SleepOption | null;
+      /** Couchages en option, supplément compté par rapport à `total`, du moins cher au plus cher. */
       options: SleepOption[];
     };
 
 /** Un couchage proposé en plus du prix de base, déjà calculé pour tout le groupe. */
 export interface SleepOption {
+  id: number | null;
   kind: "seat" | "berth" | "cabin";
   label: string;
   /** Supplément total pour le groupe, dans la devise du devis. */
@@ -123,12 +129,13 @@ export function summarizeAccommodations(list: RawAccommodation[], travellers: nu
   const cheapest = <T extends { extra: number }>(rows: T[]) => [...rows].sort((a, b) => a.extra - b.extra)[0];
   const options: SleepOption[] = [];
   const s = cheapest(seat);
-  if (s) options.push({ kind: "seat", label: travellers > 1 ? `${travellers} fauteuils` : "Fauteuil", extra: s.extra, units: s.units });
+  if (s) options.push({ id: s.item.accommodationId ?? null, kind: "seat", label: travellers > 1 ? `${travellers} fauteuils` : "Fauteuil", extra: s.extra, units: s.units });
   const b = cheapest(berth);
-  if (b) options.push({ kind: "berth", label: travellers > 1 ? `${travellers} couchettes` : "Couchette", extra: b.extra, units: b.units });
+  if (b) options.push({ id: b.item.accommodationId ?? null, kind: "berth", label: travellers > 1 ? `${travellers} couchettes` : "Couchette", extra: b.extra, units: b.units });
   const c = cheapest(cabin);
   if (c)
     options.push({
+      id: c.item.accommodationId ?? null,
       kind: "cabin",
       label: c.units > 1 ? `${c.units} cabines ${c.item.capacity} pers.` : `Cabine ${c.item.capacity} pers.`,
       extra: c.extra,
@@ -284,6 +291,7 @@ type QuoteLeg = {
     isAmendmentFeeCharged?: boolean | null;
     isCancellable?: boolean | null;
     isRefundFeeCharged?: boolean | null;
+    compulsoryAccommodationId?: number | null;
   } | null;
 };
 export type RawQuote = {
@@ -347,9 +355,23 @@ export function summarizeQuote(
 ): LiveFare {
   const leg = picked.quote.legs?.[0] ?? {};
   const tariff = leg.ticketTariff ?? null;
+  const baseTotal = Math.round(picked.quote.price!.totalInSelectedCurrency! * 100) / 100;
+  const compulsory = Boolean(leg.isAccommodationCompulsory);
+  // Couchage imposé : celui que la compagnie désigne, sinon le moins cher qui loge tout le groupe.
+  const included = compulsory
+    ? (options.find((option) => option.id != null && option.id === tariff?.compulsoryAccommodationId) ??
+      options[0] ??
+      null)
+    : null;
+  const upgrades = included
+    ? options
+        .filter((option) => option !== included && option.extra > included.extra)
+        .map((option) => ({ ...option, extra: option.extra - included.extra }))
+    : options;
   return {
     status: "ok",
-    total: Math.round(picked.quote.price!.totalInSelectedCurrency! * 100) / 100,
+    total: baseTotal + (included?.extra ?? 0),
+    baseTotal,
     currency: picked.quote.selectedCurrency || fallbackCurrency,
     sameSailing: picked.sameSailing,
     departureLocal: leg.departureDateTime ?? "",
@@ -359,11 +381,12 @@ export function summarizeQuote(
     amendmentFee: tariff?.isAmendmentFeeCharged ?? null,
     cancellable: tariff?.isCancellable ?? null,
     refundFee: tariff?.isRefundFeeCharged ?? null,
-    cabinCompulsory: Boolean(leg.isAccommodationCompulsory),
+    cabinCompulsory: compulsory,
     checkInMinutes: leg.latestCheckInMinutes ?? null,
     vehicle,
     quotedAt: now.toISOString(),
-    options,
+    included,
+    options: upgrades,
   };
 }
 

@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { BookingReturnNote } from "@/components/companion/BookingReturnNote";
 import { vesselCompanyIds } from "@/lib/ferry/filterSync";
 import { track } from "@/lib/usage";
@@ -98,6 +99,8 @@ const PAGE = 4;
 
 interface SearchPanelProps {
   homeMode?: boolean;
+  /** Grand écran : barre de recherche horizontale au-dessus des résultats, cartes sur deux colonnes. */
+  wide?: boolean;
   onTrafficPreview?: (preview: import("@/lib/ferry/mapPresentation").MapPreview | null) => void;
   onOpenSearch?: () => void;
   filters: Filters;
@@ -119,6 +122,7 @@ interface SearchPanelProps {
  */
 export function SearchPanel({
   homeMode = false,
+  wide = false,
   onTrafficPreview,
   onOpenSearch,
   filters,
@@ -295,8 +299,32 @@ export function SearchPanel({
   }, []);
   const [calOpen, setCalOpen] = useState(false);
   useEffect(() => {
-    setCalOpen(step === 2 && editing && isDesktop);
-  }, [step, editing, isDesktop]);
+    setCalOpen(step === 2 && editing && isDesktop && !wide);
+  }, [step, editing, isDesktop, wide]);
+  // Grand écran : pas de formulaire pas à pas, la barre horizontale reste au-dessus des résultats.
+  const formOpen = editing && !wide;
+  const [wideCalOpen, setWideCalOpen] = useState(false);
+  const [travellersOpen, setTravellersOpen] = useState(false);
+  // Grand écran : la barre vit dans la scène de la carte, au-dessus du volet des résultats.
+  const [stage, setStage] = useState<HTMLElement | null>(null);
+  const wideBarRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!wide) return;
+    setStage(document.getElementById("carte"));
+  }, [wide]);
+  useEffect(() => {
+    const bar = wideBarRef.current;
+    const host = stage;
+    if (!wide || !bar || !host) return;
+    const sync = () => host.style.setProperty("--wide-bar-h", `${Math.round(bar.offsetHeight)}px`);
+    sync();
+    const observer = new ResizeObserver(sync);
+    observer.observe(bar);
+    return () => {
+      observer.disconnect();
+      host.style.removeProperty("--wide-bar-h");
+    };
+  }, [wide, stage, homeMode]);
   const [calField, setCalField] = useState<CalendarField>("out");
   const [holidaysOn, setHolidaysOnState] = useState(false);
   const setHolidaysOn = (on: boolean) => {
@@ -728,11 +756,288 @@ export function SearchPanel({
     ? `${shortDay(filters.date)}${filters.roundTrip ? ` → ${filters.returnDate ? shortDay(filters.returnDate) : "retour à définir"}` : ""}${filters.flexDays ? ` ±${filters.flexDays}j` : ""}`
     : "Dates flexibles";
 
+  // Grand écran : barre de recherche façon comparateur, sur toute la largeur de la carte.
+  // Les résultats restent dans le volet de gauche ; la carte reste utilisable à droite.
+  const wideSegment = "min-w-0 bg-[color-mix(in_oklab,var(--color-muted)_60%,var(--color-card))]";
+  const wideBar =
+    wide && !homeMode && stage
+      ? createPortal(
+          <div
+            ref={wideBarRef}
+            role="search"
+            aria-label={tr("ui.searchPanel.trouverMaTraversee")}
+            className="pointer-events-auto absolute inset-x-5 top-5 z-[45] rounded-3xl border border-white/70 bg-card px-5 pb-3.5 pt-3.5 shadow-[0_16px_48px_#16324a26]"
+          >
+            <div className="mb-3 flex items-center gap-2">
+              <h2 className="font-display text-base font-bold">Réserver une traversée</h2>
+              <div
+                className="batogo-tabbar ml-3 inline-grid grid-cols-2 gap-0.5 !rounded-full !p-0.5"
+                role="radiogroup"
+                aria-label={tr("ui.searchPanel.typeDeVoyage")}
+              >
+                {[true, false].map((round) => (
+                  <button
+                    key={String(round)}
+                    type="button"
+                    role="radio"
+                    aria-checked={filters.roundTrip === round}
+                    data-active={filters.roundTrip === round}
+                    onClick={() => set({ roundTrip: round, returnDate: round ? filters.returnDate : null })}
+                    className="batogo-tab !min-h-8 !rounded-full px-3 !text-xs"
+                  >
+                    {round ? tr("ui.searchPanel.allerRetour") : tr("ui.searchPanel.allerSimple")}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                title={tr("ui.searchPanel.inverserLeSens")}
+                onClick={() => onFiltersChange(swapDirection(filters))}
+                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground"
+              >
+                <ArrowLeftRight className="size-3.5" aria-hidden />
+                {reversed ? tr("ui.searchPanel.algerieEurope") : tr("ui.searchPanel.europeAlgerie")}
+              </button>
+              <span className="flex-1" />
+              {active ? (
+                <button
+                  type="button"
+                  onClick={() => onFiltersChange({ ...emptyFilters, roundTrip: filters.roundTrip })}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground"
+                >
+                  <RotateCcw className="size-3.5" aria-hidden />
+                  {tr("ui.searchPanel.reinitialiser")}
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={closeSearch}
+                aria-label={tr("ui.searchPanel.fermerLaRecherche")}
+                className="grid size-9 shrink-0 place-items-center rounded-full border border-border bg-card text-foreground hover:bg-secondary"
+              >
+                <X className="size-4" aria-hidden />
+              </button>
+            </div>
+            <div className="flex items-stretch gap-3">
+              <div className="bw-wide-bar grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1.15fr)] gap-[2px] overflow-hidden rounded-2xl border border-border/70 bg-border/70">
+                <div className={`${wideSegment} relative pr-4`}>
+                  <PortMultiPicker
+                    onOpenPort={(id) => onSelect({ type: "port", id })}
+                    title={tr("ui.searchPanel.depart")}
+                    direction="departure"
+                    ports={ports}
+                    routes={routes}
+                    countryFilter={reversed ? isSouthShore : isNorthShore}
+                    value={filters.departurePortIds}
+                    otherSide={filters.arrivalPortIds}
+                    scheduledPortIds={departures.length ? scheduledPortIds : undefined}
+                    onChange={(ids) => onFiltersChange(withDeparturePorts(filters, ids, ports, routes))}
+                  />
+                </div>
+                <div className={`${wideSegment} relative`}>
+                  {/* Échanger départ et arrivée : l'aller part de l'autre rive. */}
+                  <button
+                    type="button"
+                    title={tr("ui.searchPanel.inverserLeSens")}
+                    aria-label={`Inverser le sens : actuellement ${reversed ? "Algérie → Europe" : "Europe → Algérie"}`}
+                    onClick={() => onFiltersChange(swapDirection(filters))}
+                    className="absolute -left-[17px] top-1/2 z-10 grid size-8 -translate-y-1/2 place-items-center rounded-full border border-border bg-card text-primary shadow-sm transition hover:bg-primary hover:text-primary-foreground"
+                  >
+                    <ArrowLeftRight className="size-3.5" aria-hidden />
+                  </button>
+                  <div className="pl-3">
+                    <PortMultiPicker
+                      onOpenPort={(id) => onSelect({ type: "port", id })}
+                      title={tr("ui.searchPanel.arrivee")}
+                      direction="arrival"
+                      ports={ports}
+                      routes={routes}
+                      countryFilter={reversed ? isNorthShore : isSouthShore}
+                      value={filters.arrivalPortIds}
+                      otherSide={filters.departurePortIds}
+                      scheduledPortIds={departures.length ? scheduledPortIds : undefined}
+                      onChange={(ids) => onFiltersChange(withArrivalPorts(filters, ids, ports, routes))}
+                    />
+                  </div>
+                </div>
+                <div className={wideSegment}>
+                  <TripCalendar
+                    side="bottom"
+                    anchor={
+                      <div className={`grid h-16 w-full ${filters.roundTrip ? "grid-cols-2" : "grid-cols-1"}`}>
+                        {(filters.roundTrip ? (["out", "ret"] as const) : (["out"] as const)).map((leg) => {
+                          const value = leg === "out" ? filters.date : filters.returnDate;
+                          const on = wideCalOpen && calField === leg;
+                          return (
+                            <button
+                              key={leg}
+                              type="button"
+                              disabled={leg === "ret" && !filters.date}
+                              onClick={() => {
+                                setCalField(leg);
+                                setWideCalOpen(true);
+                              }}
+                              className={`flex min-w-0 flex-col items-start justify-center px-4 text-left transition disabled:opacity-50 ${leg === "ret" ? "border-l border-border/70" : ""} ${on ? "bg-card shadow-[inset_0_0_0_2px_var(--color-primary)]" : "hover:bg-card"}`}
+                            >
+                              <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                {leg === "out" ? tr("ui.searchPanel.aller") : tr("ui.searchPanel.retour")}
+                              </span>
+                              <span className="w-full truncate text-sm font-semibold">
+                                {value
+                                  ? `${shortDay(value)}${leg === "out" && filters.flexDays ? ` ±${filters.flexDays} j` : ""}`
+                                  : leg === "out"
+                                    ? "Choisir"
+                                    : "+ Ajouter"}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    }
+                    open={wideCalOpen}
+                    onOpenChange={setWideCalOpen}
+                    holidaysOn={holidaysOn}
+                    onHolidaysChange={setHolidaysOn}
+                    field={calField}
+                    onFieldChange={setCalField}
+                    roundTrip={filters.roundTrip}
+                    date={filters.date}
+                    returnDate={filters.returnDate}
+                    flexDays={filters.flexDays}
+                    outDays={outAvailability}
+                    estimatedDays={estimatedDays}
+                    backDays={backAvailability}
+                    pairLabel={
+                      hasPair ? `${fromName(filters.departurePortIds)} → ${fromName(filters.arrivalPortIds)}` : null
+                    }
+                    today={today}
+                    onChange={(patch) => set(patch)}
+                  />
+                </div>
+                <div className={wideSegment}>
+                  <Popover open={travellersOpen} onOpenChange={setTravellersOpen}>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="flex h-16 w-full min-w-0 items-center justify-between gap-2 px-4 text-left transition hover:bg-card data-[state=open]:bg-card data-[state=open]:shadow-[inset_0_0_0_2px_var(--color-primary)]"
+                      >
+                        <Users className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            Voyageurs
+                          </span>
+                          <span className="block truncate text-sm font-semibold text-foreground">
+                            {summarizePassengers(profile.passengers)}
+                            {profile.vehicle === "none"
+                              ? " · sans véhicule"
+                              : ` · ${profile.car ? `${profile.car.make} ${profile.car.model}` : summarizeVehicle(profile)}`}
+                          </span>
+                        </span>
+                        <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="end"
+                      collisionPadding={12}
+                      className="max-h-[var(--radix-popover-content-available-height)] w-[440px] overflow-y-auto rounded-2xl p-4 shadow-2xl"
+                    >
+                      <TripProfile value={profile} onChange={setProfile} />
+                      <button
+                        type="button"
+                        onClick={() => setTravellersOpen(false)}
+                        className="mt-3 h-10 w-full rounded-full bg-primary text-sm font-bold text-primary-foreground hover:brightness-110"
+                      >
+                        Valider
+                      </button>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setWideCalOpen(false);
+                  setTravellersOpen(false);
+                  document
+                    .getElementById("map-next-departures")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                className="h-auto shrink-0 rounded-2xl bg-primary px-7 text-sm font-bold text-primary-foreground shadow-sm transition hover:brightness-110"
+              >
+                {outList.length ? `Voir les ${outList.length} départs` : "Rechercher"}
+              </button>
+            </div>
+            {/* Compagnie et navire : filtres secondaires, sous la barre comme les options d'un comparateur. */}
+            <div className="mt-2.5 flex items-center gap-2">
+              <div className="grid w-[400px] grid-cols-2 gap-1.5">
+                <FilterSelect
+                  label={tr("ui.searchPanel.compagnie")}
+                  open={companyMenuOpen}
+                  onOpenChange={setCompanyMenuOpen}
+                  value={filters.companyId}
+                  onChange={(value) => set({ companyId: value })}
+                  options={companies.map((company) => ({
+                    value: company.id,
+                    label: company.name,
+                    leading: <CompanyBadge name={company.name} logoUrl={company.logo_url} size={20} />,
+                  }))}
+                />
+                <FilterSelect
+                  label={tr("ui.searchPanel.navire")}
+                  value={filters.vesselId}
+                  onChange={(value) => set({ vesselId: value })}
+                  options={vessels
+                    .filter(
+                      (vessel) =>
+                        !filters.companyId ||
+                        vesselCompanyIds(vessel.id, vessels, [...recentDepartures, ...departures]).includes(
+                          filters.companyId,
+                        ),
+                    )
+                    .map((vessel) => ({ value: vessel.id, label: vessel.name }))}
+                />
+              </div>
+              {/* Tri en un geste, seulement quand il y a des départs à trier. */}
+              {outList.length || showTrips ? (
+                <div
+                  role="radiogroup"
+                  aria-label={tr("ui.searchPanel.trierPar")}
+                  className="inline-flex items-center gap-0.5 rounded-full border border-border bg-card p-0.5"
+                >
+                  {(
+                    [
+                      ["date", "Plus tôt"],
+                      ["price", "Moins cher"],
+                      ["duration", "Plus court"],
+                    ] as const
+                  ).map(([key, label]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      role="radio"
+                      aria-checked={sortBy === key}
+                      onClick={() => setSortBy(key)}
+                      className={`h-9 rounded-full px-3.5 text-xs font-semibold transition ${sortBy === key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              <p className="ml-auto text-[11px] text-muted-foreground">
+                Survolez un départ : sa ligne s'allume sur la carte.
+              </p>
+            </div>
+          </div>,
+          stage,
+        )
+      : null;
+
   return (
     <FareProfileContext.Provider value={profile}>
       <div className="flex flex-col">
         {/* RECHERCHE : capsule condensée façon Airbnb, formulaire guidé à la demande */}
-        {!editing && !homeMode ? (
+        {!formOpen && !homeMode && !wide ? (
           <section className="border-b px-3 py-2.5 md:px-5">
             <button type="button" onClick={startSearch} className="bw-search-summary">
               <Ship className="size-4 shrink-0 text-primary" aria-hidden />
@@ -786,7 +1091,7 @@ export function SearchPanel({
             ) : null}
           </section>
         ) : null}
-        {!editing && (filters.companyId || filters.vesselId) ? (
+        {!formOpen && !wide && (filters.companyId || filters.vesselId) ? (
           <div
             className="flex flex-wrap gap-1 border-b px-4 py-2"
             aria-label={tr("ui.searchPanel.filtresActifs")}
@@ -819,7 +1124,7 @@ export function SearchPanel({
         ) : null}
         <section
           ref={searchRef}
-          className={`scroll-mt-0 space-y-3 border-b bg-card px-4 pb-4 pt-4 md:bg-white md:px-5 ${editing ? "" : "hidden"}`}
+          className={`scroll-mt-0 space-y-3 border-b bg-card px-4 pb-4 pt-4 md:bg-white md:px-5 ${formOpen ? "" : "hidden"}`}
         >
           <div className="flex items-center justify-between gap-2">
             <span className="text-sm font-bold text-foreground">
@@ -970,7 +1275,7 @@ export function SearchPanel({
                     ),
                   }
                 : { inline: true })}
-              open={isDesktop ? calOpen : step === 2}
+              open={wide ? false : isDesktop ? calOpen : step === 2}
               onOpenChange={isDesktop ? setCalOpen : () => {}}
               holidaysOn={holidaysOn}
               onHolidaysChange={setHolidaysOn}
@@ -1126,18 +1431,21 @@ export function SearchPanel({
             {...(onTrafficPreview ? { onPreview: onTrafficPreview } : {})}
           />
         ) : null}
+        {wideBar}
         {/* RÉSULTATS */}
         <section
-          hidden={homeMode || editing}
+          hidden={homeMode || formOpen}
           id="map-next-departures"
           className="space-y-5 px-4 py-4 md:px-5"
         >
-          <a
-            href="/barometre-prix"
-            className="inline-block text-xs font-semibold text-primary underline underline-offset-2"
-          >
-            {tr("ui.searchPanel.comprendreLesPrixEstimesEt")}
-          </a>
+          {wide ? null : (
+            <a
+              href="/barometre-prix"
+              className="inline-block text-xs font-semibold text-primary underline underline-offset-2"
+            >
+              {tr("ui.searchPanel.comprendreLesPrixEstimesEt")}
+            </a>
+          )}
           {isLoading ? (
             <div className="space-y-2" aria-busy="true">
               {[0, 1, 2].map((item) => (
@@ -1146,6 +1454,7 @@ export function SearchPanel({
             </div>
           ) : (
             <>
+              {wide ? null : (
               <label className="flex items-center justify-end gap-2 text-xs font-semibold text-muted-foreground">
                 {tr("ui.searchPanel.trierPar")}
                 <select
@@ -1158,6 +1467,7 @@ export function SearchPanel({
                   <option value="duration">{tr("ui.searchPanel.duree")}</option>
                 </select>
               </label>
+              )}
               <BookingReturnNote className="mb-3" />
               {showTrips ? (
                 <>
@@ -1191,6 +1501,7 @@ export function SearchPanel({
                 <>
                   {salesAlert && outList.length ? <div className="mb-3">{salesAlert}</div> : null}
                   <ResultBlock
+                    wide={wide}
                     liveByDeparture={liveByDeparture}
                     title={
                       hasPair
@@ -1245,6 +1556,14 @@ export function SearchPanel({
                   {alternativesBlock}
                 </>
               )}
+              {wide ? (
+                <a
+                  href="/barometre-prix"
+                  className="inline-block text-xs font-semibold text-primary underline underline-offset-2"
+                >
+                  {tr("ui.searchPanel.comprendreLesPrixEstimesEt")}
+                </a>
+              ) : null}
             </>
           )}
         </section>
@@ -1274,6 +1593,7 @@ const bySailing = (sortBy: SortBy, profile: TripProfileValue) => (a: Sailing, b:
     : (a.durationMin ?? Infinity) - (b.durationMin ?? Infinity);
 
 function ResultBlock({
+  wide = false,
   liveByDeparture,
   title,
   subtitle,
@@ -1300,6 +1620,8 @@ function ResultBlock({
   reportContext,
   onReportMissing,
 }: {
+  /** Grand écran : cartes sur deux colonnes, la carte dépliée prend toute la largeur. */
+  wide?: boolean;
   liveByDeparture: Map<string, LiveShip>;
   title: string;
   subtitle: string;
@@ -1401,11 +1723,15 @@ function ResultBlock({
           {reasonBody(reason, emptyText)}
         </Bw504Note>
       ) : (
-        <div className="space-y-2">
+        <div className={wide ? "grid grid-cols-2 items-start gap-3" : "space-y-2"}>
           {recommended && list.some((sailing) => sailing.departure.id === recommended) ? (
-            <p className="text-[11px] text-muted-foreground">{RECOMMENDED_RULE}</p>
+            <p className="col-span-full text-[11px] text-muted-foreground">{RECOMMENDED_RULE}</p>
           ) : null}
           {list.map((sailing, index) => (
+            <div
+              key={sailing.departure.id}
+              className={wide && openId === sailing.departure.id ? "col-span-full" : "contents"}
+            >
             <SailingCard
               key={sailing.departure.id}
               sailing={sailing}
@@ -1419,12 +1745,13 @@ function ResultBlock({
               onOpenVessel={onOpenVessel}
               onOpenRoute={onOpenRoute}
             />
+            </div>
           ))}
           {!expanded && total > list.length ? (
             <button
               type="button"
               onClick={onMore}
-              className="w-full rounded-2xl border border-dashed py-3 text-sm font-semibold text-primary transition hover:bg-primary/5"
+              className="col-span-full w-full rounded-2xl border border-dashed py-3 text-sm font-semibold text-primary transition hover:bg-primary/5"
             >
               {tr("ui.searchPanel.voirLes")}
               {total - list.length}

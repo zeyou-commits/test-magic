@@ -202,7 +202,7 @@ export function MapStats({
     <div
       ref={rootRef}
       data-map-rail
-      className="pointer-events-auto absolute left-2 top-14 z-30 md:left-auto md:right-5 md:top-5"
+      className="bw-map-stats pointer-events-auto absolute left-2 top-14 z-30 md:left-auto md:right-5 md:top-5"
       onPointerLeave={(e) => {
         if (e.pointerType === "mouse") hoverClose();
       }}

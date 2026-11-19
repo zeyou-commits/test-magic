@@ -31,6 +31,8 @@ interface SidePanelProps {
   onHighlightRoute?: (routeId: string | null) => void;
   onFocusRoute?: (routeId: string | null) => void;
   homeMode?: boolean;
+  /** Grand écran : recherche à l'horizontale et résultats en colonnes. */
+  wideSearch?: boolean;
   onTrafficPreview?: (preview: MapPreview | null) => void;
   onOpenSearch?: () => void;
   itineraryOpen?: boolean;
@@ -58,6 +60,7 @@ export function SidePanel({
   onHighlightRoute,
   onFocusRoute,
   homeMode = false,
+  wideSearch = false,
   onTrafficPreview,
   onOpenSearch,
   itineraryOpen = false,
@@ -131,6 +134,7 @@ export function SidePanel({
           <div hidden={itineraryOpen} inert={itineraryOpen ? true : undefined}>
             <SearchPanel
               homeMode={homeMode}
+              wide={wideSearch}
               {...(onTrafficPreview ? { onTrafficPreview } : {})}
               {...(onOpenSearch ? { onOpenSearch } : {})}
               filters={filters}

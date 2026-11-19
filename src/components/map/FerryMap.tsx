@@ -117,6 +117,8 @@ interface FerryMapProps {
   desktopLeftInset?: number;
   /** Largeur (px) masquée à droite sur ordinateur (salon ouvert de « Mon voyage ») ; 0 par défaut. */
   desktopRightInset?: number;
+  /** Ordinateur : hauteur cachée en haut (barre de recherche pleine largeur). */
+  desktopTopInset?: number;
   /** Hauteur (px) masquée en haut sur mobile (bandeau de « Mon voyage ») ; 0 par défaut. */
   mobileTopInset?: number;
   /** Hauteur (px) masquée en bas sur ordinateur (frise de « Mon voyage ») ; 0 par défaut. */
@@ -402,6 +404,7 @@ export default function FerryMap({
   mobileBottomInset = 0,
   desktopLeftInset = 420,
   desktopRightInset = 0,
+  desktopTopInset = 0,
   mobileTopInset = 0,
   desktopBottomInset = 0,
   focusTarget = null,
@@ -479,6 +482,7 @@ export default function FerryMap({
     mobileBottomInset,
     desktopLeftInset,
     desktopRightInset,
+    desktopTopInset,
     mobileTopInset,
     desktopBottomInset,
   });
@@ -487,6 +491,7 @@ export default function FerryMap({
     mobileBottomInset,
     desktopLeftInset,
     desktopRightInset,
+    desktopTopInset,
     mobileTopInset,
     desktopBottomInset,
   };
@@ -496,6 +501,7 @@ export default function FerryMap({
       mobileBottomInset: bottom,
       desktopLeftInset: left,
       desktopRightInset: right,
+      desktopTopInset: above,
       mobileTopInset: top,
       desktopBottomInset: below,
     } = insetsRef.current;
@@ -504,7 +510,7 @@ export default function FerryMap({
     // au moins 45 % de la largeur pour la carte afin que le trajet reste lisible.
     const width = containerRef.current?.clientWidth ?? 1200;
     return {
-      top: 120,
+      top: 120 + above,
       right: 60 + right,
       bottom: 60 + below,
       left: Math.min(left + 36, Math.round(width * 0.56)),

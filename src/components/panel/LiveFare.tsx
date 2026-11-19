@@ -89,35 +89,53 @@ export function LiveFare({ sailing, profile }: { sailing: Sailing; profile: Trip
     fare.cancellable == null ? null : fare.cancellable ? (fare.refundFee ? "Remboursable avec frais" : "Remboursable") : "Non remboursable",
   ].filter(Boolean);
   const href = partnerBookingUrl(sailing, profile);
+  // Couchage imposé dont on ne connaît pas le prix : on n'affiche pas un total qui serait faux.
+  const missingCompulsory = fare.cabinCompulsory && !fare.included;
   return (
     <section aria-label="Prix pour votre voyage" className="space-y-2 rounded-2xl border border-border bg-background p-3">
       <div>
         <p className="text-base font-bold leading-snug text-foreground">
-          <span className="tabular-nums">{money(fare.total, fare.currency)}</span>{" "}
+          <span className="tabular-nums">
+            {missingCompulsory ? "dès " : ""}
+            {money(fare.total, fare.currency)}
+          </span>{" "}
           <span className="font-semibold">{whoLabel(travellers, profile)}</span>
         </p>
+        {fare.included ? (
+          <p className="flex items-center gap-1 font-semibold text-foreground">
+            <SleepIcon kind={fare.included.kind} />
+            {fare.included.label} compris, obligatoire sur ce départ
+          </p>
+        ) : missingCompulsory ? null : (
+          <p className="flex items-center gap-1 text-muted-foreground">
+            <Armchair className="size-3.5" aria-hidden />
+            Sans couchage réservé
+          </p>
+        )}
         {!fare.sameSailing ? (
           <p className="text-muted-foreground">Prix du départ de {otherTime}, le moins cher ce jour-là.</p>
         ) : null}
         {conditions.length ? <p className="text-muted-foreground">{conditions.join(" · ")}</p> : null}
       </div>
 
-      {fare.cabinCompulsory ? (
+      {missingCompulsory ? (
         <p className="rounded-lg bg-warning/15 px-2.5 py-1.5 font-semibold text-warning-foreground">
-          Cabine obligatoire sur ce départ : elle s'ajoute au prix.
+          Un couchage est obligatoire sur ce départ, en plus de ce prix : le total s'affiche à l'étape suivante.
         </p>
       ) : null}
 
       {fare.options.length ? (
         <div>
-          <p className="mb-1 text-[11px] font-semibold text-muted-foreground">Pour dormir à bord, en plus</p>
+          <p className="mb-1 text-[11px] font-semibold text-muted-foreground">
+            {fare.included ? "Pour plus de confort, en plus" : "Pour dormir à bord, en plus"}
+          </p>
           <ul className="flex flex-wrap gap-1.5">
             {fare.options.map((option) => (
               <li
                 key={option.kind}
                 className="flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1"
               >
-                {option.kind === "cabin" ? <BedDouble className="size-3.5" aria-hidden /> : <Armchair className="size-3.5" aria-hidden />}
+                <SleepIcon kind={option.kind} />
                 <span className="font-semibold">{option.label}</span>
                 <span className="tabular-nums text-muted-foreground">+{money(option.extra, fare.currency)}</span>
               </li>
@@ -134,12 +152,20 @@ export function LiveFare({ sailing, profile }: { sailing: Sailing; profile: Trip
         }}
         className="flex h-11 w-full items-center justify-center rounded-full bg-cta text-sm font-bold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-[0.98]"
       >
-        Réserver à {money(fare.total, fare.currency)}
+        {missingCompulsory ? "Voir le prix complet" : `Réserver à ${money(fare.total, fare.currency)}`}
       </a>
       <p className="text-center text-[11px] text-muted-foreground">
         {fare.options.length ? "Couchage à choisir à l'étape suivante. " : ""}Prix du moment, il peut évoluer jusqu'au paiement.
       </p>
     </section>
+  );
+}
+
+function SleepIcon({ kind }: { kind: "seat" | "berth" | "cabin" }) {
+  return kind === "seat" ? (
+    <Armchair className="size-3.5 shrink-0" aria-hidden />
+  ) : (
+    <BedDouble className="size-3.5 shrink-0" aria-hidden />
   );
 }
 

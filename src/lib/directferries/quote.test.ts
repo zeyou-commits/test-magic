@@ -107,8 +107,8 @@ describe("Direct Ferries : couchages", () => {
       4,
     );
     expect(options).toEqual([
-      { kind: "seat", label: "4 fauteuils", extra: 76, units: 4 },
-      { kind: "cabin", label: "Cabine 4 pers.", extra: 140, units: 1 },
+      { id: null, kind: "seat", label: "4 fauteuils", extra: 76, units: 4 },
+      { id: null, kind: "cabin", label: "Cabine 4 pers.", extra: 140, units: 1 },
     ]);
   });
 
@@ -118,5 +118,44 @@ describe("Direct Ferries : couchages", () => {
       4,
     );
     expect(options).toEqual([]);
+  });
+});
+
+describe("Direct Ferries : couchage obligatoire", () => {
+  const base = {
+    isSuccess: true,
+    selectedCurrency: "EUR",
+    price: { totalInSelectedCurrency: 500 },
+  };
+  const seats = { id: 2, kind: "seat" as const, label: "2 fauteuils", extra: 38, units: 2 };
+  const cabin = { id: 3, kind: "cabin" as const, label: "Cabine 2 pers.", extra: 95, units: 1 };
+
+  it("ajoute le couchage imposé au prix et décale les autres suppléments", () => {
+    const fare = summarizeQuote(
+      {
+        quote: { ...base, legs: [{ isAccommodationCompulsory: true, ticketTariff: { compulsoryAccommodationId: 2 } }] },
+        sameSailing: true,
+      },
+      "EUR",
+      null,
+      new Date(),
+      [seats, cabin],
+    );
+    expect(fare).toMatchObject({ total: 538, baseTotal: 500, included: seats });
+    expect(fare.status === "ok" && fare.options).toEqual([{ ...cabin, extra: 57 }]);
+  });
+
+  it("sans couchage imposé, le prix reste celui du devis", () => {
+    const fare = summarizeQuote({ quote: { ...base, legs: [{}] }, sameSailing: true }, "EUR", null, new Date(), [seats]);
+    expect(fare).toMatchObject({ total: 500, included: null, options: [seats] });
+  });
+
+  it("couchage imposé mais inconnu : prix de base, sans rien inventer", () => {
+    const fare = summarizeQuote(
+      { quote: { ...base, legs: [{ isAccommodationCompulsory: true }] }, sameSailing: true },
+      "EUR",
+      null,
+    );
+    expect(fare).toMatchObject({ total: 500, included: null, cabinCompulsory: true });
   });
 });

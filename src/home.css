@@ -4116,3 +4116,26 @@ body:has(.bw-home--app) {
   .bw-onepage__frise-items > li small { font-size: 7pt; }
 }
 .bw-onepage__frise { --cat: #157a43; }
+
+/* Réserver sur grand écran : barre pleine largeur au-dessus de la carte, résultats dessous. */
+@media (min-width: 1180px) {
+  .bw-map-stage[data-wide-search="true"] .bw-map-panel {
+    top: calc(var(--wide-bar-h, 150px) + 32px) !important;
+  }
+  /* Les outils de la carte (loupe, compteurs, Signaler, Salons) passent sous la barre. */
+  .bw-map-stage[data-wide-search="true"] .bw-map-stats {
+    top: calc(var(--wide-bar-h, 150px) + 32px) !important;
+  }
+  .bw-map-stage[data-wide-search="true"] .bw-report {
+    top: calc(var(--wide-bar-h, 150px) + 32px + 252px);
+  }
+  .bw-wide-bar .batogo-control {
+    height: 64px;
+    border-color: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  .bw-wide-bar .batogo-control:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--color-primary) !important;
+  }
+}

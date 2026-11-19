@@ -83,7 +83,9 @@ export function SailingCard({
   // Prix réel déjà obtenu en dépliant la carte : il remplace l'estimation sur le bouton.
   const liveFare = useLiveFare(sailing, profile, false).query.data;
   const liveTotal =
-    liveFare?.status === "ok" && liveFare.sameSailing ? Math.ceil(liveFare.total) : null;
+    liveFare?.status === "ok" && liveFare.sameSailing && !(liveFare.cabinCompulsory && !liveFare.included)
+      ? Math.ceil(liveFare.total)
+      : null;
   // Navire en alerte : un prix laisserait croire que ce départ se réserve normalement.
   const alert = useVesselAlert(sailing.vessel?.id);
 
@@ -216,18 +218,7 @@ export function SailingCard({
           <span className="ml-auto shrink-0 text-right text-[11px] font-semibold text-destructive">
             {tr("ui.sailingCard.departAConfirmerAupresDe")}
           </span>
-        ) : (
-          <a
-            href={`/simulateurs/budget-voyage?ticket=${Math.round(fare.amount)}`}
-            title={tr("ui.sailingCard.budgetPorteAPorteRoute")}
-            aria-label={tr("ui.sailingCard.calculerLeBudgetPorteA")}
-            // Sur téléphone, la ligne n'a pas la place : logo, prix et favori suffisent.
-            className="ml-auto hidden h-8 shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2.5 text-xs font-semibold text-primary hover:bg-secondary md:inline-flex"
-          >
-            <Calculator className="size-3.5" aria-hidden />
-            {tr("ui.sailingCard.budget")}
-          </a>
-        )}
+        ) : null}
         {href && !alert ? (
           <a
             // Prix réel : on reste dans le même onglet, vers la réservation du partenaire.
@@ -237,7 +228,7 @@ export function SailingCard({
               track("booking_click", liveTotal != null ? "direct-ferries" : sailing.company?.name);
               markBookingLeave(liveTotal != null ? AGGREGATOR.name : bookingSite(sailing));
             }}
-            className="ml-auto inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-cta px-3 md:ml-0 text-xs font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
+            className="ml-auto inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-cta px-3 text-xs font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
             title={`Voir l’offre sur ${bookingSite(sailing)} · budget estimé ${formatEuro(fare.amount)} (${formatFareRange(fare)})`}
           >
             <span className="tabular-nums">
@@ -309,7 +300,11 @@ export function SailingDetail({
   const profile = useFareProfile();
   const bookingHref = showBooking ? bookingUrl(sailing, profile) : null;
   // Prix réel affiché : « Réserver » devient l'action principale, la fiche passe au second plan.
-  const livePrice = useLiveFare(sailing, profile, false).query.data?.status === "ok";
+  const liveFare = useLiveFare(sailing, profile, false).query.data;
+  const livePrice = liveFare?.status === "ok";
+  const budgetTicket = Math.round(
+    liveFare?.status === "ok" && liveFare.sameSailing ? liveFare.total : estimateFerryFare(sailing, profile).amount,
+  );
   return (
     <div className="space-y-2.5 border-t bg-card px-3.5 py-3 text-xs">
       <dl className={`grid gap-2 ${sailing.route.distance_km ? "grid-cols-3" : "grid-cols-2"}`}>
@@ -382,6 +377,16 @@ export function SailingDetail({
           {tr("ui.sailingCard.ficheDeLaLigne")}
           <ChevronRight className="size-3.5" aria-hidden />
         </button>
+        {/* Budget porte à porte : dans le détail, la ligne de la carte reste logo, prix, favori. */}
+        <a
+          href={`/simulateurs/budget-voyage?ticket=${budgetTicket}`}
+          title={tr("ui.sailingCard.budgetPorteAPorteRoute")}
+          aria-label={tr("ui.sailingCard.calculerLeBudgetPorteA")}
+          className="inline-flex h-8 items-center gap-1 rounded-full border border-border px-3 font-semibold hover:bg-secondary"
+        >
+          <Calculator className="size-3.5" aria-hidden />
+          {tr("ui.sailingCard.budget")}
+        </a>
         <ReportButton targetType="departure" targetId={departure.id} />
         <FollowButton
           kind="departure"

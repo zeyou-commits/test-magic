@@ -172,32 +172,5 @@ export const KIND_COLOR: Record<StopKind, string> = {
   autre: "#5f7486",
 };
 
-export const FILTERS = ["tout", "plein", "manger", "priere", "dormir", "communaute"] as const;
-export type Filter = (typeof FILTERS)[number];
-
-export function matchFilter(s: Stop, f: Filter): boolean {
-  switch (f) {
-    case "tout":
-      return true;
-    case "plein":
-      return s.k === "carburant" || s.k === "aire";
-    case "manger":
-      return s.k === "manger" || s.f.includes("manger") || s.f.includes("halal");
-    case "priere":
-      return s.k === "priere" || s.f.includes("priere") || s.f.includes("ablutions");
-    case "dormir":
-      return s.k === "dormir" || s.f.includes("dormir");
-    case "communaute":
-      return s.src !== "osm";
-  }
-}
-
-export const formatDuration = (h: number) => {
-  const m = Math.round(h * 60);
-  const hh = Math.floor(m / 60);
-  const mm = m % 60;
-  return hh ? `${hh} h ${String(mm).padStart(2, "0")}` : `${mm} min`;
-};
-
 export const mapsLink = (s: { lat: number; lon: number }) =>
   `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}`;

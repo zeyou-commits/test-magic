@@ -289,6 +289,7 @@ export function SiteFooter() {
                 "/questions-frequentes",
                 "/voyage-algerie",
                 "/preparer-mon-voyage",
+                "/routes-du-bled",
                 "/papiers-voyage-algerie",
                 "/simulateurs",
                 "/covoiturage",

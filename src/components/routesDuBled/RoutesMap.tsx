@@ -10,32 +10,42 @@ import {
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { tr } from "@/lib/i18n";
-import { KIND_COLOR, type BledRoute, type Stop } from "@/lib/routesDuBled/data";
+import { KIND_COLOR, type StopKind } from "@/lib/routesDuBled/data";
 
 setWorkerUrl(workerUrl);
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 
+export type MapLine = { id: string; coords: [number, number][]; active: boolean };
+export type MapPin = {
+  id: string;
+  lat: number;
+  lon: number;
+  k: StopKind;
+  /** Numéro de l'étape, écrit dans la pastille. */
+  label?: string;
+  main: boolean;
+};
+
 /**
- * Carte des routes du bled : toutes les routes en fond, la route choisie en avant,
- * ses haltes en pastilles colorées par type. Toucher une pastille ouvre sa fiche.
+ * Carte du trajet : le trajet choisi en avant, les autres routes en fond, et seulement les haltes
+ * retenues pour les étapes. Elle suit l'étape regardée.
  */
 export default function RoutesMap({
-  routes,
-  selectedId,
-  stops,
-  selectedStopId,
-  onSelectRoute,
-  onSelectStop,
+  lines,
+  pins,
+  focus,
+  fitKey,
+  onSelectPin,
   picking = false,
   onPick,
 }: {
-  routes: BledRoute[];
-  selectedId: string;
-  stops: Stop[];
-  selectedStopId: string | null;
-  onSelectRoute: (id: string) => void;
-  onSelectStop: (id: string) => void;
-  /** Mode « placer la halte » : le prochain toucher sur la carte donne la position. */
+  lines: MapLine[];
+  pins: MapPin[];
+  /** Point à centrer (étape regardée). */
+  focus: { lat: number; lon: number } | null;
+  /** Change quand le trajet change : la carte se recadre sur lui. */
+  fitKey: string;
+  onSelectPin: (id: string) => void;
   picking?: boolean;
   onPick?: (lon: number, lat: number) => void;
 }) {
@@ -43,55 +53,53 @@ export default function RoutesMap({
   const mapRef = useRef<MapLibreMap | null>(null);
   const loaded = useRef(false);
   const draw = useRef<() => void>(() => {});
-  const handlers = useRef({ onSelectRoute, onSelectStop, onPick, picking });
-  handlers.current = { onSelectRoute, onSelectStop, onPick, picking };
+  const handlers = useRef({ onSelectPin, onPick, picking });
+  handlers.current = { onSelectPin, onPick, picking };
   const lastFit = useRef<string | null>(null);
+  const lastFocus = useRef<string | null>(null);
+  const lastBounds = useRef<LngLatBounds | null>(null);
 
   draw.current = () => {
     const map = mapRef.current;
     if (!map || !loaded.current) return;
     (map.getSource("rdb-lines") as GeoJSONSource).setData({
       type: "FeatureCollection",
-      features: routes.map((r) => ({
+      features: lines.map((l) => ({
         type: "Feature" as const,
-        properties: { id: r.id, selected: r.id === selectedId ? 1 : 0 },
-        geometry: {
-          type: "LineString" as const,
-          coordinates: r.line.map(([lon, lat]) => [lon, lat]),
-        },
+        properties: { id: l.id, active: l.active ? 1 : 0 },
+        geometry: { type: "LineString" as const, coordinates: l.coords },
       })),
     });
     (map.getSource("rdb-stops") as GeoJSONSource).setData({
       type: "FeatureCollection",
-      features: stops.map((s) => ({
+      features: pins.map((p) => ({
         type: "Feature" as const,
         properties: {
-          id: s.id,
-          color: KIND_COLOR[s.k],
-          selected: s.id === selectedStopId ? 1 : 0,
-          community: s.src === "osm" ? 0 : 1,
+          id: p.id,
+          color: KIND_COLOR[p.k],
+          main: p.main ? 1 : 0,
+          label: p.label ?? "",
         },
-        geometry: { type: "Point" as const, coordinates: [s.lon, s.lat] },
+        geometry: { type: "Point" as const, coordinates: [p.lon, p.lat] },
       })),
     });
-    const route = routes.find((r) => r.id === selectedId);
-    if (route && lastFit.current !== route.id) {
-      lastFit.current = route.id;
-      const first = route.line[0]!;
-      const bounds = route.line.reduce(
-        (all, [lon, lat]) => all.extend([lon, lat]),
-        new LngLatBounds([first[0], first[1]], [first[0], first[1]]),
-      );
-      map.fitBounds(bounds, { padding: 40, maxZoom: 9, duration: 700 });
+    const active = lines.filter((l) => l.active).flatMap((l) => l.coords);
+    if (active.length && lastFit.current !== fitKey) {
+      lastFit.current = fitKey;
+      lastFocus.current = null;
+      const first = active[0]!;
+      const bounds = active.reduce((all, c) => all.extend(c), new LngLatBounds(first, first));
+      lastBounds.current = bounds;
+      map.fitBounds(bounds, { padding: 36, maxZoom: 9, duration: 700 });
     }
-    if (selectedStopId) {
-      const stop = stops.find((s) => s.id === selectedStopId);
-      if (stop)
-        map.easeTo({
-          center: [stop.lon, stop.lat],
-          zoom: Math.max(map.getZoom(), 9),
-          duration: 600,
-        });
+    const key = focus ? `${focus.lat},${focus.lon}` : null;
+    if (focus && key !== lastFocus.current) {
+      lastFocus.current = key;
+      map.easeTo({
+        center: [focus.lon, focus.lat],
+        zoom: Math.max(map.getZoom(), 8.5),
+        duration: 600,
+      });
     }
   };
 
@@ -100,8 +108,8 @@ export default function RoutesMap({
     const map = new MapLibreMap({
       container: box.current,
       style: MAP_STYLE,
-      center: [2, 40],
-      zoom: 4.2,
+      center: [2, 41],
+      zoom: 4.4,
       attributionControl: { compact: true },
     });
     map.addControl(new NavigationControl({ showCompass: false }), "bottom-right");
@@ -120,19 +128,19 @@ export default function RoutesMap({
         id: "rdb-lines-halo",
         type: "line",
         source: "rdb-lines",
-        filter: ["==", ["get", "selected"], 1],
+        filter: ["==", ["get", "active"], 1],
         layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": "#f2b33d", "line-width": 12, "line-opacity": 0.28 },
+        paint: { "line-color": "#f2b33d", "line-width": 12, "line-opacity": 0.3 },
       });
       map.addLayer({
         id: "rdb-lines",
         type: "line",
         source: "rdb-lines",
-        layout: { "line-cap": "round", "line-join": "round", "line-sort-key": ["get", "selected"] },
+        layout: { "line-cap": "round", "line-join": "round", "line-sort-key": ["get", "active"] },
         paint: {
-          "line-color": ["case", ["==", ["get", "selected"], 1], "#d9861c", "#6f9db5"],
-          "line-width": ["case", ["==", ["get", "selected"], 1], 4.5, 2],
-          "line-opacity": ["case", ["==", ["get", "selected"], 1], 1, 0.6],
+          "line-color": ["case", ["==", ["get", "active"], 1], "#d9861c", "#8fb3c6"],
+          "line-width": ["case", ["==", ["get", "active"], 1], 4.5, 1.5],
+          "line-opacity": ["case", ["==", ["get", "active"], 1], 1, 0.45],
         },
       });
       map.addLayer({
@@ -146,21 +154,28 @@ export default function RoutesMap({
             ["linear"],
             ["zoom"],
             5,
-            ["case", ["==", ["get", "selected"], 1], 9, 5],
+            ["case", ["==", ["get", "main"], 1], 9, 4],
             9,
-            ["case", ["==", ["get", "selected"], 1], 12, 8],
+            ["case", ["==", ["get", "main"], 1], 13, 7],
           ],
           "circle-color": ["get", "color"],
-          "circle-stroke-color": ["case", ["==", ["get", "community"], 1], "#0e7a43", "#ffffff"],
-          "circle-stroke-width": [
-            "case",
-            ["==", ["get", "selected"], 1],
-            3,
-            ["==", ["get", "community"], 1],
-            2.5,
-            1.5,
-          ],
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": ["case", ["==", ["get", "main"], 1], 2.5, 1.5],
         },
+      });
+      map.addLayer({
+        id: "rdb-stops-label",
+        type: "symbol",
+        source: "rdb-stops",
+        filter: ["all", ["==", ["get", "main"], 1], ["!=", ["get", "label"], ""]],
+        layout: {
+          "text-field": ["get", "label"],
+          "text-size": 11,
+          "text-font": ["Noto Sans Bold"],
+          "text-allow-overlap": true,
+          "text-ignore-placement": true,
+        },
+        paint: { "text-color": "#ffffff" },
       });
       map.on("click", (e) => {
         if (handlers.current.picking)
@@ -169,22 +184,23 @@ export default function RoutesMap({
       map.on("click", "rdb-stops", (e: MapLayerMouseEvent) => {
         if (handlers.current.picking) return;
         const id = e.features?.[0]?.properties?.["id"];
-        if (typeof id === "string") handlers.current.onSelectStop(id);
+        if (typeof id === "string") handlers.current.onSelectPin(id);
       });
-      map.on("click", "rdb-lines", (e: MapLayerMouseEvent) => {
-        if (handlers.current.picking) return;
-        if (map.queryRenderedFeatures(e.point, { layers: ["rdb-stops"] }).length) return;
-        const id = e.features?.[0]?.properties?.["id"];
-        if (typeof id === "string") handlers.current.onSelectRoute(id);
-      });
-      for (const layer of ["rdb-stops", "rdb-lines"]) {
-        map.on("mouseenter", layer, () => (map.getCanvas().style.cursor = "pointer"));
-        map.on("mouseleave", layer, () => (map.getCanvas().style.cursor = ""));
-      }
+      map.on("mouseenter", "rdb-stops", () => (map.getCanvas().style.cursor = "pointer"));
+      map.on("mouseleave", "rdb-stops", () => (map.getCanvas().style.cursor = ""));
       loaded.current = true;
       draw.current();
     });
+    // La carte peut être dépliée ou repliée : elle reprend sa taille.
+    // Si elle n'avait pas encore sa taille au premier cadrage, on recadre sur le trajet.
+    const obs = new ResizeObserver(() => {
+      map.resize();
+      if (lastBounds.current && !lastFocus.current)
+        map.fitBounds(lastBounds.current, { padding: 36, maxZoom: 9, duration: 0 });
+    });
+    obs.observe(box.current);
     return () => {
+      obs.disconnect();
       loaded.current = false;
       mapRef.current = null;
       map.remove();
@@ -193,7 +209,7 @@ export default function RoutesMap({
 
   useEffect(() => {
     draw.current();
-  }, [routes, selectedId, stops, selectedStopId]);
+  }, [lines, pins, focus, fitKey]);
 
   useEffect(() => {
     const map = mapRef.current;

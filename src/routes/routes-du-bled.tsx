@@ -1,11 +1,21 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, ExternalLink, Navigation, Plus } from "lucide-react";
+import {
+  Anchor,
+  ChevronDown,
+  Coffee,
+  Map as MapIcon,
+  MoonStar,
+  Navigation,
+  Plus,
+  Ship,
+} from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/layout/SiteLayout";
 import { Breadcrumbs, FaqSection } from "@/components/editorial/Editorial";
 import { Bw504Button, Bw504Note, BwKnow } from "@/components/companion/Bw504Note";
 import { AddStopDialog, emptyDraft, type Draft } from "@/components/routesDuBled/AddStopDialog";
+import type { MapLine, MapPin } from "@/components/routesDuBled/RoutesMap";
 import {
   FeatureIcon,
   KindIcon,
@@ -16,18 +26,33 @@ import {
 import { seoHead } from "@/lib/seo/site";
 import { tr } from "@/lib/i18n";
 import {
-  FILTERS,
   KIND_COLOR,
-  formatDuration,
   loadCommunityStops,
   loadRoutesData,
   mapsLink,
-  matchFilter,
   mergeCommunity,
   type BledRoute,
-  type Filter,
-  type Stop,
 } from "@/lib/routesDuBled/data";
+import {
+  anonyme,
+  buildChain,
+  DEPARTS,
+  dureeRonde,
+  ecartKm,
+  LIGNES,
+  PAUSE_MIN,
+  PLACE_NAME,
+  planEtapes,
+  portsFrom,
+  ROUTES_DZ,
+  variants,
+  type Chain,
+  type ChainStop,
+  type Depart,
+  type Etape,
+  type Port,
+  type PortDz,
+} from "@/lib/routesDuBled/trajets";
 import "@/routes-du-bled.css";
 
 const RoutesMap = lazy(() => import("@/components/routesDuBled/RoutesMap"));
@@ -35,14 +60,30 @@ const RoutesMap = lazy(() => import("@/components/routesDuBled/RoutesMap"));
 export const Route = createFileRoute("/routes-du-bled")({
   head: () =>
     seoHead(
-      "Routes du bled : itinéraires et haltes vers les ports et en Algérie | BledWay",
-      "Les grands itinéraires en voiture vers Marseille, Sète, Barcelone, Valence, Alicante et Almería, puis en Algérie après le port : aires, carburant, manger halal, prier, dormir.",
+      "Routes du bled : ton trajet en voiture jusqu'au port, étape par étape | BledWay",
+      "Choisis ton départ et ton port (Marseille, Sète, Barcelone, Valence, Alicante, Almería) : pauses toutes les 2 h, où faire le plein, manger, prier et dormir, puis la route en Algérie après le port.",
       "/routes-du-bled",
     ),
   component: RoutesDuBledPage,
 });
 
-const fmt = (n: number) => n.toLocaleString("fr-FR");
+const fmt = (n: number) => Math.round(n).toLocaleString("fr-FR");
+const STORE = "bw-routes-du-bled";
+const EXEMPLES: [Depart, Port][] = [
+  ["lyon", "alicante"],
+  ["paris", "marseille"],
+  ["paris", "almeria"],
+  ["montpellier", "sete"],
+];
+
+/** Nom affiché d'une halte, même quand OpenStreetMap ne lui en donne pas. */
+const stopName = (s: ChainStop) => {
+  if (!anonyme(s)) return s.n;
+  if (s.k === "priere") return tr("ui.pageRoutesDuBled.sansNomPriere");
+  if (s.k === "dormir") return tr("ui.pageRoutesDuBled.sansNomHotel");
+  if (s.k === "aire") return tr("ui.pageRoutesDuBled.sansNomAire");
+  return kindLabel(s.k);
+};
 
 function RoutesDuBledPage() {
   const data = useQuery({
@@ -56,61 +97,139 @@ function RoutesDuBledPage() {
     staleTime: 60_000,
   });
   const routes = useMemo(() => data.data?.routes ?? [], [data.data]);
-  const [routeId, setRouteId] = useState("E2");
-  const [filter, setFilter] = useState<Filter>("tout");
-  const [openStop, setOpenStop] = useState<string | null>(null);
+
+  const [from, setFrom] = useState<Depart | null>(null);
+  const [port, setPort] = useState<Port | null>(null);
+  const [variant, setVariant] = useState(0);
+  const [dz, setDz] = useState<PortDz | null>(null);
+  const [focusId, setFocusId] = useState<string | null>(null);
+  const [mapOpen, setMapOpen] = useState(false);
   const [adding, setAdding] = useState(false);
   const [picking, setPicking] = useState(false);
   const [draft, setDraft] = useState<Draft>(() => emptyDraft("E2"));
-  const mapBox = useRef<HTMLDivElement>(null);
 
-  const route = routes.find((r) => r.id === routeId) ?? routes[0];
-  const allStops = useMemo(
-    () => (route ? mergeCommunity(route, community.data ?? []) : []),
-    [route, community.data],
-  );
-  const stops = allStops.filter((s) => matchFilter(s, filter));
-  const totals = useMemo(() => {
-    const km = routes.reduce((a, r) => a + r.km, 0);
-    const n = routes.reduce((a, r) => a + r.stops.length, 0) + (community.data?.length ?? 0);
-    return { km, n };
-  }, [routes, community.data]);
-
+  // Un lien ?depart=lyon&port=alicante ouvre ce trajet ; sinon le dernier trajet choisi
+  // revient à la visite suivante (sur cet appareil seulement).
   useEffect(() => {
-    if (!openStop) return;
-    document
-      .getElementById(`halte-${openStop}`)
-      ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [openStop]);
+    let saved: { from?: Depart; port?: Port } | null = null;
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("depart")) saved = { from: q.get("depart") as Depart, port: q.get("port") as Port };
+    else
+      try {
+        saved = JSON.parse(localStorage.getItem(STORE) ?? "null") as typeof saved;
+      } catch {
+        /* stockage indisponible : on part de zéro */
+      }
+    if (saved?.from && DEPARTS.includes(saved.from)) setFrom(saved.from);
+    if (saved?.from && saved.port && portsFrom(saved.from).includes(saved.port))
+      setPort(saved.port);
+  }, []);
+  useEffect(() => {
+    if (!from) return;
+    try {
+      localStorage.setItem(STORE, JSON.stringify({ from, port }));
+    } catch {
+      /* rien à faire */
+    }
+  }, [from, port]);
 
-  const chooseRoute = (id: string) => {
-    setRouteId(id);
-    setOpenStop(null);
-    setFilter("tout");
-    setDraft((d) => ({ ...d, route: id }));
+  const stopsOf = useMemo(() => {
+    const rows = community.data ?? [];
+    return (r: BledRoute) => mergeCommunity(r, rows);
+  }, [community.data]);
+
+  const options = from && port ? variants(from, port) : [];
+  const def = options[Math.min(variant, options.length - 1)];
+  const chain = useMemo(
+    () =>
+      def && routes.length
+        ? buildChain(`${def.from}-${def.port}-${def.via ?? ""}`, def.legs, routes, stopsOf)
+        : null,
+    [def, routes, stopsOf],
+  );
+  const etapes = useMemo(() => (chain ? planEtapes(chain) : []), [chain]);
+  const portStop = chain?.stops.filter((s) => s.k === "port" || s.k === "billets").at(-1) ?? null;
+  const nPauses = etapes.filter((e) => e.type === "pause").length;
+  const nNuits = etapes.length - nPauses;
+
+  const dzOptions = port ? LIGNES[port] : [];
+  const dzChains = useMemo(() => {
+    if (!dz) return [];
+    return ROUTES_DZ[dz]
+      .map((id) => buildChain(id, [{ route: id }], routes, stopsOf))
+      .filter((c): c is Chain => Boolean(c));
+  }, [dz, routes, stopsOf]);
+
+  const choose = (f: Depart, p: Port | null) => {
+    setFrom(f);
+    setPort(p && portsFrom(f).includes(p) ? p : null);
+    setVariant(0);
+    setDz(null);
+    setFocusId(null);
   };
-  const startAdd = () => {
-    setDraft((d) => ({ ...d, route: route?.id ?? d.route }));
+
+  const startAdd = (routeId?: string) => {
+    setDraft((d) => ({ ...d, route: routeId ?? chain?.segs[0]?.route.id ?? d.route }));
     setAdding(true);
   };
   const startPick = () => {
     setAdding(false);
     setPicking(true);
-    mapBox.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    setMapOpen(true);
+    requestAnimationFrame(() =>
+      document.getElementById("rdb-map")?.scrollIntoView({ behavior: "smooth", block: "center" }),
+    );
   };
 
-  const groups: { side: BledRoute["side"]; title: string; hint: string }[] = [
-    {
-      side: "europe",
-      title: tr("ui.pageRoutesDuBled.groupeEurope"),
-      hint: tr("ui.pageRoutesDuBled.groupeEuropeAide"),
-    },
-    {
-      side: "algerie",
-      title: tr("ui.pageRoutesDuBled.groupeAlgerie"),
-      hint: tr("ui.pageRoutesDuBled.groupeAlgerieAide"),
-    },
-  ];
+  const focusEtape = (id: string) => {
+    setFocusId(id);
+    document.getElementById(`etape-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  // Carte : le trajet en avant, les autres routes en fond, une pastille par étape.
+  const mapLines = useMemo<MapLine[]>(() => {
+    const bg = routes.map((r) => ({
+      id: r.id,
+      coords: r.line.map(([lon, lat]) => [lon, lat] as [number, number]),
+      active: false,
+    }));
+    const active = [chain, ...dzChains]
+      .filter((c): c is Chain => Boolean(c))
+      .map((c) => ({ id: `t-${c.key}`, coords: c.line, active: true }));
+    return [...bg, ...active];
+  }, [routes, chain, dzChains]);
+  const mapPins = useMemo<MapPin[]>(() => {
+    const pins: MapPin[] = [];
+    etapes.forEach((e) => {
+      if (e.best)
+        pins.push({
+          id: e.id,
+          lat: e.best.lat,
+          lon: e.best.lon,
+          k: e.type === "nuit" ? "dormir" : e.best.k,
+          label: e.type === "nuit" ? "" : String(e.n),
+          main: true,
+        });
+      if (e.id === focusId)
+        [...e.others, ...e.priere, ...e.manger].forEach((s) =>
+          pins.push({ id: e.id, lat: s.lat, lon: s.lon, k: s.k, main: false }),
+        );
+    });
+    if (portStop)
+      pins.push({
+        id: "port",
+        lat: portStop.lat,
+        lon: portStop.lon,
+        k: "port",
+        label: "",
+        main: true,
+      });
+    return pins;
+  }, [etapes, focusId, portStop]);
+  const focus = (() => {
+    const e = etapes.find((x) => x.id === focusId);
+    return e?.best ? { lat: e.best.lat, lon: e.best.lon } : null;
+  })();
 
   const faq = [
     { q: tr("ui.pageRoutesDuBled.faq1Q"), a: tr("ui.pageRoutesDuBled.faq1A") },
@@ -122,219 +241,352 @@ function RoutesDuBledPage() {
   return (
     <>
       <SiteHeader />
-      <main className="rdb mx-auto max-w-6xl px-4 pb-20 pt-8 sm:px-6 sm:pt-14">
+      <main className="rdb mx-auto max-w-6xl px-4 pb-20 pt-6 sm:px-6 sm:pt-12">
         <Breadcrumbs
           items={[{ name: tr("ui.pageRoutesDuBled.titreCourt"), path: "/routes-du-bled" }]}
         />
 
         <header className="rdb-hero">
-          <div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-[.18em] text-primary">
-              {tr("ui.pageRoutesDuBled.surtitre")}
-            </p>
-            <h1 className="mt-2 font-display text-3xl font-bold leading-tight tracking-tight sm:text-5xl">
-              {tr("ui.pageRoutesDuBled.titre")}
-            </h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-              {tr("ui.pageRoutesDuBled.intro")}
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button type="button" className="rdb-cta" onClick={startAdd}>
-                <Plus className="size-4" aria-hidden />
-                {tr("ui.pageRoutesDuBled.ajouterUneHalte")}
-              </button>
-            </div>
+          <p className="text-xs font-bold uppercase tracking-[.18em] text-primary">
+            {tr("ui.pageRoutesDuBled.surtitre")}
+          </p>
+          <h1 className="mt-2 font-display text-3xl font-bold leading-tight tracking-tight sm:text-5xl">
+            {tr("ui.pageRoutesDuBled.titre")}
+          </h1>
+          <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
+            {tr("ui.pageRoutesDuBled.intro")}
+          </p>
+
+          <div className="rdb-chooser">
+            <label className="rdb-field">
+              <span>{tr("ui.pageRoutesDuBled.tuParsDe")}</span>
+              <select value={from ?? ""} onChange={(e) => choose(e.target.value as Depart, port)}>
+                <option value="" disabled>
+                  {tr("ui.pageRoutesDuBled.choisir")}
+                </option>
+                {DEPARTS.map((d) => (
+                  <option key={d} value={d}>
+                    {PLACE_NAME[d]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <span className="rdb-chooser__arrow" aria-hidden>
+              →
+            </span>
+            <label className="rdb-field">
+              <span>{tr("ui.pageRoutesDuBled.tuEmbarquesA")}</span>
+              <select
+                value={port ?? ""}
+                disabled={!from}
+                onChange={(e) => {
+                  setPort(e.target.value as Port);
+                  setVariant(0);
+                  setDz(null);
+                  setFocusId(null);
+                }}
+              >
+                <option value="" disabled>
+                  {from
+                    ? tr("ui.pageRoutesDuBled.choisirLePort")
+                    : tr("ui.pageRoutesDuBled.dabordLeDepart")}
+                </option>
+                {(from ? portsFrom(from) : []).map((p) => (
+                  <option key={p} value={p}>
+                    {PLACE_NAME[p]}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
-          <dl className="rdb-stats">
-            <div>
-              <dt>{tr("ui.pageRoutesDuBled.statRoutes")}</dt>
-              <dd>{routes.length || "…"}</dd>
+
+          {!chain ? (
+            <div className="mt-5">
+              <p className="text-sm font-semibold">{tr("ui.pageRoutesDuBled.exemples")}</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {EXEMPLES.map(([f, p]) => (
+                  <button
+                    key={`${f}-${p}`}
+                    type="button"
+                    className="rdb-chip"
+                    onClick={() => choose(f, p)}
+                  >
+                    {PLACE_NAME[f]} → {PLACE_NAME[p]}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div>
-              <dt>{tr("ui.pageRoutesDuBled.statKm")}</dt>
-              <dd>{totals.km ? fmt(totals.km) : "…"}</dd>
-            </div>
-            <div>
-              <dt>{tr("ui.pageRoutesDuBled.statHaltes")}</dt>
-              <dd>{totals.n ? fmt(totals.n) : "…"}</dd>
-            </div>
-          </dl>
+          ) : null}
         </header>
 
         {data.isError ? (
           <Bw504Note
             tone="stuck"
-            className="mt-10"
+            className="mt-8"
             title={tr("ui.pageRoutesDuBled.erreurChargement")}
           >
             {(data.error as Error).message}
           </Bw504Note>
-        ) : null}
-
-        <section
-          className="mt-10 grid gap-8"
-          aria-label={tr("ui.pageRoutesDuBled.choisirUneRoute")}
-        >
-          {groups.map((g) => (
-            <div key={g.side}>
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 className="font-display text-xl font-bold sm:text-2xl">{g.title}</h2>
-                <p className="text-sm text-muted-foreground">{g.hint}</p>
-              </div>
-              <div className="rdb-routes mt-4">
-                {routes
-                  .filter((r) => r.side === g.side)
-                  .map((r) => (
-                    <button
-                      key={r.id}
-                      type="button"
-                      className="rdb-route"
-                      aria-pressed={r.id === route?.id}
-                      onClick={() => chooseRoute(r.id)}
-                    >
-                      <span className="rdb-route__code">{r.id}</span>
-                      <span className="rdb-route__name">{r.name}</span>
-                      <span className="rdb-route__meta">
-                        {fmt(r.km)} km · {formatDuration(r.h)}
-                      </span>
-                      <span className="rdb-route__count">
-                        {r.releve
-                          ? tr("ui.pageRoutesDuBled.nbHaltes", { n: r.stops.length })
-                          : tr("ui.pageRoutesDuBled.releveEnCours")}
-                      </span>
-                    </button>
-                  ))}
-              </div>
-            </div>
-          ))}
-        </section>
-
-        {route ? (
-          <section className="rdb-main mt-10" aria-labelledby="rdb-route-title">
-            <div className="rdb-mapcol" ref={mapBox}>
-              {picking ? (
-                <Bw504Note
-                  tone="start"
-                  className="mb-3"
-                  title={tr("ui.pageRoutesDuBled.toucheLaCarte")}
-                  actions={
-                    <Bw504Button
-                      onClick={() => {
-                        setPicking(false);
-                        setAdding(true);
-                      }}
-                    >
-                      {tr("ui.pageRoutesDuBled.annuler")}
-                    </Bw504Button>
-                  }
-                />
-              ) : null}
-              <div className="rdb-map" data-picking={picking || undefined}>
-                <Suspense
-                  fallback={
-                    <div className="rdb-map__wait">{tr("ui.pageRoutesDuBled.chargementCarte")}</div>
-                  }
-                >
-                  <RoutesMap
-                    routes={routes}
-                    selectedId={route.id}
-                    stops={stops}
-                    selectedStopId={openStop}
-                    onSelectRoute={chooseRoute}
-                    onSelectStop={(id) => setOpenStop(id)}
-                    picking={picking}
-                    onPick={(lon, lat) => {
-                      setDraft((d) => ({ ...d, coords: { lat, lon } }));
-                      setPicking(false);
-                      setAdding(true);
-                    }}
-                  />
-                </Suspense>
-              </div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {tr("ui.pageRoutesDuBled.legende")}
-              </p>
-            </div>
-
-            <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-[.14em] text-primary">
-                {route.side === "europe"
-                  ? tr("ui.pageRoutesDuBled.jusquAuPort")
-                  : tr("ui.pageRoutesDuBled.apresLePort")}
-              </p>
-              <h2 id="rdb-route-title" className="mt-1 font-display text-2xl font-bold">
-                {route.name}
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {tr("ui.pageRoutesDuBled.resumeRoute", {
-                  km: fmt(route.km),
-                  duree: formatDuration(route.h),
-                  via: route.via.join(" · "),
-                })}
-              </p>
-
-              <div
-                className="rdb-filters mt-5"
-                role="toolbar"
-                aria-label={tr("ui.pageRoutesDuBled.filtrer")}
-              >
-                {FILTERS.map((f) => {
-                  const n = allStops.filter((s) => matchFilter(s, f)).length;
-                  return (
-                    <button
-                      key={f}
-                      type="button"
-                      className="rdb-chip"
-                      aria-pressed={filter === f}
-                      onClick={() => setFilter(f)}
-                    >
-                      {filterLabel(f)} <span className="opacity-60">{n}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {!route.releve ? (
-                <Bw504Note
-                  tone="start"
-                  className="mt-5"
-                  title={tr("ui.pageRoutesDuBled.routeSansReleveTitre")}
-                  actions={
-                    <Bw504Button primary onClick={startAdd}>
-                      {tr("ui.pageRoutesDuBled.ajouterUneHalte")}
-                    </Bw504Button>
-                  }
-                >
-                  {tr("ui.pageRoutesDuBled.routeSansReleveTexte")}
-                </Bw504Note>
-              ) : null}
-
-              <ol className="rdb-stops mt-5">
-                {stops.map((s) => (
-                  <StopRow
-                    key={s.id}
-                    stop={s}
-                    open={openStop === s.id}
-                    onToggle={() => setOpenStop(openStop === s.id ? null : s.id)}
-                  />
-                ))}
-              </ol>
-              {route.releve && !stops.length ? (
-                <p className="mt-4 text-sm text-muted-foreground">
-                  {tr("ui.pageRoutesDuBled.aucuneHalteFiltre")}
-                </p>
-              ) : null}
-
-              <BwKnow className="mt-6" source={tr("ui.pageRoutesDuBled.sourcesOsm")}>
-                {tr("ui.pageRoutesDuBled.bonASavoir")}
-              </BwKnow>
-            </div>
-          </section>
-        ) : data.isPending ? (
-          <p className="mt-10 text-sm text-muted-foreground">
+        ) : data.isPending && from && port ? (
+          <p className="mt-8 text-sm text-muted-foreground">
             {tr("ui.pageRoutesDuBled.chargement")}
           </p>
         ) : null}
+
+        {chain && def ? (
+          <section className="rdb-trip mt-8" aria-labelledby="rdb-trip-title">
+            <div className="rdb-trip__head">
+              {options.length > 1 ? (
+                <div
+                  className="rdb-variants"
+                  role="tablist"
+                  aria-label={tr("ui.pageRoutesDuBled.parOuPasser")}
+                >
+                  {options.map((o, i) => (
+                    <button
+                      key={o.via ?? i}
+                      type="button"
+                      role="tab"
+                      aria-selected={i === variant}
+                      onClick={() => {
+                        setVariant(i);
+                        setFocusId(null);
+                      }}
+                    >
+                      {o.via === "madrid"
+                        ? tr("ui.pageRoutesDuBled.parMadrid")
+                        : tr("ui.pageRoutesDuBled.parLaCote")}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              <h2 id="rdb-trip-title" className="font-display text-2xl font-bold sm:text-3xl">
+                {PLACE_NAME[def.from]} → {PLACE_NAME[def.port]}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {nPauses
+                  ? tr("ui.pageRoutesDuBled.resumeTrajet", {
+                      km: fmt(chain.km),
+                      route: dureeRonde(chain.h),
+                      total: dureeRonde(chain.h + (nPauses * PAUSE_MIN) / 60),
+                      pauses: nPauses,
+                    })
+                  : tr("ui.pageRoutesDuBled.resumeTrajetSansPause", {
+                      km: fmt(chain.km),
+                      route: dureeRonde(chain.h),
+                    })}
+                {nNuits === 1 ? ` ${tr("ui.pageRoutesDuBled.resumeNuit1")}` : ""}
+                {nNuits > 1 ? ` ${tr("ui.pageRoutesDuBled.resumeNuits", { n: nNuits })}` : ""}
+              </p>
+
+              <ol className="rdb-frise" aria-label={tr("ui.pageRoutesDuBled.friseAria")}>
+                <li data-type="depart">
+                  <span className="rdb-frise__dot" aria-hidden>
+                    <img src="/cabas/persos/voiture_504.webp" alt="" width={30} height={30} />
+                  </span>
+                  <span className="rdb-frise__t">{PLACE_NAME[def.from]}</span>
+                </li>
+                {etapes.map((e) => (
+                  <li key={e.id} data-type={e.type} data-empty={!e.best || undefined}>
+                    <button
+                      type="button"
+                      onClick={() => focusEtape(e.id)}
+                      aria-label={etapeTitle(e)}
+                    >
+                      <span className="rdb-frise__dot" aria-hidden>
+                        {e.type === "nuit" ? (
+                          <MoonStar className="size-4" />
+                        ) : (
+                          <Coffee className="size-4" />
+                        )}
+                      </span>
+                      <span className="rdb-frise__t">{dureeRonde(e.h)}</span>
+                    </button>
+                  </li>
+                ))}
+                <li data-type="port">
+                  <span className="rdb-frise__dot" aria-hidden>
+                    <Anchor className="size-4" />
+                  </span>
+                  <span className="rdb-frise__t">{PLACE_NAME[def.port]}</span>
+                </li>
+              </ol>
+
+              {chain.sansReleve.length ? (
+                <p className="rdb-gap">
+                  {tr("ui.pageRoutesDuBled.sansReleve", {
+                    routes: chain.sansReleve.map((r) => r.name.replace(/ \(.*\)$/, "")).join(", "),
+                  })}{" "}
+                  <button type="button" onClick={() => startAdd(chain.sansReleve[0]!.id)}>
+                    {tr("ui.pageRoutesDuBled.ajouterLaTienne")}
+                  </button>
+                </p>
+              ) : null}
+            </div>
+
+            <div className="rdb-trip__body">
+              <div className="rdb-mapcol" id="rdb-map" data-open={mapOpen || picking || undefined}>
+                <button
+                  type="button"
+                  className="rdb-maptoggle"
+                  aria-expanded={mapOpen || picking}
+                  onClick={() => setMapOpen((o) => !o)}
+                >
+                  <MapIcon className="size-4" aria-hidden />
+                  {mapOpen
+                    ? tr("ui.pageRoutesDuBled.masquerLaCarte")
+                    : tr("ui.pageRoutesDuBled.voirLaCarte")}
+                </button>
+                {picking ? (
+                  <Bw504Note
+                    tone="start"
+                    className="mb-3"
+                    title={tr("ui.pageRoutesDuBled.toucheLaCarte")}
+                    actions={
+                      <Bw504Button
+                        onClick={() => {
+                          setPicking(false);
+                          setAdding(true);
+                        }}
+                      >
+                        {tr("ui.pageRoutesDuBled.annuler")}
+                      </Bw504Button>
+                    }
+                  />
+                ) : null}
+                <div className="rdb-map" data-picking={picking || undefined}>
+                  <Suspense
+                    fallback={
+                      <div className="rdb-map__wait">
+                        {tr("ui.pageRoutesDuBled.chargementCarte")}
+                      </div>
+                    }
+                  >
+                    <RoutesMap
+                      lines={mapLines}
+                      pins={mapPins}
+                      focus={focus}
+                      fitKey={chain.key + (dz ?? "")}
+                      onSelectPin={(id) => (id === "port" ? undefined : focusEtape(id))}
+                      picking={picking}
+                      onPick={(lon, lat) => {
+                        setDraft((d) => ({ ...d, coords: { lat, lon } }));
+                        setPicking(false);
+                        setAdding(true);
+                      }}
+                    />
+                  </Suspense>
+                </div>
+              </div>
+
+              <ol className="rdb-road">
+                <li className="rdb-step" data-type="depart">
+                  <span className="rdb-step__marker" aria-hidden>
+                    <img src="/cabas/persos/voiture_504.webp" alt="" width={40} height={40} />
+                  </span>
+                  <div className="rdb-step__card">
+                    <p className="rdb-step__when">{tr("ui.pageRoutesDuBled.depart")}</p>
+                    <h3 className="rdb-step__title">{PLACE_NAME[def.from]}</h3>
+                    <p className="rdb-step__text">
+                      {tr("ui.pageRoutesDuBled.departConseil")}{" "}
+                      <Link to="/preparer-mon-voyage" className="underline underline-offset-2">
+                        {tr("ui.pageRoutesDuBled.preparerLien")}
+                      </Link>
+                    </p>
+                  </div>
+                </li>
+
+                {etapes.map((e) => (
+                  <EtapeCard
+                    key={e.id}
+                    etape={e}
+                    focused={focusId === e.id}
+                    onFocus={() => setFocusId(e.id)}
+                    onAdd={() => startAdd(e.route.id)}
+                  />
+                ))}
+
+                <li className="rdb-step" data-type="port">
+                  <span className="rdb-step__marker" aria-hidden>
+                    <Ship className="size-5" />
+                  </span>
+                  <div className="rdb-step__card">
+                    <p className="rdb-step__when">
+                      {tr("ui.pageRoutesDuBled.arriveeApres", {
+                        duree: dureeRonde(chain.h + (nPauses * PAUSE_MIN) / 60),
+                      })}
+                    </p>
+                    <h3 className="rdb-step__title">
+                      {tr("ui.pageRoutesDuBled.portDe", { port: PLACE_NAME[def.port] })}
+                    </h3>
+                    {portStop ? (
+                      <p className="rdb-step__text">
+                        {portStop.n}{" "}
+                        <a
+                          className="rdb-go rdb-go--inline"
+                          href={mapsLink(portStop)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Navigation className="size-3.5" aria-hidden />
+                          {tr("ui.pageRoutesDuBled.yAller")}
+                        </a>
+                      </p>
+                    ) : null}
+                    <p className="rdb-step__text">{tr("ui.pageRoutesDuBled.portConseil")}</p>
+                  </div>
+                </li>
+              </ol>
+            </div>
+
+            <section className="rdb-dz mt-10" aria-labelledby="rdb-dz-title">
+              <h2 id="rdb-dz-title" className="font-display text-xl font-bold sm:text-2xl">
+                {tr("ui.pageRoutesDuBled.apresLePortTitre")}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {tr("ui.pageRoutesDuBled.apresLePortAide", { port: PLACE_NAME[def.port] })}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {dzOptions.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    className="rdb-chip"
+                    aria-pressed={dz === p}
+                    onClick={() => setDz(dz === p ? null : p)}
+                  >
+                    <Ship className="size-3.5" aria-hidden />
+                    {PLACE_NAME[p]}
+                  </button>
+                ))}
+              </div>
+              {dz ? (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {dzChains.map((c) => (
+                    <DzRoute key={c.key} chain={c} onAdd={() => startAdd(c.key)} />
+                  ))}
+                </div>
+              ) : null}
+            </section>
+          </section>
+        ) : null}
+
+        <section className="rdb-contrib mt-12">
+          <Bw504Note
+            tone="start"
+            title={tr("ui.pageRoutesDuBled.contribTitre")}
+            actions={
+              <Bw504Button primary onClick={() => startAdd()}>
+                {tr("ui.pageRoutesDuBled.ajouterUneHalte")}
+              </Bw504Button>
+            }
+          >
+            {tr("ui.pageRoutesDuBled.contribTexte")}
+          </Bw504Note>
+          <BwKnow className="mt-4" source={tr("ui.pageRoutesDuBled.sourcesOsm")}>
+            {tr("ui.pageRoutesDuBled.bonASavoir")}
+          </BwKnow>
+        </section>
 
         <FaqSection faq={faq} path="/routes-du-bled" />
       </main>
@@ -354,91 +606,217 @@ function RoutesDuBledPage() {
   );
 }
 
-function filterLabel(f: Filter) {
-  switch (f) {
-    case "tout":
-      return tr("ui.pageRoutesDuBled.filtreTout");
-    case "plein":
-      return tr("ui.pageRoutesDuBled.filtrePlein");
-    case "manger":
-      return tr("ui.pageRoutesDuBled.filtreManger");
-    case "priere":
-      return tr("ui.pageRoutesDuBled.filtrePriere");
-    case "dormir":
-      return tr("ui.pageRoutesDuBled.filtreDormir");
-    case "communaute":
-      return tr("ui.pageRoutesDuBled.filtreCommunaute");
-  }
+function etapeTitle(e: Etape) {
+  return e.type === "nuit"
+    ? tr("ui.pageRoutesDuBled.nuitN", { n: e.n })
+    : tr("ui.pageRoutesDuBled.pauseN", { n: e.n });
 }
 
-function StopRow({ stop, open, onToggle }: { stop: Stop; open: boolean; onToggle: () => void }) {
+function EtapeCard({
+  etape: e,
+  focused,
+  onFocus,
+  onAdd,
+}: {
+  etape: Etape;
+  focused: boolean;
+  onFocus: () => void;
+  onAdd: () => void;
+}) {
+  const [more, setMore] = useState(false);
+  const best = e.best;
+  const color = best ? KIND_COLOR[e.type === "nuit" ? "dormir" : best.k] : undefined;
   return (
     <li
-      id={`halte-${stop.id}`}
-      className="rdb-stop"
-      data-open={open || undefined}
-      data-src={stop.src}
-      style={{ ["--k" as string]: KIND_COLOR[stop.k] }}
+      id={`etape-${e.id}`}
+      className="rdb-step"
+      data-type={e.type}
+      data-focused={focused || undefined}
+      data-empty={!best || undefined}
+      style={color ? { ["--k" as string]: color } : undefined}
+      onClick={onFocus}
     >
-      <span className="rdb-stop__bubble" aria-hidden>
-        <KindIcon kind={stop.k} className="size-[18px]" />
+      <span className="rdb-step__marker" aria-hidden>
+        {e.type === "nuit" ? <MoonStar className="size-5" /> : <Coffee className="size-5" />}
       </span>
-      <div className="rdb-stop__card">
-        <button type="button" className="rdb-stop__head" aria-expanded={open} onClick={onToggle}>
-          <span className="rdb-stop__km">km {fmt(stop.km)}</span>
-          <span className="rdb-stop__name">{stop.n}</span>
-          <span className="rdb-stop__kind">
-            {kindLabel(stop.k)}
-            {stop.src !== "osm" ? ` · ${sourceLabel(stop.src)}` : ""}
-          </span>
-          <ChevronDown className="rdb-stop__chev size-4" aria-hidden />
-        </button>
-        {stop.f.length ? (
-          <ul className="rdb-stop__tags">
-            {stop.f.map((f) => (
-              <li key={f}>
-                <FeatureIcon feature={f} />
-                {featureLabel(f)}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        {open ? (
-          <div className="rdb-stop__more">
-            {stop.note ? <p>{stop.note}</p> : null}
-            {stop.place ? <p className="text-muted-foreground">{stop.place}</p> : null}
-            {stop.direction && stop.direction !== "both" ? (
-              <p className="text-muted-foreground">
-                {stop.direction === "aller"
-                  ? tr("ui.pageRoutesDuBled.sensAllerSeul")
-                  : tr("ui.pageRoutesDuBled.sensRetourSeul")}
-              </p>
-            ) : null}
-            <p className="text-xs text-muted-foreground">
-              {sourceLabel(stop.src)}
-              {stop.date ? ` · ${stop.date}` : ""}
-              {stop.url ? (
-                <>
-                  {" · "}
-                  <a
-                    href={stop.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline underline-offset-2"
-                  >
-                    {tr("ui.pageRoutesDuBled.voirLaSource")}
-                    <ExternalLink className="ml-1 inline size-3" aria-hidden />
-                  </a>
-                </>
-              ) : null}
+      <div className="rdb-step__card">
+        <p className="rdb-step__when">
+          {etapeTitle(e)} · {tr("ui.pageRoutesDuBled.apresDeRoute", { duree: dureeRonde(e.h) })}
+        </p>
+        {best ? (
+          <>
+            <h3 className="rdb-step__title">{stopName(best)}</h3>
+            <p className="rdb-step__kind">
+              <KindIcon kind={best.k} className="size-4" />
+              {kindLabel(best.k)}
+              {best.src !== "osm" ? ` · ${sourceLabel(best.src)}` : ""}
             </p>
-            <a className="rdb-go" href={mapsLink(stop)} target="_blank" rel="noopener noreferrer">
-              <Navigation className="size-4" aria-hidden />
-              {tr("ui.pageRoutesDuBled.yAller")}
-            </a>
-          </div>
-        ) : null}
+            {best.f.length ? (
+              <ul className="rdb-tags">
+                {best.f.slice(0, 5).map((f) => (
+                  <li key={f}>
+                    <FeatureIcon feature={f} />
+                    {featureLabel(f)}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {best.note ? <p className="rdb-step__text">« {best.note} »</p> : null}
+            <ul className="rdb-near">
+              {e.priere.map((s) => (
+                <li key={s.id}>
+                  <KindIcon kind="priere" className="size-4" />
+                  {tr("ui.pageRoutesDuBled.prierPres", { nom: stopName(s), km: ecartKm(s, best) })}
+                </li>
+              ))}
+              {e.manger.map((s) => (
+                <li key={s.id}>
+                  <KindIcon kind="manger" className="size-4" />
+                  {tr("ui.pageRoutesDuBled.mangerPres", { nom: stopName(s), km: ecartKm(s, best) })}
+                </li>
+              ))}
+            </ul>
+            <div className="rdb-step__acts">
+              <a
+                className="rdb-go"
+                href={mapsLink(best)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(ev) => ev.stopPropagation()}
+              >
+                <Navigation className="size-4" aria-hidden />
+                {tr("ui.pageRoutesDuBled.yAller")}
+              </a>
+              {e.others.length ? (
+                <button
+                  type="button"
+                  className="rdb-more"
+                  aria-expanded={more}
+                  onClick={(ev) => {
+                    ev.stopPropagation();
+                    setMore(!more);
+                  }}
+                >
+                  {tr("ui.pageRoutesDuBled.autresOptions", { n: e.others.length })}
+                  <ChevronDown className="size-4" aria-hidden />
+                </button>
+              ) : null}
+            </div>
+            {more ? (
+              <ul className="rdb-others">
+                {e.others.map((s) => (
+                  <li key={s.id}>
+                    <KindIcon kind={s.k} className="size-4" />
+                    <span className="min-w-0 flex-1">
+                      <b>{stopName(s)}</b>
+                      <span className="text-muted-foreground">
+                        {" · "}
+                        {tr(
+                          s.km < best.km
+                            ? "ui.pageRoutesDuBled.kmAvant"
+                            : "ui.pageRoutesDuBled.kmApres",
+                          {
+                            km: ecartKm(s, best),
+                          },
+                        )}
+                      </span>
+                    </span>
+                    <a
+                      href={mapsLink(s)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={tr("ui.pageRoutesDuBled.yAller")}
+                    >
+                      <Navigation className="size-4" aria-hidden />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <h3 className="rdb-step__title">
+              {e.type === "nuit"
+                ? tr("ui.pageRoutesDuBled.nuitVide")
+                : tr("ui.pageRoutesDuBled.pauseVide")}
+            </h3>
+            <p className="rdb-step__text">
+              {tr("ui.pageRoutesDuBled.etapeVideTexte", {
+                route: e.route.name.replace(/ \(.*\)$/, ""),
+              })}
+            </p>
+          </>
+        )}
+        <button
+          type="button"
+          className="rdb-add"
+          onClick={(ev) => {
+            ev.stopPropagation();
+            onAdd();
+          }}
+        >
+          <Plus className="size-3.5" aria-hidden />
+          {best ? tr("ui.pageRoutesDuBled.tuConnaisMieux") : tr("ui.pageRoutesDuBled.ajouterIci")}
+        </button>
       </div>
     </li>
+  );
+}
+
+/** Une route en Algérie après le port : courte, donc on montre ses haltes clés sans découpage. */
+function DzRoute({ chain, onAdd }: { chain: Chain; onAdd: () => void }) {
+  const route = chain.segs[0]!.route;
+  const etapes = planEtapes(chain);
+  const cles = chain.stops
+    .filter(
+      (s) =>
+        s.km > 3 && (s.k === "carburant" || s.k === "aire" || s.k === "priere" || s.k === "manger"),
+    )
+    .filter((s, i, all) => all.findIndex((x) => x.k === s.k) === i || s.src !== "osm")
+    .slice(0, 4);
+  return (
+    <article className="rdb-dzcard">
+      <h3 className="font-display text-lg font-bold">{route.name.replace(/ \(.*\)$/, "")}</h3>
+      <p className="text-sm text-muted-foreground">
+        {tr("ui.pageRoutesDuBled.resumeCourt", { km: fmt(chain.km), duree: dureeRonde(chain.h) })}
+        {etapes.length === 1 ? ` · ${tr("ui.pageRoutesDuBled.resumePause1")}` : ""}
+        {etapes.length > 1
+          ? ` · ${tr("ui.pageRoutesDuBled.resumePauses", { n: etapes.length })}`
+          : ""}
+      </p>
+      {cles.length ? (
+        <ul className="rdb-near mt-2">
+          {cles.map((s) => (
+            <li key={s.id}>
+              <KindIcon kind={s.k} className="size-4" />
+              <span className="min-w-0 flex-1">
+                {stopName(s)}
+                <span className="text-muted-foreground">
+                  {" · "}
+                  {tr("ui.pageRoutesDuBled.apresDeRoute", {
+                    duree: dureeRonde((route.h * s.km) / route.km),
+                  })}
+                </span>
+              </span>
+              <a
+                href={mapsLink(s)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={tr("ui.pageRoutesDuBled.yAller")}
+              >
+                <Navigation className="size-4" aria-hidden />
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-2 text-sm">{tr("ui.pageRoutesDuBled.dzVide")}</p>
+      )}
+      <button type="button" className="rdb-add" onClick={onAdd}>
+        <Plus className="size-3.5" aria-hidden />
+        {tr("ui.pageRoutesDuBled.ajouterSurCetteRoute")}
+      </button>
+    </article>
   );
 }

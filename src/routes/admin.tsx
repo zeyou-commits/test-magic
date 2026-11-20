@@ -2,6 +2,7 @@ import { EntityReviewsModeration } from "@/components/admin/EntityReviewsModerat
 import { WalletMediaAdmin } from "@/components/admin/WalletMediaAdmin";
 import { IllustrationsAdmin } from "@/components/admin/IllustrationsAdmin";
 import { EmailsAdmin } from "@/components/admin/EmailsAdmin";
+import { AdminGate } from "@/components/admin/AdminGate";
 import { AvatarsAdmin } from "@/components/admin/AvatarsAdmin";
 import { LibraryCategoriesAdmin } from "@/components/admin/LibraryCategoriesAdmin";
 import { PhotosModeration } from "@/components/admin/PhotosModeration";
@@ -179,27 +180,10 @@ function AdminPage() {
     return <CenteredNote>Chargement…</CenteredNote>;
   }
 
-  if (!user) {
-    return (
-      <CenteredNote>
-        <p>Connectez-vous pour accéder au back-office.</p>
-        <Button asChild className="mt-3">
-          <a href="/auth?next=%2Fadmin">Se connecter</a>
-        </Button>
-      </CenteredNote>
-    );
-  }
+  if (!user) return <AdminGate state="signin" />;
 
-  if (!roles.some((role) => (STAFF_ROLES as readonly string[]).includes(role))) {
-    return (
-      <CenteredNote>
-        <p>Cet espace est réservé à l'équipe BledWay.</p>
-        <Button asChild variant="outline" className="mt-3">
-          <Link to="/">Retour à la carte</Link>
-        </Button>
-      </CenteredNote>
-    );
-  }
+  if (!roles.some((role) => (STAFF_ROLES as readonly string[]).includes(role)))
+    return <AdminGate state="refused" />;
 
   return <AdminTabs />;
 }

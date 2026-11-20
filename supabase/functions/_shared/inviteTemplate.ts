@@ -196,6 +196,13 @@ const FIXED = {
 
 const SITE = "https://www.bledway.com";
 
+/** Nom et description d'un rôle, et sens d'écriture : repris par l'e-mail de nouveau rôle. */
+export function roleInfo(lang: InviteLang, role: InviteRole) {
+  const f = FIXED[lang];
+  const [label, summary] = f.roles[role];
+  return { label, summary, dir: f.dir, team: f.team, roleTitle: f.roleTitle };
+}
+
 const escapeHtml = (value: string) =>
   value.replace(
     /[&<>"']/g,

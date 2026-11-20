@@ -3,87 +3,68 @@
 // planifiées. Envoi par Resend depuis contact@bledway.com (domaine vérifié chez Resend).
 // Secrets Supabase requis : RESEND_API_KEY.
 // Voix : la 504 parle au tu, comme dans ses bulles sur le site (décision du 17/11/2026).
+// Textes : modèle partagé (_shared/welcomeTemplate.ts), modifiable dans l'admin, rubrique « E-mails ».
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
+import { welcomeEmail } from "../_shared/welcomeTemplate.ts";
+import { CORS, staffTester } from "../_shared/staffTester.ts";
 
 declare const Deno: {
   env: { get(name: string): string | undefined };
   serve(handler: (request: Request) => Response | Promise<Response>): void;
 };
 
-const SITE = "https://www.bledway.com";
 const FROM = "BledWay <contact@bledway.com>";
 
 const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
-
-const escape = (value: string) =>
-  value.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
-
-function welcomeHtml(name: string) {
-  const hello = name ? `Salam ${escape(name)} !` : "Salam et bienvenue !";
-  const step = (n: number, title: string, text: string, href?: string, label?: string) => `
-    <tr><td style="padding:10px 0;vertical-align:top;width:34px">
-      <div style="width:26px;height:26px;border-radius:13px;background:#0e6b3b;color:#fff;font:700 14px/26px Arial,sans-serif;text-align:center">${n}</div>
-    </td><td style="padding:10px 0;font:15px/1.5 Arial,sans-serif;color:#1f2a37">
-      <b>${title}</b><br/>${text}${href ? `<br/><a href="${SITE}${href}" style="color:#0e6b3b;font-weight:700">${label} →</a>` : ""}
-    </td></tr>`;
-  return `<!doctype html><html lang="fr"><body style="margin:0;background:#f4f1ea">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ea;padding:24px 12px">
-  <tr><td align="center">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:18px;overflow:hidden">
-      <tr><td style="background:#0d3b4f;padding:22px 24px" align="left">
-        <img src="${SITE}/pwa-icon-192.png" width="48" height="48" alt="BledWay" style="border-radius:12px;vertical-align:middle"/>
-        <span style="font:800 22px Arial,sans-serif;color:#ffffff;vertical-align:middle;margin-left:10px">BledWay</span>
-        <div style="font:14px Arial,sans-serif;color:#cfe7dc;margin-top:6px">La route du bled, ensemble</div>
-      </td></tr>
-      <tr><td style="padding:26px 24px 8px">
-        <h1 style="margin:0 0 10px;font:800 24px/1.25 Arial,sans-serif;color:#0d3b4f">${hello}</h1>
-        <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-          <td style="vertical-align:middle;padding-right:12px">
-            <img src="${SITE}/email/voiture_504.png" width="72" height="72" alt="" style="display:block"/>
-          </td>
-          <td style="vertical-align:middle;font:15px/1.6 Arial,sans-serif;color:#1f2a37">
-            Moi, c’est la 504. Ton compte BledWay est prêt : du choix du ferry jusqu’à l’arrivée au port,
-            voici comment on fait la route ensemble, sans mauvaise surprise.
-          </td>
-        </tr></table>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px">
-          ${step(1, "Avant de partir : trouve et réserve", "Compare les départs et les prix indicatifs de chaque compagnie, puis réserve directement chez elle depuis BledWay.", "/horaires", "Voir les départs")}
-          ${step(2, "Une fois réservé : suis et prépare", "Touche le cœur sur ta traversée et accepte les notifications : je te préviens des retards, reports et changements de navire signalés. Coche au fur et à mesure tes papiers, la voiture et les bagages.")}
-          ${step(3, "Le jour J : signale", "File au port, attente à l’embarquement, retard au départ : partage en un geste ce que tu vois sur place, et profite de ce que signalent les autres voyageurs.")}
-          ${step(4, "À bord : le salon de ta traversée", "Échange avec ceux qui font la même traversée : état de la mer, ambiance à bord, heure d’arrivée.")}
-        </table>
-      </td></tr>
-      <tr><td align="center" style="padding:14px 24px 28px">
-        <a href="${SITE}/horaires" style="display:inline-block;background:#0e6b3b;color:#ffffff;text-decoration:none;font:700 16px Arial,sans-serif;padding:14px 26px;border-radius:999px">Trouver ma traversée</a>
-        <div style="margin-top:14px;font:14px Arial,sans-serif;color:#1f2a37">
-          Déjà réservé ? <a href="${SITE}/" style="color:#0e6b3b;font-weight:700">Suis ta traversée sur la carte</a>
-        </div>
-      </td></tr>
-      <tr><td style="padding:16px 24px;background:#f7f5ef;font:12px/1.5 Arial,sans-serif;color:#6b7280">
-        Tu reçois ce message une seule fois, parce que tu viens de créer un compte sur
-        <a href="${SITE}" style="color:#0e6b3b">bledway.com</a>. Bonne route, et à bientôt sur le navire !
-      </td></tr>
-    </table>
-  </td></tr></table></body></html>`;
-}
+  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", ...CORS } });
 
 Deno.serve(async (request) => {
+  if (request.method === "OPTIONS") return new Response("ok", { headers: CORS });
   const db = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "", {
     auth: { persistSession: false },
   }) as unknown as SupabaseClient;
   const token = (request.headers.get("authorization") ?? "").replace(/^Bearer /, "");
   const { data: allowed } = await db.rpc("bw_cron_secret_ok", { p_token: token });
-  if (allowed !== true) return new Response("Unauthorized", { status: 401 });
+  const body = (await request.json().catch(() => null)) as
+    | { user_id?: string; test?: boolean; texts?: unknown }
+    | null;
   const key = Deno.env.get("RESEND_API_KEY");
+
+  // Essai depuis la rubrique « E-mails » : à sa propre adresse, avec les textes en cours d'écriture.
+  if (allowed !== true && body?.test === true) {
+    const tester = await staffTester(db, token);
+    if (!tester) return json({ error: "Réservé à l'équipe" }, 403);
+    if (!key) return json({ error: "RESEND_API_KEY manquante" }, 500);
+    const mail = welcomeEmail(tester.name, body.texts);
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        from: FROM,
+        to: [tester.email],
+        subject: `[Essai] ${mail.subject}`,
+        html: mail.html,
+        text: mail.text,
+        reply_to: "contact@bledway.com",
+      }),
+    });
+    return json({ sent: response.ok, to: tester.email }, response.ok ? 200 : 502);
+  }
+  if (allowed !== true) return new Response("Unauthorized", { status: 401, headers: CORS });
   if (!key) return json({ error: "RESEND_API_KEY manquante" }, 500);
 
-  const body = (await request.json().catch(() => null)) as { user_id?: string } | null;
   if (!body?.user_id) return json({ error: "user_id attendu" }, 400);
   // Une seule fois par compte : la ligne est réservée avant l'envoi.
   const { data: claimed } = await db.rpc("bw_welcome_claim", { p_user: body.user_id });
   if (!claimed) return json({ skipped: "déjà envoyé ou compte introuvable" });
   const { email, name } = claimed as { email: string; name: string };
+  // Textes modifiés dans l'admin (rubrique « E-mails »), sinon ceux d'origine.
+  const { data: setting } = await db
+    .from("bw_admin_settings")
+    .select("value")
+    .eq("key", "email_welcome")
+    .maybeSingle();
+  const mail = welcomeEmail(name ?? "", (setting as { value?: unknown } | null)?.value);
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -91,8 +72,9 @@ Deno.serve(async (request) => {
     body: JSON.stringify({
       from: FROM,
       to: [email],
-      subject: "Bienvenue sur BledWay 🚢",
-      html: welcomeHtml(name),
+      subject: mail.subject,
+      html: mail.html,
+      text: mail.text,
       reply_to: "contact@bledway.com",
     }),
   });

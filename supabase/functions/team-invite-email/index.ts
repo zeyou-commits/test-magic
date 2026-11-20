@@ -6,10 +6,13 @@
 // « E-mails » (réglage bw_admin_settings « email_invite »).
 // Essai ({ test: true }) : envoyé à l'adresse de la personne connectée (admin ou éditeur), avec
 // les textes en cours d'écriture, sans créer de compte.
+// Aussi l'e-mail « nouveau rôle » ({ kind: "role" }) : quand un administrateur donne un rôle
+// d'équipe à un compte existant (textes : _shared/roleTemplate.ts, réglage « email_role »).
 // Envoi par Resend depuis contact@bledway.com. Secrets Supabase requis : RESEND_API_KEY.
 // Déploiement : verify_jwt false (la session est vérifiée ici, comme pour les autres fonctions).
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { inviteEmail, type InviteLang, type InviteRole } from "../_shared/inviteTemplate.ts";
+import { roleEmail, type StaffRole } from "../_shared/roleTemplate.ts";
 
 declare const Deno: {
   env: { get(name: string): string | undefined };
@@ -49,8 +52,11 @@ Deno.serve(async (request) => {
     lang?: string;
     test?: boolean;
     texts?: unknown;
+    kind?: string;
+    name?: string;
   } | null;
   const test = body?.test === true;
+  const promotion = body?.kind === "role";
   // Envoi réel : administrateurs seulement. Essai : administrateurs et éditeurs (rubrique E-mails).
   const { data: roles } = await db
     .from("user_roles")
@@ -65,12 +71,13 @@ Deno.serve(async (request) => {
   const role: InviteRole = (["admin", "editor", "moderator"] as const).includes(body?.role as never)
     ? (body!.role as InviteRole)
     : "none";
+  if (promotion && role === "none") return json({ error: "Rôle attendu" }, 400);
   const to = test ? String(who.user.email ?? "") : String(body?.to ?? "").trim();
   const link = test ? `${SITE}/admin?tab=emails` : String(body?.link ?? "");
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to) || to.length > 255)
     return json({ error: "Adresse invalide" }, 400);
   // Seuls les liens d'invitation de ce projet Supabase sont acceptés.
-  if (!test && (!url || !link.startsWith(`${url}/auth/v1/verify?`)))
+  if (!test && !promotion && (!url || !link.startsWith(`${url}/auth/v1/verify?`)))
     return json({ error: "Lien refusé" }, 400);
 
   // Textes : ceux en cours d'écriture pour un essai, sinon ceux enregistrés dans l'admin.
@@ -80,7 +87,7 @@ Deno.serve(async (request) => {
     const { data: setting } = await db
       .from("bw_admin_settings")
       .select("value")
-      .eq("key", "email_invite")
+      .eq("key", promotion ? "email_role" : "email_invite")
       .maybeSingle();
     overrides = (setting as { value?: unknown } | null)?.value;
   }
@@ -95,7 +102,11 @@ Deno.serve(async (request) => {
     .trim()
     .slice(0, 60);
 
-  const mail = inviteEmail(lang, role, inviter, link, overrides);
+  // Prénom de la personne promue : donné par le serveur du site ; pour un essai, le sien.
+  const name = String(test ? inviter : (body?.name ?? "")).trim().slice(0, 60);
+  const mail = promotion
+    ? roleEmail(lang, role as StaffRole, name, inviter, overrides)
+    : inviteEmail(lang, role, inviter, link, overrides);
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },

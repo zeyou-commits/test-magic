@@ -267,7 +267,7 @@ export const adminSections: AdminSectionDef[] = [
     id: "emails",
     label: "E-mails",
     description:
-      "Les e-mails envoyés par BledWay : textes modifiables en français, arabe et anglais.",
+      "Bienvenue, alertes, invitation, nouveau rôle : les textes des e-mails de BledWay.",
     group: "Contenus",
     icon: Mail,
   },

@@ -36,6 +36,9 @@ export const usersActionSchema = z.discriminatedUnion("action", [
     ...target,
     role: z.enum(["admin", "editor", "moderator"]),
     enabled: z.boolean(),
+    // Prévenir la personne par e-mail quand elle reçoit un rôle, dans la langue choisie.
+    notify: z.boolean().default(true),
+    lang: z.enum(["fr", "ar", "en"]).default("fr"),
   }),
   z.object({ action: z.literal("ban"), ...target, duration: z.enum(["24h", "168h", "876000h"]) }),
   z.object({ action: z.literal("unban"), ...target }),
@@ -142,6 +145,24 @@ export async function handleUsersAdmin(request: Request, db: SupabaseClient<Data
         );
       return respond(input.action === "banned_emails" ? result.data : { ok: true });
     }
+    // E-mails d'équipe par la fonction Supabase « team-invite-email » (Resend, contact@bledway.com),
+    // appelée avec la session de l'administrateur, qu'elle revérifie.
+    const teamMail = async (body: Record<string, unknown>) => {
+      try {
+        const base = (process.env["SUPABASE_URL"] ?? "").replace(/\/$/, "");
+        const mail = await fetch(`${base}/functions/v1/team-invite-email`, {
+          method: "POST",
+          headers: {
+            authorization: request.headers.get("authorization") ?? "",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify(body),
+        });
+        return mail.ok;
+      } catch {
+        return false;
+      }
+    };
     if (input.action === "invite") {
       const email = input.email.toLowerCase();
       // Adresse interdite : refus clair (le garde-fou en base bloquerait de toute façon).
@@ -187,28 +208,12 @@ export async function handleUsersAdmin(request: Request, db: SupabaseClient<Data
         });
         roleGiven = !given.error;
       }
-      // Envoi par la fonction Supabase « team-invite-email » (Resend, contact@bledway.com),
-      // appelée avec la session de l'administrateur, qu'elle revérifie.
-      let sent = false;
-      try {
-        const base = (process.env["SUPABASE_URL"] ?? "").replace(/\/$/, "");
-        const mail = await fetch(`${base}/functions/v1/team-invite-email`, {
-          method: "POST",
-          headers: {
-            authorization: request.headers.get("authorization") ?? "",
-            "content-type": "application/json",
-          },
-          body: JSON.stringify({
-            to: email,
-            link: data.properties.action_link,
-            role: input.role,
-            lang: input.lang,
-          }),
-        });
-        sent = mail.ok;
-      } catch {
-        sent = false;
-      }
+      const sent = await teamMail({
+        to: email,
+        link: data.properties.action_link,
+        role: input.role,
+        lang: input.lang,
+      });
       await audit("invitation_sent", invitedId, {
         role: input.role,
         lang: input.lang,
@@ -310,16 +315,41 @@ export async function handleUsersAdmin(request: Request, db: SupabaseClient<Data
           409,
         );
     }
+    // Rôle donné : la personne est prévenue par e-mail (pas quand un rôle est retiré).
+    let notified: boolean | undefined;
+    if (input.action === "role" && input.enabled && input.notify && found.user.email) {
+      const { data: profile } = await db
+        .from("profiles")
+        .select("display_name")
+        .eq("id", input.userId)
+        .maybeSingle();
+      notified = await teamMail({
+        kind: "role",
+        to: found.user.email,
+        role: input.role,
+        lang: input.lang,
+        name: profile?.display_name ?? "",
+      });
+    }
     await audit(
       `${input.action}_completed`,
       input.userId,
       input.action === "role"
-        ? { role: input.role, enabled: input.enabled }
+        ? {
+            role: input.role,
+            enabled: input.enabled,
+            ...(notified === undefined ? {} : { email_sent: notified }),
+          }
         : input.action === "delete" && input.banEmail
           ? { email_banned: true }
           : {},
     );
-    return respond({ ok: true });
+    if (notified === false)
+      return respond({
+        ok: true,
+        warning: "Rôle donné, mais l’e-mail pour le prévenir n’est pas parti : prévenez-le vous-même.",
+      });
+    return respond({ ok: true, ...(notified ? { notified: true } : {}) });
   } catch {
     return respond(
       {

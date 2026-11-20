@@ -240,6 +240,9 @@ export function UsersAdmin() {
   const [inviteLang, setInviteLang] = useState<InviteLang>("fr");
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [banEmail, setBanEmail] = useState(false);
+  // Rôle donné : prévenir la personne par e-mail (coché d'office), dans la langue choisie.
+  const [notify, setNotify] = useState(true);
+  const [notifyLang, setNotifyLang] = useState<InviteLang>("fr");
   const [change, setChange] = useState<Change | null>(null);
   const [confirmation, setConfirmation] = useState("");
   const [reason, setReason] = useState("");
@@ -275,9 +278,11 @@ export function UsersAdmin() {
   });
   const mutation = useMutation({
     mutationFn: (input: Record<string, unknown>) =>
-      userAdminAction<{ ok: true; warning?: string }>(input),
+      userAdminAction<{ ok: true; warning?: string; notified?: boolean }>(input),
     onSuccess: (data) => {
       if (data?.warning) toast.warning(data.warning, { duration: 12000 });
+      else if (data?.notified)
+        toast.success("Rôle donné : la personne est prévenue par e-mail.");
       else toast.success("Opération enregistrée.");
       setChange(null);
       void client.invalidateQueries({ queryKey: ["admin", "users"] });
@@ -320,6 +325,8 @@ export function UsersAdmin() {
     setConfirmation("");
     setReason("");
     setBanEmail(false);
+    setNotify(true);
+    setNotifyLang("fr");
     mutation.reset();
   };
   const banned = (member: ManagedUser) =>
@@ -798,7 +805,12 @@ export function UsersAdmin() {
                   ...(change.action === "ban" ? { duration } : {}),
                   ...(change.action === "delete" ? { banEmail } : {}),
                   ...(change.action === "role"
-                    ? { role: change.role, enabled: change.enabled }
+                    ? {
+                        role: change.role,
+                        enabled: change.enabled,
+                        notify: Boolean(change.enabled && notify),
+                        lang: notifyLang,
+                      }
                     : {}),
                 });
               }}
@@ -854,6 +866,51 @@ export function UsersAdmin() {
                       : undefined
                   }
                 />
+              )}
+              {change.action === "role" && change.enabled && change.member.email && (
+                <div className="space-y-2 rounded-xl border border-border p-3 text-sm">
+                  <label className="flex cursor-pointer items-start gap-2">
+                    <input
+                      type="checkbox"
+                      checked={notify}
+                      onChange={(e) => setNotify(e.target.checked)}
+                      className="mt-1"
+                    />
+                    <span>
+                      <span className="block font-semibold">Le prévenir par e-mail</span>
+                      <span className="block text-muted-foreground">
+                        {change.member.email} reçoit un e-mail avec son nouveau rôle et un lien vers
+                        l'espace équipe.{" "}
+                        <a href="/admin?tab=emails" className="font-semibold text-primary underline">
+                          Modifier le texte
+                        </a>
+                      </span>
+                    </span>
+                  </label>
+                  {notify && (
+                    <div
+                      className="inline-flex overflow-hidden rounded-lg border border-border"
+                      role="radiogroup"
+                      aria-label="Langue de l'e-mail"
+                    >
+                      {INVITE_LANGS.map(([value, label]) => (
+                        <button
+                          key={value}
+                          type="button"
+                          role="radio"
+                          aria-checked={notifyLang === value}
+                          lang={value}
+                          onClick={() => setNotifyLang(value)}
+                          className={`min-h-9 border-l border-border px-3 text-sm font-semibold first:border-l-0 ${
+                            notifyLang === value ? "bg-foreground text-background" : "bg-white"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
               {change.action === "ban" && (
                 <label className="block text-sm">

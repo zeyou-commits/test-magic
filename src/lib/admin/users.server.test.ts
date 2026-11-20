@@ -122,6 +122,28 @@ describe("Gestion des utilisateurs côté serveur", () => {
       _enabled: true,
     });
   });
+  it("prévient par e-mail la personne qui reçoit un rôle, dans la langue choisie", async () => {
+    const res = await call({ ...body, action: "role", role: "editor", enabled: true, lang: "en" });
+    expect(await res.json()).toEqual({ ok: true, notified: true });
+    const [url, init] = vi.mocked(fetch).mock.calls[0]!;
+    expect(String(url)).toMatch(/\/functions\/v1\/team-invite-email$/);
+    expect(JSON.parse(String(init!.body))).toMatchObject({
+      kind: "role",
+      to: "voyageur@example.test",
+      role: "editor",
+      lang: "en",
+    });
+  });
+  it("n'envoie rien quand un rôle est retiré ou la case décochée", async () => {
+    await call({ ...body, action: "role", role: "editor", enabled: false });
+    await call({ ...body, action: "role", role: "editor", enabled: true, notify: false });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+  it("signale un rôle donné dont l'e-mail n'est pas parti", async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response("{}", { status: 502 }));
+    const res = await call({ ...body, action: "role", role: "moderator", enabled: true });
+    expect((await res.json()).warning).toMatch(/e-mail/);
+  });
   it("supprime uniquement les avatars du compte choisi avant Auth", async () => {
     expect((await call({ ...body, action: "delete" })).status).toBe(200);
     expect(mocks.list).toHaveBeenCalledWith(target, { limit: 1000 });

@@ -17,6 +17,7 @@ import { canUseAdminTab, roleHome, STAFF_ROLES } from "@/lib/admin/permissions";
 import { communityQuery } from "@/lib/ferry/community";
 import { NewsAdmin, PlacesAdmin } from "@/components/admin/ContentAdmin";
 import { CommunityModeration } from "@/components/panel/CommunityModeration";
+import { RouteStopsModeration } from "@/components/admin/RouteStopsModeration";
 import { cloneElement, isValidElement, useEffect, useId, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -407,6 +408,7 @@ function AdminTabs() {
         </TabsContent>
         <TabsContent value="community">
           <CommunityModeration />
+          <RouteStopsModeration />
         </TabsContent>
         <TabsContent value="reports">
           <ReportsModeration newOnly={filter === "new"} onClearFilter={clearFilter} />

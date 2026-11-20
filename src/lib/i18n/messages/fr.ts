@@ -5,6 +5,7 @@ import { ui } from "./fr.ui";
 export const fr = {
   ui,
   nav: {
+    routesDuBled: "Routes du bled",
     map: "Carte",
     departuresArrivals: "Départs & arrivées",
     departures: "Départs",

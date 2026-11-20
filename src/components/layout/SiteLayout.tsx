@@ -89,6 +89,7 @@ const footerLinks = [
   { to: "/voyage-algerie", labelKey: "nav.travelAlgeria" },
   { to: "/papiers-voyage-algerie", labelKey: "nav.travelPapers" },
   { to: "/preparer-mon-voyage", labelKey: "nav.prepareCompanion" },
+  { to: "/routes-du-bled", labelKey: "nav.routesDuBled" },
   { to: "/covoiturage", labelKey: "nav.carpool" },
   { to: "/bateaux", labelKey: "nav.vessels" },
   { to: "/simulateurs", labelKey: "nav.simulators" },

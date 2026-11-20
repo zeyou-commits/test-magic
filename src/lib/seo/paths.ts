@@ -26,6 +26,7 @@ export const staticSitemapEntries = [
     "/actualites",
     "/questions-frequentes",
     "/barometre-prix",
+    "/routes-du-bled",
     "/mes-dinars",
     "/ports",
     "/lignes",

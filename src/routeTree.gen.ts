@@ -40,6 +40,7 @@ import { Route as PortsRouteImport } from './routes/ports'
 import { Route as PreparerMonVoyageRouteImport } from './routes/preparer-mon-voyage'
 import { Route as QuestionsFrequentesRouteImport } from './routes/questions-frequentes'
 import { Route as RejoindreCompagnieRouteImport } from './routes/rejoindre-compagnie'
+import { Route as RoutesDuBledRouteImport } from './routes/routes-du-bled'
 import { Route as SimulateursRouteImport } from './routes/simulateurs'
 import { Route as SitemapMaritimeDotxmlRouteImport } from './routes/sitemap-maritime[.]xml'
 import { Route as SitemapPagesDotxmlRouteImport } from './routes/sitemap-pages[.]xml'
@@ -225,6 +226,11 @@ const QuestionsFrequentesRoute = QuestionsFrequentesRouteImport.update({
 const RejoindreCompagnieRoute = RejoindreCompagnieRouteImport.update({
   id: '/rejoindre-compagnie',
   path: '/rejoindre-compagnie',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RoutesDuBledRoute = RoutesDuBledRouteImport.update({
+  id: '/routes-du-bled',
+  path: '/routes-du-bled',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SimulateursRoute = SimulateursRouteImport.update({
@@ -415,6 +421,7 @@ export interface FileRoutesByFullPath {
   '/preparer-mon-voyage': typeof PreparerMonVoyageRoute
   '/questions-frequentes': typeof QuestionsFrequentesRoute
   '/rejoindre-compagnie': typeof RejoindreCompagnieRoute
+  '/routes-du-bled': typeof RoutesDuBledRoute
   '/simulateurs': typeof SimulateursRouteWithChildren
   '/sitemap-maritime.xml': typeof SitemapMaritimeDotxmlRoute
   '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
@@ -474,6 +481,7 @@ export interface FileRoutesByTo {
   '/preparer-mon-voyage': typeof PreparerMonVoyageRoute
   '/questions-frequentes': typeof QuestionsFrequentesRoute
   '/rejoindre-compagnie': typeof RejoindreCompagnieRoute
+  '/routes-du-bled': typeof RoutesDuBledRoute
   '/sitemap-maritime.xml': typeof SitemapMaritimeDotxmlRoute
   '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -538,6 +546,7 @@ export interface FileRoutesById {
   '/preparer-mon-voyage': typeof PreparerMonVoyageRoute
   '/questions-frequentes': typeof QuestionsFrequentesRoute
   '/rejoindre-compagnie': typeof RejoindreCompagnieRoute
+  '/routes-du-bled': typeof RoutesDuBledRoute
   '/simulateurs': typeof SimulateursRouteWithChildren
   '/sitemap-maritime.xml': typeof SitemapMaritimeDotxmlRoute
   '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
@@ -604,6 +613,7 @@ export interface FileRouteTypes {
     | '/preparer-mon-voyage'
     | '/questions-frequentes'
     | '/rejoindre-compagnie'
+    | '/routes-du-bled'
     | '/simulateurs'
     | '/sitemap-maritime.xml'
     | '/sitemap-pages.xml'
@@ -663,6 +673,7 @@ export interface FileRouteTypes {
     | '/preparer-mon-voyage'
     | '/questions-frequentes'
     | '/rejoindre-compagnie'
+    | '/routes-du-bled'
     | '/sitemap-maritime.xml'
     | '/sitemap-pages.xml'
     | '/sitemap.xml'
@@ -726,6 +737,7 @@ export interface FileRouteTypes {
     | '/preparer-mon-voyage'
     | '/questions-frequentes'
     | '/rejoindre-compagnie'
+    | '/routes-du-bled'
     | '/simulateurs'
     | '/sitemap-maritime.xml'
     | '/sitemap-pages.xml'
@@ -791,6 +803,7 @@ export interface RootRouteChildren {
   PreparerMonVoyageRoute: typeof PreparerMonVoyageRoute
   QuestionsFrequentesRoute: typeof QuestionsFrequentesRoute
   RejoindreCompagnieRoute: typeof RejoindreCompagnieRoute
+  RoutesDuBledRoute: typeof RoutesDuBledRoute
   SimulateursRoute: typeof SimulateursRouteWithChildren
   SitemapMaritimeDotxmlRoute: typeof SitemapMaritimeDotxmlRoute
   SitemapPagesDotxmlRoute: typeof SitemapPagesDotxmlRoute
@@ -1029,6 +1042,13 @@ declare module '@tanstack/react-router' {
       path: '/rejoindre-compagnie'
       fullPath: '/rejoindre-compagnie'
       preLoaderRoute: typeof RejoindreCompagnieRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/routes-du-bled': {
+      id: '/routes-du-bled'
+      path: '/routes-du-bled'
+      fullPath: '/routes-du-bled'
+      preLoaderRoute: typeof RoutesDuBledRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/simulateurs': {
@@ -1361,6 +1381,7 @@ const rootRouteChildren: RootRouteChildren = {
   PreparerMonVoyageRoute: PreparerMonVoyageRoute,
   QuestionsFrequentesRoute: QuestionsFrequentesRoute,
   RejoindreCompagnieRoute: RejoindreCompagnieRoute,
+  RoutesDuBledRoute: RoutesDuBledRoute,
   SimulateursRoute: SimulateursRouteWithChildren,
   SitemapMaritimeDotxmlRoute: SitemapMaritimeDotxmlRoute,
   SitemapPagesDotxmlRoute: SitemapPagesDotxmlRoute,

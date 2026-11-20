@@ -40,6 +40,7 @@ const mainPages: [string, string, string][] = [
   ["Compagnies", "/compagnies", "compagnies, lignes et flotte"],
   ["Navires", "/bateaux", "flotte et caractéristiques"],
   ["Baromètre des prix", "/barometre-prix", "repères estimés par ligne et par saison"],
+  ["Routes du bled", "/routes-du-bled", "itinéraires en voiture vers les ports et en Algérie, haltes"],
   ["Guide", "/guide", "dossiers sourcés de préparation"],
   ["Voyage en Algérie", "/voyage-algerie", "cabine, enfants, animaux, embarquement"],
   ["Mes dinars", "/mes-dinars", "change euro et dinar, budget sur place"],

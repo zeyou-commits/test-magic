@@ -1,0 +1,220 @@
+/* Page « Routes du bled » : couleurs de la charte (home.css), carte à gauche et frise des haltes à droite sur ordinateur. */
+.rdb-hero {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1.5rem;
+  align-items: end;
+}
+@media (min-width: 1024px) {
+  .rdb-hero { grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr); }
+}
+.rdb-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0 1.25rem;
+  border-radius: 999px;
+  background: var(--cta);
+  color: var(--cta-foreground);
+  font-weight: 700;
+  font-size: 0.9rem;
+  box-shadow: 0 6px 16px rgb(14 122 67 / 0.25);
+  transition: transform 0.15s var(--bw-ease);
+}
+.rdb-cta:hover { transform: translateY(-1px); }
+.rdb-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+  padding: 1rem;
+  border-radius: 1.5rem;
+  background: #0d3043;
+  color: #fff;
+}
+.rdb-stats div { padding: 0.25rem 0.5rem; }
+.rdb-stats dt { font-size: 0.75rem; color: rgb(255 255 255 / 0.7); }
+.rdb-stats dd { margin: 0.25rem 0 0; font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+
+/* Choix de la route : cartes qui glissent sur téléphone, grille sur ordinateur. */
+.rdb-routes {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(220px, 70%);
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+@media (min-width: 768px) {
+  .rdb-routes { grid-auto-flow: row; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); overflow: visible; }
+}
+.rdb-route {
+  scroll-snap-align: start;
+  display: grid;
+  gap: 0.25rem;
+  text-align: left;
+  padding: 0.9rem 1rem;
+  border-radius: 1.1rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s var(--bw-ease);
+}
+.rdb-route:hover { transform: translateY(-1px); box-shadow: var(--shadow-card-hover); }
+.rdb-route[aria-pressed="true"] { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary), var(--shadow-card-hover); background: var(--accent); }
+.rdb-route__code {
+  justify-self: start;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: #0d3043;
+  color: #fff;
+}
+.rdb-route__name { font-weight: 700; line-height: 1.3; text-wrap: balance; }
+.rdb-route__meta { font-size: 0.8rem; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+.rdb-route__count { font-size: 0.75rem; font-weight: 700; color: var(--primary); }
+
+/* Carte + frise */
+.rdb-main { display: grid; gap: 1.5rem; }
+@media (min-width: 1024px) {
+  .rdb-main { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); align-items: start; }
+  .rdb-mapcol { position: sticky; top: 5.5rem; }
+}
+.rdb-map {
+  position: relative;
+  height: 340px;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--sea);
+}
+@media (min-width: 1024px) { .rdb-map { height: 560px; } }
+.rdb-map[data-picking] { outline: 3px solid var(--cta); outline-offset: 2px; }
+.rdb-map__wait { display: grid; place-items: center; height: 100%; font-size: 0.85rem; color: var(--muted-foreground); }
+
+.rdb-filters { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.25rem; scrollbar-width: none; }
+.rdb-filters::-webkit-scrollbar { display: none; }
+.rdb-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.25rem;
+  padding: 0 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.rdb-chip[aria-pressed="true"] { background: var(--foreground); color: var(--background); border-color: var(--foreground); }
+
+/* La frise : un fil pointillé, une pastille ronde par halte, la carte de la halte à droite. */
+.rdb-stops { position: relative; display: grid; gap: 0.6rem; list-style: none; margin: 0; padding: 0; }
+.rdb-stops::before {
+  content: "";
+  position: absolute;
+  left: 19px;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  background: repeating-linear-gradient(var(--map-route) 0 8px, transparent 8px 14px);
+  opacity: 0.35;
+}
+.rdb-stop { position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 0.75rem; align-items: start; }
+.rdb-stop__bubble {
+  position: relative;
+  z-index: 1;
+  width: 40px;
+  height: 40px;
+  margin-top: 4px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--k);
+  box-shadow: 0 0 0 4px var(--background);
+}
+.rdb-stop[data-src="communaute"] .rdb-stop__bubble { box-shadow: 0 0 0 3px var(--background), 0 0 0 5px var(--cta); }
+.rdb-stop__card {
+  min-width: 0;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  overflow: hidden;
+}
+.rdb-stop[data-open] .rdb-stop__card { border-color: var(--k); box-shadow: 0 0 0 1px var(--k); }
+.rdb-stop__head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "km name chev" "km kind chev";
+  column-gap: 0.75rem;
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  text-align: left;
+}
+.rdb-stop__km {
+  grid-area: km;
+  align-self: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+  min-width: 4.2rem;
+}
+.rdb-stop__name { grid-area: name; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.rdb-stop__kind { grid-area: kind; font-size: 0.75rem; color: var(--muted-foreground); }
+.rdb-stop__chev { grid-area: chev; align-self: center; color: var(--muted-foreground); transition: transform 0.2s; }
+.rdb-stop[data-open] .rdb-stop__chev { transform: rotate(180deg); }
+.rdb-stop__tags { display: flex; flex-wrap: wrap; gap: 0.35rem; list-style: none; margin: 0; padding: 0 0.85rem 0.7rem; }
+.rdb-stop__tags li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.rdb-stop__more { display: grid; gap: 0.5rem; padding: 0 0.85rem 0.85rem; font-size: 0.875rem; line-height: 1.5; }
+.rdb-go {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.5rem;
+  padding: 0 1rem;
+  border-radius: 999px;
+  background: var(--cta);
+  color: var(--cta-foreground);
+  font-weight: 700;
+}
+
+/* Fenêtre « Ajouter une halte » */
+.rdb-kinds { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem; }
+@media (max-width: 420px) { .rdb-kinds { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.rdb-kind {
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+  padding: 0.6rem 0.25rem;
+  border-radius: 0.9rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+}
+.rdb-kind svg { width: 1.25rem; height: 1.25rem; color: var(--map-route); }
+.rdb-kind[aria-pressed="true"] { border-color: var(--primary); background: var(--accent); box-shadow: 0 0 0 1px var(--primary); }
+.rdb-kind[aria-pressed="true"] svg { color: var(--primary); }
+
+@media (prefers-reduced-motion: reduce) {
+  .rdb-route, .rdb-cta, .rdb-stop__chev { transition: none; }
+}

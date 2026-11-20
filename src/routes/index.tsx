@@ -1037,12 +1037,17 @@ function Index() {
     !selection &&
     companionWidth === 0 &&
     (panelMode === "search" || panelMode === "departures");
-  // Grand écran, Réserver sans critère : la barre seule sur la carte, sans liste ouverte d'office.
-  // La liste s'ouvre dès qu'on choisit un port, une date, une compagnie, ou avec « Voir N départs ».
-  const [wideListAsked, setWideListAsked] = useState(false);
-  const wideIdle = wideSearch && !wideListAsked && !hasActiveFilters(filters);
+  // Grand écran : la barre seule sur la carte. La liste ne s'ouvre jamais d'office pendant que le
+  // voyageur choisit ses ports et ses dates : il clique sur « Afficher les départs ». Seul un lien
+  // partagé qui porte déjà une recherche arrive avec la liste ouverte.
+  const [wideListAsked, setWideListAsked] = useState(() =>
+    hasActiveFilters(filtersFromUrl(initialSearch)),
+  );
+  const wideIdle = wideSearch && !wideListAsked;
+  const wasWide = useRef(false);
   useEffect(() => {
-    if (!wideSearch) setWideListAsked(false);
+    if (wasWide.current && !wideSearch) setWideListAsked(false);
+    wasWide.current = wideSearch;
   }, [wideSearch]);
   useEffect(() => {
     const show = () => setWideListAsked(true);

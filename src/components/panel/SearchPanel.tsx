@@ -967,7 +967,7 @@ export function SearchPanel({
                 }}
                 className="h-auto shrink-0 rounded-2xl bg-primary px-7 text-sm font-bold text-primary-foreground shadow-sm transition hover:brightness-110"
               >
-                {wideCount ? `Voir ${wideCount}` : "Rechercher"}
+                {wideCount ? `Afficher ${wideCount}` : "Afficher les départs"}
               </button>
             </div>
             {/* Options du voyage, sur une seule ligne sous les champs, comme sur un comparateur. */}

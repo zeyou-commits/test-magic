@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Ban, CalendarX2, Car, Check, ChevronDown, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -35,6 +35,9 @@ interface PortMultiPickerProps {
   scheduledPortIds?: Set<string> | undefined;
   /** Ouvre la fiche d'un port grisé ou fermé (consultation toujours possible). */
   onOpenPort?: (id: string) => void;
+  /** Ouverture pilotée de l'extérieur : enchaîner Départ → Arrivée → Dates. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 /** Choix d'un ou plusieurs ports, groupés par pays, avec recherche intégrée. */
@@ -50,8 +53,15 @@ export function PortMultiPicker({
   title,
   scheduledPortIds,
   onOpenPort,
+  open: openProp,
+  onOpenChange,
 }: PortMultiPickerProps) {
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = (next: boolean) => {
+    if (onOpenChange) onOpenChange(next);
+    if (openProp === undefined) setOpenState(next);
+  };
   const [search, setSearch] = useState("");
   const [collapsedCountries, setCollapsedCountries] = useState<Record<string, boolean>>({});
   const isMobile = useIsMobile();
@@ -101,42 +111,18 @@ export function PortMultiPicker({
     return { groups, enabledIds: [...enabled], reasons };
   }, [direction, ports, routes, otherSide, search, countryFilter, scheduledPortIds]);
 
-  // Aucun filtre = tous les ports : on l'affiche comme tout coché.
-  // « Tout désélectionner » : état visuel vide le temps de choisir (sans choix, aucun filtre).
-  const [cleared, setCleared] = useState(false);
-  useEffect(() => {
-    if (value.length || (!open && !inline)) setCleared(false);
-  }, [value.length, open, inline]);
-  const allMode = value.length === 0 && !cleared;
-  const effective = allMode ? enabledIds : value;
-  // « Tous » : chaque port sélectionnable apparaît coché.
-  const isOn = (id: string) => effective.includes(id);
+  // Rien de coché tant que le voyageur n'a pas choisi : la liste part vide. Sans choix, la
+  // recherche (et la carte) gardent toutes les lignes ; seul l'affichage du choix est vide.
+  const isOn = (id: string) => value.includes(id);
+  const allMode = enabledIds.length > 0 && enabledIds.every(isOn);
 
   const toggle = (ids: string[]) => {
-    if (allMode) {
-      // Décocher depuis « Tous » : on garde tous les autres ports.
-      const next = enabledIds.filter((id) => !ids.includes(id));
-      setCleared(next.length === 0);
-      onChange(next);
-      return;
-    }
     const allSelected = ids.length > 0 && ids.every(isOn);
-    const next = allSelected
-      ? effective.filter((id) => !ids.includes(id))
-      : [...new Set([...effective, ...ids])];
-    const coversAll = enabledIds.length > 0 && enabledIds.every((id) => next.includes(id));
-    if (next.length === 0) setCleared(true);
-    onChange(coversAll ? [] : next);
+    onChange(
+      allSelected ? value.filter((id) => !ids.includes(id)) : [...new Set([...value, ...ids])],
+    );
   };
-  const toggleAll = () => {
-    if (allMode) {
-      setCleared(true);
-      onChange([]);
-    } else {
-      setCleared(false);
-      onChange([]);
-    }
-  };
+  const toggleAll = () => onChange(allMode ? [] : enabledIds);
 
   const body = (
     <>
@@ -282,11 +268,8 @@ export function PortMultiPicker({
         <div className="mt-3 flex shrink-0 items-center justify-between border-t pt-3">
           <button
             type="button"
-            onClick={() => {
-              setCleared(false);
-              onChange([]);
-            }}
-            disabled={!value.length && !cleared}
+            onClick={() => onChange([])}
+            disabled={!value.length}
             className="text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-40"
           >
             {tr("ui.portFilters.reinitialiser")}
@@ -309,7 +292,7 @@ export function PortMultiPicker({
         <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-wider text-primary">
           {title ?? label}
           <span className="ml-1 font-medium normal-case tracking-normal text-muted-foreground">
-            · {summarizePorts(value, ports, "Tous")}
+            · {summarizePorts(value, ports, "à choisir")}
           </span>
         </p>
         {body}
@@ -321,14 +304,16 @@ export function PortMultiPicker({
     <button
       type="button"
       className="batogo-control flex h-14 w-full min-w-0 items-center justify-between gap-2 px-3 text-left"
-      aria-label={`${label} : ${summarizePorts(value, ports)}`}
+      aria-label={`${label} : ${summarizePorts(value, ports, "à choisir")}`}
     >
       <span className="min-w-0">
         <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           {label}
         </span>
-        <span className="block truncate text-sm font-semibold text-foreground">
-          {summarizePorts(value, ports, "Tous")}
+        <span
+          className={`block truncate text-sm font-semibold ${value.length ? "text-foreground" : "text-muted-foreground"}`}
+        >
+          {summarizePorts(value, ports, direction === "departure" ? "D'où partez-vous ?" : "Où allez-vous ?")}
         </span>
       </span>
       <ChevronDown className="size-4 shrink-0 text-muted-foreground" />

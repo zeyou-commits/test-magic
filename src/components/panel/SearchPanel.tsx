@@ -305,6 +305,37 @@ export function SearchPanel({
   const formOpen = editing && !wide;
   const [wideCalOpen, setWideCalOpen] = useState(false);
   const [travellersOpen, setTravellersOpen] = useState(false);
+  // Enchaînement : chaque choix ouvre le suivant (Départ → Arrivée → Dates → Voyageurs).
+  const [portOpen, setPortOpen] = useState<"departure" | "arrival" | null>(null);
+  const travellersChained = useRef(false);
+  // Après la fermeture animée du choix précédent (le focus revient sur son bouton) : sinon le
+  // suivant, ouvert trop tôt, se refermerait aussitôt.
+  const later = (fn: () => void) => window.setTimeout(fn, 320);
+  const onPortOpenChange = (direction: "departure" | "arrival") => (next: boolean) => {
+    if (next) return setPortOpen(direction);
+    setPortOpen(null);
+    if (direction === "departure") {
+      if (filters.departurePortIds.length && !filters.arrivalPortIds.length)
+        later(() => setPortOpen("arrival"));
+      return;
+    }
+    if (!filters.arrivalPortIds.length || filters.date) return;
+    if (wide) {
+      setCalField("out");
+      later(() => setWideCalOpen(true));
+    } else later(() => setStep(2));
+  };
+  const onWideCalOpenChange = (next: boolean) => {
+    setWideCalOpen(next);
+    if (next || travellersChained.current) return;
+    // La date choisie arrive au rendu suivant : on la relit après la fermeture.
+    later(() => {
+      const current = latest.current.filters;
+      if (!current.date || (current.roundTrip && !current.returnDate)) return;
+      travellersChained.current = true;
+      setTravellersOpen(true);
+    });
+  };
   // Grand écran : la barre vit dans la scène de la carte, au-dessus du volet des résultats.
   const [stage, setStage] = useState<HTMLElement | null>(null);
   const wideBarRef = useRef<HTMLDivElement>(null);
@@ -682,17 +713,20 @@ export function SearchPanel({
       filters.arrivalPortIds,
     ],
   );
-  const salesAlert = filters.date ? (
-    <SalesCalendarNote
-      calendars={calendars}
-      date={filters.date}
-      returnDate={filters.roundTrip ? filters.returnDate : null}
-      fromLabel={filters.departurePortIds.length ? fromName(filters.departurePortIds) : null}
-      toLabel={filters.arrivalPortIds.length ? fromName(filters.arrivalPortIds) : null}
-      fromIds={filters.departurePortIds}
-      toIds={filters.arrivalPortIds}
-    />
-  ) : null;
+  const salesNote = (defaultOpen = false) =>
+    filters.date ? (
+      <SalesCalendarNote
+        defaultOpen={defaultOpen}
+        calendars={calendars}
+        date={filters.date}
+        returnDate={filters.roundTrip ? filters.returnDate : null}
+        fromLabel={filters.departurePortIds.length ? fromName(filters.departurePortIds) : null}
+        toLabel={filters.arrivalPortIds.length ? fromName(filters.arrivalPortIds) : null}
+        fromIds={filters.departurePortIds}
+        toIds={filters.arrivalPortIds}
+      />
+    ) : null;
+  const salesAlert = salesNote();
   // Aller-retour sans résultat : pourquoi (aller d'abord, puis retour), et les jours les plus proches.
   const roundTripHelp = useMemo(() => {
     const nearest = (days: string[], target: string | null) => {
@@ -791,6 +825,8 @@ export function SearchPanel({
                     otherSide={filters.arrivalPortIds}
                     scheduledPortIds={departures.length ? scheduledPortIds : undefined}
                     onChange={(ids) => onFiltersChange(withDeparturePorts(filters, ids, ports, routes))}
+                    open={wide && portOpen === "departure"}
+                    onOpenChange={onPortOpenChange("departure")}
                   />
                 </div>
                 <div className={`${wideSegment} relative`}>
@@ -816,6 +852,8 @@ export function SearchPanel({
                       otherSide={filters.departurePortIds}
                       scheduledPortIds={departures.length ? scheduledPortIds : undefined}
                       onChange={(ids) => onFiltersChange(withArrivalPorts(filters, ids, ports, routes))}
+                      open={wide && portOpen === "arrival"}
+                      onOpenChange={onPortOpenChange("arrival")}
                     />
                   </div>
                 </div>
@@ -854,7 +892,7 @@ export function SearchPanel({
                       </div>
                     }
                     open={wideCalOpen}
-                    onOpenChange={setWideCalOpen}
+                    onOpenChange={onWideCalOpenChange}
                     holidaysOn={holidaysOn}
                     onHolidaysChange={setHolidaysOn}
                     field={calField}
@@ -1218,6 +1256,8 @@ export function SearchPanel({
                 otherSide={filters.arrivalPortIds}
                 scheduledPortIds={departures.length ? scheduledPortIds : undefined}
                 onChange={(ids) => onFiltersChange(withDeparturePorts(filters, ids, ports, routes))}
+                open={!wide && portOpen === "departure"}
+                onOpenChange={onPortOpenChange("departure")}
               />
             </div>
             <div className="min-w-0">
@@ -1232,6 +1272,8 @@ export function SearchPanel({
                 otherSide={filters.departurePortIds}
                 scheduledPortIds={departures.length ? scheduledPortIds : undefined}
                 onChange={(ids) => onFiltersChange(withArrivalPorts(filters, ids, ports, routes))}
+                open={!wide && portOpen === "arrival"}
+                onOpenChange={onPortOpenChange("arrival")}
               />
             </div>
           </div>
@@ -1483,10 +1525,6 @@ export function SearchPanel({
               <BookingReturnNote className="mb-3" />
               {showTrips ? (
                 <>
-                  {/* Des résultats : l'encart explique d'abord les « Estimé ». Rien : la 504 d'abord. */}
-                  {salesAlert && roundTrips.main.some((trip) => trip.mirror) ? (
-                    <div className="mb-3">{salesAlert}</div>
-                  ) : null}
                   <RoundTripSection
                     wide={wide}
                     help={roundTripHelp}
@@ -1505,14 +1543,14 @@ export function SearchPanel({
                     reportTarget={reportTarget}
                     reportContext={reportContext}
                   />
-                  {salesAlert && !roundTrips.main.some((trip) => trip.mirror) ? (
-                    <div className="mt-3">{salesAlert}</div>
+                  {/* D'abord les départs disponibles ; la ligne « pas encore en vente » vient après. */}
+                  {salesAlert ? (
+                    <div className="mt-3">{salesNote(!roundTrips.main.length)}</div>
                   ) : null}
                   {alternativesBlock}
                 </>
               ) : (
                 <>
-                  {salesAlert && outList.length ? <div className="mb-3">{salesAlert}</div> : null}
                   <ResultBlock
                     wide={wide}
                     liveByDeparture={liveByDeparture}
@@ -1553,7 +1591,7 @@ export function SearchPanel({
                     expanded={showAllOut || Boolean(filters.date)}
                     emptyText="Aucun départ publié pour cette recherche. Un horaire peut manquer."
                     reason={noSailingReason}
-                    notice={noSailingReason.kind === "notPublished" ? salesAlert : null}
+                    notice={noSailingReason.kind === "notPublished" ? salesNote(true) : null}
                     reportTarget={reportTarget}
                     reportContext={reportContext}
                     onReportMissing={startSearch}
@@ -1563,8 +1601,8 @@ export function SearchPanel({
                         : undefined
                     }
                   />
-                  {salesAlert && !outList.length && noSailingReason.kind !== "notPublished" ? (
-                    <div className="mt-3">{salesAlert}</div>
+                  {salesAlert && (outList.length || noSailingReason.kind !== "notPublished") ? (
+                    <div className="mt-3">{salesNote()}</div>
                   ) : null}
                   {alternativesBlock}
                 </>
@@ -2013,7 +2051,7 @@ function RoundTripSection({
         )}
       </div>
       {otherPorts.length ? (
-        <details open={wide && samePort.length < 3} className="rounded-2xl border border-dashed p-3">
+        <details open={!wide || samePort.length < 3} className="rounded-2xl border border-dashed p-3">
           <summary className="cursor-pointer font-display text-sm font-bold">
             {tr("ui.searchPanel.retourParUnAutrePort")}
             {otherPorts.length})

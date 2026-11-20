@@ -89,6 +89,11 @@ export function SailingCard({
   // Navire en alerte : un prix laisserait croire que ce départ se réserve normalement.
   const alert = useVesselAlert(sailing.vessel?.id);
 
+  const estimated = Boolean(departure.schedule_id && departure.reliability !== "verified");
+  const company = sailing.company?.name ?? tr("ui.sailingCard.compagnie");
+
+  // Fermée, la carte ne garde que ce qui sert à comparer : jour, heures, ports, compagnie, prix.
+  // Mer, navire, suivi, partage et fiches sont dans le détail, au clic.
   return (
     <article
       style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
@@ -96,38 +101,33 @@ export function SailingCard({
       onMouseLeave={() => onHover(false)}
       onFocus={() => onHover(true)}
       onBlur={() => onHover(false)}
-      className={`sailing-card group relative overflow-hidden rounded-2xl border bg-card transition-all duration-200 hover:shadow-lg ${expanded ? "border-primary shadow-md ring-2 ring-primary/20" : "border-border hover:-translate-y-0.5"}`}
+      className={`sailing-card group relative overflow-hidden rounded-2xl border bg-card transition-[box-shadow,border-color] duration-200 hover:shadow-md motion-reduce:transition-none ${expanded ? "border-primary shadow-md ring-2 ring-primary/20" : "border-border hover:border-primary/40"}`}
     >
-      <span
-        className="absolute inset-y-0 left-0 w-1.5"
-        style={{ background: "#1e5b7a" }}
-        aria-hidden
-      />
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={expanded}
-        aria-controls={panelId}
-        className="block w-full py-2.5 pb-2 pl-4 pr-3.5 text-left"
-      >
-        <div className="mb-1.5 flex items-center justify-between gap-2 text-[11px]">
-          <span className="font-semibold text-foreground">
-            {showDay ? `${formatDayKey(sailing.dayKey)} · ` : ""}
-            <span className="font-medium text-muted-foreground">
-              {relativeDay(sailing.dayKey, sailing.fromZone)}
+      <div className="flex items-stretch">
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={expanded}
+          aria-controls={panelId}
+          className="min-w-0 flex-1 rounded-l-2xl py-2 pl-3 pr-1 text-left focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--color-primary)]"
+        >
+          <div className="flex min-w-0 items-center gap-1.5 text-[11px] leading-4">
+            <span className="truncate font-semibold text-foreground">
+              {showDay ? `${formatDayKey(sailing.dayKey)} · ` : ""}
+              <span className="font-medium text-muted-foreground">
+                {relativeDay(sailing.dayKey, sailing.fromZone)}
+              </span>
             </span>
-          </span>
-          <span className="flex flex-wrap items-center justify-end gap-1.5">
-            <SeaChip
-              departureId={departure.id}
-              from={sailing.from}
-              to={sailing.to}
-              departureAt={departure.departure_at}
-              arrivalAt={departure.arrival_at}
-            />
-            {departure.schedule_id && departure.reliability !== "verified" ? (
+            {overnight ? (
+              <Moon
+                className="size-3 shrink-0 text-primary"
+                role="img"
+                aria-label={tr("ui.sailingCard.departEnSoireeOuDe")}
+              />
+            ) : null}
+            {estimated ? (
               <span
-                className="inline-flex items-center gap-1 rounded-full bg-warning/15 px-2 py-0.5 font-semibold text-warning-foreground"
+                className="shrink-0 rounded-full bg-warning/15 px-1.5 text-[10px] font-semibold text-warning-foreground"
                 title="Calendrier théorique : la rotation habituelle du navire, pas encore mise en vente par la compagnie."
               >
                 Estimé
@@ -135,132 +135,97 @@ export function SailingCard({
             ) : null}
             {recommended ? (
               <span
-                className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 font-semibold text-success"
+                className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-success/15 px-1.5 text-[10px] font-semibold text-success"
                 title={RECOMMENDED_RULE}
               >
-                <Sparkles className="size-3" aria-hidden />
+                <Sparkles className="size-2.5" aria-hidden />
                 {tr("ui.sailingCard.recommande")}
               </span>
             ) : null}
-            {overnight ? (
-              <span
-                className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-semibold text-primary"
-                title={tr("ui.sailingCard.departEnSoireeOuDe")}
-              >
-                <Moon className="size-3" aria-hidden />
-                {tr("ui.sailingCard.nuit")}
-              </span>
-            ) : null}
             <ChevronDown
-              className={`size-4 text-muted-foreground transition-transform duration-300 ${expanded ? "rotate-180 text-primary" : ""}`}
+              className={`ml-auto size-3.5 shrink-0 text-muted-foreground transition-transform duration-300 motion-reduce:transition-none ${expanded ? "rotate-180 text-primary" : ""}`}
               aria-hidden
             />
-          </span>
-        </div>
-
-        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
-          <div>
-            <div className="font-display text-xl font-bold leading-none tabular-nums tracking-tight">
-              {sailing.depTime}
-            </div>
-            <div className="mt-0.5 max-w-[92px] truncate text-xs font-semibold text-foreground">
-              {sailing.from.name}
-            </div>
           </div>
 
-          <div className="relative flex flex-col items-center px-1" aria-hidden>
-            <span className="mb-2.5 text-[11px] font-semibold tabular-nums text-muted-foreground">
-              {formatDuration(sailing.durationMin)}
+          <div className="mt-1.5 grid grid-cols-[2.25rem_auto_minmax(2rem,1fr)_auto] items-center gap-2.5">
+            <span
+              className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-xl bg-white ring-1 ring-border"
+              title={company}
+            >
+              <CompanyBadge name={sailing.company?.name} logoUrl={sailing.company?.logo_url} size={17} />
+              <span className="sr-only">{company}</span>
             </span>
-            <div className="relative h-0.5 w-full rounded-full bg-border">
-              <span className="absolute inset-y-0 left-0 w-full origin-left rounded-full bg-gradient-to-r from-primary to-cta opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              <span className="absolute -left-0.5 top-1/2 size-2 -translate-y-1/2 rounded-full bg-primary" />
-              <span className="absolute -right-0.5 top-1/2 size-2 -translate-y-1/2 rounded-full border-2 border-primary bg-card" />
-              <span className="absolute left-1/2 top-1/2 grid size-6 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-card text-primary shadow-sm ring-1 ring-border transition-transform duration-500 group-hover:translate-x-3">
-                <Ship className="size-3.5" />
+            <div className="min-w-0">
+              <div className="font-display text-lg font-bold leading-none tabular-nums tracking-tight">
+                {sailing.depTime}
+              </div>
+              <div className="mt-0.5 max-w-[88px] truncate text-[11px] font-medium text-muted-foreground">
+                {sailing.from.name}
+              </div>
+            </div>
+            <div className="flex min-w-0 flex-col items-center" aria-hidden>
+              <span className="mb-1 text-[10px] font-semibold tabular-nums text-muted-foreground">
+                {formatDuration(sailing.durationMin)}
+              </span>
+              <span className="relative h-0.5 w-full rounded-full bg-border">
+                <span className="absolute inset-y-0 left-0 w-full origin-left scale-x-0 rounded-full bg-primary transition-transform duration-500 group-hover:scale-x-100 motion-reduce:transition-none" />
+                <span className="absolute -left-0.5 top-1/2 size-1.5 -translate-y-1/2 rounded-full bg-primary" />
+                <span className="absolute -right-0.5 top-1/2 size-1.5 -translate-y-1/2 rounded-full border border-primary bg-card" />
               </span>
             </div>
+            <div className="min-w-0 text-right">
+              <div className="font-display text-lg font-bold leading-none tabular-nums tracking-tight">
+                {sailing.arrTime ?? "—"}
+                {arrivalSuffix ? (
+                  <sup className="ml-0.5 text-[10px] font-semibold text-cta">{arrivalSuffix}</sup>
+                ) : null}
+              </div>
+              <div className="ml-auto mt-0.5 max-w-[88px] truncate text-[11px] font-medium text-muted-foreground">
+                {sailing.to.name}
+              </div>
+            </div>
           </div>
+        </button>
 
-          <div className="text-right">
-            <div className="font-display text-xl font-bold leading-none tabular-nums tracking-tight">
-              {sailing.arrTime ?? "—"}
-              {arrivalSuffix ? (
-                <sup className="ml-0.5 text-[11px] font-semibold text-cta">{arrivalSuffix}</sup>
-              ) : null}
-            </div>
-            <div className="ml-auto mt-0.5 max-w-[92px] truncate text-xs font-semibold text-foreground">
-              {sailing.to.name}
-            </div>
-          </div>
+        <div className="flex shrink-0 items-center py-2 pl-1 pr-2.5">
+          {alert ? (
+            <span className="max-w-[88px] text-right text-[11px] font-semibold leading-tight text-destructive">
+              {tr("ui.sailingCard.departAConfirmerAupresDe")}
+            </span>
+          ) : href ? (
+            <a
+              // Prix réel : on reste dans le même onglet, vers la réservation du partenaire.
+              href={liveTotal != null ? partnerBookingUrl(sailing, profile) : href}
+              {...(liveTotal != null ? {} : { target: "_blank", rel: "noopener noreferrer" })}
+              onClick={() => {
+                track("booking_click", liveTotal != null ? "direct-ferries" : sailing.company?.name);
+                markBookingLeave(liveTotal != null ? AGGREGATOR.name : bookingSite(sailing));
+              }}
+              className="inline-flex h-9 items-center gap-1 rounded-full bg-cta px-3 text-sm font-bold text-cta-foreground shadow-sm transition-[filter,transform] hover:brightness-110 active:scale-95 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              title={`Voir l’offre sur ${bookingSite(sailing)} · budget estimé ${formatEuro(fare.amount)} (${formatFareRange(fare)})`}
+            >
+              <span className="tabular-nums">
+                {liveTotal != null ? `${liveTotal.toLocaleString("fr-FR")} €` : formatEuro(fare.amount)}
+              </span>
+              {liveTotal != null ? (
+                <span className="sr-only"> : réserver ce départ</span>
+              ) : (
+                <>
+                  <ArrowUpRight className="size-3.5" aria-hidden />
+                  <span className="sr-only">
+                    {tr("ui.sailingCard.sur")}
+                    {bookingSite(sailing)}
+                    {tr("ui.sailingCard.nouvelOnglet")}
+                  </span>
+                </>
+              )}
+            </a>
+          ) : null}
         </div>
-      </button>
+      </div>
 
       {live ? <LiveStrip live={live} arrivalZone={sailing.toZone} /> : null}
-
-      <div className="flex items-center justify-between gap-2 border-t border-dashed bg-secondary/40 px-3.5 py-1.5">
-        <div className="flex min-w-0 items-center gap-2">
-          <CompanyBadge name={sailing.company?.name} logoUrl={sailing.company?.logo_url} />
-          <div className="min-w-0 truncate text-xs font-semibold">
-            {sailing.company?.name ?? tr("ui.sailingCard.compagnie")}
-            {sailing.vessel?.name ? (
-              <span className="font-normal text-muted-foreground"> · {sailing.vessel.name}</span>
-            ) : null}
-            {sailing.vessel?.name ? (
-              <>
-                {" "}
-                <VesselAlertTag vesselId={sailing.vessel.id} />
-              </>
-            ) : null}
-          </div>
-        </div>
-        {alert ? (
-          <span className="ml-auto shrink-0 text-right text-[11px] font-semibold text-destructive">
-            {tr("ui.sailingCard.departAConfirmerAupresDe")}
-          </span>
-        ) : null}
-        {href && !alert ? (
-          <a
-            // Prix réel : on reste dans le même onglet, vers la réservation du partenaire.
-            href={liveTotal != null ? partnerBookingUrl(sailing, profile) : href}
-            {...(liveTotal != null ? {} : { target: "_blank", rel: "noopener noreferrer" })}
-            onClick={() => {
-              track("booking_click", liveTotal != null ? "direct-ferries" : sailing.company?.name);
-              markBookingLeave(liveTotal != null ? AGGREGATOR.name : bookingSite(sailing));
-            }}
-            className="ml-auto inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-cta px-3 text-xs font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
-            title={`Voir l’offre sur ${bookingSite(sailing)} · budget estimé ${formatEuro(fare.amount)} (${formatFareRange(fare)})`}
-          >
-            <span className="tabular-nums">
-              {liveTotal != null
-                ? `${liveTotal.toLocaleString("fr-FR")} €`
-                : `≈ ${formatEuro(fare.amount)}`}
-            </span>
-            {liveTotal != null ? (
-              <span className="sr-only"> : réserver ce départ</span>
-            ) : (
-              <>
-                <ArrowUpRight className="size-3.5" aria-hidden />
-                <span className="sr-only">
-                  {tr("ui.sailingCard.sur")}
-                  {bookingSite(sailing)}
-                  {tr("ui.sailingCard.nouvelOnglet")}
-                </span>
-              </>
-            )}
-          </a>
-        ) : null}
-        {/* Suivre sans déplier : le cœur, comme dans la liste du trafic. */}
-        <span className="shrink-0">
-          <FollowButton
-            kind="departure"
-            targetId={departure.id}
-            iconOnly
-            label={`${sailing.from.name} → ${sailing.to.name}`}
-            demo={Boolean(departure.is_demo)}
-          />
-        </span>
-      </div>
 
       {/* Détail : s'ouvre en glissant, sans quitter la liste. */}
       <div
@@ -327,6 +292,16 @@ export function SailingDetail({
       <LiveFare sailing={sailing} profile={profile} />
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="font-semibold text-foreground">
+          {sailing.company?.name ?? tr("ui.sailingCard.compagnie")}
+        </span>
+        <SeaChip
+          departureId={departure.id}
+          from={sailing.from}
+          to={sailing.to}
+          departureAt={departure.departure_at}
+          arrivalAt={departure.arrival_at}
+        />
         {sailing.vessel ? (
           <button
             type="button"

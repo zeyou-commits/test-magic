@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BellRing, Check, CircleCheck, Hourglass } from "lucide-react";
+import { BellRing, Check, ChevronDown, CircleCheck, Hourglass } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { longDay, type CompanyCalendar } from "@/lib/companion/salesCalendar";
@@ -25,6 +25,7 @@ export function SalesCalendarNote({
   toLabel,
   fromIds = [],
   toIds = [],
+  defaultOpen = false,
 }: {
   calendars: CompanyCalendar[];
   date: string;
@@ -34,12 +35,16 @@ export function SalesCalendarNote({
   /** Ports cherchés : l'envoi quotidien vérifie l'ouverture des ventes sur ces liaisons. */
   fromIds?: string[];
   toIds?: string[];
+  /** Déplié d'office : quand il explique à lui seul une liste vide. */
+  defaultOpen?: boolean;
 }) {
   const waiting = calendars.filter((item) => !item.coversDates);
   const { user } = useAuth();
   const [picked, setPicked] = useState<string[]>(() => waiting.map((item) => item.companyId));
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
   const waitingKey = waiting.map((item) => item.companyId).join(",");
+  // Une ligne sous les départs ; le détail par compagnie et l'alerte s'ouvrent au clic.
+  const [open, setOpen] = useState(defaultOpen);
   useEffect(() => {
     setPicked(waitingKey ? waitingKey.split(",") : []);
     setState("idle");
@@ -78,12 +83,37 @@ export function SalesCalendarNote({
     setState(error ? "error" : "done");
   };
 
+  const names = waiting.map((item) => item.name);
+  const who =
+    names.length > 2 ? `${names.slice(0, 2).join(", ")} +${names.length - 2}` : names.join(" et ");
+  const bodyId = `salescal-${date}`;
   return (
-    <section className="bw-salescal" aria-label="Calendriers de vente des compagnies">
-      <p className="bw-salescal__title">
+    <section
+      className="bw-salescal"
+      data-open={open || undefined}
+      aria-label="Calendriers de vente des compagnies"
+    >
+      <button
+        type="button"
+        className="bw-salescal__bar"
+        aria-expanded={open}
+        aria-controls={bodyId}
+        onClick={() => setOpen((value) => !value)}
+      >
         <Hourglass className="size-4 shrink-0" aria-hidden />
-        Pour le {longDay(last)}, tout n'est pas encore en vente
-      </p>
+        <span className="min-w-0 flex-1">
+          <b>{who}</b> : pas encore en vente pour le {longDay(last)}
+        </span>
+        <span className="bw-salescal__cta">
+          {open ? "Masquer" : "Me prévenir"}
+          <ChevronDown
+            className={`size-3.5 transition-transform motion-reduce:transition-none ${open ? "rotate-180" : ""}`}
+            aria-hidden
+          />
+        </span>
+      </button>
+      {open ? (
+      <div id={bodyId} className="bw-salescal__body">
       <p className="bw-salescal__text">
         Les compagnies ouvrent leurs ventes par saison.{" "}
         {anyEstimated
@@ -173,6 +203,8 @@ export function SalesCalendarNote({
           ) : null}
         </div>
       )}
+      </div>
+      ) : null}
     </section>
   );
 }

@@ -13,7 +13,7 @@ const mocks = {
   getUserById: vi.fn(),
   updateUserById: vi.fn(),
   deleteUser: vi.fn(),
-  inviteUserByEmail: vi.fn(),
+  generateLink: vi.fn(),
   list: vi.fn(),
   remove: vi.fn(),
 };
@@ -60,7 +60,14 @@ beforeEach(() => {
   });
   mocks.updateUserById.mockResolvedValue({ error: null });
   mocks.deleteUser.mockResolvedValue({ error: null });
-  mocks.inviteUserByEmail.mockResolvedValue({ data: { user: { id: target } }, error: null });
+  mocks.generateLink.mockResolvedValue({
+    data: {
+      user: { id: target },
+      properties: { action_link: "https://projet.supabase.co/auth/v1/verify?token=t&type=invite" },
+    },
+    error: null,
+  });
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}", { status: 200 })));
   mocks.list.mockResolvedValue({ data: [{ name: "avatar.webp" }], error: null });
   mocks.remove.mockResolvedValue({ error: null });
 });
@@ -126,14 +133,79 @@ describe("Gestion des utilisateurs côté serveur", () => {
     expect((await call({ ...body, action: "delete" })).status).toBe(500);
     expect(mocks.deleteUser).not.toHaveBeenCalled();
   });
-  it("l'invitation crée un voyageur sans attribuer de privilège", async () => {
-    expect(
-      (await call({ action: "invite", email: "nouveau@example.test", role: "admin" })).status,
-    ).toBe(200);
-    expect(mocks.inviteUserByEmail).toHaveBeenCalledWith("nouveau@example.test", {
-      redirectTo: "https://example.test/auth?mode=reset",
+  it("l'invitation attribue le rôle choisi et envoie l'e-mail BledWay dans la langue choisie", async () => {
+    const res = await call({
+      action: "invite",
+      email: "Nouveau@Example.test",
+      role: "moderator",
+      lang: "ar",
     });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, sent: true, roleGiven: true });
+    expect(mocks.generateLink).toHaveBeenCalledWith({
+      type: "invite",
+      email: "nouveau@example.test",
+      options: {
+        redirectTo: "https://example.test/auth?mode=reset",
+        data: { invited_role: "moderator", lang: "ar" },
+      },
+    });
+    expect(mocks.rpc).toHaveBeenCalledWith("bw_admin_set_user_role", {
+      _actor: actor,
+      _target: target,
+      _role: "moderator",
+      _enabled: true,
+    });
+    const [url, init] = vi.mocked(fetch).mock.calls[0]!;
+    expect(String(url)).toMatch(/\/functions\/v1\/team-invite-email$/);
+    expect((init!.headers as Record<string, string>)["authorization"]).toBe("Bearer token");
+    expect(JSON.parse(String(init!.body))).toMatchObject({ role: "moderator", lang: "ar" });
+  });
+  it("l'invitation exige un rôle explicite", async () => {
+    expect((await call({ action: "invite", email: "nouveau@example.test" })).status).toBe(400);
+    expect(
+      (await call({ action: "invite", email: "a@example.test", role: "superadmin" })).status,
+    ).toBe(400);
+    expect(mocks.generateLink).not.toHaveBeenCalled();
+  });
+  it("une invitation « voyageur » ne donne aucun rôle", async () => {
+    expect((await call({ action: "invite", email: "a@example.test", role: "none" })).status).toBe(
+      200,
+    );
     expect(mocks.rpc).not.toHaveBeenCalledWith("bw_admin_set_user_role", expect.anything());
+  });
+  it("rend le lien à l'administrateur si l'e-mail ne part pas", async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response("{}", { status: 404 }));
+    const res = await call({ action: "invite", email: "a@example.test", role: "editor" });
+    expect(await res.json()).toMatchObject({
+      sent: false,
+      link: expect.stringContaining("/auth/v1/verify?"),
+    });
+  });
+  it("refuse d'inviter une adresse interdite", async () => {
+    mocks.rpc.mockImplementation((name: string) =>
+      Promise.resolve({
+        data: name === "bw_admin_email_is_banned" ? true : { total: 0, members: [] },
+        error: null,
+      }),
+    );
+    expect((await call({ action: "invite", email: "a@example.test", role: "editor" })).status).toBe(
+      409,
+    );
+    expect(mocks.generateLink).not.toHaveBeenCalled();
+  });
+  it("interdit l'adresse après la suppression si demandé", async () => {
+    expect((await call({ ...body, action: "delete", banEmail: true })).status).toBe(200);
+    expect(mocks.deleteUser).toHaveBeenCalledWith(target);
+    expect(mocks.rpc).toHaveBeenCalledWith("bw_admin_ban_email", {
+      _actor: actor,
+      _email: "voyageur@example.test",
+      _reason: "Spam répété",
+    });
+  });
+  it("n'interdit pas l'adresse sans la case cochée", async () => {
+    expect((await call({ ...body, action: "delete" })).status).toBe(200);
+    expect(mocks.rpc).not.toHaveBeenCalledWith("bw_admin_ban_email", expect.anything());
   });
   it("lit chiffres, fiche et historique par les fonctions réservées au serveur", async () => {
     expect((await call({ action: "stats" })).status).toBe(200);

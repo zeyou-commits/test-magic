@@ -20,6 +20,8 @@ import {
   BellRing,
   ShieldAlert,
   Clock,
+  Copy,
+  MailX,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -61,14 +63,24 @@ const auditText = (entry: AuditEntry) => {
       return entry.details["enabled"]
         ? `${entry.actor} a donné le rôle ${role} à ${target}`
         : `${entry.actor} a retiré le rôle ${role} à ${target}`;
-    case "invitation_sent":
-      return `${entry.actor} a invité ${target}`;
+    case "invitation_sent": {
+      const invited = entry.details["role"];
+      return typeof invited === "string" && invited !== "none"
+        ? `${entry.actor} a invité ${target} comme ${roleLabels[invited as Role] ?? invited}`
+        : `${entry.actor} a invité ${target}`;
+    }
+    case "email_banned":
+      return `${entry.actor} a interdit l'adresse ${String(entry.details["email"] ?? "")}`;
+    case "email_unbanned":
+      return `${entry.actor} a levé l'interdiction de ${String(entry.details["email"] ?? "")}`;
     case "ban_completed":
       return `${entry.actor} a suspendu ${target}`;
     case "unban_completed":
       return `${entry.actor} a réactivé ${target}`;
     case "delete_completed":
-      return `${entry.actor} a supprimé le compte ${target}`;
+      return entry.details["email_banned"]
+        ? `${entry.actor} a supprimé le compte ${target} et interdit son adresse`
+        : `${entry.actor} a supprimé le compte ${target}`;
     case "export_completed":
       return `${entry.actor} a exporté les données de ${target}`;
     default:
@@ -204,6 +216,15 @@ type Change = {
   enabled?: boolean;
 };
 type Tab = "team" | "travellers" | "history";
+type InviteRole = Role | "none";
+type InviteLang = "fr" | "ar" | "en";
+type InviteResult = { ok: true; sent: boolean; roleGiven: boolean; link?: string };
+type BannedEmail = { email: string; reason: string | null; created_at: string };
+const INVITE_LANGS: [InviteLang, string][] = [
+  ["fr", "Français"],
+  ["ar", "العربية"],
+  ["en", "English"],
+];
 
 export function UsersAdmin() {
   const { user } = useAuth();
@@ -215,6 +236,10 @@ export function UsersAdmin() {
   const [page, setPage] = useState(1);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [email, setEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<InviteRole | null>(null);
+  const [inviteLang, setInviteLang] = useState<InviteLang>("fr");
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [banEmail, setBanEmail] = useState(false);
   const [change, setChange] = useState<Change | null>(null);
   const [confirmation, setConfirmation] = useState("");
   const [reason, setReason] = useState("");
@@ -242,21 +267,59 @@ export function UsersAdmin() {
     enabled: Boolean(user) && tab === "history",
     retry: false,
   });
+  const bannedEmails = useQuery({
+    queryKey: ["admin", "users", "banned-emails", user?.id],
+    queryFn: () => userAdminAction<BannedEmail[]>({ action: "banned_emails" }),
+    enabled: Boolean(user) && tab === "travellers" && onlyBanned,
+    retry: false,
+  });
   const mutation = useMutation({
-    mutationFn: (input: Record<string, unknown>) => userAdminAction(input),
-    onSuccess: () => {
-      toast.success("Opération enregistrée.");
-      setInviteOpen(false);
+    mutationFn: (input: Record<string, unknown>) =>
+      userAdminAction<{ ok: true; warning?: string }>(input),
+    onSuccess: (data) => {
+      if (data?.warning) toast.warning(data.warning, { duration: 12000 });
+      else toast.success("Opération enregistrée.");
       setChange(null);
-      setEmail("");
       void client.invalidateQueries({ queryKey: ["admin", "users"] });
     },
     onError: (e: Error) => toast.error(e.message),
+  });
+  const closeInvite = () => {
+    setInviteOpen(false);
+    setEmail("");
+    setInviteRole(null);
+    setInviteLang("fr");
+    setInviteLink(null);
+    invite.reset();
+  };
+  const invite = useMutation({
+    mutationFn: () =>
+      userAdminAction<InviteResult>({
+        action: "invite",
+        email,
+        role: inviteRole,
+        lang: inviteLang,
+      }),
+    onSuccess: (data) => {
+      void client.invalidateQueries({ queryKey: ["admin", "users"] });
+      if (!data.roleGiven)
+        toast.warning(
+          "Compte créé, mais le rôle n'a pas pu être attribué : donnez-le depuis sa fiche.",
+        );
+      if (data.sent) {
+        toast.success(`Invitation envoyée à ${email}.`);
+        closeInvite();
+      } else {
+        // L'e-mail n'est pas parti : le lien reste affiché pour être transmis à la main.
+        setInviteLink(data.link ?? null);
+      }
+    },
   });
   const openChange = (next: Change) => {
     setChange(next);
     setConfirmation("");
     setReason("");
+    setBanEmail(false);
     mutation.reset();
   };
   const banned = (member: ManagedUser) =>
@@ -316,7 +379,7 @@ export function UsersAdmin() {
             className="ml-auto"
             onClick={() => {
               setInviteOpen(true);
-              mutation.reset();
+              invite.reset();
             }}
           >
             <UserPlus size={16} /> Inviter un membre
@@ -393,6 +456,19 @@ export function UsersAdmin() {
               </label>
             )}
           </form>
+          {tab === "travellers" && onlyBanned && (
+            <BannedEmailsPanel
+              query={bannedEmails}
+              onLift={(address) => {
+                void userAdminAction({ action: "unban_email", email: address })
+                  .then(() => {
+                    toast.success(`${address} peut de nouveau créer un compte.`);
+                    void client.invalidateQueries({ queryKey: ["admin", "users"] });
+                  })
+                  .catch((e: Error) => toast.error(e.message));
+              }}
+            />
+          )}
           <p className="text-xs text-muted-foreground">
             {result.data ? `${result.data.total} compte(s) · page ${page}` : ""}
           </p>
@@ -559,45 +635,139 @@ export function UsersAdmin() {
       <Dialog
         open={inviteOpen}
         onOpenChange={(open) => {
-          if (!mutation.isPending) setInviteOpen(open);
+          if (invite.isPending) return;
+          if (open) setInviteOpen(true);
+          else closeInvite();
         }}
       >
         <DialogContent className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Inviter un membre</DialogTitle>
             <DialogDescription>
-              Un e-mail lui permet de créer son compte. Par sécurité, l'invitation ne donne aucun
-              droit : une fois son compte créé, il apparaît dans l'onglet Voyageurs, et vous lui
-              donnez son rôle depuis sa fiche.
+              Il reçoit un e-mail BledWay dans la langue choisie, avec un bouton pour créer son mot
+              de passe. Son rôle est prêt dès qu'il accepte l'invitation.
             </DialogDescription>
           </DialogHeader>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              mutation.mutate({ action: "invite", email });
-            }}
-            className="space-y-4"
-          >
-            <label className="block text-sm">
-              Adresse e-mail
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                maxLength={255}
-                autoComplete="off"
-              />
-            </label>
-            {mutation.error && (
-              <p role="alert" className="text-sm text-destructive">
-                {mutation.error.message}
+          {inviteLink ? (
+            <div className="space-y-3">
+              <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                Le compte de <b>{email}</b> est prêt, mais l'e-mail n'a pas pu partir.
+                Transmettez-lui ce lien personnel, valable 24 heures, par le moyen de votre choix.
               </p>
-            )}
-            <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending ? "Envoi…" : "Envoyer l’invitation"}
-            </Button>
-          </form>
+              <div className="flex gap-2">
+                <Input readOnly value={inviteLink} onFocus={(e) => e.currentTarget.select()} />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    void navigator.clipboard
+                      ?.writeText(inviteLink)
+                      .then(() => toast.success("Lien copié."));
+                  }}
+                >
+                  <Copy size={16} /> Copier
+                </Button>
+              </div>
+              <Button type="button" onClick={closeInvite}>
+                Terminer
+              </Button>
+            </div>
+          ) : (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (inviteRole) invite.mutate();
+              }}
+              className="space-y-5"
+            >
+              <label className="block text-sm font-medium">
+                Adresse e-mail
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  maxLength={255}
+                  autoComplete="off"
+                  className="mt-1"
+                />
+              </label>
+              <fieldset>
+                <legend className="text-sm font-medium">Quel rôle lui donner ?</legend>
+                <div className="mt-2 grid gap-2">
+                  {([...STAFF_ROLES, "none"] as InviteRole[]).map((value) => {
+                    const label = value === "none" ? "Voyageur" : ROLE_CATALOG[value].label;
+                    const summary =
+                      value === "none"
+                        ? "Un compte voyageur, sans accès à l'espace équipe."
+                        : ROLE_CATALOG[value].summary;
+                    const checked = inviteRole === value;
+                    return (
+                      <label
+                        key={value}
+                        className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm transition-colors ${
+                          checked
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:bg-muted/40"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="invite-role"
+                          value={value}
+                          checked={checked}
+                          onChange={() => setInviteRole(value)}
+                          className="mt-1"
+                          required
+                        />
+                        <span>
+                          <span className="block font-semibold">{label}</span>
+                          <span className="block text-muted-foreground">{summary}</span>
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {inviteRole === "admin" && (
+                  <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-900">
+                    Administrateur : il pourra gérer les comptes et les rôles. Réservez ce rôle aux
+                    personnes de confiance.
+                  </p>
+                )}
+              </fieldset>
+              <fieldset>
+                <legend className="text-sm font-medium">Langue de l'e-mail</legend>
+                <div
+                  className="mt-2 inline-flex overflow-hidden rounded-lg border border-border"
+                  role="radiogroup"
+                >
+                  {INVITE_LANGS.map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      role="radio"
+                      aria-checked={inviteLang === value}
+                      lang={value}
+                      onClick={() => setInviteLang(value)}
+                      className={`min-h-10 border-l border-border px-4 text-sm font-semibold first:border-l-0 ${
+                        inviteLang === value ? "bg-foreground text-background" : "bg-white"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              {invite.error && (
+                <p role="alert" className="text-sm text-destructive">
+                  {invite.error.message}
+                </p>
+              )}
+              <Button type="submit" disabled={invite.isPending || !inviteRole}>
+                {invite.isPending ? "Envoi…" : "Envoyer l’invitation"}
+              </Button>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -623,6 +793,7 @@ export function UsersAdmin() {
                   confirmation,
                   reason,
                   ...(change.action === "ban" ? { duration } : {}),
+                  ...(change.action === "delete" ? { banEmail } : {}),
                   ...(change.action === "role"
                     ? { role: change.role, enabled: change.enabled }
                     : {}),
@@ -638,6 +809,37 @@ export function UsersAdmin() {
                       ? "Le voyageur pourra se reconnecter. Il devra réactiver ses suivis et ses notifications."
                       : null}
               </p>
+              {change.action === "delete" && (
+                <div className="space-y-2 rounded-xl border border-border p-3 text-sm">
+                  {change.member.email && (
+                    <label className="flex cursor-pointer items-start gap-2">
+                      <input
+                        type="checkbox"
+                        checked={banEmail}
+                        onChange={(e) => setBanEmail(e.target.checked)}
+                        className="mt-1"
+                      />
+                      <span>
+                        <span className="block font-semibold">Interdire aussi cette adresse</span>
+                        <span className="block text-muted-foreground">
+                          {change.member.email} ne pourra plus créer de compte, ni par e-mail ni
+                          avec Google. Vous pourrez lever l'interdiction plus tard.
+                        </span>
+                      </span>
+                    </label>
+                  )}
+                  <p className="text-muted-foreground">
+                    Vous voulez seulement l'empêcher de revenir, sans effacer ses données ?{" "}
+                    <button
+                      type="button"
+                      className="font-semibold text-primary underline"
+                      onClick={() => openChange({ action: "ban", member: change.member })}
+                    >
+                      Suspendre le compte à la place
+                    </button>
+                  </p>
+                </div>
+              )}
               {change.action === "role" && change.role && (
                 <RoleChangeSummary
                   role={change.role as Role}
@@ -713,7 +915,11 @@ export function UsersAdmin() {
                     ? "Traitement…"
                     : change.action === "role" && change.role
                       ? `${change.enabled ? "Donner" : "Retirer"} le rôle ${roleLabels[change.role as Role]}`
-                      : "Confirmer"}
+                      : change.action === "delete"
+                        ? banEmail
+                          ? "Supprimer et interdire"
+                          : "Supprimer le compte"
+                        : "Confirmer"}
                 </Button>
               </div>
             </form>
@@ -721,6 +927,58 @@ export function UsersAdmin() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+/** Adresses interdites : visibles avec le filtre « suspendus », levée en un clic. */
+function BannedEmailsPanel({
+  query,
+  onLift,
+}: {
+  query: { data?: BannedEmail[] | undefined; error: Error | null; isPending: boolean };
+  onLift: (email: string) => void;
+}) {
+  return (
+    <section className="rounded-2xl border bg-card p-4">
+      <h2 className="flex items-center gap-2 text-sm font-semibold">
+        <MailX size={16} /> Adresses interdites
+      </h2>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Ces adresses ne peuvent plus créer de compte (e-mail, Google ou invitation).
+      </p>
+      {query.isPending ? (
+        <p className="mt-2 text-sm text-muted-foreground">Chargement…</p>
+      ) : query.error ? (
+        <p className="mt-2 text-sm text-amber-900">{query.error.message}</p>
+      ) : query.data?.length ? (
+        <ul className="mt-2 divide-y divide-border">
+          {query.data.map((item) => (
+            <li key={item.email} className="flex flex-wrap items-center gap-2 py-2 text-sm">
+              <span className="min-w-0 flex-1">
+                <span className="block break-all font-medium">{item.email}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {when(item.created_at)}
+                  {item.reason ? ` · ${item.reason}` : ""}
+                </span>
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (window.confirm(`Autoriser de nouveau ${item.email} à créer un compte ?`))
+                    onLift(item.email);
+                }}
+              >
+                Lever l'interdiction
+              </Button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-2 text-sm text-muted-foreground">Aucune adresse interdite.</p>
+      )}
+    </section>
   );
 }
 

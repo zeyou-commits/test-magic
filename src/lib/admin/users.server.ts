@@ -15,7 +15,18 @@ export const usersActionSchema = z.discriminatedUnion("action", [
     page: z.number().int().min(1).max(100000).default(1),
     filter: z.enum(["all", "team", "travellers", "banned"]).default("all"),
   }),
-  z.object({ action: z.literal("invite"), email: z.string().trim().email().max(255) }),
+  z.object({
+    action: z.literal("invite"),
+    email: z.string().trim().email().max(255),
+    // Rôle choisi par l'administrateur à l'invitation ; « none » = simple compte voyageur.
+    role: z.enum(["admin", "editor", "moderator", "none"]),
+    lang: z.enum(["fr", "ar", "en"]).default("fr"),
+  }),
+  z.object({ action: z.literal("banned_emails") }),
+  z.object({
+    action: z.literal("unban_email"),
+    email: z.string().trim().email().max(255),
+  }),
   z.object({ action: z.literal("stats") }),
   z.object({ action: z.literal("audit") }),
   z.object({ action: z.literal("detail"), userId: z.string().uuid() }),
@@ -28,7 +39,7 @@ export const usersActionSchema = z.discriminatedUnion("action", [
   }),
   z.object({ action: z.literal("ban"), ...target, duration: z.enum(["24h", "168h", "876000h"]) }),
   z.object({ action: z.literal("unban"), ...target }),
-  z.object({ action: z.literal("delete"), ...target }),
+  z.object({ action: z.literal("delete"), ...target, banEmail: z.boolean().default(false) }),
 ]);
 
 // Le client privilégié n'est importé que par la route serveur. Paramètre injectable pour tester sans compte réel.
@@ -116,22 +127,101 @@ export async function handleUsersAdmin(request: Request, db: SupabaseClient<Data
     if (result.error) throw new Error("Le journal de contrôle est indisponible.");
   };
   try {
-    if (input.action === "invite") {
-      // Invitation sans privilège : le rôle est attribué séparément après création du compte.
-      await audit("invitation_requested", null);
-      const { data, error } = await db.auth.admin.inviteUserByEmail(input.email, {
-        redirectTo: `${new URL(request.url).origin}/auth?mode=reset`,
-      });
-      if (error)
+    if (input.action === "banned_emails" || input.action === "unban_email") {
+      const result =
+        input.action === "banned_emails"
+          ? await rpc("bw_admin_banned_emails", { _actor: auth.user.id })
+          : await rpc("bw_admin_unban_email", { _actor: auth.user.id, _email: input.email });
+      if (result.error)
         return respond(
           {
             error:
-              "Invitation impossible. Vérifiez si le compte existe déjà et la configuration des e-mails Supabase.",
+              "Adresses interdites indisponibles : exécutez le script SQL « adresses interdites » (20270118100000_adresses_interdites.sql).",
+          },
+          503,
+        );
+      return respond(input.action === "banned_emails" ? result.data : { ok: true });
+    }
+    if (input.action === "invite") {
+      const email = input.email.toLowerCase();
+      // Adresse interdite : refus clair (le garde-fou en base bloquerait de toute façon).
+      const blocked = await rpc("bw_admin_email_is_banned", {
+        _actor: auth.user.id,
+        _email: email,
+      });
+      if (blocked.data === true)
+        return respond(
+          {
+            error:
+              "Cette adresse est interdite. Levez d’abord l’interdiction (Voyageurs → Adresses interdites).",
           },
           409,
         );
-      await audit("invitation_sent", data.user.id);
-      return respond({ ok: true });
+      await audit("invitation_requested", null, { role: input.role, lang: input.lang });
+      // Lien d'invitation sans envoi par Supabase : l'e-mail part ensuite habillé BledWay, dans la langue choisie.
+      const { data, error } = await db.auth.admin.generateLink({
+        type: "invite",
+        email,
+        options: {
+          redirectTo: `${new URL(request.url).origin}/auth?mode=reset`,
+          data: { invited_role: input.role, lang: input.lang },
+        },
+      });
+      if (error || !data?.user || !data.properties?.action_link)
+        return respond(
+          {
+            error: /already|registered|exists/i.test(error?.message ?? "")
+              ? "Un compte existe déjà avec cette adresse : ouvrez sa fiche pour lui donner son rôle."
+              : "Invitation impossible. Vérifiez l’adresse puis réessayez.",
+          },
+          409,
+        );
+      const invitedId = data.user.id;
+      let roleGiven = input.role === "none";
+      if (input.role !== "none") {
+        const given = await rpc("bw_admin_set_user_role", {
+          _actor: auth.user.id,
+          _target: invitedId,
+          _role: input.role,
+          _enabled: true,
+        });
+        roleGiven = !given.error;
+      }
+      // Envoi par la fonction Supabase « team-invite-email » (Resend, contact@bledway.com),
+      // appelée avec la session de l'administrateur, qu'elle revérifie.
+      let sent = false;
+      try {
+        const base = (process.env["SUPABASE_URL"] ?? "").replace(/\/$/, "");
+        const mail = await fetch(`${base}/functions/v1/team-invite-email`, {
+          method: "POST",
+          headers: {
+            authorization: request.headers.get("authorization") ?? "",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            to: email,
+            link: data.properties.action_link,
+            role: input.role,
+            lang: input.lang,
+          }),
+        });
+        sent = mail.ok;
+      } catch {
+        sent = false;
+      }
+      await audit("invitation_sent", invitedId, {
+        role: input.role,
+        lang: input.lang,
+        email_sent: sent,
+        role_given: roleGiven,
+      });
+      // Si l'e-mail n'est pas parti, l'administrateur reçoit le lien pour le transmettre lui-même.
+      return respond({
+        ok: true,
+        sent,
+        roleGiven,
+        ...(sent ? {} : { link: data.properties.action_link }),
+      });
     }
     if (input.userId === auth.user.id)
       return respond(
@@ -195,6 +285,21 @@ export async function handleUsersAdmin(request: Request, db: SupabaseClient<Data
           },
           409,
         );
+      if (input.banEmail && found.user.email) {
+        const ban = await rpc("bw_admin_ban_email", {
+          _actor: auth.user.id,
+          _email: found.user.email,
+          _reason: input.reason,
+        });
+        if (ban.error) {
+          await audit("delete_completed", input.userId, { email_banned: false });
+          return respond({
+            ok: true,
+            warning:
+              "Compte supprimé, mais l’adresse n’a pas pu être interdite : exécutez le script SQL « adresses interdites » puis interdisez-la depuis Voyageurs → Adresses interdites.",
+          });
+        }
+      }
     } else {
       const result = await db.auth.admin.updateUserById(input.userId, {
         ban_duration: input.action === "ban" ? input.duration : "none",
@@ -208,7 +313,11 @@ export async function handleUsersAdmin(request: Request, db: SupabaseClient<Data
     await audit(
       `${input.action}_completed`,
       input.userId,
-      input.action === "role" ? { role: input.role, enabled: input.enabled } : {},
+      input.action === "role"
+        ? { role: input.role, enabled: input.enabled }
+        : input.action === "delete" && input.banEmail
+          ? { email_banned: true }
+          : {},
     );
     return respond({ ok: true });
   } catch {

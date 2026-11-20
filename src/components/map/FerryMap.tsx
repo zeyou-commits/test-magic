@@ -119,6 +119,8 @@ interface FerryMapProps {
   desktopRightInset?: number;
   /** Ordinateur : hauteur cachée en haut (barre de recherche pleine largeur). */
   desktopTopInset?: number;
+  /** Carte encadrée dans une page qui défile : la molette fait défiler la page, Ctrl + molette zoome. */
+  pageScroll?: boolean;
   /** Hauteur (px) masquée en haut sur mobile (bandeau de « Mon voyage ») ; 0 par défaut. */
   mobileTopInset?: number;
   /** Hauteur (px) masquée en bas sur ordinateur (frise de « Mon voyage ») ; 0 par défaut. */
@@ -405,6 +407,7 @@ export default function FerryMap({
   desktopLeftInset = 420,
   desktopRightInset = 0,
   desktopTopInset = 0,
+  pageScroll = false,
   mobileTopInset = 0,
   desktopBottomInset = 0,
   focusTarget = null,
@@ -558,6 +561,11 @@ export default function FerryMap({
       crossSourceCollisions: false,
       fadeDuration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 180,
       cooperativeGestures: false,
+      locale: {
+        "CooperativeGesturesHandler.WindowsHelpText": "Ctrl + molette pour zoomer sur la carte",
+        "CooperativeGesturesHandler.MacHelpText": "⌘ + molette pour zoomer sur la carte",
+        "CooperativeGesturesHandler.MobileHelpText": "Deux doigts pour déplacer la carte",
+      },
       dragPan: true,
       touchPitch: false,
       scrollZoom: true,
@@ -1820,9 +1828,19 @@ export default function FerryMap({
     }
   }, [itineraryPreview, isMobile, hasFocus, mapReady, focusShipId]);
 
+  // Accueil qui défile (ordinateur, Réserver) : la molette appartient à la page, pas à la carte.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (pageScroll) map.cooperativeGestures.enable();
+    else map.cooperativeGestures.disable();
+  }, [pageScroll, mapReady]);
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady || selection || itineraryPreview || portsMode) return;
+    // Le cadre a pu changer de hauteur (accueil qui défile ou écran d'application) : on mesure d'abord.
+    map.resize();
     // Recalcule la limite de dézoom d'après la place réellement disponible (volet ou tiroir compris).
     const limit = map.cameraForBounds(LIMIT_BOUNDS, { padding: viewPadding() });
     if (limit?.zoom !== undefined)
@@ -1880,6 +1898,7 @@ export default function FerryMap({
     mobileBottomInset,
     desktopLeftInset,
     desktopTopInset,
+    pageScroll,
     fitPortIds.join("|"),
     selection?.type,
     selection?.id,

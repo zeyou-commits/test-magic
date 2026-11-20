@@ -4156,3 +4156,402 @@ body:has(.bw-home--app) {
 
 /* Réserver sur PC, barre seule (aucune liste ouverte) : rien à trier. */
 .bw-map-stage[data-wide-idle="true"] .bw-wide-sort { display: none; }
+
+/* ─── Accueil ordinateur (Réserver, à partir de 1180 px) : une page qui défile (20/11/2026).
+   Le module de réservation est encadré (on aperçoit la suite), puis la présentation des services.
+   Couleurs, rayons et typographie : ceux de la charte (sable, bleu nuit, vert BledWay). ─── */
+.bw-home--landing {
+  background: #fcfaf6;
+}
+.bw-home--landing .batogo-panel-scroll,
+.bw-home--landing .bw-map-panel,
+.bw-home--landing [data-radix-scroll-area-viewport] {
+  overscroll-behavior: contain;
+}
+@media (min-width: 768px) {
+  .bw-home--landing .bw-map-stage {
+    /* 86 % de la fenêtre sous l'en-tête : le début de la présentation reste visible. */
+    height: clamp(660px, calc((100dvh - var(--bw-header-height, 114px)) * 0.86), 880px);
+  }
+}
+.bw-services {
+  margin-top: 28px;
+  padding-block: 56px 8px;
+  background: #f6f2ea;
+}
+.bw-services h2 {
+  font-size: clamp(27px, 3vw, 42px);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1.15;
+  color: #16324a;
+}
+.bw-services h2 em {
+  color: #0e7a43;
+  font-style: normal;
+}
+.bw-services-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: 48px;
+  align-items: center;
+  padding: 40px;
+  border: 1px solid #dfded3;
+  border-radius: 28px;
+  background: #fffcf6;
+}
+.bw-services-hero h2 {
+  max-width: 16ch;
+  margin-bottom: 20px;
+}
+.bw-services-hero > div > p:not(.bw-eyebrow) {
+  max-width: 52ch;
+  color: #53636b;
+  font-size: 16px;
+  line-height: 1.8;
+}
+.bw-services-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+  margin-top: 28px;
+}
+.bw-services-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.bw-services-stats > div {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 4px;
+  padding: 20px 22px;
+  border-radius: 20px;
+  background: #f6f2ea;
+}
+.bw-services-stats dd {
+  color: #16324a;
+  font-size: clamp(30px, 3vw, 42px);
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.bw-services-stats > div:last-child dd {
+  color: #0e7a43;
+}
+.bw-services-stats dt {
+  color: #53636b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.bw-services-moments {
+  padding-block: 88px 24px;
+}
+.bw-moments-tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #ece7dc;
+}
+.bw-moments-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 20px 0 8px;
+  border-radius: 999px;
+  color: #435566;
+  font-size: 14px;
+  font-weight: 650;
+  transition:
+    background 0.18s var(--bw-ease),
+    color 0.18s var(--bw-ease);
+}
+.bw-moments-tabs button > span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #ffffffa8;
+  font-size: 12px;
+  font-weight: 750;
+}
+.bw-moments-tabs button:hover {
+  color: #16324a;
+}
+.bw-moments-tabs button[aria-selected="true"] {
+  background: #fff;
+  color: #0e7a43;
+  box-shadow: 0 2px 10px #16324a14;
+}
+.bw-moments-tabs button[aria-selected="true"] > span {
+  background: #0e7a43;
+  color: #fff;
+}
+.bw-moment {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 56px;
+  align-items: center;
+  margin-top: 36px;
+  animation: bw-moment-in 0.4s var(--bw-ease) both;
+}
+@keyframes bw-moment-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-moment {
+    animation: none;
+  }
+}
+.bw-moment__copy h3 {
+  color: #16324a;
+  font-size: clamp(22px, 2vw, 28px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+.bw-moment__copy > p {
+  margin-top: 14px;
+  color: #53636b;
+  font-size: 15px;
+  line-height: 1.75;
+}
+.bw-moment__copy ul {
+  display: grid;
+  gap: 14px;
+  margin-top: 24px;
+}
+.bw-moment__copy li {
+  display: flex;
+  gap: 12px;
+  color: #53636b;
+  font-size: 14px;
+  line-height: 1.55;
+}
+.bw-moment__copy li > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  padding: 2px;
+  border-radius: 999px;
+  background: #e3f1e7;
+  color: #0e7a43;
+}
+.bw-moment__copy li a {
+  display: block;
+  color: #16324a;
+  font-weight: 700;
+}
+.bw-moment__copy li a:hover {
+  color: #0e7a43;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.bw-moment__screen {
+  overflow: hidden;
+  margin: 0;
+  border: 1px solid #dfded3;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 24px 60px #16324a1f;
+}
+.bw-moment__bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding-inline: 14px;
+  border-bottom: 1px solid #ece7dc;
+  background: #f6f2ea;
+}
+.bw-moment__bar i {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #dcd5c6;
+}
+.bw-moment__bar span {
+  margin-left: 10px;
+  padding: 2px 12px;
+  border-radius: 999px;
+  background: #fffcf6;
+  color: #6b7780;
+  font-size: 11px;
+  font-weight: 600;
+}
+.bw-moment__screen img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1200 / 760;
+  object-fit: cover;
+  object-position: top left;
+}
+
+.bw-services-community {
+  margin-top: 72px;
+  padding-block: 72px;
+  background: #e6eeee;
+}
+.bw-community-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+.bw-community-steps li {
+  position: relative;
+  padding: 28px;
+  border-radius: 24px;
+  background: #fffcf6;
+}
+.bw-community-steps__icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 20px;
+  border-radius: 14px;
+  background: #e3f1e7;
+  color: #0e7a43;
+}
+.bw-community-steps li:first-child .bw-community-steps__icon {
+  background: #fdf0c4;
+  color: #8a5a00;
+}
+.bw-community-steps__num {
+  position: absolute;
+  top: 28px;
+  right: 28px;
+  color: #b7c2c4;
+  font-size: 13px;
+  font-weight: 750;
+}
+.bw-community-steps h3 {
+  color: #16324a;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.bw-community-steps p {
+  margin-top: 8px;
+  color: #53636b;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.bw-services-trust {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 64px;
+  align-items: start;
+  padding-block: 88px;
+}
+.bw-services-trust > div > p:not(.bw-eyebrow) {
+  margin-top: 20px;
+  color: #53636b;
+  font-size: 15px;
+  line-height: 1.8;
+}
+.bw-services-trust ul {
+  border-top: 1px solid #dfded3;
+}
+.bw-services-trust li {
+  display: flex;
+  gap: 16px;
+  padding-block: 22px;
+  border-bottom: 1px solid #dfded3;
+  color: #53636b;
+  font-size: 14px;
+  line-height: 1.65;
+}
+.bw-services-trust li > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #1e5b7a;
+}
+.bw-services-trust li strong {
+  display: block;
+  margin-bottom: 2px;
+  color: #16324a;
+  font-size: 16px;
+}
+
+.bw-services-news {
+  padding-bottom: 72px;
+}
+.bw-services-news__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+.bw-services-news__grid a {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 24px;
+  border: 1px solid #dfded3;
+  border-radius: 20px;
+  background: #fffcf6;
+  transition:
+    border-color 0.18s var(--bw-ease),
+    transform 0.18s var(--bw-ease);
+}
+.bw-services-news__grid a:hover {
+  border-color: #0e7a43;
+  transform: translateY(-2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-services-news__grid a:hover {
+    transform: none;
+  }
+}
+.bw-services-news__day {
+  color: #547365;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.bw-services-news__grid h3 {
+  color: #16324a;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+.bw-services-news__grid p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  color: #53636b;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.bw-services-final {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+  padding-block: 36px 56px;
+  border-top: 1px solid #cdd3cb;
+  color: #16324a;
+}
+.bw-services-final > p {
+  flex: 1;
+  min-width: 240px;
+  font-size: 17px;
+  font-weight: 600;
+}
+.bw-services-final > svg {
+  color: #0e7a43;
+}

@@ -27,7 +27,6 @@ import {
   Waypoints,
   type LucideIcon,
 } from "lucide-react";
-import { goHome } from "@/lib/ferry/voyageTrip";
 import { useT, type MessageKey } from "@/lib/i18n";
 import { usePrepareStatus } from "@/lib/ferry/usePrepareUnfinished";
 
@@ -241,6 +240,13 @@ export function familyIsActive(family: MenuFamily, pathname: string, view: HomeV
   );
 }
 
+/** « Carte en direct » : la carte des navires, même quand l'accueil s'ouvre sur Réserver. */
+export const OPEN_LIVE_EVENT = "bledway:open-live";
+export function openLiveFromHeader() {
+  window.sessionStorage.setItem("bledway:open-home-action", "live");
+  if (window.location.pathname === "/") window.dispatchEvent(new Event(OPEN_LIVE_EVENT));
+}
+
 /** « Réserver » : la recherche de traversée de la carte d'accueil, d'où partent les liens de réservation. */
 export function openSearchFromHeader() {
   window.sessionStorage.setItem("bledway:open-home-action", "search");
@@ -278,7 +284,7 @@ export const MenuItemLink = forwardRef<
       onClick={(event) => {
         onClick?.(event);
         if (itinerary) openItineraryFromHeader();
-        else if (item.to === "/") goHome();
+        else if (item.to === "/") openLiveFromHeader();
       }}
       className={`bw-menu-link${item.featured ? " bw-menu-link--featured" : ""}${className ? ` ${className}` : ""}`}
     >

@@ -69,12 +69,13 @@ import { FLASH_PREVIEW_EVENT } from "@/components/panel/FlashFeed";
 import { filtersFromUrl, mapStateToSearch, selectionFromUrl } from "@/lib/ferry/urlState";
 import { bookingSearch, loadPlan } from "@/lib/ferry/companion";
 import { hasActiveFilters, filterRoutes, summarizePorts } from "@/lib/ferry/filtering";
-import { setHomeView } from "@/components/layout/menu";
+import { OPEN_LIVE_EVENT, setHomeView } from "@/components/layout/menu";
 import { portTimeZone } from "@/lib/ferry/time";
 import { portTraffic } from "@/lib/ferry/portTraffic";
 import { buildSailings, legSailings } from "@/lib/ferry/trips";
 import { useFleet } from "@/lib/ferry/useFleet";
-import { SiteHeader } from "@/components/layout/SiteLayout";
+import { SiteFooter, SiteHeader } from "@/components/layout/SiteLayout";
+import { HomeServices } from "@/components/home/HomeServices";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import type { ItineraryMapPreview } from "@/lib/ferry/itinerary";
 import { toast } from "sonner";
@@ -263,6 +264,17 @@ function Index() {
     mq.addEventListener("change", sync);
     return () => mq.removeEventListener("change", sync);
   }, []);
+  // Ordinateur : l'accueil s'ouvre sur Réserver (la barre, la carte en dessous, puis la
+  // présentation des services). « Suivre en direct » reste à un clic dans le menu.
+  const homeDefaultDone = useRef(false);
+  useEffect(() => {
+    if (!largeDesktop || homeDefaultDone.current) return;
+    homeDefaultDone.current = true;
+    if (panelMode !== null || selection || voyageOn) return;
+    if (window.sessionStorage.getItem("bledway:open-home-action")) return;
+    setPanelMode("search");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [largeDesktop]);
   const resizingPanel = useRef(false);
   const [focusTarget, setFocusTarget] = useState<{ center: [number, number]; key: number } | null>(
     null,
@@ -1044,11 +1056,10 @@ function Index() {
     hasActiveFilters(filtersFromUrl(initialSearch)),
   );
   const wideIdle = wideSearch && !wideListAsked;
-  const wasWide = useRef(false);
+  // Quitter Réserver (direct, porte à porte) : au retour, la barre seule.
   useEffect(() => {
-    if (wasWide.current && !wideSearch) setWideListAsked(false);
-    wasWide.current = wideSearch;
-  }, [wideSearch]);
+    if (panelMode !== "search" && panelMode !== "departures") setWideListAsked(false);
+  }, [panelMode]);
   useEffect(() => {
     const show = () => setWideListAsked(true);
     const hide = () => setWideListAsked(false);
@@ -1060,6 +1071,10 @@ function Index() {
     };
   }, []);
   const panelShown = desktopPanelOpen && !wideIdle;
+  // Ordinateur, Réserver : l'accueil devient une page qui défile (module de réservation encadré,
+  // puis la présentation des services). Le direct et « Mon voyage » restent des écrans d'application.
+  const landing =
+    largeDesktop && !voyage && (panelMode === "search" || panelMode === "departures");
   // L'en-tête PC allume la rubrique de ce que montre l'accueil (carte, Réserver, porte à porte).
   useEffect(() => {
     setHomeView(
@@ -1261,9 +1276,20 @@ function Index() {
   const leaveVoyageRef = useRef(leaveVoyage);
   leaveVoyageRef.current = leaveVoyage;
   useEffect(() => {
-    const onHome = () => leaveVoyageRef.current();
+    const onHome = () => {
+      leaveVoyageRef.current();
+      if (window.matchMedia("(min-width: 1180px)").matches) setPanelMode("search");
+    };
+    const onLive = () => {
+      window.sessionStorage.removeItem("bledway:open-home-action");
+      leaveVoyageRef.current();
+    };
     window.addEventListener(GO_HOME_EVENT, onHome);
-    return () => window.removeEventListener(GO_HOME_EVENT, onHome);
+    window.addEventListener(OPEN_LIVE_EVENT, onLive);
+    return () => {
+      window.removeEventListener(GO_HOME_EVENT, onHome);
+      window.removeEventListener(OPEN_LIVE_EVENT, onLive);
+    };
   }, []);
 
   const openMobileDepartures = () => {
@@ -1371,6 +1397,7 @@ function Index() {
     if (!action) return;
     const timer = window.setTimeout(() => {
       window.sessionStorage.removeItem("bledway:open-home-action");
+      if (action === "live") return;
       if (action === "departures") openMobileDepartures();
       else if (action === "search") openSearchFromMenu();
       else if (action === "ports") showMobilePorts();
@@ -1450,7 +1477,7 @@ function Index() {
   };
 
   return (
-    <div className="bw-home bw-home--app">
+    <div className={`bw-home ${landing ? "bw-home--landing" : "bw-home--app"}`}>
       <a href="#contenu" className="bw-skip-link">
         {tr("ui.pageIndex.allerAuContenu")}
       </a>
@@ -2097,6 +2124,7 @@ function Index() {
                   }
                   desktopRightInset={voyage && !isMobile && salonOpen ? 400 : 0}
                   desktopTopInset={wideSearch ? 110 : 0}
+                  pageScroll={landing}
                   desktopBottomInset={voyage && !isMobile ? 150 : 0}
                 />
               </Suspense>
@@ -2118,9 +2146,20 @@ function Index() {
             </Dialog>
           ) : null}
         </section>
-        {/* Écran d'application : rien sous la carte. Le récit, les lignes, les guides et la FAQ
-            sont sur « Découvrir » (/decouvrir). */}
+        {/* Ordinateur, Réserver : la présentation des services sous le module. Ailleurs (direct,
+            téléphone), écran d'application : le récit reste sur « Découvrir » (/decouvrir). */}
+        {landing ? (
+          <HomeServices
+            ports={ports}
+            routes={routes}
+            companies={companies}
+            onBook={() => {
+              document.getElementById("carte")?.scrollIntoView({ behavior: "smooth" });
+            }}
+          />
+        ) : null}
       </main>
+      {landing ? <SiteFooter /> : null}
     </div>
   );
 }

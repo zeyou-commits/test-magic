@@ -15,9 +15,9 @@ import {
 } from "@/lib/photos/photos";
 
 /**
- * Ma photo de profil, en plus des avatars : mêmes garde-fous que les autres photos du site
- * (réduite, sans métadonnées, filtre de contenu explicite, accord, validation par l'équipe),
- * sauf le floutage du visage. Tant qu'elle n'est pas validée, l'avatar reste affiché.
+ * Ma photo de profil, en plus des avatars : réduite, sans métadonnées, filtre de contenu explicite
+ * (téléphone puis serveur) et accord, sans floutage du visage. Publiée tout de suite, sans attendre
+ * l'équipe ; deux signalements la retirent et la renvoient à l'équipe.
  */
 export function ProfilePhotoField() {
   const { user } = useAuth();
@@ -36,7 +36,7 @@ export function ProfilePhotoField() {
       setPhotos([]);
       setConsent(false);
       refresh();
-      toast.success("Photo envoyée : elle s’affichera dès que l’équipe l’aura validée.");
+      toast.success("Photo publiée : elle remplace votre avatar.");
     },
     onError: (failure: Error) => toast.error(failure.message),
   });
@@ -56,8 +56,8 @@ export function ProfilePhotoField() {
     <fieldset className="bw-profile-photo">
       <legend>Votre photo de profil</legend>
       <p className="text-xs text-muted-foreground">
-        Facultative : elle remplace votre avatar auprès des autres voyageurs, une fois validée par
-        l’équipe. Vous pouvez la retirer à tout moment.
+        Facultative : elle remplace votre avatar auprès des autres voyageurs dès l’envoi. Vous
+        pouvez la changer ou la retirer à tout moment.
       </p>
       {approved ? (
         <div className="mt-2 flex items-center gap-3">
@@ -86,14 +86,14 @@ export function ProfilePhotoField() {
       {pending ? (
         <p className="mt-2 flex items-center gap-1.5 rounded-lg bg-amber-50 p-2 text-sm text-amber-900">
           <Clock size={14} aria-hidden />
-          Une photo attend la validation de l’équipe.
+          Votre photo est en cours de vérification par l’équipe.
           <button
             type="button"
             className="ml-auto font-semibold underline"
             disabled={remove.isPending}
             onClick={() => remove.mutate({ id: pending.id, path: "" })}
           >
-            Annuler l’envoi
+            La retirer
           </button>
         </p>
       ) : null}
@@ -105,7 +105,7 @@ export function ProfilePhotoField() {
           onChange={setPhotos}
           consent={consent}
           onConsent={setConsent}
-          note="Visible après validation par l’équipe."
+          note="Visible tout de suite par les autres voyageurs."
         />
       </div>
       {photos.length ? (
@@ -116,7 +116,7 @@ export function ProfilePhotoField() {
           onClick={() => send.mutate()}
         >
           {send.isPending ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : null}
-          Envoyer pour validation
+          Publier ma photo
         </button>
       ) : null}
     </fieldset>

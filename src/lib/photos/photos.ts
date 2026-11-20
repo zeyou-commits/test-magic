@@ -127,21 +127,27 @@ export async function submitPhoto(
 }
 
 /**
- * Photo de profil : déposée en attente ; l'équipe la valide avant qu'elle remplace l'avatar.
- * Une nouvelle photo remplace celle qui attendait encore.
+ * Photo de profil : contrôlée par le serveur (filtre de contenu explicite), puis publiée tout de
+ * suite à la place de l'avatar, sans attendre l'équipe. Deux signalements la renvoient à l'équipe.
  */
 export async function submitProfilePhoto(userId: string, photo: PreparedPhoto) {
-  const path = `${userId}/profil-${crypto.randomUUID()}.${extension(photo.blob)}`;
-  await upload(PENDING_BUCKET, path, photo.blob);
-  const { error } = await db.rpc("bw_profile_photo_submit", {
-    p_path: path,
-    p_width: photo.width,
-    p_height: photo.height,
-  });
-  if (error) {
-    await db.storage.from(PENDING_BUCKET).remove([path]);
-    throw new Error(readable(error.message, "La photo n’a pas pu être envoyée."));
+  const path = `${userId}/profil-${crypto.randomUUID()}.jpg`;
+  await upload(PENDING_BUCKET, path, await asJpeg(photo));
+  const { publishProfilePhotoFn } = await import("./profilePhoto.functions");
+  let result: Awaited<ReturnType<typeof publishProfilePhotoFn>>;
+  try {
+    result = await publishProfilePhotoFn({
+      data: { pendingPath: path, width: photo.width, height: photo.height },
+    });
+  } catch {
+    throw new Error("La photo n’a pas pu être publiée. Réessayez.");
   }
+  if (!result.ok)
+    throw new Error(
+      result.reason.startsWith("rpc:")
+        ? readable(result.reason.slice(4), "La photo n’a pas pu être publiée.")
+        : result.reason,
+    );
 }
 
 export type MyProfilePhoto = {

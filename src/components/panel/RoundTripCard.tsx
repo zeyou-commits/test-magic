@@ -12,6 +12,7 @@ import { CompanyBadge } from "./CompanyBadge";
 import { SailingDetail } from "./SailingCard";
 import { bookingSite, bookingUrl } from "@/lib/ferry/booking";
 import { estimateFare, formatEuro, useFareProfile } from "@/lib/ferry/pricing";
+import { summarizePassengers, summarizeVehicle } from "./TripProfile";
 import { vesselPositionsQuery } from "@/lib/ferry/useLiveShips";
 import { wallTimeInZone } from "@/lib/ferry/time";
 import { tr } from "@/lib/i18n";
@@ -309,6 +310,237 @@ export function RoundTripCard({
         </a>
         )}
       </footer>
+    </article>
+  );
+}
+
+
+/** Une ligne de trajet dans la vue compacte : jour, compagnie, horaires et frise courte. */
+function CompactLeg({
+  label,
+  tone,
+  sailing,
+  atdAt,
+  onHover,
+}: {
+  label: string;
+  tone: keyof typeof LEG_TONES;
+  sailing: Sailing;
+  atdAt: string | null;
+  onHover: (hovering: boolean) => void;
+}) {
+  const overnight = sailing.depHour >= 20 || sailing.depHour < 5;
+  return (
+    <div
+      onMouseEnter={() => onHover(true)}
+      onMouseLeave={() => onHover(false)}
+      className="grid grid-cols-[5.25rem_2.25rem_4.25rem_minmax(3rem,1fr)_4.75rem_7rem] items-center gap-2.5 py-2.5"
+    >
+      <div className="min-w-0 leading-tight">
+        <span
+          className="block text-[10px] font-bold uppercase tracking-wider"
+          style={{ color: LEG_TONES[tone].bar }}
+        >
+          {label}
+        </span>
+        <span className="block truncate text-xs font-semibold text-foreground">
+          {formatDay(sailing.dayKey)}
+        </span>
+      </div>
+      {/* Pastille de taille fixe : un logo très large (Nouris, Corsica) ne déborde pas sur l'heure. */}
+      <span
+        className="grid size-9 place-items-center overflow-hidden rounded-xl bg-white ring-1 ring-border"
+        title={sailing.company?.name ?? undefined}
+      >
+        <CompanyBadge
+          name={sailing.company?.name ?? "?"}
+          logoUrl={sailing.company?.logo_url ?? null}
+          size={17}
+        />
+      </span>
+      <div className="min-w-0 leading-tight">
+        <span className="block font-display text-lg font-bold tabular-nums tracking-tight">
+          {atdAt ? wallTimeInZone(atdAt, sailing.fromZone) : sailing.depTime}
+        </span>
+        <span className="block truncate text-[11px] text-muted-foreground">{sailing.from.name}</span>
+      </div>
+      <div className="flex flex-col items-center gap-1" aria-hidden>
+        <span className="text-[11px] font-semibold tabular-nums text-muted-foreground">
+          {formatDuration(sailing.durationMin)}
+        </span>
+        <span className="relative block h-0.5 w-full rounded-full bg-border">
+          <span className="absolute inset-0 origin-left scale-x-0 rounded-full bg-primary transition-transform duration-500 group-hover/rt:scale-x-100 motion-reduce:transition-none" />
+          <span className="absolute -left-0.5 top-1/2 size-1.5 -translate-y-1/2 rounded-full bg-primary" />
+          <span className="absolute -right-0.5 top-1/2 size-1.5 -translate-y-1/2 rounded-full border border-primary bg-card" />
+        </span>
+      </div>
+      <div className="min-w-0 text-right leading-tight">
+        <span className="block font-display text-lg font-bold tabular-nums tracking-tight">
+          {sailing.arrTime ?? "—"}
+          {sailing.arrDayOffset > 0 ? (
+            <sup className="ml-0.5 text-[10px] font-semibold text-cta">+{sailing.arrDayOffset}</sup>
+          ) : null}
+        </span>
+        <span className="block truncate text-[11px] text-muted-foreground">{sailing.to.name}</span>
+      </div>
+      <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
+        <span className="min-w-0 truncate">
+          {sailing.vessel?.name ?? sailing.company?.name ?? tr("ui.roundTripCard.compagnie")}
+        </span>
+        {overnight ? (
+          <Moon className="size-3.5 shrink-0 text-primary" role="img" aria-label="Traversée de nuit" />
+        ) : null}
+        <VesselAlertTag vesselId={sailing.vessel?.id} />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Grand écran : un aller-retour = un bloc compact (deux lignes de trajet), le prix total à droite.
+ * On compare d'un coup d'œil ; le détail des deux trajets s'ouvre dessous, côte à côte.
+ */
+export function RoundTripRow({
+  trip,
+  index,
+  onOpenVessel,
+  onOpenRoute,
+  onHoverRoute,
+  onFocusRoute,
+}: {
+  trip: RoundTrip;
+  index: number;
+  onOpenVessel: (vesselId: string) => void;
+  onOpenRoute: (routeId: string) => void;
+  onHoverRoute: (routeId: string | null) => void;
+  onFocusRoute?: (routeId: string | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const { data: livePositions = [] } = useQuery(vesselPositionsQuery);
+  const actualDeparture = (sailing: Sailing) => {
+    const mmsi = sailing.vessel?.mmsi;
+    const position = mmsi ? livePositions.find((item) => item.mmsi === mmsi) : null;
+    if (!position?.atdAt) return null;
+    const atdTime = Date.parse(position.atdAt);
+    const scheduled = Date.parse(sailing.departure.departure_at);
+    return atdTime >= scheduled - 6 * 60 * 60_000 && atdTime <= scheduled + 24 * 60 * 60_000
+      ? position.atdAt
+      : null;
+  };
+  const profile = useFareProfile();
+  const total = estimateFare(trip.out, profile) + estimateFare(trip.back, profile);
+  const outAlert = useVesselAlert(trip.out.vessel?.id);
+  const backAlert = useVesselAlert(trip.back.vessel?.id);
+  const panelId = `rt-row-${trip.out.departure.id}-${trip.back.departure.id}`;
+  const who = `${summarizePassengers(profile.passengers)}${profile.vehicle === "none" ? "" : ` + ${summarizeVehicle(profile).toLowerCase()}`}`;
+  const toggle = () => {
+    const next = !open;
+    setOpen(next);
+    onFocusRoute?.(next ? trip.out.route.id : null);
+  };
+  return (
+    <article
+      style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
+      className={`sailing-card group/rt overflow-hidden rounded-2xl border bg-card transition-[border-color,box-shadow] duration-200 hover:border-primary/40 hover:shadow-[0_10px_30px_-12px_#16324a40] ${open ? "border-primary/60 shadow-[0_10px_30px_-12px_#16324a40]" : "border-border"}`}
+    >
+      <div className="grid grid-cols-[minmax(0,1fr)_11.5rem]">
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={open}
+          aria-controls={panelId}
+          onFocus={() => onHoverRoute(trip.out.route.id)}
+          onBlur={() => onHoverRoute(null)}
+          className="min-w-0 divide-y divide-dashed divide-border rounded-l-2xl px-4 py-1 text-left focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--color-primary)]"
+        >
+          <CompactLeg
+            label={tr("ui.roundTripCard.aller")}
+            tone="out"
+            sailing={trip.out}
+            atdAt={actualDeparture(trip.out)}
+            onHover={(h) => onHoverRoute(h ? trip.out.route.id : null)}
+          />
+          <CompactLeg
+            label={tr("ui.roundTripCard.retour")}
+            tone="back"
+            sailing={trip.back}
+            atdAt={actualDeparture(trip.back)}
+            onHover={(h) => onHoverRoute(h ? trip.back.route.id : null)}
+          />
+        </button>
+        <div className="flex flex-col items-end justify-center gap-1 border-l border-border bg-muted/30 px-4 py-3 text-right">
+          {outAlert || backAlert ? (
+            <span className="text-xs font-semibold text-destructive">
+              {tr("ui.roundTripCard.departAConfirmerAupresDe")}
+            </span>
+          ) : (
+            <>
+              <span
+                className="font-display text-2xl font-bold leading-none tabular-nums tracking-tight"
+                title={tr("ui.roundTripCard.tarifMoyenIndicatifAllerRetour")}
+              >
+                {formatEuro(total)}
+              </span>
+              <span className="text-[11px] leading-snug text-muted-foreground">
+                Aller-retour estimé · {who}
+              </span>
+            </>
+          )}
+          <span className="text-[11px] font-semibold text-muted-foreground">
+            {trip.stayDays > 0 ? `${trip.stayDays}\u00a0j sur place` : tr("ui.roundTripCard.allerRetour")}
+            {trip.mirror ? "" : ` · retour par ${trip.back.from.name}`}
+          </span>
+          <button
+            type="button"
+            onClick={toggle}
+            aria-expanded={open}
+            aria-controls={panelId}
+            className="mt-1 inline-flex h-9 items-center gap-1 rounded-full bg-primary px-4 text-xs font-bold text-primary-foreground transition-[filter,transform] hover:brightness-110 active:scale-95 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          >
+            {open ? "Masquer" : "Voir les prix"}
+            <ChevronDown
+              className={`size-4 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+              aria-hidden
+            />
+          </button>
+        </div>
+      </div>
+      <div
+        id={panelId}
+        role="region"
+        aria-label="Détail de l'aller et du retour"
+        className={`grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+      >
+        <div className="overflow-hidden">
+          {open ? (
+            <div className="grid grid-cols-2 divide-x divide-border border-t border-border">
+              {(
+                [
+                  ["out", trip.out],
+                  ["back", trip.back],
+                ] as const
+              ).map(([tone, sailing]) => (
+                <section key={tone} aria-label={tone === "out" ? "Aller" : "Retour"} className="min-w-0">
+                  <h3
+                    className="flex items-center gap-1.5 px-3.5 pt-3 text-[11px] font-bold uppercase tracking-wider"
+                    style={{ color: LEG_TONES[tone].bar }}
+                  >
+                    {tone === "back" ? <Undo2 className="size-3" aria-hidden /> : null}
+                    {tone === "out" ? tr("ui.roundTripCard.aller") : tr("ui.roundTripCard.retour")} ·{" "}
+                    {formatDay(sailing.dayKey)}
+                  </h3>
+                  <SailingDetail
+                    sailing={sailing}
+                    onOpenVessel={onOpenVessel}
+                    onOpenRoute={onOpenRoute}
+                    showBooking
+                  />
+                </section>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </div>
     </article>
   );
 }

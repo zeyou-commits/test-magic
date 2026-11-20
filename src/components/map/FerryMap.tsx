@@ -1827,6 +1827,9 @@ export default function FerryMap({
     const limit = map.cameraForBounds(LIMIT_BOUNDS, { padding: viewPadding() });
     if (limit?.zoom !== undefined)
       map.setMinZoom(Math.min(minZoomFloor(), Math.max(2.2, limit.zoom - 0.6)));
+    // Recherche grand écran : le volet couvre plus de la moitié gauche. La limite de déplacement
+    // compte toute la largeur et repousserait le cadrage vers l'est ; on la lève le temps de la recherche.
+    map.setMaxBounds(desktopTopInset > 0 ? null : LIMIT_BOUNDS);
     const chosen = fitPortIds
       .map((id) => ports.find((port) => port.id === id))
       .filter((port): port is Port => Boolean(port));
@@ -1842,10 +1845,10 @@ export default function FerryMap({
         { padding: viewPadding(), maxZoom: 6.2, duration: cameraDuration(800) },
       );
     } else {
-      // Petit écran : on cadre les liaisons qui ont au moins une traversée programmée, pour ne pas
+      // Petit écran, ou recherche grand écran (barre en haut) : on cadre les liaisons qui ont au moins une traversée programmée, pour ne pas
       // sacrifier les lignes les plus fréquentées à une ligne lointaine sans départ.
       const active = new Set(dateActiveRouteIds);
-      const activePorts = isMobile
+      const activePorts = isMobile || desktopTopInset > 0
         ? routes
             .filter((route) => active.has(route.id))
             .flatMap((route) => [route.departure_port_id, route.arrival_port_id])
@@ -1876,6 +1879,7 @@ export default function FerryMap({
     mapReady,
     mobileBottomInset,
     desktopLeftInset,
+    desktopTopInset,
     fitPortIds.join("|"),
     selection?.type,
     selection?.id,

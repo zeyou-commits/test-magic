@@ -66,7 +66,7 @@ import { SalesCalendarNote } from "@/components/companion/SalesCalendarNote";
 import { companyCalendars, isEstimatedDeparture } from "@/lib/companion/salesCalendar";
 import { isNorthShore, isSouthShore } from "@/lib/ferry/markets";
 import { CompanyBadge } from "./CompanyBadge";
-import { RoundTripCard } from "./RoundTripCard";
+import { RoundTripCard, RoundTripRow } from "./RoundTripCard";
 import { estimateFare, FareProfileContext, formatEuro, useFareProfile } from "@/lib/ferry/pricing";
 import { buildRoundTrips, type RoundTrip } from "@/lib/ferry/roundTrips";
 import { DayStrip, SailingCard } from "./SailingCard";
@@ -758,6 +758,14 @@ export function SearchPanel({
 
   // Grand écran : barre de recherche façon comparateur, sur toute la largeur de la carte.
   // Les résultats restent dans le volet de gauche ; la carte reste utilisable à droite.
+  const tripCount = showTrips ? roundTrips.main.length : 0;
+  const wideCount = showTrips
+    ? tripCount
+      ? `${tripCount} aller${tripCount > 1 ? "s" : ""}-retour${tripCount > 1 ? "s" : ""}`
+      : ""
+    : outList.length
+      ? `${outList.length} départ${outList.length > 1 ? "s" : ""}`
+      : "";
   const wideSegment = "min-w-0 bg-[color-mix(in_oklab,var(--color-muted)_60%,var(--color-card))]";
   const wideBar =
     wide && !homeMode && stage
@@ -768,56 +776,7 @@ export function SearchPanel({
             aria-label={tr("ui.searchPanel.trouverMaTraversee")}
             className="pointer-events-auto absolute inset-x-5 top-5 z-[45] rounded-3xl border border-white/70 bg-card px-5 pb-3.5 pt-3.5 shadow-[0_16px_48px_#16324a26]"
           >
-            <div className="mb-3 flex items-center gap-2">
-              <h2 className="font-display text-base font-bold">Réserver une traversée</h2>
-              <div
-                className="batogo-tabbar ml-3 inline-grid grid-cols-2 gap-0.5 !rounded-full !p-0.5"
-                role="radiogroup"
-                aria-label={tr("ui.searchPanel.typeDeVoyage")}
-              >
-                {[true, false].map((round) => (
-                  <button
-                    key={String(round)}
-                    type="button"
-                    role="radio"
-                    aria-checked={filters.roundTrip === round}
-                    data-active={filters.roundTrip === round}
-                    onClick={() => set({ roundTrip: round, returnDate: round ? filters.returnDate : null })}
-                    className="batogo-tab !min-h-8 !rounded-full px-3 !text-xs"
-                  >
-                    {round ? tr("ui.searchPanel.allerRetour") : tr("ui.searchPanel.allerSimple")}
-                  </button>
-                ))}
-              </div>
-              <button
-                type="button"
-                title={tr("ui.searchPanel.inverserLeSens")}
-                onClick={() => onFiltersChange(swapDirection(filters))}
-                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground"
-              >
-                <ArrowLeftRight className="size-3.5" aria-hidden />
-                {reversed ? tr("ui.searchPanel.algerieEurope") : tr("ui.searchPanel.europeAlgerie")}
-              </button>
-              <span className="flex-1" />
-              {active ? (
-                <button
-                  type="button"
-                  onClick={() => onFiltersChange({ ...emptyFilters, roundTrip: filters.roundTrip })}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground"
-                >
-                  <RotateCcw className="size-3.5" aria-hidden />
-                  {tr("ui.searchPanel.reinitialiser")}
-                </button>
-              ) : null}
-              <button
-                type="button"
-                onClick={closeSearch}
-                aria-label={tr("ui.searchPanel.fermerLaRecherche")}
-                className="grid size-9 shrink-0 place-items-center rounded-full border border-border bg-card text-foreground hover:bg-secondary"
-              >
-                <X className="size-4" aria-hidden />
-              </button>
-            </div>
+            <h2 className="sr-only">Réserver une traversée</h2>
             <div className="flex items-stretch gap-3">
               <div className="bw-wide-bar grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1.15fr)] gap-[2px] overflow-hidden rounded-2xl border border-border/70 bg-border/70">
                 <div className={`${wideSegment} relative pr-4`}>
@@ -877,7 +836,7 @@ export function SearchPanel({
                                 setCalField(leg);
                                 setWideCalOpen(true);
                               }}
-                              className={`flex min-w-0 flex-col items-start justify-center px-4 text-left transition disabled:opacity-50 ${leg === "ret" ? "border-l border-border/70" : ""} ${on ? "bg-card shadow-[inset_0_0_0_2px_var(--color-primary)]" : "hover:bg-card"}`}
+                              className={`flex min-w-0 flex-col items-start justify-center px-4 text-left transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--color-primary)] ${leg === "ret" ? "border-l border-border/70" : ""} ${on ? "bg-card shadow-[inset_0_0_0_2px_var(--color-primary)]" : "hover:bg-card"}`}
                             >
                               <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                                 {leg === "out" ? tr("ui.searchPanel.aller") : tr("ui.searchPanel.retour")}
@@ -919,7 +878,7 @@ export function SearchPanel({
                     <PopoverTrigger asChild>
                       <button
                         type="button"
-                        className="flex h-16 w-full min-w-0 items-center justify-between gap-2 px-4 text-left transition hover:bg-card data-[state=open]:bg-card data-[state=open]:shadow-[inset_0_0_0_2px_var(--color-primary)]"
+                        className="flex h-16 w-full min-w-0 items-center justify-between gap-2 px-4 text-left transition-colors hover:bg-card focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--color-primary)] data-[state=open]:bg-card data-[state=open]:shadow-[inset_0_0_0_2px_var(--color-primary)]"
                       >
                         <Users className="size-5 shrink-0 text-muted-foreground" aria-hidden />
                         <span className="min-w-0 flex-1">
@@ -964,12 +923,41 @@ export function SearchPanel({
                 }}
                 className="h-auto shrink-0 rounded-2xl bg-primary px-7 text-sm font-bold text-primary-foreground shadow-sm transition hover:brightness-110"
               >
-                {outList.length ? `Voir les ${outList.length} départs` : "Rechercher"}
+                {wideCount ? `Voir ${wideCount}` : "Rechercher"}
               </button>
             </div>
-            {/* Compagnie et navire : filtres secondaires, sous la barre comme les options d'un comparateur. */}
+            {/* Options du voyage, sur une seule ligne sous les champs, comme sur un comparateur. */}
             <div className="mt-2.5 flex items-center gap-2">
-              <div className="grid w-[400px] grid-cols-2 gap-1.5">
+              <div
+                className="batogo-tabbar inline-grid grid-cols-2 gap-0.5 !rounded-full !p-0.5"
+                role="radiogroup"
+                aria-label={tr("ui.searchPanel.typeDeVoyage")}
+              >
+                {[true, false].map((round) => (
+                  <button
+                    key={String(round)}
+                    type="button"
+                    role="radio"
+                    aria-checked={filters.roundTrip === round}
+                    data-active={filters.roundTrip === round}
+                    onClick={() => set({ roundTrip: round, returnDate: round ? filters.returnDate : null })}
+                    className="batogo-tab !min-h-8 !rounded-full px-3 !text-xs"
+                  >
+                    {round ? tr("ui.searchPanel.allerRetour") : tr("ui.searchPanel.allerSimple")}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                title={tr("ui.searchPanel.inverserLeSens")}
+                onClick={() => onFiltersChange(swapDirection(filters))}
+                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground"
+              >
+                <ArrowLeftRight className="size-3.5" aria-hidden />
+                {reversed ? tr("ui.searchPanel.algerieEurope") : tr("ui.searchPanel.europeAlgerie")}
+              </button>
+              <span className="mx-1 h-6 w-px bg-border" aria-hidden />
+              <div className="grid w-[330px] shrink grid-cols-2 gap-1.5">
                 <FilterSelect
                   label={tr("ui.searchPanel.compagnie")}
                   open={companyMenuOpen}
@@ -998,11 +986,11 @@ export function SearchPanel({
                 />
               </div>
               {/* Tri en un geste, seulement quand il y a des départs à trier. */}
-              {outList.length || showTrips ? (
+              {wideCount ? (
                 <div
-                  role="radiogroup"
+                  role="group"
                   aria-label={tr("ui.searchPanel.trierPar")}
-                  className="inline-flex items-center gap-0.5 rounded-full border border-border bg-card p-0.5"
+                  className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-border bg-card p-0.5"
                 >
                   {(
                     [
@@ -1014,19 +1002,34 @@ export function SearchPanel({
                     <button
                       key={key}
                       type="button"
-                      role="radio"
-                      aria-checked={sortBy === key}
+                      aria-pressed={sortBy === key}
                       onClick={() => setSortBy(key)}
-                      className={`h-9 rounded-full px-3.5 text-xs font-semibold transition ${sortBy === key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
+                      className={`h-8 rounded-full px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${sortBy === key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
                     >
                       {label}
                     </button>
                   ))}
                 </div>
               ) : null}
-              <p className="ml-auto text-[11px] text-muted-foreground">
-                Survolez un départ : sa ligne s'allume sur la carte.
-              </p>
+              <span className="flex-1" />
+              {active ? (
+                <button
+                  type="button"
+                  onClick={() => onFiltersChange({ ...emptyFilters, roundTrip: filters.roundTrip })}
+                  className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground"
+                >
+                  <RotateCcw className="size-3.5" aria-hidden />
+                  {tr("ui.searchPanel.reinitialiser")}
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={closeSearch}
+                aria-label={tr("ui.searchPanel.fermerLaRecherche")}
+                className="grid size-9 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
+              >
+                <X className="size-4" aria-hidden />
+              </button>
             </div>
           </div>,
           stage,
@@ -1476,6 +1479,7 @@ export function SearchPanel({
                     <div className="mb-3">{salesAlert}</div>
                   ) : null}
                   <RoundTripSection
+                    wide={wide}
                     help={roundTripHelp}
                     dateLabel={{ out: filters.date, back: filters.returnDate }}
                     flexDays={filters.flexDays}
@@ -1863,6 +1867,7 @@ type RoundTripHelp = {
 };
 
 function RoundTripSection({
+  wide = false,
   help,
   dateLabel,
   flexDays,
@@ -1876,6 +1881,8 @@ function RoundTripSection({
   reportTarget,
   reportContext,
 }: {
+  /** Grand écran : un aller-retour par ligne compacte, prix total à droite. */
+  wide?: boolean;
   help: RoundTripHelp;
   dateLabel: { out: string | null; back: string | null };
   flexDays: number;
@@ -1892,6 +1899,17 @@ function RoundTripSection({
   const list = (items: RoundTrip[]) => (
     <div className="space-y-2.5">
       {items.map((trip, index) => (
+        wide ? (
+          <RoundTripRow
+            key={`${trip.out.departure.id}-${trip.back.departure.id}`}
+            trip={trip}
+            index={index}
+            onOpenVessel={onOpenVessel}
+            onOpenRoute={onOpenRoute}
+            onHoverRoute={onHoverRoute}
+            onFocusRoute={onFocusRoute}
+          />
+        ) : (
         <RoundTripCard
           key={`${trip.out.departure.id}-${trip.back.departure.id}`}
           trip={trip}
@@ -1901,6 +1919,7 @@ function RoundTripSection({
           onHoverRoute={onHoverRoute}
           onFocusRoute={onFocusRoute}
         />
+        )
       ))}
     </div>
   );
@@ -1985,7 +2004,7 @@ function RoundTripSection({
         )}
       </div>
       {otherPorts.length ? (
-        <details className="rounded-2xl border border-dashed p-3">
+        <details open={wide && samePort.length < 3} className="rounded-2xl border border-dashed p-3">
           <summary className="cursor-pointer font-display text-sm font-bold">
             {tr("ui.searchPanel.retourParUnAutrePort")}
             {otherPorts.length})

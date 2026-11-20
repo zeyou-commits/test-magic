@@ -16,6 +16,7 @@ import {
   PrepareBadge,
   MenuItemLink,
   openSearchFromHeader,
+  useHomeView,
   type MenuFamily,
 } from "./menu";
 
@@ -126,6 +127,7 @@ export function BrandLink({ compact = false }: { compact?: boolean }) {
 export function SiteHeader() {
   const t = useT();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const homeView = useHomeView();
   // Une traversée suivie : « Mon voyage » à portée de clic, comme le bouton central du téléphone.
   const { trip } = useVoyageTrip();
   // Hauteur réelle du bandeau (bandeau d'alertes compris), pour caler ce qui reste collé dessous.
@@ -147,7 +149,7 @@ export function SiteHeader() {
     <DropdownMenu key={family.id} modal={false}>
       <DropdownMenuTrigger
         className="bw-explore-trigger"
-        data-active={familyIsActive(family, pathname) || undefined}
+        data-active={familyIsActive(family, pathname, homeView) || undefined}
       >
         {t(family.titleKey)}
         {family.id === "prepare" ? <PrepareBadge /> : null}
@@ -208,6 +210,7 @@ export function SiteHeader() {
             onClick={openSearchFromHeader}
             activeProps={{ className: "" }}
             className="bw-book-button"
+            data-active={(pathname === "/" && homeView === "book") || undefined}
             data-tour="book"
             aria-label={t("menu.bookLabel")}
           >

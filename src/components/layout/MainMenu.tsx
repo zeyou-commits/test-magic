@@ -31,6 +31,7 @@ import {
   MenuItemLink,
   NEWS_LINK,
   openSearchFromHeader,
+  useHomeView,
   type MenuFamily,
 } from "./menu";
 
@@ -196,6 +197,7 @@ function RootLevel({
   const { trip } = useVoyageTrip();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const homeView = useHomeView();
   const prepare = familyById("prepare");
 
   const openSalons = () => {
@@ -216,7 +218,7 @@ function RootLevel({
         ref={(node) => rowRef(family.id, node)}
         label={t(family.titleKey)}
         count={countItems(family)}
-        active={familyIsActive(family, pathname)}
+        active={familyIsActive(family, pathname, homeView)}
         onClick={() => onOpen(family.id)}
       />
     );

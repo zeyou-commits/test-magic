@@ -917,9 +917,15 @@ export function SearchPanel({
                 onClick={() => {
                   setWideCalOpen(false);
                   setTravellersOpen(false);
-                  document
-                    .getElementById("map-next-departures")
-                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  // Sans critère, la liste n'est pas ouverte : ce bouton l'ouvre.
+                  window.dispatchEvent(new Event("bledway:wide-results"));
+                  window.setTimeout(
+                    () =>
+                      document
+                        .getElementById("map-next-departures")
+                        ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                    60,
+                  );
                 }}
                 className="h-auto shrink-0 rounded-2xl bg-primary px-7 text-sm font-bold text-primary-foreground shadow-sm transition hover:brightness-110"
               >
@@ -990,7 +996,7 @@ export function SearchPanel({
                 <div
                   role="group"
                   aria-label={tr("ui.searchPanel.trierPar")}
-                  className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-border bg-card p-0.5"
+                  className="bw-wide-sort inline-flex shrink-0 items-center gap-0.5 rounded-full border border-border bg-card p-0.5"
                 >
                   {(
                     [
@@ -1015,7 +1021,10 @@ export function SearchPanel({
               {active ? (
                 <button
                   type="button"
-                  onClick={() => onFiltersChange({ ...emptyFilters, roundTrip: filters.roundTrip })}
+                  onClick={() => {
+                    onFiltersChange({ ...emptyFilters, roundTrip: filters.roundTrip });
+                    window.dispatchEvent(new Event("bledway:wide-results-hide"));
+                  }}
                   className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground"
                 >
                   <RotateCcw className="size-3.5" aria-hidden />

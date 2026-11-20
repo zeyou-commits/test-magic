@@ -69,6 +69,7 @@ import { FLASH_PREVIEW_EVENT } from "@/components/panel/FlashFeed";
 import { filtersFromUrl, mapStateToSearch, selectionFromUrl } from "@/lib/ferry/urlState";
 import { bookingSearch, loadPlan } from "@/lib/ferry/companion";
 import { hasActiveFilters, filterRoutes, summarizePorts } from "@/lib/ferry/filtering";
+import { setHomeView } from "@/components/layout/menu";
 import { portTimeZone } from "@/lib/ferry/time";
 import { portTraffic } from "@/lib/ferry/portTraffic";
 import { buildSailings, legSailings } from "@/lib/ferry/trips";
@@ -1036,6 +1037,37 @@ function Index() {
     !selection &&
     companionWidth === 0 &&
     (panelMode === "search" || panelMode === "departures");
+  // Grand écran, Réserver sans critère : la barre seule sur la carte, sans liste ouverte d'office.
+  // La liste s'ouvre dès qu'on choisit un port, une date, une compagnie, ou avec « Voir N départs ».
+  const [wideListAsked, setWideListAsked] = useState(false);
+  const wideIdle = wideSearch && !wideListAsked && !hasActiveFilters(filters);
+  useEffect(() => {
+    if (!wideSearch) setWideListAsked(false);
+  }, [wideSearch]);
+  useEffect(() => {
+    const show = () => setWideListAsked(true);
+    const hide = () => setWideListAsked(false);
+    window.addEventListener("bledway:wide-results", show);
+    window.addEventListener("bledway:wide-results-hide", hide);
+    return () => {
+      window.removeEventListener("bledway:wide-results", show);
+      window.removeEventListener("bledway:wide-results-hide", hide);
+    };
+  }, []);
+  const panelShown = desktopPanelOpen && !wideIdle;
+  // L'en-tête PC allume la rubrique de ce que montre l'accueil (carte, Réserver, porte à porte).
+  useEffect(() => {
+    setHomeView(
+      voyage || (isMobile && panelLevel === 0)
+        ? "live"
+        : panelMode === "itinerary"
+          ? "itinerary"
+          : panelMode === "search" || panelMode === "departures"
+            ? "book"
+            : "live",
+    );
+  }, [voyage, isMobile, panelLevel, panelMode]);
+  useEffect(() => () => setHomeView("live"), []);
   const panelWidth = wideSearch
     ? // Résultats à gauche, la carte reste utilisable à droite (au moins 45 % de l'écran).
       Math.max(desktopPanelWidth, Math.min(820, Math.round(window.innerWidth * 0.55)))
@@ -1427,6 +1459,7 @@ function Index() {
           data-panel-open={true}
           data-panel-full={panelLevel === 2}
           data-wide-search={wideSearch}
+          data-wide-idle={wideIdle}
           ref={mapStageRef}
           style={
             {
@@ -1458,7 +1491,7 @@ function Index() {
               } as React.CSSProperties
             }
             className={`bw-map-panel absolute bottom-0 left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-5 md:left-5 md:right-auto md:top-5 md:h-auto md:w-[var(--desktop-panel-width)] md:overflow-visible md:rounded-3xl md:z-40 ${
-              desktopPanelOpen ? "md:translate-x-0" : "md:translate-x-[calc(-100%-1.25rem)]"
+              panelShown ? "md:translate-x-0" : "md:translate-x-[calc(-100%-1.25rem)]"
             } ${panelLevel === 0 ? (voyage ? "h-24 rounded-t-3xl" : "h-32 rounded-t-3xl") : panelLevel === 1 ? (isPeekSelection ? "h-[var(--mobile-peek-height)] rounded-t-3xl" : panelMode === "itinerary" || voyage ? "h-[calc(var(--stage-height)*0.5)] rounded-t-3xl" : "h-[var(--middle-panel-height)] rounded-t-3xl") : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
           >
             {collapsed ? (
@@ -1511,7 +1544,7 @@ function Index() {
             <div
               id="map-side-panel"
               hidden={Boolean(voyage)}
-              className={`${collapsed ? "hidden md:block" : "min-h-0 flex-1"} md:h-full ${desktopPanelOpen ? "" : "md:invisible md:pointer-events-none"}`}
+              className={`${collapsed ? "hidden md:block" : "min-h-0 flex-1"} md:h-full ${panelShown ? "" : "md:invisible md:pointer-events-none"}`}
             >
               <SidePanel
                 noticeId={
@@ -1724,7 +1757,7 @@ function Index() {
               aria-expanded={desktopPanelOpen}
               aria-controls="map-side-panel"
               onClick={() => setDesktopPanelOpen((open) => !open)}
-              className="absolute -right-8 top-1/2 hidden h-14 w-8 -translate-y-1/2 rounded-l-none rounded-r-lg border-l-0 bg-background/95 text-primary shadow-md backdrop-blur-md md:flex"
+              className={`absolute -right-8 top-1/2 hidden h-14 w-8 -translate-y-1/2 rounded-l-none rounded-r-lg border-l-0 bg-background/95 text-primary shadow-md backdrop-blur-md ${wideIdle ? "" : "md:flex"}`}
             >
               {desktopPanelOpen ? (
                 <ChevronLeft className="size-5" />
@@ -2055,7 +2088,7 @@ function Index() {
                   }}
                   mobileBottomInset={mobileBottomInset}
                   desktopLeftInset={
-                    desktopPanelOpen ? panelWidth + 80 + (voyage ? 0 : companionWidth) : 50
+                    panelShown ? panelWidth + 80 + (voyage ? 0 : companionWidth) : 50
                   }
                   desktopRightInset={voyage && !isMobile && salonOpen ? 400 : 0}
                   desktopTopInset={wideSearch ? 110 : 0}

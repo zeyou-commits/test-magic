@@ -1,4 +1,4 @@
-import { forwardRef, type MouseEventHandler } from "react";
+import { forwardRef, useSyncExternalStore, type MouseEventHandler } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   Anchor,
@@ -208,11 +208,35 @@ export const familyItems = (family: MenuFamily) => [
   ...(family.footer ?? []),
 ];
 
-/** La rubrique allumée : « Suivre en direct » sur la carte d'accueil. */
-export function familyIsActive(family: MenuFamily, pathname: string) {
+/**
+ * Ce que montre la page d'accueil : la carte en direct, la recherche (« Réserver ») ou le trajet
+ * porte à porte (« Préparer »). Tout est sur « / » : sans cet état, l'en-tête allumait toujours
+ * « Suivre en direct ».
+ */
+export type HomeView = "live" | "book" | "itinerary";
+let homeView: HomeView = "live";
+const homeViewListeners = new Set<() => void>();
+export function setHomeView(view: HomeView) {
+  if (view === homeView) return;
+  homeView = view;
+  homeViewListeners.forEach((listener) => listener());
+}
+export function useHomeView() {
+  return useSyncExternalStore(
+    (listener) => {
+      homeViewListeners.add(listener);
+      return () => homeViewListeners.delete(listener);
+    },
+    () => homeView,
+    () => "live" as HomeView,
+  );
+}
+
+/** La rubrique allumée : celle de la page, ou sur l'accueil celle de ce qu'il montre. */
+export function familyIsActive(family: MenuFamily, pathname: string, view: HomeView = "live") {
   return familyItems(family).some((item) =>
     item.to === "/"
-      ? pathname === "/" && !item.action
+      ? pathname === "/" && (item.action === "itinerary" ? view === "itinerary" : !item.action && view === "live")
       : pathname === item.to || pathname.startsWith(`${item.to}/`),
   );
 }

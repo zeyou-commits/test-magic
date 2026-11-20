@@ -93,6 +93,7 @@ html {
   background: #f1eee7;
 }
 .bw-desktop-nav > a.active,
+.bw-desktop-nav > a.bw-book-button[data-active],
 .bw-explore-trigger[data-active] {
   color: #0e7a43;
   background: #edf6ef;
@@ -4152,3 +4153,6 @@ body:has(.bw-home--app) {
     transform-origin: top right;
   }
 }
+
+/* Réserver sur PC, barre seule (aucune liste ouverte) : rien à trier. */
+.bw-map-stage[data-wide-idle="true"] .bw-wide-sort { display: none; }

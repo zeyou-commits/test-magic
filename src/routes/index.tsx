@@ -14,6 +14,7 @@ import {
   ChevronRight,
   ArrowLeft,
   Globe2,
+  Maximize2,
   MessagesSquare,
   Minus,
   X,
@@ -76,6 +77,7 @@ import { buildSailings, legSailings } from "@/lib/ferry/trips";
 import { useFleet } from "@/lib/ferry/useFleet";
 import { SiteFooter, SiteHeader } from "@/components/layout/SiteLayout";
 import { HomeServices } from "@/components/home/HomeServices";
+import { HomeSearchCard } from "@/components/home/HomeSearchCard";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import type { ItineraryMapPreview } from "@/lib/ferry/itinerary";
 import { toast } from "sonner";
@@ -379,6 +381,97 @@ function Index() {
     onSelect: (next) => handleSelectRef.current(next),
     onAsk: () => (window.innerWidth < 768 ? setSalonDialog(true) : setSalonOpen(true)),
   });
+  // Téléphone, dans le navigateur (pas l'appli installée) : l'accueil devient une page qui défile.
+  // Réserver en carte compacte, la carte encadrée, puis la présentation de BledWay. Recherche,
+  // résultats, fiches et direct restent l'écran d'application habituel.
+  // null tant que la largeur n'est pas mesurée (rendu serveur, premier rendu).
+  const [phoneBrowser, setPhoneBrowser] = useState<boolean | null>(null);
+  const [mobileHome, setMobileHome] = useState(false);
+  const mobileBrowser = phoneBrowser === true;
+  const mobileBrowserRef = useRef(mobileBrowser);
+  mobileBrowserRef.current = mobileBrowser;
+  // La recherche ouverte depuis la carte compacte : la fermer ramène à l'accueil.
+  const fromMobileHome = useRef(false);
+  const mobileHomeDone = useRef(false);
+  useEffect(() => {
+    const installed =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.matchMedia("(display-mode: fullscreen)").matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true ||
+      document.referrer.startsWith("android-app://");
+    const mq = window.matchMedia("(max-width: 767px)");
+    const sync = () => setPhoneBrowser(mq.matches && !installed);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  useEffect(() => {
+    if (phoneBrowser === null || mobileHomeDone.current) return;
+    mobileHomeDone.current = true;
+    if (!phoneBrowser) return;
+    if (panelMode !== null || selection || voyageOn) return;
+    const action = window.sessionStorage.getItem("bledway:open-home-action");
+    if (action && action !== "search") return;
+    // Un lien partagé qui porte déjà une recherche ou une fiche s'ouvre comme avant.
+    if (hasActiveFilters(filtersFromUrl(initialSearch)) || selectionFromUrl(initialSearch)) return;
+    setPanelMode("search");
+    setPanelLevel(0);
+    setMobileHome(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phoneBrowser]);
+  const mobileLanding =
+    mobileBrowser &&
+    mobileHome &&
+    !voyage &&
+    !selection &&
+    panelMode === "search" &&
+    panelLevel === 0;
+  // Quitter l'accueil (fiche, direct, Route, recherche plein écran) : seuls Réserver et le logo
+  // y ramènent.
+  useEffect(() => {
+    if (mobileHome && !mobileLanding) setMobileHome(false);
+  }, [mobileHome, mobileLanding]);
+  const enterMobileHome = () => {
+    fromMobileHome.current = false;
+    resetToMap();
+    window.dispatchEvent(new Event("batogo:close-filters"));
+    setPanelMode("search");
+    setPanelLevel(0);
+    setMobileHome(true);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  };
+  const enterMobileHomeRef = useRef(enterMobileHome);
+  enterMobileHomeRef.current = enterMobileHome;
+  // Carte compacte → l'écran de recherche habituel, à l'étape voulue (dates ou voyageurs).
+  const openMobileStep = (step: 2 | 3) => {
+    fromMobileHome.current = true;
+    setMobileHome(false);
+    setPanelMode("search");
+    setPanelLevel(2);
+    window.scrollTo({ top: 0, behavior: "instant" });
+    window.setTimeout(
+      () => window.dispatchEvent(new CustomEvent("batogo:edit-step", { detail: { step } })),
+      40,
+    );
+  };
+  const showMobileResults = () => {
+    fromMobileHome.current = true;
+    setMobileHome(false);
+    window.dispatchEvent(new Event("batogo:close-filters"));
+    setPanelMode("departures");
+    setPanelLevel(2);
+    window.scrollTo({ top: 0, behavior: "instant" });
+    window.setTimeout(() => window.dispatchEvent(new Event("batogo:show-departures")), 60);
+  };
+  // « Agrandir la carte » : l'écran d'application, carte plein écran.
+  const expandMobileMap = () => {
+    fromMobileHome.current = false;
+    setMobileHome(false);
+    resetToMap();
+    setPanelLevel(0);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  };
+
   // « Mon voyage, étape par étape » (barre du bas, lien de « Ma traversée ») : sur téléphone,
   // la page s'ouvre volet déplié en grand (niveau 3), l'étape lisible sans avoir à le tirer.
   const enterVoyage = () => {
@@ -1074,11 +1167,14 @@ function Index() {
   // Ordinateur, Réserver : l'accueil devient une page qui défile (module de réservation encadré,
   // puis la présentation des services). Le direct et « Mon voyage » restent des écrans d'application.
   const landing =
-    largeDesktop && !voyage && (panelMode === "search" || panelMode === "departures");
+    (largeDesktop && !voyage && (panelMode === "search" || panelMode === "departures")) ||
+    mobileLanding;
   // L'en-tête PC allume la rubrique de ce que montre l'accueil (carte, Réserver, porte à porte).
   useEffect(() => {
     setHomeView(
-      voyage || (isMobile && panelLevel === 0)
+      mobileLanding
+        ? "book"
+        : voyage || (isMobile && panelLevel === 0)
         ? "live"
         : panelMode === "itinerary"
           ? "itinerary"
@@ -1086,7 +1182,7 @@ function Index() {
             ? "book"
             : "live",
     );
-  }, [voyage, isMobile, panelLevel, panelMode]);
+  }, [voyage, isMobile, panelLevel, panelMode, mobileLanding]);
   useEffect(() => () => setHomeView("live"), []);
   const panelWidth = wideSearch
     ? // Résultats à gauche, la carte reste utilisable à droite (au moins 45 % de l'écran).
@@ -1160,7 +1256,11 @@ function Index() {
     return () => window.removeEventListener("batogo:panel-full", full);
   }, []);
   useEffect(() => {
-    const close = () => resetToMap();
+    const close = () => {
+      // Recherche ouverte depuis l'accueil du navigateur mobile : on y revient.
+      if (fromMobileHome.current && mobileBrowserRef.current) enterMobileHome();
+      else resetToMap();
+    };
     const results = () => {
       setPanelLevel(2);
       setPanelMode("departures");
@@ -1279,9 +1379,11 @@ function Index() {
     const onHome = () => {
       leaveVoyageRef.current();
       if (window.matchMedia("(min-width: 1180px)").matches) setPanelMode("search");
+      else if (mobileBrowserRef.current) enterMobileHomeRef.current();
     };
     const onLive = () => {
       window.sessionStorage.removeItem("bledway:open-home-action");
+      setMobileHome(false);
       leaveVoyageRef.current();
     };
     window.addEventListener(GO_HOME_EVENT, onHome);
@@ -1335,6 +1437,16 @@ function Index() {
   };
 
   const openMobileSearch = () => {
+    // Navigateur du téléphone : Réserver, c'est l'accueil (déjà dessus : retour en haut).
+    if (mobileBrowser) {
+      if (mobileLanding) window.scrollTo({ top: 0, behavior: "smooth" });
+      else {
+        seedSearchFromPlan();
+        if (panelMode === "itinerary") applyItineraryChoice();
+        enterMobileHome();
+      }
+      return;
+    }
     if (panelMode === "search" && !selection) {
       resetToMap();
       return;
@@ -1437,6 +1549,12 @@ function Index() {
 
   // « Réserver » (en-tête) : la recherche de traversée, ouverte et prête à remplir, sans bascule.
   const openSearchFromMenu = () => {
+    if (mobileBrowserRef.current) {
+      if (panelMode === "itinerary") applyItineraryChoice();
+      seedSearchFromPlan();
+      enterMobileHome();
+      return;
+    }
     if (window.innerWidth >= 768)
       document.getElementById("carte")?.scrollIntoView({ behavior: "instant" });
     if (panelMode === "itinerary") applyItineraryChoice();
@@ -1477,13 +1595,26 @@ function Index() {
   };
 
   return (
-    <div className={`bw-home ${landing ? "bw-home--landing" : "bw-home--app"}`}>
+    <div
+      className={`bw-home ${landing ? "bw-home--landing" : "bw-home--app"}${mobileLanding ? " bw-home--landing-m" : ""}`}
+    >
       <a href="#contenu" className="bw-skip-link">
         {tr("ui.pageIndex.allerAuContenu")}
       </a>
       <SiteHeader />
       <main id="contenu" tabIndex={-1}>
         <h1 className="sr-only">{tr("ui.pageIndex.ferriesEuropeMaghrebCarteDes")}</h1>
+        {mobileLanding ? (
+          <HomeSearchCard
+            filters={filters}
+            onFiltersChange={setFilters}
+            ports={ports}
+            routes={routes}
+            onDates={() => openMobileStep(2)}
+            onTravellers={() => openMobileStep(3)}
+            onShow={showMobileResults}
+          />
+        ) : null}
         <section
           id="carte"
           aria-label={tr("ui.pageIndex.carteEtRechercheDeTraversees")}
@@ -1804,7 +1935,9 @@ function Index() {
             <MobileTabBar
               className="h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]"
               activeTab={
-                voyage && panelLevel > 0
+                mobileLanding
+                  ? "search"
+                  : voyage && panelLevel > 0
                   ? "voyage"
                   : panelLevel === 0
                     ? "map"
@@ -1817,6 +1950,7 @@ function Index() {
                 // Le bouton ne laisse jamais un film, « Ma traversée », une fiche ou un écran
                 // (Route, Départs, recherche) par-dessus la carte.
                 const scrolled = window.scrollY > 40;
+                setMobileHome(false);
                 const elsewhere = Boolean(voyage) || panelMode !== null || Boolean(selection);
                 if (elsewhere) {
                   if (voyage) leaveVoyage();
@@ -1844,6 +1978,13 @@ function Index() {
               onOpenItinerary={openItinerary}
             />
           </div>
+
+          {mobileLanding ? (
+            <button type="button" className="bw-map-expand" onClick={expandMobileMap}>
+              <Maximize2 size={15} aria-hidden />
+              Agrandir la carte
+            </button>
+          ) : null}
 
           {/* CARTE */}
           <div className="bw-map-canvas absolute inset-0 z-0 bg-[var(--sea)]">
@@ -2118,7 +2259,9 @@ function Index() {
                       window.dispatchEvent(new Event("batogo:close-filters"));
                     } else if (panelMode !== "itinerary") resetToMap();
                   }}
-                  mobileBottomInset={mobileBottomInset}
+                  // Carte encadrée de l'accueil mobile : rien ne la recouvre en haut ni en bas.
+                  mobileTopInset={mobileLanding ? -64 : 0}
+                  mobileBottomInset={mobileLanding ? 48 : mobileBottomInset}
                   desktopLeftInset={
                     panelShown ? panelWidth + 80 + (voyage ? 0 : companionWidth) : 50
                   }
@@ -2154,7 +2297,9 @@ function Index() {
             routes={routes}
             companies={companies}
             onBook={() => {
-              document.getElementById("carte")?.scrollIntoView({ behavior: "smooth" });
+              document
+                .getElementById(mobileLanding ? "bw-home-card" : "carte")
+                ?.scrollIntoView({ behavior: "smooth" });
             }}
           />
         ) : null}

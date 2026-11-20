@@ -22,7 +22,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAuthNext } from "@/lib/authReturn";
 import { useUnreadNoticeCount } from "@/components/panel/FlashCenter";
 import { OPEN_ROOM_PICKER_EVENT } from "@/lib/ferry/chatDemo";
-import { goHome, openVoyage, useVoyageTrip } from "@/lib/ferry/voyageTrip";
+import { openVoyage, useVoyageTrip } from "@/lib/ferry/voyageTrip";
 import { LanguageSwitcher, tr, useT } from "@/lib/i18n";
 import {
   familyById,
@@ -30,6 +30,7 @@ import {
   menuFamilies,
   MenuItemLink,
   NEWS_LINK,
+  openLiveFromHeader,
   openSearchFromHeader,
   useHomeView,
   type MenuFamily,
@@ -267,7 +268,7 @@ function RootLevel({
         to="/"
         activeOptions={{ exact: true }}
         onClick={() => {
-          goHome();
+          openLiveFromHeader();
           onNavigate();
         }}
         className="bw-menu-link"

@@ -8,10 +8,16 @@ import {
   Ship,
 } from "lucide-react";
 import { OPEN_ROOM_PICKER_EVENT } from "@/lib/ferry/chatDemo";
-import { goHome, useVoyageTrip } from "@/lib/ferry/voyageTrip";
+import { useVoyageTrip } from "@/lib/ferry/voyageTrip";
 import { useT } from "@/lib/i18n";
 import { MainMenuSheet } from "./MainMenu";
-import { familyById, familyIsActive, openSearchFromHeader, PrepareBadge } from "./menu";
+import {
+  familyById,
+  familyIsActive,
+  openLiveFromHeader,
+  openSearchFromHeader,
+  PrepareBadge,
+} from "./menu";
 
 /**
  * Un seul onglet en avant : celui où l'on est (vert + trait au-dessus de l'icône). Les autres,
@@ -160,7 +166,7 @@ export function MobileTabBar({
       ) : (
         <Link
           to="/"
-          onClick={goHome}
+          onClick={openLiveFromHeader}
           className={itemClass}
           data-active={familyIsActive(live, pathname)}
         >

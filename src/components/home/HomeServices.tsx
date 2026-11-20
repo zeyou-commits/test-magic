@@ -334,14 +334,23 @@ export function HomeServices({
               <i />
               <span>{current.shot.path}</span>
             </span>
-            <img
-              src={current.shot.src}
-              alt={current.shot.alt}
-              width={1200}
-              height={760}
-              loading="lazy"
-              decoding="async"
-            />
+            {/* Téléphone : la capture du même écran sur téléphone. */}
+            <picture>
+              <source
+                media="(max-width: 767px)"
+                srcSet={`/images/accueil/${current.key}-mobile.webp`}
+                width={780}
+                height={1100}
+              />
+              <img
+                src={current.shot.src}
+                alt={current.shot.alt}
+                width={1200}
+                height={760}
+                loading="lazy"
+                decoding="async"
+              />
+            </picture>
           </figure>
         </div>
       </section>

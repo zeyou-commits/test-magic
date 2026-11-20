@@ -4555,3 +4555,303 @@ body:has(.bw-home--app) {
 .bw-services-final > svg {
   color: #0e7a43;
 }
+
+/* ─── Présentation des services sur téléphone (page qui défile dans le navigateur mobile). ─── */
+@media (max-width: 767px) {
+  .bw-services {
+    margin-top: 16px;
+    padding-block: 28px 0;
+  }
+  .bw-services h2 {
+    font-size: 27px;
+  }
+  .bw-services-hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    padding: 24px 20px;
+    border-radius: 24px;
+  }
+  .bw-services-hero > div > p:not(.bw-eyebrow) {
+    font-size: 15px;
+    line-height: 1.7;
+  }
+  .bw-services-actions {
+    gap: 14px;
+    margin-top: 22px;
+  }
+  .bw-services-stats > div {
+    padding: 16px;
+    border-radius: 16px;
+  }
+  .bw-services-stats dd {
+    font-size: 28px;
+  }
+  .bw-services-stats dt {
+    font-size: 12px;
+  }
+  .bw-services-moments {
+    padding-block: 56px 8px;
+  }
+  /* Les 4 moments en pastilles qui défilent de côté. */
+  .bw-moments-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+  .bw-moments-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .bw-moments-tabs button {
+    flex-shrink: 0;
+    padding-right: 16px;
+    scroll-snap-align: start;
+    white-space: nowrap;
+  }
+  .bw-moment {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+    margin-top: 24px;
+  }
+  /* La capture d'abord, comme un téléphone posé sur la page. */
+  .bw-moment__screen {
+    order: -1;
+    width: min(100%, 300px);
+    margin-inline: auto;
+    border: 6px solid #16324a;
+    border-radius: 34px;
+    box-shadow: 0 20px 44px #16324a29;
+  }
+  .bw-moment__bar {
+    display: none;
+  }
+  .bw-moment__screen img {
+    aspect-ratio: 780 / 1100;
+    object-position: top center;
+  }
+  .bw-services-community {
+    margin-top: 48px;
+    padding-block: 48px;
+  }
+  .bw-community-steps {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .bw-community-steps li {
+    padding: 22px;
+    border-radius: 20px;
+  }
+  .bw-community-steps__icon {
+    width: 42px;
+    height: 42px;
+    margin-bottom: 14px;
+  }
+  .bw-community-steps__num {
+    top: 22px;
+    right: 22px;
+  }
+  .bw-services-trust {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    padding-block: 56px;
+  }
+  .bw-services-news {
+    padding-bottom: 40px;
+  }
+  /* Les actualités en carrousel. */
+  .bw-services-news__grid {
+    display: flex;
+    gap: 12px;
+    margin-inline: -20px;
+    padding-inline: 20px;
+    scroll-padding-inline: 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-snap-type: x mandatory;
+  }
+  .bw-services-news__grid::-webkit-scrollbar {
+    display: none;
+  }
+  .bw-services-news__grid a {
+    flex: 0 0 82%;
+    scroll-snap-align: start;
+  }
+  .bw-services-final {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding-block: 28px 40px;
+  }
+  .bw-services-final > p {
+    min-width: 0;
+  }
+  .bw-services .bw-section-heading {
+    align-items: flex-start;
+  }
+  /* La communauté en trois lignes courtes : l'icône à gauche, le texte à droite. */
+  .bw-community-steps li {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    column-gap: 14px;
+    padding: 18px;
+  }
+  .bw-community-steps__icon {
+    grid-row: span 2;
+    margin-bottom: 0;
+  }
+  .bw-community-steps__num {
+    display: none;
+  }
+  .bw-community-steps h3 {
+    font-size: 17px;
+  }
+  .bw-community-steps p {
+    margin-top: 4px;
+  }
+}
+
+/* ─── Accueil du navigateur mobile (pas l'appli installée) : une page qui défile. ─── */
+@media (max-width: 767px) {
+  .bw-home--landing-m {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+  }
+  /* La carte dans un cadre : on voit qu'il y a une suite. */
+  .bw-home--landing-m .bw-map-stage,
+  .bw-home--landing-m .bw-map-stage[data-panel-open="true"] {
+    height: 55svh;
+    min-height: 340px;
+    margin: 12px 8px 0;
+    border-radius: 22px;
+  }
+  /* Le volet du bas n'a pas sa place ici : la carte compacte le remplace. */
+  .bw-home--landing-m .bw-map-panel {
+    display: none;
+  }
+}
+.bw-home-card {
+  display: grid;
+  gap: 12px;
+  margin: 12px 12px 0;
+  padding: 16px;
+  border: 1px solid #dfded3;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 10px 30px #16324a14;
+}
+.bw-home-card__modes {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.bw-home-card h2 {
+  color: #16324a;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.bw-home-card__swap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border: 1px solid #dfded3;
+  border-radius: 999px;
+  background: #fffcf6;
+  color: #0e7a43;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.bw-home-card__ports {
+  display: grid;
+  gap: 10px;
+}
+.bw-home-card__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 8px 14px;
+  border: 1px solid #dfded3;
+  border-radius: 16px;
+  background: #fffcf6;
+  color: #0e7a43;
+  text-align: left;
+  animation: bw-card-row-in 0.32s var(--bw-ease, ease) both;
+}
+.bw-home-card__row > span {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+.bw-home-card__row small {
+  color: #6b7780;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.bw-home-card__row strong {
+  overflow: hidden;
+  color: #16324a;
+  font-size: 15px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-home-card__row strong[data-empty] {
+  color: #0e7a43;
+}
+.bw-home-card__row > svg:last-child {
+  color: #9aa6ac;
+}
+.bw-home-card__go {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  border-radius: 999px;
+  background: #0e7a43;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  box-shadow: 0 8px 20px #0e7a4333;
+  animation: bw-card-row-in 0.32s var(--bw-ease, ease) both;
+}
+@keyframes bw-card-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-home-card__row,
+  .bw-home-card__go {
+    animation: none;
+  }
+}
+/* « Agrandir la carte » : posé en bas à droite de la carte encadrée. */
+.bw-map-expand {
+  position: absolute;
+  z-index: 30;
+  right: 12px;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: #fffcf6;
+  box-shadow: 0 4px 14px #16324a26;
+  color: #16324a;
+  font-size: 13px;
+  font-weight: 700;
+}

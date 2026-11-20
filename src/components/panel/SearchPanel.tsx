@@ -256,8 +256,20 @@ export function SearchPanel({
       setStep(1);
       setEditing(true);
     };
+    // Accueil du navigateur mobile : la carte Réserver ouvre directement l'étape des dates
+    // ou des voyageurs (les ports y sont déjà choisis).
+    const openStep = (event: Event) => {
+      const wanted = (event as CustomEvent<{ step?: 2 | 3 }>).detail?.step ?? 2;
+      if (wanted === 2) setCalField(latest.current.filters.date && latest.current.filters.roundTrip ? "ret" : "out");
+      setStep(wanted);
+      setEditing(true);
+    };
     window.addEventListener("batogo:edit-filters", open);
-    return () => window.removeEventListener("batogo:edit-filters", open);
+    window.addEventListener("batogo:edit-step", openStep);
+    return () => {
+      window.removeEventListener("batogo:edit-filters", open);
+      window.removeEventListener("batogo:edit-step", openStep);
+    };
   }, []);
   useEffect(() => {
     const close = () => {

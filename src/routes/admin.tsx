@@ -1,6 +1,7 @@
 import { EntityReviewsModeration } from "@/components/admin/EntityReviewsModeration";
 import { WalletMediaAdmin } from "@/components/admin/WalletMediaAdmin";
 import { IllustrationsAdmin } from "@/components/admin/IllustrationsAdmin";
+import { EmailsAdmin } from "@/components/admin/EmailsAdmin";
 import { AvatarsAdmin } from "@/components/admin/AvatarsAdmin";
 import { LibraryCategoriesAdmin } from "@/components/admin/LibraryCategoriesAdmin";
 import { PhotosModeration } from "@/components/admin/PhotosModeration";
@@ -433,6 +434,9 @@ function AdminTabs() {
         </TabsContent>
         <TabsContent value="places">
           <PlacesAdmin />
+        </TabsContent>
+        <TabsContent value="emails">
+          <EmailsAdmin />
         </TabsContent>
         <TabsContent value="illustrations">
           <IllustrationsAdmin />

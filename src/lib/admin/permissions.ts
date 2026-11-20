@@ -23,6 +23,7 @@ const editorial = new Set([
   "alerts",
   "data",
   "flash",
+  "emails",
   "signals",
   "places",
   "illustrations",

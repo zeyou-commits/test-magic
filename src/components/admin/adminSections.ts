@@ -19,6 +19,7 @@ import {
   Zap,
   Fuel,
   Images,
+  Mail,
   Smile,
   Megaphone,
   TriangleAlert,
@@ -261,6 +262,14 @@ export const adminSections: AdminSectionDef[] = [
     description: "Actualités et perturbations Europe ↔ Algérie, sourcées.",
     group: "Contenus",
     icon: Zap,
+  },
+  {
+    id: "emails",
+    label: "E-mails",
+    description:
+      "Les e-mails envoyés par BledWay : textes modifiables en français, arabe et anglais.",
+    group: "Contenus",
+    icon: Mail,
   },
   {
     id: "notifications",

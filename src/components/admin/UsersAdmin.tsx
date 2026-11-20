@@ -645,7 +645,10 @@ export function UsersAdmin() {
             <DialogTitle>Inviter un membre</DialogTitle>
             <DialogDescription>
               Il reçoit un e-mail BledWay dans la langue choisie, avec un bouton pour créer son mot
-              de passe. Son rôle est prêt dès qu'il accepte l'invitation.
+              de passe. Son rôle est prêt dès qu'il accepte l'invitation.{" "}
+              <a href="/admin?tab=emails" className="font-semibold text-primary underline">
+                Modifier le texte de l'e-mail
+              </a>
             </DialogDescription>
           </DialogHeader>
           {inviteLink ? (

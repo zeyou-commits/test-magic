@@ -6,7 +6,8 @@
  * - le cadre de chaque rôle (ROLE_CATALOG.tabs) : ce que la base de données autorise à ce rôle
  *   (private.bw_staff_permission, politiques RLS) ;
  * - le réglage de l'administrateur (RoleConfig, table bw_staff_role_config) : à l'intérieur de
- *   ce cadre, il retire des rubriques à un rôle et choisit sa page d'arrivée.
+ *   ce cadre, il retire des rubriques à un rôle, lui en ouvre d'autres et choisit son arrivée.
+ *   La base applique le même réglage (private.bw_staff_can).
  */
 export const STAFF_ROLES = ["admin", "editor", "moderator"] as const;
 export type StaffRole = (typeof STAFF_ROLES)[number];
@@ -45,6 +46,17 @@ const moderation = new Set(["overview", "reviews", "community", "reports", "comp
 
 /** Rubriques qu'on ne retire jamais : l'accueil de chacun. */
 export const LOCKED_TABS: ReadonlySet<string> = new Set(["overview"]);
+/**
+ * Rubriques que l'administrateur ne peut pas ouvrir à un autre rôle : comptes, rôles, diffusion
+ * aux voyageurs, données de référence. Identique à private.bw_admin_only_tabs() en base.
+ */
+export const ADMIN_ONLY_TABS: ReadonlySet<string> = new Set([
+  "overview",
+  "users",
+  "roles",
+  "notifications",
+  "reference",
+]);
 
 export const ROLE_CATALOG: Record<
   StaffRole,
@@ -119,8 +131,15 @@ export const TAB_ACTIONS: Record<string, string> = {
   data: "Contrôler la cohérence des informations publiées",
 };
 
-/** Réglage de l'administrateur, rôle par rôle. Absent = cadre complet, arrivée sur l'accueil. */
-export type RoleSetting = { removed: readonly string[]; home: string | null };
+/**
+ * Réglage de l'administrateur, rôle par rôle : rubriques du cadre fermées, rubriques hors cadre
+ * ouvertes en plus, page d'arrivée. Absent = cadre complet, arrivée sur l'accueil.
+ */
+export type RoleSetting = {
+  removed: readonly string[];
+  added: readonly string[];
+  home: string | null;
+};
 export type RoleConfig = Partial<Record<TunableRole, RoleSetting>>;
 
 /**
@@ -156,9 +175,17 @@ export function roleAllowsTab(role: StaffRole, tab: string) {
   return tabs === "all" || tabs.has(tab);
 }
 
+/** L'administrateur peut-il ouvrir cette rubrique en plus à ce rôle ? */
+export function roleCanBeGranted(role: StaffRole, tab: string) {
+  return isTunableRole(role) && !roleAllowsTab(role, tab) && !ADMIN_ONLY_TABS.has(tab);
+}
+
 /** Le rôle ouvre-t-il la rubrique, réglage de l'administrateur compris ? */
 export function roleCanUseTab(role: StaffRole, tab: string, config?: RoleConfig) {
-  if (!roleAllowsTab(role, tab)) return false;
+  if (!roleAllowsTab(role, tab))
+    return (
+      roleCanBeGranted(role, tab) && Boolean(config?.[role as TunableRole]?.added.includes(tab))
+    );
   if (!isTunableRole(role) || LOCKED_TABS.has(tab)) return true;
   return !config?.[role]?.removed.includes(tab);
 }

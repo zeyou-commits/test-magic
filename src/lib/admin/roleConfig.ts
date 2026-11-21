@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   isTunableRole,
   roleAllowsTab,
+  roleCanBeGranted,
   LOCKED_TABS,
   type RoleConfig,
   type TunableRole,
@@ -16,6 +17,7 @@ const db = typedSupabase as unknown as SupabaseClient;
 type Row = {
   role: string;
   removed_tabs: string[] | null;
+  added_tabs?: string[] | null;
   home_tab: string | null;
   updated_at: string;
 };
@@ -34,15 +36,17 @@ export function useRoleConfig() {
     staleTime: 60_000,
     retry: false,
     queryFn: async () => {
-      const { data, error } = await db
-        .from("bw_staff_role_config")
-        .select("role, removed_tabs, home_tab, updated_at");
+      const { data, error } = await db.from("bw_staff_role_config").select("*");
       if (error) return { config: {} as RoleConfig, updatedAt: null, ready: false };
       const config: RoleConfig = {};
       let updatedAt: string | null = null;
       for (const row of (data ?? []) as Row[]) {
         if (!isTunableRole(row.role)) continue;
-        config[row.role] = { removed: row.removed_tabs ?? [], home: row.home_tab };
+        config[row.role] = {
+          removed: row.removed_tabs ?? [],
+          added: row.added_tabs ?? [],
+          home: row.home_tab,
+        };
         if (!updatedAt || row.updated_at > updatedAt) updatedAt = row.updated_at;
       }
       return { config, updatedAt, ready: true };
@@ -57,20 +61,24 @@ export function useSaveRoleSetting() {
     mutationFn: async ({
       role,
       removed,
+      added,
       home,
     }: {
       role: TunableRole;
       removed: string[];
+      added: string[];
       home: string | null;
     }) => {
-      // Ne garder que des rubriques du cadre du rôle, jamais l'accueil.
+      // Fermer : seulement dans le cadre du rôle, jamais l'accueil. Ouvrir : seulement hors cadre.
       const clean = [...new Set(removed)].filter(
         (tab) => roleAllowsTab(role, tab) && !LOCKED_TABS.has(tab),
       );
+      const extra = [...new Set(added)].filter((tab) => roleCanBeGranted(role, tab));
       const { error } = await db.rpc("bw_admin_set_role_config", {
         p_role: role,
         p_removed: clean,
         p_home: home && !clean.includes(home) ? home : null,
+        p_added: extra,
       });
       if (error) throw error;
     },

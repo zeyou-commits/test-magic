@@ -30,7 +30,7 @@ const WEBP = Buffer.concat([
   Buffer.alloc(64),
 ]);
 
-const state = { user: OPS_ONE as string, photoStatus: "pending" };
+const state = { user: OPS_ONE as string, photoStatus: "pending", closedFor: "" };
 const storageCalls: string[] = [];
 const bucket = (name: string) => ({
   upload: vi.fn(async (path: string) => {
@@ -64,6 +64,11 @@ function table(name: string) {
         const hit = mine.find((r) => (Array.isArray(wanted) ? wanted.includes(r) : r === wanted));
         return { data: hit ? { role: hit } : null, error: null };
       }
+      if (name === "bw_staff_role_config")
+        return {
+          data: filters["role"] === state.closedFor ? { removed_tabs: ["companyRequests"] } : null,
+          error: null,
+        };
       if (name === "bw_company_photos")
         return {
           data: { pending_path: `${COMPANY_ONE}/${PHOTO}.webp`, status: state.photoStatus },
@@ -107,6 +112,7 @@ const photoInput = (extra: Record<string, unknown> = {}) => ({
 
 beforeEach(() => {
   vi.resetAllMocks();
+  state.closedFor = "";
   for (const key of Object.keys(buckets)) delete buckets[key];
   storageCalls.length = 0;
   state.user = OPS_ONE;
@@ -248,6 +254,16 @@ describe("Lot 3 côté serveur : réponses, fiche, photos, responsable", () => {
     expect(body.photos[0].url).toBe(`https://signe.test/${COMPANY_ONE}/${PHOTO}.webp`);
     expect(body.photos[0]).not.toHaveProperty("pendingPath");
     expect(body.photos[1].url).toBe(`https://public.test/${COMPANY_ONE}/p.webp`);
+  });
+
+  it("rubrique fermée par l'administrateur : l'éditeur n'ouvre plus la file", async () => {
+    state.user = EDITOR;
+    state.closedFor = "editor";
+    const response = await call({ action: "desk_queue" });
+    expect(response.status).toBe(403);
+    expect(rpc).not.toHaveBeenCalledWith("bw_company_desk_queue", expect.anything());
+    state.user = MODERATOR;
+    expect((await call({ action: "desk_queue" })).status).toBe(200);
   });
 
   it("un collaborateur de compagnie n'ouvre pas la file de relecture", async () => {

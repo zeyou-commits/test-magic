@@ -1,10 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
-import { Check, Eye, Lock, RotateCcw, X } from "lucide-react";
-import { toast } from "sonner";
+import { useState } from "react";
+import { Check, Plus, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
   FUTURE_ROLES,
-  LOCKED_TABS,
   ROLE_CATALOG,
   STAFF_ROLES,
   TAB_ACTIONS,
@@ -16,7 +14,8 @@ import {
   type StaffRole,
   type TunableRole,
 } from "@/lib/admin/permissions";
-import { useRoleConfig, useSaveRoleSetting } from "@/lib/admin/roleConfig";
+import { useRoleConfig } from "@/lib/admin/roleConfig";
+import { RolesTune } from "./RolesTune";
 import { adminSections, adminSpaces, sectionLabel } from "./adminSections";
 
 type View = "compare" | TunableRole;
@@ -95,7 +94,7 @@ export function RolesAdmin({ onPreview }: { onPreview?: (role: TunableRole) => v
       {view === "compare" ? (
         <Compare config={config} />
       ) : (
-        <Tune
+        <RolesTune
           key={view}
           role={view}
           config={config}
@@ -125,7 +124,13 @@ export function RolesAdmin({ onPreview }: { onPreview?: (role: TunableRole) => v
 function Compare({ config }: { config: RoleConfig }) {
   const [diffOnly, setDiffOnly] = useState(false);
   const state = (role: StaffRole, tab: string) =>
-    roleCanUseTab(role, tab, config) ? "on" : roleAllowsTab(role, tab) ? "closed" : "off";
+    roleCanUseTab(role, tab, config)
+      ? roleAllowsTab(role, tab)
+        ? "on"
+        : "added"
+      : roleAllowsTab(role, tab)
+        ? "closed"
+        : "off";
   return (
     <section className="bo-card bo-matrix" aria-label="Comparatif des rôles">
       <div className="bo-matrix__bar">
@@ -136,6 +141,9 @@ function Compare({ config }: { config: RoleConfig }) {
         <ul className="bo-matrix__legend" aria-label="Légende">
           <li>
             <Check aria-hidden /> Peut le faire
+          </li>
+          <li data-state="added">
+            <Plus aria-hidden /> Ouvert en plus
           </li>
           <li data-state="closed">
             <X aria-hidden /> Fermé par vous
@@ -180,7 +188,13 @@ function Compare({ config }: { config: RoleConfig }) {
                   {STAFF_ROLES.map((role) => {
                     const value = state(role, section.id);
                     const label =
-                      value === "on" ? "Oui" : value === "closed" ? "Fermé par vous" : "Non";
+                      value === "on"
+                        ? "Oui"
+                        : value === "added"
+                          ? "Oui, ouvert en plus"
+                          : value === "closed"
+                            ? "Fermé par vous"
+                            : "Non";
                     return (
                       <span
                         key={role}
@@ -190,7 +204,15 @@ function Compare({ config }: { config: RoleConfig }) {
                         aria-label={`${ROLE_CATALOG[role].label} : ${label}`}
                         title={`${ROLE_CATALOG[role].label} : ${label}`}
                       >
-                        {value === "on" ? <Check /> : value === "closed" ? <X /> : "—"}
+                        {value === "on" ? (
+                          <Check />
+                        ) : value === "added" ? (
+                          <Plus />
+                        ) : value === "closed" ? (
+                          <X />
+                        ) : (
+                          "—"
+                        )}
                       </span>
                     );
                   })}
@@ -200,184 +222,6 @@ function Compare({ config }: { config: RoleConfig }) {
           </div>
         );
       })}
-    </section>
-  );
-}
-
-/** Le réglage d'un rôle : interrupteur par rubrique, page d'arrivée, enregistrement groupé. */
-function Tune({
-  role,
-  config,
-  ready,
-  updatedAt,
-  onPreview,
-}: {
-  role: TunableRole;
-  config: RoleConfig;
-  ready: boolean;
-  updatedAt: string | null;
-  onPreview?: ((role: TunableRole) => void) | undefined;
-}) {
-  const saved = config[role];
-  const savedRemoved = useMemo(() => saved?.removed ?? [], [saved]);
-  const [removed, setRemoved] = useState<string[]>([...savedRemoved]);
-  const [home, setHome] = useState<string>(saved?.home ?? "overview");
-  useEffect(() => {
-    setRemoved([...savedRemoved]);
-    setHome(saved?.home ?? "overview");
-  }, [savedRemoved, saved?.home]);
-  const save = useSaveRoleSetting();
-
-  const inFrame = adminSections.filter((section) => roleAllowsTab(role, section.id));
-  const outside = adminSections.filter((section) => !roleAllowsTab(role, section.id));
-  const openTabs = inFrame.filter((section) => !removed.includes(section.id));
-  const dirty =
-    removed.length !== savedRemoved.length ||
-    removed.some((tab) => !savedRemoved.includes(tab)) ||
-    home !== (saved?.home ?? "overview");
-  const toggle = (tab: string, on: boolean) => {
-    setRemoved((list) => (on ? list.filter((id) => id !== tab) : [...list, tab]));
-    if (!on && home === tab) setHome("overview");
-  };
-  const submit = () =>
-    save.mutate(
-      { role, removed, home: home === "overview" ? null : home },
-      {
-        onSuccess: () => toast.success(`Droits du rôle ${ROLE_CATALOG[role].label} enregistrés`),
-        onError: (error) => toast.error(error.message || "Enregistrement impossible"),
-      },
-    );
-
-  return (
-    <section className="bo-card bo-tune" aria-label={`Régler le rôle ${ROLE_CATALOG[role].label}`}>
-      <header className="bo-tune__head">
-        <p>
-          <span className={`bw-role-chip bw-role-chip--${role}`}>{ROLE_CATALOG[role].label}</span>{" "}
-          ouvre <strong>{openTabs.length}</strong> rubrique{openTabs.length > 1 ? "s" : ""} sur{" "}
-          {inFrame.length} possibles.
-          {updatedAt ? (
-            <small>
-              {" "}
-              Dernier réglage le{" "}
-              {new Date(updatedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}.
-            </small>
-          ) : null}
-        </p>
-        <div className="bo-tune__tools">
-          <label>
-            Page d'arrivée
-            <select value={home} onChange={(event) => setHome(event.target.value)}>
-              {openTabs.map((section) => (
-                <option key={section.id} value={section.id}>
-                  {section.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            type="button"
-            className="bo-btn"
-            disabled={!ready || save.isPending || (!removed.length && home === "overview")}
-            onClick={() => {
-              setRemoved([]);
-              setHome("overview");
-            }}
-          >
-            <RotateCcw aria-hidden /> Tout rouvrir
-          </button>
-          {onPreview ? (
-            <button type="button" className="bo-btn" onClick={() => onPreview(role)}>
-              <Eye aria-hidden /> Voir comme un {ROLE_CATALOG[role].label.toLowerCase()}
-            </button>
-          ) : null}
-        </div>
-      </header>
-
-      {adminSpaces.map((space) => {
-        const rows = inFrame.filter((section) => section.group === space.id);
-        if (!rows.length) return null;
-        return (
-          <div key={space.id} className="bo-tune__group">
-            <h3>
-              <space.icon aria-hidden /> {space.label}
-            </h3>
-            <ul>
-              {rows.map((section) => {
-                const locked = LOCKED_TABS.has(section.id);
-                const on = !removed.includes(section.id);
-                const id = `tune-${role}-${section.id}`;
-                return (
-                  <li key={section.id} data-off={!on || undefined}>
-                    <label htmlFor={id}>
-                      <strong>{section.label}</strong>
-                      <small>{TAB_ACTIONS[section.id] ?? section.description}</small>
-                    </label>
-                    {locked ? (
-                      <span className="bo-tune__lock" title="L'accueil reste toujours ouvert">
-                        <Lock aria-hidden /> Toujours
-                      </span>
-                    ) : (
-                      <Switch
-                        id={id}
-                        checked={on}
-                        disabled={!ready || save.isPending}
-                        onCheckedChange={(value) => toggle(section.id, value)}
-                      />
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        );
-      })}
-
-      <details className="bo-tune__outside">
-        <summary>
-          Hors du rôle {ROLE_CATALOG[role].label.toLowerCase()} ({outside.length})
-        </summary>
-        <p>
-          Ces rubriques sont réservées par la base de données à d'autres rôles : on ne peut pas les
-          ouvrir d'ici. Pour qu'une personne y accède, donnez-lui le rôle qui les contient
-          (Utilisateurs → Équipe).
-        </p>
-        <ul>
-          {outside.map((section) => (
-            <li key={section.id}>
-              {section.label}
-              <small>
-                {STAFF_ROLES.filter((r) => roleAllowsTab(r, section.id))
-                  .map((r) => SHORT[r])
-                  .join(", ")}
-              </small>
-            </li>
-          ))}
-        </ul>
-      </details>
-
-      <div className="bo-tune__save" data-dirty={dirty || undefined}>
-        <span>{dirty ? "Modifications non enregistrées" : "À jour"}</span>
-        {dirty ? (
-          <button
-            type="button"
-            className="bo-btn"
-            onClick={() => {
-              setRemoved([...savedRemoved]);
-              setHome(saved?.home ?? "overview");
-            }}
-          >
-            Annuler
-          </button>
-        ) : null}
-        <button
-          type="button"
-          className="bo-btn bo-btn--primary"
-          disabled={!ready || !dirty || save.isPending}
-          onClick={submit}
-        >
-          {save.isPending ? "Enregistrement…" : "Enregistrer"}
-        </button>
-      </div>
     </section>
   );
 }

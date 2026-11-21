@@ -217,6 +217,23 @@ export async function handleCompanyAccess(
       .in("role", staffRoles)
       .limit(1)
       .maybeSingle();
+    // Réglage de l'administrateur (Rôles et droits) : « Demandes des compagnies » fermée à ce rôle.
+    let closed = false;
+    if (role && role.role !== "admin") {
+      const { data: setting } = await (db as unknown as SupabaseClient)
+        .from("bw_staff_role_config")
+        .select("removed_tabs")
+        .eq("role", role.role)
+        .maybeSingle();
+      closed = Boolean(
+        (setting as { removed_tabs?: string[] } | null)?.removed_tabs?.includes("companyRequests"),
+      );
+    }
+    if (closed)
+      return respond(
+        { error: "Les demandes des compagnies ne sont pas ouvertes à votre rôle." },
+        403,
+      );
     if (error || !role)
       return respond(
         {

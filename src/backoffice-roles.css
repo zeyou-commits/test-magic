@@ -552,3 +552,46 @@
     width: auto;
   }
 }
+/* Lot 2 : rubriques ouvertes en plus, réservées à l'administrateur. */
+.bo-matrix__cell[data-state="added"] svg {
+  background: #e4effa;
+  color: #1d5d9b;
+}
+.bo-matrix__legend li[data-state="added"] svg {
+  color: #1d5d9b;
+}
+.bo-tune__group strong em {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #e4effa;
+  color: #1d5d9b;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+  text-decoration: none;
+  vertical-align: 1px;
+}
+.bo-tune__group strong em[data-tone="off"] {
+  background: #ffe2d8;
+  color: #b3391a;
+}
+.bo-tune__group li[data-off] strong {
+  text-decoration: none;
+}
+.bo-tune__group li[data-muted] strong,
+.bo-tune__group li[data-muted] small {
+  color: var(--bo-muted);
+}
+.bo-tune__group li[data-muted] {
+  opacity: 0.75;
+}
+.bo-tune__note {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f4f7f5;
+  color: var(--bo-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}

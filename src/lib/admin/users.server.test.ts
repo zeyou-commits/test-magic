@@ -272,11 +272,19 @@ describe("Gestion des utilisateurs côté serveur", () => {
     expect(canUseAdminTab(["moderator"], "reviews")).toBe(true);
     expect(canUseAdminTab([], "departures")).toBe(false);
     // Réglage de l'administrateur : il ferme une rubrique du cadre, jamais l'accueil ni hors cadre.
-    const config = { editor: { removed: ["import", "overview", "users"], home: null } };
+    const config = {
+      editor: { removed: ["import", "overview", "users"], added: [], home: null },
+      moderator: { removed: [], added: ["flash", "notifications", "import"], home: null },
+    };
     expect(canUseAdminTab(["editor"], "import", config)).toBe(false);
     expect(canUseAdminTab(["editor"], "overview", config)).toBe(true);
     expect(canUseAdminTab(["editor"], "users", config)).toBe(false);
     expect(canUseAdminTab(["editor", "admin"], "import", config)).toBe(true);
     expect(canUseAdminTab(["moderator"], "overview")).toBe(true);
+    // Ouvert en plus : hors cadre, jamais une rubrique réservée à l'administrateur.
+    expect(canUseAdminTab(["moderator"], "flash", config)).toBe(true);
+    expect(canUseAdminTab(["moderator"], "import", config)).toBe(true);
+    expect(canUseAdminTab(["moderator"], "notifications", config)).toBe(false);
+    expect(canUseAdminTab(["moderator"], "flash")).toBe(false);
   });
 });

@@ -90,6 +90,16 @@ const auditText = (entry: AuditEntry) => {
       const parts = [
         closed.length ? `fermé ${closed.join(", ")}` : "",
         opened.length ? `rouvert ${opened.join(", ")}` : "",
+        ...(() => {
+          const was = (entry.details["added_before"] as string[] | undefined) ?? [];
+          const now = (entry.details["added_after"] as string[] | undefined) ?? [];
+          const plus = now.filter((tab) => !was.includes(tab)).map(sectionLabel);
+          const minus = was.filter((tab) => !now.includes(tab)).map(sectionLabel);
+          return [
+            plus.length ? `ouvert en plus ${plus.join(", ")}` : "",
+            minus.length ? `retiré ${minus.join(", ")}` : "",
+          ];
+        })(),
         entry.details["home_after"] !== entry.details["home_before"]
           ? `réglé l'arrivée sur ${sectionLabel(String(entry.details["home_after"] ?? "overview"))}`
           : "",

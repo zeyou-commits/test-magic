@@ -1,3 +1,4 @@
+import { BrandPicture } from "@/components/layout/SiteLayout";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type RefObject } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -168,7 +169,7 @@ function Empty({
   return (
     <div className="bw-onepage-wrap">
       <div className="bw-onepage bw-onepage--empty">
-        <img src="/bledway-brand-entete.webp" alt="BledWay" className="h-9 w-auto" />
+        <BrandPicture alt="BledWay" className="bw-brand-small h-9 w-auto" />
         {locked ? <Lock size={22} className="text-primary" aria-hidden /> : null}
         <h1>{title}</h1>
         <p>{text}</p>

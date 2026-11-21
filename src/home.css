@@ -3136,6 +3136,10 @@ html {
 .bw-brand-link {
   line-height: 1;
 }
+/* <picture> du logo : transparent pour la mise en page, l'image garde ses règles. */
+.bw-brand-picture {
+  display: contents;
+}
 .bw-brand-link {
   position: relative;
 }
@@ -3228,8 +3232,12 @@ html {
   }
 }
 @media (max-width: 767px) {
+  /* Téléphone : le mot BledWay seul (sans la 504), à la hauteur d'une ligne de barre. */
   .bw-brand-link .bw-brand {
-    height: 34px;
+    height: 26px;
+  }
+  .bw-brand-small {
+    height: 26px;
   }
   .bw-beta {
     margin-top: 0;

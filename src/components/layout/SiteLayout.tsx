@@ -105,6 +105,19 @@ const footerLinks = [
   { to: "/conditions-utilisation", labelKey: "nav.terms" },
 ] as const;
 
+/**
+ * Logo de l'en-tête : avec la 504 sur ordinateur, le mot BledWay seul sur téléphone
+ * (la voiture le rendait trop large et trop haut dans la barre du haut).
+ */
+export function BrandPicture({ alt, className }: { alt: string; className?: string }) {
+  return (
+    <picture className="bw-brand-picture">
+      <source media="(max-width: 767px)" srcSet="/bledway-wordmark.webp" />
+      <img src="/bledway-brand-entete.webp" alt={alt} className={className} />
+    </picture>
+  );
+}
+
 /** Identité compacte commune à toutes les pages. */
 export function BrandLink({ compact = false }: { compact?: boolean }) {
   const t = useT();
@@ -115,8 +128,7 @@ export function BrandLink({ compact = false }: { compact?: boolean }) {
       aria-label={t("menu.homeLabel")}
       onClick={goHome}
     >
-      <img
-        src="/bledway-brand-entete.webp"
+      <BrandPicture
         alt={tr("ui.siteLayout.bledway")}
         className={compact ? "bw-brand bw-brand-compact" : "bw-brand"}
       />

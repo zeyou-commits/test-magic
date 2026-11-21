@@ -139,7 +139,23 @@ export function optionsEurope(
     const approche = bout(pt);
     keep({ key: `${p}:direct`, port: p, chain: null, joint: pt, approche, h: approche.h });
   }
-  const list = [...best.values()];
+  const routesDe = (o: OptionEu) => o.chain?.segs.map((s) => s.route.id) ?? [];
+  // Un trajet qui ne fait que reprendre la fin d'un autre, rejoint de plus loin, est un doublon :
+  // l'autre passe déjà par là (ex. « E3 » seul quand « E2 > E3 » est rejoint plus près).
+  const suite = (x: OptionEu, y: OptionEu) => {
+    const a = routesDe(x);
+    const b = routesDe(y);
+    return (
+      x !== y &&
+      x.port === y.port &&
+      a.length > 0 &&
+      a.length < b.length &&
+      a.every((r, i) => r === b[b.length - a.length + i]) &&
+      x.approche.km >= y.approche.km
+    );
+  };
+  const all = [...best.values()];
+  const list = all.filter((x) => !all.some((y) => suite(x, y)));
   // Pas deux fois le même port : « direct » seulement s'il est le meilleur, et pas de grand axe de 30 km.
   return list.filter((o) =>
     !o.chain
@@ -217,14 +233,25 @@ export type Chemin = {
   dz: OptionDz;
   /** Heures de route, de la porte au port puis du port au village (traversée non comprise). */
   h: number;
+  /** Durée habituelle de la traversée, en minutes ; null si la ligne ne la donne pas. */
+  mer: number | null;
   km: number;
   etapes: Etape[];
   bonsPlans: number;
   trousKm: number;
 };
 
-/** Les chemins possibles, du moins de route au plus de route ; un seul par grand axe, trois au plus. */
-export function chemins(eu: OptionEu[], dz: OptionDz[], max = 3): Chemin[] {
+/** Durée habituelle d'une traversée, en minutes, dans le sens Europe → Algérie. */
+export type DureeMer = (port: Port, dz: PortDz) => number | null;
+
+/** Porte à porte en heures (route + mer, sans l'attente au port) ; null sans durée de traversée. */
+export const heuresEnTout = (c: Chemin) => (c.mer == null ? null : c.h + c.mer / 60);
+
+/**
+ * Les chemins possibles, du plus court au plus long porte à porte ; un seul par grand axe, trois au plus.
+ * Une ligne sans durée de traversée connue passe après les autres, classée par heures de route.
+ */
+export function chemins(eu: OptionEu[], dz: OptionDz[], max = 3, mer?: DureeMer): Chemin[] {
   const all: Chemin[] = [];
   for (const o of eu)
     for (const d of dz) {
@@ -236,13 +263,15 @@ export function chemins(eu: OptionEu[], dz: OptionDz[], max = 3): Chemin[] {
         eu: o,
         dz: d,
         h: o.h + d.h,
+        mer: mer?.(o.port, d.port) ?? null,
         km: o.approche.km + (o.chain?.km ?? 0) + (d.chain?.km ?? 0) + d.dernier.km,
         etapes,
         bonsPlans: (o.chain?.stops.length ?? 0) + (d.chain?.stops.length ?? 0),
         trousKm: t.reduce((s, [a, b]) => s + b - a, 0),
       });
     }
-  all.sort((a, b) => a.h - b.h);
+  const rang = (c: Chemin) => heuresEnTout(c) ?? 1e6 + c.h;
+  all.sort((a, b) => rang(a) - rang(b));
   const seen = new Set<string>();
   const pick: Chemin[] = [];
   for (const c of all) {

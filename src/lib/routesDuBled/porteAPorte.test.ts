@@ -4,7 +4,14 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
 
 import type { RoutesData } from "./data";
-import { chemins, optionsAlgerie, optionsEurope, parPort, type LonLat } from "./porteAPorte";
+import {
+  chemins,
+  heuresEnTout,
+  optionsAlgerie,
+  optionsEurope,
+  parPort,
+  type LonLat,
+} from "./porteAPorte";
 
 const data = JSON.parse(readFileSync("public/data/routes-du-bled.json", "utf8")) as RoutesData;
 const eu = (p: LonLat) => optionsEurope(data.routes, (r) => r.stops, p);
@@ -42,6 +49,22 @@ describe("porte à porte", () => {
     expect(list.length).toBeLessThanOrEqual(3);
     expect(new Set(list.map((c) => c.eu.key)).size).toBe(list.length);
     for (let i = 1; i < list.length; i++) expect(list[i]!.h).toBeGreaterThanOrEqual(list[i - 1]!.h);
+  });
+  it("classe porte à porte avec la traversée, et met les lignes sans durée à la fin", () => {
+    // Durées fictives : Marseille longue, Barcelone courte, Valence inconnue.
+    const mer = (p: string) => ({ marseille: 1440, barcelone: 600 })[p] ?? null;
+    const list = chemins(eu(SAINT_ETIENNE), dz(TLEMCEN), 3, mer);
+    expect(list[0]!.eu.port).toBe("barcelone");
+    expect(heuresEnTout(list[0]!)).toBeCloseTo(list[0]!.h + 10);
+    const sans = list.findIndex((c) => c.mer == null);
+    if (sans >= 0) expect(list.slice(sans).every((c) => c.mer == null)).toBe(true);
+  });
+  it("depuis Montauban, ne garde pas de doublon rejoint de loin (Espagne par la côte ou par Madrid)", () => {
+    const keys = eu([1.355, 44.018]).map((o) => o.key);
+    expect(keys).toContain("alicante:E2>E3");
+    expect(keys).toContain("alicante:E5>E6");
+    expect(keys).not.toContain("alicante:E3");
+    expect(keys).not.toContain("alicante:E6");
   });
   it("compte les heures des pauses depuis la maison", () => {
     const lille: LonLat = [3.057, 50.629];

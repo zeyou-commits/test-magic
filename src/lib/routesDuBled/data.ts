@@ -174,3 +174,31 @@ export const KIND_COLOR: Record<StopKind, string> = {
 
 export const mapsLink = (s: { lat: number; lon: number }) =>
   `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}`;
+
+/**
+ * Durées habituelles des traversées, par sens (« marseille-oran » ≠ « oran-marseille »),
+ * telles que l'équipe les tient dans les lignes. En minutes.
+ */
+export async function loadDureesMer(): Promise<Record<string, number>> {
+  const { data, error } = await db
+    .from("routes")
+    .select(
+      "typical_duration_minutes, dep:ports!routes_departure_port_id_fkey(slug), arr:ports!routes_arrival_port_id_fkey(slug)",
+    )
+    .eq("status", "active");
+  if (error) throw error;
+  const out: Record<string, number> = {};
+  type Bout = { slug: string } | { slug: string }[] | null;
+  const slug = (b: Bout) => (Array.isArray(b) ? b[0]?.slug : b?.slug);
+  for (const r of (data ?? []) as unknown as {
+    typical_duration_minutes: number | null;
+    dep: Bout;
+    arr: Bout;
+  }[]) {
+    const min = r.typical_duration_minutes;
+    const a = slug(r.dep);
+    const b = slug(r.arr);
+    if (a && b && min && min > 0) out[`${a}-${b}`] = min;
+  }
+  return out;
+}

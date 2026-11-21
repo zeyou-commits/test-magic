@@ -3,6 +3,7 @@
  * étape par étape (couleurs de la charte, home.css). Carte repliable sur téléphone, fixe à droite sur ordinateur.
  */
 .rdb-hero { margin-top: 1.25rem; }
+@media (min-width: 1024px) { .rdb-hero { margin-top: 0.5rem; } }
 
 .rdb-chip {
   flex: none;
@@ -187,6 +188,7 @@
 
 /* Porte à porte : la barre « Tu pars de → Tu arrives à », la carte, les chemins. */
 .rdb-planner { margin-top: 1.25rem; scroll-margin-top: 5rem; }
+@media (min-width: 1024px) { .rdb-planner { margin-top: 0.85rem; } }
 .rdb-bar {
   position: relative;
   z-index: 6;
@@ -254,8 +256,29 @@
 .rdb-sugg__none { padding: 0.55rem 0.7rem; font-size: 0.85rem; color: var(--muted-foreground); }
 
 .rdb-planner__grid { display: grid; gap: 0.9rem; margin-top: 0.9rem; }
+.rdb-side { display: grid; gap: 0.9rem; min-width: 0; align-content: start; }
+.rdb-side .rdb-trip { margin-top: 1.5rem; }
+/* Ordinateur : la carte reste en vue pendant que les chemins puis les étapes défilent à côté. */
 @media (min-width: 1024px) {
-  .rdb-planner__grid { grid-template-columns: minmax(0, 1fr) 22rem; height: min(40rem, calc(100vh - 9rem)); }
+  .rdb-planner__grid { grid-template-columns: minmax(0, 1fr) 25rem; align-items: start; }
+  .rdb-planner__grid > .rdb-map {
+    position: sticky;
+    top: calc(var(--bw-header-h, 64px) + 0.75rem);
+    height: calc(100vh - var(--bw-header-h, 64px) - 1.5rem);
+    min-height: 26rem;
+  }
+  .rdb-panel .rdb-cta--etapes { display: none; }
+  .rdb-side .rdb-trip { margin-top: 0.5rem; }
+  .rdb-side .rdb-trip h2 { font-size: 1.25rem; }
+  .rdb-side .rdb-road { gap: 0.7rem; }
+  .rdb-side .rdb-step { grid-template-columns: 40px minmax(0, 1fr); gap: 0.6rem; }
+  .rdb-side .rdb-step__card { padding: 0.8rem 0.9rem; }
+  .rdb-side .rdb-step__marker { width: 40px; height: 40px; }
+  .rdb-side .rdb-step__marker img { width: 32px; height: 32px; }
+  .rdb-side .rdb-road::before { left: 12px; width: 16px; }
+  .rdb-side .rdb-road::after { left: 19px; }
+  .rdb-side .rdb-step__title { font-size: 1.02rem; }
+  .rdb-side .rdb-step__text { font-size: 0.85rem; }
 }
 .rdb-map {
   position: relative;
@@ -267,7 +290,7 @@
   border: 1px solid var(--border);
   background: #dfe9ef;
 }
-@media (min-width: 1024px) { .rdb-map { height: 100%; max-height: none; } }
+@media (min-width: 1024px) { .rdb-map { max-height: none; } }
 .rdb-map[data-picking] { outline: 3px solid var(--cta); outline-offset: 2px; }
 .rdb-map__wait { display: grid; place-items: center; height: 100%; font-size: 0.85rem; color: var(--muted-foreground); }
 .rdb-map__hint {
@@ -330,8 +353,11 @@
   border-radius: 1.25rem;
   border: 1px solid var(--border);
   background: var(--card);
-  overflow-y: auto;
 }
+.rdb-chemin__via { display: block; margin-top: 0.1rem; font-family: var(--font-sans, inherit); font-size: 0.8rem; font-weight: 700; color: var(--muted-foreground); }
+.rdb-autres { min-height: 2.75rem; border-radius: 0.9rem; border: 1px dashed var(--border); font-size: 0.9rem; font-weight: 700; color: var(--primary); }
+.rdb-autres:hover { background: var(--secondary); }
+.rdb-chemin__total { font-family: var(--font-display); font-size: 0.95rem; font-weight: 800; color: var(--foreground); }
 .rdb-panel__stack { display: grid; gap: 0.9rem; }
 .rdb-panel__eyebrow { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted-foreground); }
 .rdb-panel__title { font-family: var(--font-display); font-size: 1.35rem; font-weight: 800; line-height: 1.2; }

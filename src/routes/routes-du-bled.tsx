@@ -30,6 +30,7 @@ import { calculateRoadGeometry, measureBledLegs } from "@/lib/ferry/itinerary.fu
 import {
   KIND_COLOR,
   loadCommunityStops,
+  loadDureesMer,
   loadRoutesData,
   mapsLink,
   mergeCommunity,
@@ -48,6 +49,7 @@ import {
 import {
   chemins,
   cleBout,
+  heuresEnTout,
   optionsAlgerie,
   optionsEurope,
   parPort,
@@ -55,6 +57,7 @@ import {
   trous,
   type Bout,
   type Chemin,
+  type DureeMer,
   type Lieu,
   type LonLat,
   type Mesures,
@@ -160,6 +163,16 @@ function RoutesDuBledPage() {
     queryFn: loadCommunityStops,
     staleTime: 60_000,
   });
+  // Durées habituelles des traversées, tenues dans les lignes par l'équipe.
+  const dureesMer = useQuery({
+    queryKey: ["routes-du-bled", "mer"],
+    queryFn: loadDureesMer,
+    staleTime: 10 * 60_000,
+  });
+  const mer = useMemo<DureeMer>(
+    () => (p, d) => dureesMer.data?.[`${p}-${d}`] ?? null,
+    [dureesMer.data],
+  );
   const routes = useMemo(() => data.data?.routes ?? [], [data.data]);
 
   const [from, setFrom] = useState<Lieu | null>(null);
@@ -261,7 +274,12 @@ function RoutesDuBledPage() {
     () => (to && routes.length ? optionsAlgerie(routes, stopsOf, to.point, mesures) : []),
     [to, routes, stopsOf, mesures],
   );
-  const list = useMemo(() => (from && to ? chemins(eu, dz) : []), [from, to, eu, dz]);
+  const list = useMemo(() => (from && to ? chemins(eu, dz, 20, mer) : []), [from, to, eu, dz, mer]);
+  // Trois chemins d'abord ; les autres ports (souvent l'Espagne) à la demande.
+  const [tous, setTous] = useState(false);
+  useEffect(() => setTous(false), [from, to]);
+  const shown = tous ? list : list.slice(0, 3);
+  const caches = list.slice(3);
   const sel = list.find((c) => c.id === selId) ?? list[0] ?? null;
   const ports = parPort(eu);
 
@@ -422,16 +440,16 @@ function RoutesDuBledPage() {
   return (
     <>
       <SiteHeader />
-      <main className="rdb mx-auto max-w-6xl px-4 pb-20 pt-6 sm:px-6 sm:pt-10">
+      <main className="rdb mx-auto max-w-6xl px-4 pb-20 pt-4 sm:px-6 sm:pt-5">
         <Breadcrumbs
           items={[{ name: tr("ui.pageRoutesDuBled.titreCourt"), path: "/routes-du-bled" }]}
         />
 
         <header className="rdb-hero">
-          <p className="text-xs font-bold uppercase tracking-[.18em] text-primary">
+          <p className="text-xs font-bold uppercase tracking-[.18em] text-primary lg:hidden">
             {tr("ui.pageRoutesDuBled.surtitre")}
           </p>
-          <h1 className="mt-2 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
+          <h1 className="mt-2 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:mt-0 lg:text-3xl">
             {tr("ui.pageRoutesDuBled.titre")}
           </h1>
         </header>
@@ -525,120 +543,129 @@ function RoutesDuBledPage() {
               </Suspense>
             </div>
 
-            <aside className="rdb-panel" aria-live="polite">
-              {geoError ? <p className="rdb-panel__err">{geoError}</p> : null}
-              {data.isError ? (
-                <Bw504Note tone="stuck" title={tr("ui.pageRoutesDuBled.erreurChargement")}>
-                  {(data.error as Error).message}
-                </Bw504Note>
-              ) : !from && !to ? (
-                <div className="rdb-panel__stack">
-                  <p className="rdb-panel__lead">{tr("ui.pageRoutesDuBled.intro")}</p>
-                  <button type="button" className="rdb-cta" onClick={locate}>
-                    <Navigation className="size-4" aria-hidden />
-                    {tr("ui.pageRoutesDuBled.partirDeMaPosition")}
-                  </button>
-                  <div>
-                    <p className="rdb-panel__eyebrow">{tr("ui.pageRoutesDuBled.exemples")}</p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {EXEMPLES.map(([f, t]) => (
-                        <button
-                          key={f.label + t.label}
-                          type="button"
-                          className="rdb-chip"
-                          onClick={() => {
-                            setFrom(f);
-                            setTo(t);
-                            setSelId(null);
-                          }}
-                        >
-                          {f.label} → {t.label}
-                        </button>
-                      ))}
+            <div className="rdb-side">
+              <aside className="rdb-panel" aria-live="polite">
+                {geoError ? <p className="rdb-panel__err">{geoError}</p> : null}
+                {data.isError ? (
+                  <Bw504Note tone="stuck" title={tr("ui.pageRoutesDuBled.erreurChargement")}>
+                    {(data.error as Error).message}
+                  </Bw504Note>
+                ) : !from && !to ? (
+                  <div className="rdb-panel__stack">
+                    <p className="rdb-panel__lead">{tr("ui.pageRoutesDuBled.intro")}</p>
+                    <button type="button" className="rdb-cta" onClick={locate}>
+                      <Navigation className="size-4" aria-hidden />
+                      {tr("ui.pageRoutesDuBled.partirDeMaPosition")}
+                    </button>
+                    <div>
+                      <p className="rdb-panel__eyebrow">{tr("ui.pageRoutesDuBled.exemples")}</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {EXEMPLES.map(([f, t]) => (
+                          <button
+                            key={f.label + t.label}
+                            type="button"
+                            className="rdb-chip"
+                            onClick={() => {
+                              setFrom(f);
+                              setTo(t);
+                              setSelId(null);
+                            }}
+                          >
+                            {f.label} → {t.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ) : from && !to ? (
-                <div className="rdb-panel__stack">
-                  <div>
-                    <p className="rdb-panel__eyebrow">
-                      {tr("ui.pageRoutesDuBled.depuis", { lieu: from.label })}
-                    </p>
-                    <h2 className="rdb-panel__title">{tr("ui.pageRoutesDuBled.etTuVasOu")}</h2>
+                ) : from && !to ? (
+                  <div className="rdb-panel__stack">
+                    <div>
+                      <p className="rdb-panel__eyebrow">
+                        {tr("ui.pageRoutesDuBled.depuis", { lieu: from.label })}
+                      </p>
+                      <h2 className="rdb-panel__title">{tr("ui.pageRoutesDuBled.etTuVasOu")}</h2>
+                    </div>
+                    <ul className="rdb-ports">
+                      {ports.slice(0, 4).map((o) => (
+                        <li key={o.key}>
+                          <Ship className="size-4" aria-hidden />
+                          <b>{PLACE_NAME[o.port]}</b>
+                          <span>
+                            {tr("ui.pageRoutesDuBled.deRoute", {
+                              duree: duree({ ...o.approche, h: o.h }),
+                            })}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <ul className="rdb-ports">
-                    {ports.slice(0, 4).map((o) => (
-                      <li key={o.key}>
-                        <Ship className="size-4" aria-hidden />
-                        <b>{PLACE_NAME[o.port]}</b>
-                        <span>
-                          {tr("ui.pageRoutesDuBled.deRoute", {
-                            duree: duree({ ...o.approche, h: o.h }),
-                          })}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : to && !from ? (
-                <div className="rdb-panel__stack">
-                  <div>
-                    <p className="rdb-panel__eyebrow">
-                      {tr("ui.pageRoutesDuBled.vers", { lieu: to.label })}
-                    </p>
-                    <h2 className="rdb-panel__title">{tr("ui.pageRoutesDuBled.etTuPars")}</h2>
+                ) : to && !from ? (
+                  <div className="rdb-panel__stack">
+                    <div>
+                      <p className="rdb-panel__eyebrow">
+                        {tr("ui.pageRoutesDuBled.vers", { lieu: to.label })}
+                      </p>
+                      <h2 className="rdb-panel__title">{tr("ui.pageRoutesDuBled.etTuPars")}</h2>
+                    </div>
+                    <button type="button" className="rdb-cta" onClick={locate}>
+                      <Navigation className="size-4" aria-hidden />
+                      {tr("ui.pageRoutesDuBled.partirDeMaPosition")}
+                    </button>
                   </div>
-                  <button type="button" className="rdb-cta" onClick={locate}>
-                    <Navigation className="size-4" aria-hidden />
-                    {tr("ui.pageRoutesDuBled.partirDeMaPosition")}
-                  </button>
-                </div>
-              ) : data.isPending ? (
-                <p className="text-sm text-muted-foreground">
-                  {tr("ui.pageRoutesDuBled.chargement")}
-                </p>
-              ) : !list.length ? (
-                <div className="rdb-panel__stack">
-                  <h2 className="rdb-panel__title">{tr("ui.pageRoutesDuBled.aucunChemin")}</h2>
+                ) : data.isPending ? (
                   <p className="text-sm text-muted-foreground">
-                    {tr("ui.pageRoutesDuBled.aucunCheminTexte")}
+                    {tr("ui.pageRoutesDuBled.chargement")}
                   </p>
-                </div>
-              ) : (
-                <div className="rdb-panel__stack">
-                  <p className="rdb-panel__eyebrow">{tr("ui.pageRoutesDuBled.tesChemins")}</p>
-                  {list.map((c, i) => (
-                    <CheminCard
-                      key={c.id}
-                      c={c}
-                      first={i === 0}
-                      selected={c === sel}
-                      onSelect={() => setSelId(c.id)}
-                    />
-                  ))}
-                  <a href="#rdb-etapes" className="rdb-cta">
-                    {tr("ui.pageRoutesDuBled.voirMesEtapes")}
-                  </a>
-                  <p className="rdb-panel__note">{tr("ui.pageRoutesDuBled.noteDurees")}</p>
-                </div>
-              )}
-            </aside>
+                ) : !list.length ? (
+                  <div className="rdb-panel__stack">
+                    <h2 className="rdb-panel__title">{tr("ui.pageRoutesDuBled.aucunChemin")}</h2>
+                    <p className="text-sm text-muted-foreground">
+                      {tr("ui.pageRoutesDuBled.aucunCheminTexte")}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="rdb-panel__stack">
+                    <p className="rdb-panel__eyebrow">{tr("ui.pageRoutesDuBled.tesChemins")}</p>
+                    {shown.map((c, i) => (
+                      <CheminCard
+                        key={c.id}
+                        c={c}
+                        via={viaDe(c, list)}
+                        first={i === 0}
+                        selected={c === sel}
+                        onSelect={() => setSelId(c.id)}
+                      />
+                    ))}
+                    {caches.length && !tous ? (
+                      <button type="button" className="rdb-autres" onClick={() => setTous(true)}>
+                        {tr("ui.pageRoutesDuBled.autresChemins", { n: caches.length })}
+                      </button>
+                    ) : null}
+                    <a href="#rdb-etapes" className="rdb-cta rdb-cta--etapes">
+                      {tr("ui.pageRoutesDuBled.voirMesEtapes")}
+                    </a>
+                    <p className="rdb-panel__note">{tr("ui.pageRoutesDuBled.noteDurees")}</p>
+                  </div>
+                )}
+              </aside>
+              {/* Sur ordinateur, les étapes défilent à côté de la carte, qui reste en vue. */}
+              {sel && from && to ? (
+                <TripSteps
+                  c={sel}
+                  from={from}
+                  to={to}
+                  focusId={focusId}
+                  setFocusId={setFocusId}
+                  onAdd={startAdd}
+                  portStop={
+                    sel.eu.chain?.stops.filter((s) => s.k === "port" || s.k === "billets").at(-1) ??
+                    null
+                  }
+                />
+              ) : null}
+            </div>
           </div>
         </section>
-
-        {sel && from && to ? (
-          <TripSteps
-            c={sel}
-            from={from}
-            to={to}
-            focusId={focusId}
-            setFocusId={setFocusId}
-            onAdd={startAdd}
-            portStop={
-              sel.eu.chain?.stops.filter((s) => s.k === "port" || s.k === "billets").at(-1) ?? null
-            }
-          />
-        ) : null}
 
         <section className="rdb-contrib mt-12">
           <Bw504Note
@@ -676,13 +703,24 @@ function RoutesDuBledPage() {
 }
 
 /** Un chemin proposé : l'essentiel sur une ligne ; la frise et les bons plans quand il est choisi. */
+/** « Par Madrid » ou « par la côte », quand deux chemins mènent aux mêmes ports. */
+function viaDe(c: Chemin, all: Chemin[]): string | null {
+  const twin = all.some((x) => x !== c && x.eu.port === c.eu.port && x.dz.port === c.dz.port);
+  if (!twin || !c.eu.chain) return null;
+  return c.eu.chain.segs.some((s) => s.route.id === "E5")
+    ? tr("ui.pageRoutesDuBled.parMadrid")
+    : tr("ui.pageRoutesDuBled.parLaCote");
+}
+
 function CheminCard({
   c,
+  via,
   first,
   selected,
   onSelect,
 }: {
   c: Chemin;
+  via: string | null;
   first: boolean;
   selected: boolean;
   onSelect: () => void;
@@ -694,18 +732,30 @@ function CheminCard({
     h: c.h + (pauses * PAUSE_MIN) / 60,
     mesure: c.eu.approche.mesure && c.dz.dernier.mesure,
   };
+  const enTout = heuresEnTout(c);
   return (
     <button type="button" className="rdb-chemin" aria-pressed={selected} onClick={onSelect}>
       <span className="rdb-chemin__top">
         <b>
           {PLACE_NAME[c.eu.port]} → {PLACE_NAME[c.dz.port]}
+          {via ? <small className="rdb-chemin__via">{via}</small> : null}
         </b>
         {first ? (
-          <span className="rdb-chemin__tag">{tr("ui.pageRoutesDuBled.leMoinsDeRoute")}</span>
+          <span className="rdb-chemin__tag">{tr("ui.pageRoutesDuBled.lePlusCourt")}</span>
         ) : null}
       </span>
+      {enTout != null ? (
+        <span className="rdb-chemin__total">
+          {tr("ui.pageRoutesDuBled.enTout", {
+            duree: duree({ ...total, h: enTout + (pauses * PAUSE_MIN) / 60 }),
+          })}
+        </span>
+      ) : null}
       <span className="rdb-chemin__facts">
         {tr("ui.pageRoutesDuBled.deRoute", { duree: duree(total) })}
+        {c.mer != null
+          ? ` + ${tr("ui.pageRoutesDuBled.deMer", { duree: dureeRonde(c.mer / 60) })}`
+          : ""}
         {pauses
           ? ` · ${tr(pauses > 1 ? "ui.pageRoutesDuBled.nPauses" : "ui.pageRoutesDuBled.unePause", { n: pauses })}`
           : ""}
@@ -717,7 +767,12 @@ function CheminCard({
         <>
           <Frise c={c} />
           <span className="rdb-chemin__facts">
-            {tr("ui.pageRoutesDuBled.bonsPlansSurTaRoute", { n: c.bonsPlans })}
+            {tr(
+              c.bonsPlans > 1
+                ? "ui.pageRoutesDuBled.bonsPlansSurTaRoute"
+                : "ui.pageRoutesDuBled.unBonPlanSurTaRoute",
+              { n: c.bonsPlans },
+            )}
           </span>
         </>
       ) : null}
@@ -774,14 +829,41 @@ function TripSteps({
   const pe = PLACE_NAME[c.eu.port];
   const pd = PLACE_NAME[c.dz.port];
   const dzChain = c.dz.chain;
+  const nuits = c.etapes.length - pauses;
+  const sansReleve = [...(c.eu.chain?.sansReleve ?? []), ...(dzChain?.sansReleve ?? [])];
   return (
-    <section className="rdb-trip mt-10" id="rdb-etapes" aria-labelledby="rdb-trip-title">
-      <h2 id="rdb-trip-title" className="font-display text-2xl font-bold sm:text-3xl">
+    <section className="rdb-trip" id="rdb-etapes" aria-labelledby="rdb-trip-title">
+      <h2 id="rdb-trip-title" className="font-display text-2xl font-bold">
         {tr("ui.pageRoutesDuBled.tonTrajet")}
       </h2>
       <p className="mt-1 text-sm text-muted-foreground">
         {courte(from.label)} → {pe} → {pd} → {courte(to.label)}
       </p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {pauses
+          ? tr("ui.pageRoutesDuBled.resumeTrajet", {
+              km: fmt(c.km),
+              route: dureeRonde(c.h),
+              total: dureeRonde(c.h + (pauses * PAUSE_MIN) / 60),
+              pauses,
+            })
+          : tr("ui.pageRoutesDuBled.resumeTrajetSansPause", {
+              km: fmt(c.km),
+              route: dureeRonde(c.h),
+            })}
+        {nuits === 1 ? ` ${tr("ui.pageRoutesDuBled.resumeNuit1")}` : ""}
+        {nuits > 1 ? ` ${tr("ui.pageRoutesDuBled.resumeNuits", { n: nuits })}` : ""}
+      </p>
+      {sansReleve.length ? (
+        <p className="rdb-gap">
+          {tr("ui.pageRoutesDuBled.sansReleve", {
+            routes: sansReleve.map((r) => r.name.replace(/ (.*)$/, "")).join(", "),
+          })}{" "}
+          <button type="button" onClick={() => onAdd(sansReleve[0]!.id)}>
+            {tr("ui.pageRoutesDuBled.ajouterLaTienne")}
+          </button>
+        </p>
+      ) : null}
       {c.trousKm > 0 ? (
         <p className="rdb-gap">
           {tr("ui.pageRoutesDuBled.trousTexte", { km: fmt(Math.round(c.trousKm / 10) * 10) })}{" "}
@@ -807,6 +889,18 @@ function TripSteps({
             </p>
           </div>
         </li>
+
+        {c.etapes
+          .filter((e) => e.horsAxe)
+          .map((e) => (
+            <EtapeCard
+              key={e.id}
+              etape={e}
+              focused={focusId === e.id}
+              onFocus={() => setFocusId(e.id)}
+              onAdd={() => onAdd(e.route.id)}
+            />
+          ))}
 
         {c.eu.chain && c.eu.approche.km > 3 ? (
           <li className="rdb-step" data-type="rejoindre">
@@ -836,15 +930,17 @@ function TripSteps({
           </li>
         ) : null}
 
-        {c.etapes.map((e) => (
-          <EtapeCard
-            key={e.id}
-            etape={e}
-            focused={focusId === e.id}
-            onFocus={() => setFocusId(e.id)}
-            onAdd={() => onAdd(e.route.id)}
-          />
-        ))}
+        {c.etapes
+          .filter((e) => !e.horsAxe)
+          .map((e) => (
+            <EtapeCard
+              key={e.id}
+              etape={e}
+              focused={focusId === e.id}
+              onFocus={() => setFocusId(e.id)}
+              onAdd={() => onAdd(e.route.id)}
+            />
+          ))}
 
         <li className="rdb-step" data-type="port">
           <span className="rdb-step__marker" aria-hidden>
@@ -885,6 +981,9 @@ function TripSteps({
               {pe} → {pd}
             </h3>
             <p className="rdb-step__text">
+              {c.mer != null
+                ? `${tr("ui.pageRoutesDuBled.merHabituelle", { duree: dureeRonde(c.mer / 60) })} `
+                : ""}
               {tr("ui.pageRoutesDuBled.traverseeTexte")}{" "}
               <Link to="/lignes" className="underline underline-offset-2">
                 {tr("ui.pageRoutesDuBled.voirLesLignes")}
@@ -919,6 +1018,22 @@ function TripSteps({
                   ? tr("ui.pageRoutesDuBled.finAuBout")
                   : tr("ui.pageRoutesDuBled.finAuPort", { port: portDe(pd) })}
             </p>
+            {c.mer != null ? (
+              <p className="rdb-step__text">
+                {tr(
+                  c.etapes.some((x) => x.type === "nuit")
+                    ? "ui.pageRoutesDuBled.enToutNuits"
+                    : "ui.pageRoutesDuBled.enToutTexte",
+                  {
+                    duree: duree({
+                      km: 0,
+                      h: auPort + c.mer / 60 + c.dz.h,
+                      mesure: c.eu.approche.mesure && c.dz.dernier.mesure,
+                    }),
+                  },
+                )}
+              </p>
+            ) : null}
           </div>
         </li>
       </ol>

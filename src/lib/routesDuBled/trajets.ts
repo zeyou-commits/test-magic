@@ -110,6 +110,8 @@ export type Chain = {
   km: number;
   h: number;
   line: LonLat[];
+  /** Kilomètre de chaque point de `line`, depuis le début du trajet. */
+  lineKm: number[];
   stops: ChainStop[];
   segs: Seg[];
   /** Routes du trajet sans relevé des haltes. */
@@ -125,6 +127,7 @@ export function buildChain(
 ): Chain | null {
   const segs: Seg[] = [];
   const line: LonLat[] = [];
+  const lineKm: number[] = [];
   const stops: ChainStop[] = [];
   let offset = 0;
   let hours = 0;
@@ -135,7 +138,11 @@ export function buildChain(
     const b = leg.to ? locateOnRoute(route, ...leg.to).km : route.km;
     const len = Math.max(1, b - a);
     const segHours = (route.h * len) / route.km;
-    for (const [lon, lat, km] of route.line) if (km >= a && km <= b) line.push([lon, lat]);
+    for (const [lon, lat, km] of route.line)
+      if (km >= a && km <= b) {
+        line.push([lon, lat]);
+        lineKm.push(km - a + offset);
+      }
     for (const s of stopsOf(route)) {
       if (s.km < a || s.km > b || s.direction === "retour") continue;
       stops.push({ ...s, km: s.km - a + offset, route: route.id });
@@ -146,7 +153,7 @@ export function buildChain(
   }
   stops.sort((x, y) => x.km - y.km);
   const sansReleve = segs.map((s) => s.route).filter((r) => !r.releve);
-  return { key, km: offset, h: hours, line, stops, segs, sansReleve };
+  return { key, km: offset, h: hours, line, lineKm, stops, segs, sansReleve };
 }
 
 /** Heure de route au km donné, et l'inverse, en suivant la vitesse propre à chaque route. */
@@ -172,6 +179,8 @@ export type Etape = {
   others: ChainStop[];
   priere: ChainStop[];
   manger: ChainStop[];
+  /** Pause prise avant de rejoindre la grande route (entre chez toi et l'autoroute). */
+  horsAxe?: boolean;
 };
 
 const PAUSE_TOUTES_LES = 2.25;
@@ -219,9 +228,13 @@ const near = (
     .sort((a, b) => Math.abs(a.km - km) - Math.abs(b.km - km))
     .slice(0, max);
 
-/** Découpe le trajet : nuits si plus de 10 h, puis des pauses régulières entre deux nuits. */
-export function planEtapes(chain: Chain): Etape[] {
-  const T = chain.h;
+/**
+ * Découpe le trajet : nuits si plus de 10 h, puis des pauses régulières entre deux nuits.
+ * `avant` : heures déjà roulées avant de rejoindre ce trajet (depuis chez toi) ; les heures
+ * des étapes comptent alors depuis le départ de la maison.
+ */
+export function planEtapes(chain: Chain, avant = 0): Etape[] {
+  const T = chain.h + avant;
   const nNuits = T > NUIT_AU_DELA ? Math.ceil(T / 9) - 1 : 0;
   const nuits = Array.from({ length: nNuits }, (_, i) => (T * (i + 1)) / (nNuits + 1));
   const bornes = [0, ...nuits, T];
@@ -238,8 +251,22 @@ export function planEtapes(chain: Chain): Etape[] {
   const urbain = (s: ChainStop) => s.src === "osm" && (s.km < 25 || s.km > chain.km - 15);
   let pauses = 0;
   let nNuit = 0;
-  return marks.map((m, i) => {
-    const km = kmAt(chain, m.h);
+  return marks.map((m, i): Etape => {
+    if (m.h < avant)
+      return {
+        id: `${chain.key}-${i}`,
+        type: m.type,
+        n: m.type === "nuit" ? ++nNuit : ++pauses,
+        h: m.h,
+        km: 0,
+        route: chain.segs[0]!.route,
+        best: null,
+        others: [],
+        priere: [],
+        manger: [],
+        horsAxe: true,
+      };
+    const km = kmAt(chain, m.h - avant);
     const isNuit = m.type === "nuit";
     const range = isNuit ? 60 : 35;
     const pool = chain.stops.filter(
@@ -262,7 +289,7 @@ export function planEtapes(chain: Chain): Etape[] {
       id: `${chain.key}-${i}`,
       type: m.type,
       n: isNuit ? ++nNuit : ++pauses,
-      h: best ? hoursAt(chain, best.km) : m.h,
+      h: best ? hoursAt(chain, best.km) + avant : m.h,
       km: at,
       route: routeAt(chain, at),
       best,

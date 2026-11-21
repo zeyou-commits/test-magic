@@ -190,3 +190,42 @@ export const calculateRoadGeometry = createServerFn({ method: "POST" })
     ]);
     return { toPort, fromPort };
   });
+
+const pointSchema = z.tuple([z.number().min(-180).max(180), z.number().min(-90).max(90)]);
+
+/**
+ * Routes du bled : bouts hors des grands axes, mesurés en une seule requête OSRM.
+ * « depuis » : de la maison vers chaque point où l'on rejoint l'autoroute ;
+ * « vers » : de chaque sortie de grande route vers le village. Repli estimatif si OSRM échoue.
+ */
+export const measureBledLegs = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        from: pointSchema,
+        points: z.array(pointSchema).min(1).max(12),
+        sens: z.enum(["depuis", "vers"]),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const n = data.points.length;
+    const pts: [number, number][] =
+      data.sens === "depuis" ? [data.from, ...data.points] : [...data.points, data.from];
+    const sources = data.sens === "depuis" ? ["0"] : data.points.map((_, i) => String(i));
+    const destinations =
+      data.sens === "depuis" ? data.points.map((_, i) => String(i + 1)) : [String(n)];
+    try {
+      const m = await matrix(pts, sources, destinations, osrmBase());
+      const legs = data.points.map((_, i) => {
+        const d = data.sens === "depuis" ? m.distances?.[0]?.[i] : m.distances?.[i]?.[0];
+        const t = data.sens === "depuis" ? m.durations?.[0]?.[i] : m.durations?.[i]?.[0];
+        return d == null || t == null
+          ? null
+          : { km: Math.round(d / 100) / 10, min: Math.ceil(t / 60) };
+      });
+      return { mode: "osrm" as const, legs };
+    } catch {
+      return { mode: "estimate" as const, legs: data.points.map(() => null) };
+    }
+  });

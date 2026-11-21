@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowUpRight,
-  Check,
   Clock3,
   Megaphone,
   MessagesSquare,
@@ -15,131 +14,7 @@ import {
 import type { Company, Port, RouteLine } from "@/lib/ferry/types";
 import { newsDay, newsFeedQuery, newsSlug } from "@/lib/ferry/newsFeed";
 import { TICKETING } from "@/lib/seo/pitch";
-
-type Moment = {
-  key: string;
-  label: string;
-  title: string;
-  text: string;
-  points: { title: string; text: string; to: string }[];
-  shot: { src: string; path: string; alt: string };
-};
-
-/** Le voyage dans l'ordre : chaque moment montre un vrai écran de BledWay. */
-const MOMENTS: Moment[] = [
-  {
-    key: "preparer",
-    label: "Je prépare",
-    title: "Un compagnon pas à pas, des mois avant le départ.",
-    text: "Vous indiquez la période, qui voyage et avec quel véhicule. BledWay construit le calendrier à rebours : papiers, réservation, budget, rappels.",
-    points: [
-      {
-        title: "Préparer mon voyage",
-        text: "La liste de ce qu'il reste à faire, avec des rappels avant chaque échéance.",
-        to: "/preparer-mon-voyage",
-      },
-      {
-        title: "Papiers et formalités",
-        text: "Voyageur par voyageur : passeport, visa, carte consulaire, véhicule.",
-        to: "/papiers-voyage-algerie",
-      },
-      {
-        title: "Budget porte à porte",
-        text: "Traversée, route, péages et carburant, dans un seul calcul.",
-        to: "/simulateurs",
-      },
-    ],
-    shot: {
-      src: "/images/accueil/preparer.webp",
-      path: "bledway.com/preparer-mon-voyage",
-      alt: "Écran « Préparer mon voyage » de BledWay, avec la 504 qui propose de commencer",
-    },
-  },
-  {
-    key: "reserver",
-    label: "Je réserve",
-    title: "Toutes les compagnies, dans une seule recherche.",
-    text: `Départs, horaires, durées et prix estimés pour votre véhicule, comparés côte à côte. ${TICKETING.afterCompare}`,
-    points: [
-      {
-        title: "Comparer les départs",
-        text: "Allers-retours, autres ports de retour, traversées de nuit.",
-        to: "/lignes",
-      },
-      {
-        title: "Des prix repères",
-        text: "Une estimation selon les voyageurs et le véhicule, avant d'aller plus loin.",
-        to: "/barometre-prix",
-      },
-      {
-        title: "L'ouverture des ventes",
-        text: "Une alerte quand la compagnie met vos dates en vente.",
-        to: "/horaires",
-      },
-    ],
-    shot: {
-      src: "/images/accueil/reserver.webp",
-      path: "bledway.com",
-      alt: "Recherche de traversées sur BledWay : barre de recherche et départs comparés",
-    },
-  },
-  {
-    key: "traverser",
-    label: "Je traverse",
-    title: "Le navire sur la carte, et ce qui se passe à bord.",
-    text: "La position du navire, l'état de la mer et le retard calculé. Quand le signal n'est pas capté, BledWay le dit et passe en estimation.",
-    points: [
-      {
-        title: "Navires en direct",
-        text: "« Position réelle » ou « Estimation » : toujours indiqué.",
-        to: "/bateaux",
-      },
-      {
-        title: "Départs et arrivées",
-        text: "Les mouvements du jour, port par port.",
-        to: "/horaires",
-      },
-      {
-        title: "Les salons de traversée",
-        text: "Les passagers du même navire échangent avant, pendant et après.",
-        to: "/ports",
-      },
-    ],
-    shot: {
-      src: "/images/accueil/traverser.webp",
-      path: "bledway.com",
-      alt: "Carte en direct de BledWay : navire en mer entre l'Europe et l'Algérie",
-    },
-  },
-  {
-    key: "arriver",
-    label: "J'arrive",
-    title: "Le port, les formalités, puis la route.",
-    text: "Ce qui attend à l'arrivée : passage du port, douane, véhicule. Les repères viennent des guides et des voyageurs qui viennent de passer.",
-    points: [
-      {
-        title: "Arrivée et formalités",
-        text: "Police, douane, déclaration du véhicule, dans l'ordre.",
-        to: "/guide/arrivee-algerie-port-formalites",
-      },
-      {
-        title: "Les fiches des ports",
-        text: "Accès, services, lignes au départ et à l'arrivée.",
-        to: "/ports",
-      },
-      {
-        title: "Voiture de moins de 3 ans",
-        text: "Les démarches d'importation, expliquées simplement.",
-        to: "/vehicules-moins-3-ans",
-      },
-    ],
-    shot: {
-      src: "/images/accueil/arriver.webp",
-      path: "bledway.com/guide/arrivee-algerie-port-formalites",
-      alt: "Guide BledWay « Arriver en Algérie en ferry : organiser la sortie du port »",
-    },
-  },
-];
+import { HomeTour } from "./HomeTour";
 
 const COMMUNITY = [
   {
@@ -193,7 +68,6 @@ export function HomeServices({
   onBook: () => void;
 }) {
   const root = useRef<HTMLDivElement>(null);
-  const [moment, setMoment] = useState(0);
   const { data: news = [] } = useQuery(newsFeedQuery);
 
   useEffect(() => {
@@ -229,7 +103,6 @@ export function HomeServices({
       label: "compagnies comparées",
     },
   ].filter((stat) => stat.value > 0);
-  const current = MOMENTS[moment]!;
   const latest = news.slice(0, 3);
 
   return (
@@ -273,87 +146,7 @@ export function HomeServices({
         ) : null}
       </section>
 
-      <section className="bw-container bw-services-moments" data-reveal aria-labelledby="moments-title">
-        <div className="bw-section-heading">
-          <div>
-            <p className="bw-eyebrow">Les outils</p>
-            <h2 id="moments-title">À chaque moment du voyage, le bon écran.</h2>
-          </div>
-        </div>
-        <div className="bw-moments-tabs" role="tablist" aria-label="Moments du voyage">
-          {MOMENTS.map((item, index) => (
-            <button
-              key={item.key}
-              type="button"
-              role="tab"
-              id={`moment-tab-${item.key}`}
-              aria-selected={moment === index}
-              aria-controls={`moment-panel-${item.key}`}
-              tabIndex={moment === index ? 0 : -1}
-              onClick={() => setMoment(index)}
-              onKeyDown={(event) => {
-                if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
-                event.preventDefault();
-                const next =
-                  (index + (event.key === "ArrowRight" ? 1 : MOMENTS.length - 1)) % MOMENTS.length;
-                setMoment(next);
-                document.getElementById(`moment-tab-${MOMENTS[next]!.key}`)?.focus();
-              }}
-            >
-              <span aria-hidden>{index + 1}</span>
-              {item.label}
-            </button>
-          ))}
-        </div>
-        <div
-          className="bw-moment"
-          role="tabpanel"
-          id={`moment-panel-${current.key}`}
-          aria-labelledby={`moment-tab-${current.key}`}
-          key={current.key}
-        >
-          <div className="bw-moment__copy">
-            <h3>{current.title}</h3>
-            <p>{current.text}</p>
-            <ul>
-              {current.points.map((point) => (
-                <li key={point.title}>
-                  <Check size={18} aria-hidden />
-                  <span>
-                    <Link to={point.to as never}>{point.title}</Link>
-                    {point.text}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <figure className="bw-moment__screen">
-            <span className="bw-moment__bar" aria-hidden>
-              <i />
-              <i />
-              <i />
-              <span>{current.shot.path}</span>
-            </span>
-            {/* Téléphone : la capture du même écran sur téléphone. */}
-            <picture>
-              <source
-                media="(max-width: 767px)"
-                srcSet={`/images/accueil/${current.key}-mobile.webp`}
-                width={780}
-                height={1100}
-              />
-              <img
-                src={current.shot.src}
-                alt={current.shot.alt}
-                width={1200}
-                height={760}
-                loading="lazy"
-                decoding="async"
-              />
-            </picture>
-          </figure>
-        </div>
-      </section>
+      <HomeTour />
 
       <section className="bw-services-community" data-reveal aria-labelledby="community-title">
         <div className="bw-container">

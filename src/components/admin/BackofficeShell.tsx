@@ -166,6 +166,9 @@ export function BackofficeShell({
   ];
   const mobileSpaces = visibleSpaces.slice(0, 4);
   const moreBadge = sum(visibleSpaces.slice(4).flatMap((space) => space.items));
+  // Profil resserré (5 rubriques ou moins, ex. modérateur) : la barre du bas montre directement
+  // les rubriques, sans passer par les espaces.
+  const flatBottom = available.length <= 5;
 
   const spaceList = (compact: boolean) =>
     visibleSpaces.map((space) => {
@@ -313,7 +316,11 @@ export function BackofficeShell({
             </div>
           </div>
           {siblings.length > 1 ? (
-            <nav className="bo-tabs" aria-label={`Rubriques de l'espace ${currentSpace?.label}`}>
+            <nav
+              className="bo-tabs"
+              data-flat={flatBottom || undefined}
+              aria-label={`Rubriques de l'espace ${currentSpace?.label}`}
+            >
               {siblings.map((item) => (
                 <button
                   key={item.id}
@@ -332,24 +339,45 @@ export function BackofficeShell({
         </main>
       </div>
 
-      <nav className="bo-bottom" aria-label="Espaces">
-        {mobileSpaces.map((space) => {
-          const Icon = space.icon;
-          const pending = sum(space.items);
-          return (
-            <button
-              key={space.id}
-              type="button"
-              aria-current={space.id === currentSpace?.id && !more ? "page" : undefined}
-              onClick={() => go(space.id === currentSpace?.id ? current.id : space.items[0]!.id)}
-            >
-              <Icon aria-hidden />
-              <span>{space.label}</span>
-              {pending ? <b>{pending}</b> : null}
-            </button>
-          );
-        })}
-        {visibleSpaces.length > 4 ? (
+      <nav className="bo-bottom" aria-label={flatBottom ? "Rubriques" : "Espaces"}>
+        {flatBottom
+          ? available.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  aria-current={item.id === current.id ? "page" : undefined}
+                  onClick={() => go(item.id)}
+                >
+                  <Icon aria-hidden />
+                  <span>{item.short ?? item.label}</span>
+                  {badges[item.id] ? <b>{badges[item.id]}</b> : null}
+                </button>
+              );
+            })
+          : null}
+        {flatBottom
+          ? null
+          : mobileSpaces.map((space) => {
+              const Icon = space.icon;
+              const pending = sum(space.items);
+              return (
+                <button
+                  key={space.id}
+                  type="button"
+                  aria-current={space.id === currentSpace?.id && !more ? "page" : undefined}
+                  onClick={() =>
+                    go(space.id === currentSpace?.id ? current.id : space.items[0]!.id)
+                  }
+                >
+                  <Icon aria-hidden />
+                  <span>{space.label}</span>
+                  {pending ? <b>{pending}</b> : null}
+                </button>
+              );
+            })}
+        {!flatBottom && visibleSpaces.length > 4 ? (
           <button
             type="button"
             aria-expanded={more}

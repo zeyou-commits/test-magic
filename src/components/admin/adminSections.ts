@@ -30,6 +30,7 @@ import {
   Settings2,
   PenSquare,
   Network,
+  KeyRound,
   type LucideIcon,
 } from "lucide-react";
 
@@ -225,6 +226,7 @@ export const adminSections: AdminSectionDef[] = [
   {
     id: "reviews",
     label: "Avis et photos",
+    short: "Avis",
     description: "Relisez les avis et les photos des voyageurs avant de les rendre publics.",
     group: "Voyageurs",
     icon: Star,
@@ -316,6 +318,15 @@ export const adminSections: AdminSectionDef[] = [
     description: "Gérez les comptes voyageurs, les rôles et les accès de votre équipe.",
     group: "Réglages",
     icon: Users,
+  },
+  {
+    id: "roles",
+    label: "Rôles et droits",
+    description:
+      "Ce que chaque profil peut faire, côte à côte. Fermez une rubrique à un rôle ou choisissez sa page d'arrivée.",
+    group: "Réglages",
+    short: "Droits",
+    icon: KeyRound,
   },
   {
     id: "reference",

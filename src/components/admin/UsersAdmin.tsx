@@ -37,8 +37,9 @@ import {
   type UsersStats,
 } from "@/lib/admin/users";
 import { AdminDrawer } from "@/components/admin/AdminDrawer";
-import { RoleMatrix } from "@/components/admin/RoleMatrix";
-import { adminSections } from "@/components/admin/adminSections";
+import { Link } from "@tanstack/react-router";
+import { useRoleConfig } from "@/lib/admin/roleConfig";
+import { adminSections, sectionLabel } from "@/components/admin/adminSections";
 import { ROLE_CATALOG, STAFF_ROLES, roleCanUseTab, type StaffRole } from "@/lib/admin/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,6 +82,20 @@ const auditText = (entry: AuditEntry) => {
       return entry.details["email_banned"]
         ? `${entry.actor} a supprimé le compte ${target} et interdit son adresse`
         : `${entry.actor} a supprimé le compte ${target}`;
+    case "role_config": {
+      const before = (entry.details["removed_before"] as string[] | undefined) ?? [];
+      const after = (entry.details["removed_after"] as string[] | undefined) ?? [];
+      const closed = after.filter((tab) => !before.includes(tab)).map(sectionLabel);
+      const opened = before.filter((tab) => !after.includes(tab)).map(sectionLabel);
+      const parts = [
+        closed.length ? `fermé ${closed.join(", ")}` : "",
+        opened.length ? `rouvert ${opened.join(", ")}` : "",
+        entry.details["home_after"] !== entry.details["home_before"]
+          ? `réglé l'arrivée sur ${sectionLabel(String(entry.details["home_after"] ?? "overview"))}`
+          : "",
+      ].filter(Boolean);
+      return `${entry.actor} a ${parts.length ? parts.join(", ") : "revu les droits"} pour le rôle ${role}`;
+    }
     case "export_completed":
       return `${entry.actor} a exporté les données de ${target}`;
     default:
@@ -394,7 +409,21 @@ export function UsersAdmin() {
         )}
       </div>
 
-      {tab === "team" && <RoleMatrix />}
+      {tab === "team" && (
+        <Link
+          to="/admin"
+          search={{ tab: "roles" }}
+          className="mt-4 flex items-center justify-between gap-3 rounded-2xl border bg-card p-4 text-sm hover:border-primary"
+        >
+          <span>
+            <strong className="block">Qui peut faire quoi</strong>
+            <span className="text-xs text-muted-foreground">
+              Comparer l'administrateur, l'éditeur et le modérateur, et régler leurs droits.
+            </span>
+          </span>
+          <span className="shrink-0 font-semibold text-primary">Rôles et droits →</span>
+        </Link>
+      )}
 
       {tab === "history" ? (
         <section className="rounded-2xl border bg-card p-4">
@@ -1290,11 +1319,13 @@ function RoleChangeSummary({
   member: ManagedUser;
   adminCount: number | undefined;
 }) {
+  const config = useRoleConfig().data?.config;
   const others = member.roles.filter((r): r is Role => r !== role && r in roleLabels);
   // Rubriques réellement gagnées ou perdues, compte tenu des autres rôles déjà détenus.
   const changed = adminSections.filter(
     (section) =>
-      roleCanUseTab(role, section.id) && !others.some((r) => roleCanUseTab(r, section.id)),
+      roleCanUseTab(role, section.id, config) &&
+      !others.some((r) => roleCanUseTab(r, section.id, config)),
   );
   const name = member.display_name || member.email || "ce compte";
   return (

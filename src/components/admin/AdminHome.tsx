@@ -1,5 +1,8 @@
+import { useState } from "react";
 import {
   CalendarClock,
+  CalendarDays,
+  ClipboardList,
   FileSpreadsheet,
   Flag,
   Megaphone,
@@ -16,6 +19,31 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAdminCounts } from "@/hooks/useAdminCounts";
 import { userAdminAction, type UsersStats } from "@/lib/admin/users";
 import type { AdminFilter } from "@/lib/admin/navigation";
+import { ROLE_CATALOG, TAB_ACTIONS, staffRoles } from "@/lib/admin/permissions";
+import { adminSections } from "./adminSections";
+
+type Shortcut = { tab: string; filter?: AdminFilter; label: string; icon: LucideIcon };
+/** Raccourcis du bonjour, selon le métier : chacun arrive sur ce qu'il fait le plus. */
+const SHORTCUTS: Record<string, Shortcut[]> = {
+  admin: [
+    { tab: "users", label: "Utilisateurs", icon: Users },
+    { tab: "notifications", label: "Écrire aux voyageurs", icon: Send },
+    { tab: "flash", label: "Publier un Flash info", icon: MessageSquare },
+    { tab: "import", label: "Importer un planning", icon: FileSpreadsheet },
+  ],
+  editor: [
+    { tab: "departures", filter: "today", label: "Départs du jour", icon: CalendarClock },
+    { tab: "planning", label: "Planning de la semaine", icon: CalendarDays },
+    { tab: "flash", label: "Publier un Flash info", icon: MessageSquare },
+    { tab: "import", label: "Importer un planning", icon: FileSpreadsheet },
+  ],
+  moderator: [
+    { tab: "reviews", filter: "pending", label: "Avis à relire", icon: Star },
+    { tab: "community", label: "Signalements", icon: Megaphone },
+    { tab: "reports", filter: "new", label: "Erreurs signalées", icon: Flag },
+    { tab: "companyRequests", label: "Demandes des compagnies", icon: ClipboardList },
+  ],
+};
 
 type Tile = {
   tab: string;
@@ -35,10 +63,16 @@ type Tile = {
 export function AdminHome({
   onNavigate,
   can,
+  roles = [],
 }: {
   onNavigate: (id: string, filter?: AdminFilter) => void;
   can: (id: string) => boolean;
+  /** Rôles d'équipe effectifs (ou celui de l'aperçu). */
+  roles?: readonly string[];
 }) {
+  const [showMine, setShowMine] = useState(false);
+  const mine = staffRoles(roles);
+  const mySections = adminSections.filter((section) => can(section.id));
   const { profile, user } = useAuth();
   const { data, isPending, isError } = useAdminCounts();
   // Les comptes : mêmes chiffres (et même cache) que la rubrique Utilisateurs, réservés à l'admin.
@@ -122,12 +156,9 @@ export function AdminHome({
   const waiting = tiles
     .filter((tile) => tile.todo)
     .reduce((sum, tile) => sum + (tile.value ?? 0), 0);
-  const shortcuts = [
-    { tab: "users", label: "Utilisateurs", icon: Users },
-    { tab: "notifications", label: "Écrire aux voyageurs", icon: Send },
-    { tab: "flash", label: "Publier un Flash info", icon: MessageSquare },
-    { tab: "import", label: "Importer un planning", icon: FileSpreadsheet },
-  ].filter((item) => can(item.tab));
+  const shortcuts = (SHORTCUTS[mine[0] ?? "admin"] ?? [])
+    .filter((item) => can(item.tab))
+    .slice(0, 4);
   return (
     <section aria-label="Vue d'ensemble">
       <div className="bo-hello">
@@ -147,13 +178,45 @@ export function AdminHome({
         {shortcuts.length ? (
           <div className="bo-hello__actions">
             {shortcuts.map((item) => (
-              <button key={item.tab} type="button" onClick={() => onNavigate(item.tab)}>
+              <button
+                key={item.tab}
+                type="button"
+                onClick={() => onNavigate(item.tab, item.filter)}
+              >
                 <item.icon aria-hidden /> {item.label}
               </button>
             ))}
           </div>
         ) : null}
       </div>
+      {mine.length && !mine.includes("admin") ? (
+        <>
+          <p className="bo-myrole">
+            {mine.map((role) => (
+              <span key={role} className={`bw-role-chip bw-role-chip--${role}`}>
+                {ROLE_CATALOG[role].label}
+              </span>
+            ))}
+            <span>
+              {mySections.length} rubrique{mySections.length > 1 ? "s" : ""} ouverte
+              {mySections.length > 1 ? "s" : ""}
+            </span>
+            <button type="button" aria-expanded={showMine} onClick={() => setShowMine((v) => !v)}>
+              {showMine ? "Masquer" : "Ce que je peux faire"}
+            </button>
+          </p>
+          {showMine ? (
+            <ul className="bo-mylist">
+              {mySections.map((section) => (
+                <li key={section.id}>
+                  <strong>{section.label}</strong>
+                  <small>{TAB_ACTIONS[section.id] ?? section.description}</small>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </>
+      ) : null}
       <div className="bo-kpis">
         {tiles.map((tile) => (
           <button

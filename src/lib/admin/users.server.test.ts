@@ -271,5 +271,12 @@ describe("Gestion des utilisateurs côté serveur", () => {
     expect(canUseAdminTab(["editor"], "departures")).toBe(true);
     expect(canUseAdminTab(["moderator"], "reviews")).toBe(true);
     expect(canUseAdminTab([], "departures")).toBe(false);
+    // Réglage de l'administrateur : il ferme une rubrique du cadre, jamais l'accueil ni hors cadre.
+    const config = { editor: { removed: ["import", "overview", "users"], home: null } };
+    expect(canUseAdminTab(["editor"], "import", config)).toBe(false);
+    expect(canUseAdminTab(["editor"], "overview", config)).toBe(true);
+    expect(canUseAdminTab(["editor"], "users", config)).toBe(false);
+    expect(canUseAdminTab(["editor", "admin"], "import", config)).toBe(true);
+    expect(canUseAdminTab(["moderator"], "overview")).toBe(true);
   });
 });

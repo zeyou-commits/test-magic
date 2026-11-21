@@ -15,7 +15,15 @@ import { trackingTimes } from "@/lib/ferry/tracking";
 import type { Departure } from "@/lib/ferry/types";
 import { CommercialPrograms } from "@/components/admin/CommercialPrograms";
 import { UsersAdmin } from "@/components/admin/UsersAdmin";
-import { canUseAdminTab, roleHome, STAFF_ROLES } from "@/lib/admin/permissions";
+import {
+  canUseAdminTab as canUseTabFor,
+  roleHome as roleHomeFor,
+  STAFF_ROLES,
+  isTunableRole,
+  type TunableRole,
+} from "@/lib/admin/permissions";
+import { useRoleConfig } from "@/lib/admin/roleConfig";
+import { RolesAdmin } from "@/components/admin/RolesAdmin";
 import { communityQuery } from "@/lib/ferry/community";
 import { NewsAdmin, PlacesAdmin } from "@/components/admin/ContentAdmin";
 import { CommunityModeration } from "@/components/panel/CommunityModeration";
@@ -175,8 +183,9 @@ export const Route = createFileRoute("/admin")({
 
 function AdminPage() {
   const { roles, loading, user } = useAuth();
+  const roleConfig = useRoleConfig();
 
-  if (loading) {
+  if (loading || (user && roleConfig.isPending)) {
     return <CenteredNote>Chargement…</CenteredNote>;
   }
 
@@ -207,8 +216,26 @@ function CountBadge({
   );
 }
 
+const PREVIEW_KEY = "bledway:admin-preview";
+
 function AdminTabs() {
-  const { user, roles, isAdmin } = useAuth();
+  const { user, roles: accountRoles, isAdmin } = useAuth();
+  const roleConfig = useRoleConfig();
+  const config = roleConfig.data?.config;
+  // Aperçu « voir comme » : l'administrateur parcourt l'espace avec le menu d'un autre rôle.
+  const [preview, setPreview] = useState<TunableRole | null>(null);
+  useEffect(() => {
+    try {
+      const saved = window.sessionStorage.getItem(PREVIEW_KEY);
+      if (saved && isTunableRole(saved)) setPreview(saved);
+    } catch {
+      /* stockage indisponible : pas d'aperçu mémorisé */
+    }
+  }, []);
+  const activePreview = isAdmin ? preview : null;
+  const roles = activePreview ? [activePreview] : accountRoles;
+  const canUseAdminTab = (list: readonly string[], id: string) => canUseTabFor(list, id, config);
+  const roleHome = (list: readonly string[]) => roleHomeFor(list, config);
   const community = useQuery(communityQuery(undefined, undefined, true, user?.id));
   const {
     tab: requestedTab = "overview",
@@ -227,6 +254,24 @@ function AdminTabs() {
     void navigate({ search: adminSearch({ tab: id, filter: nextFilter }), resetScroll: false });
   };
   const clearFilter = () => navigateTo(tab);
+  const startPreview = (role: TunableRole) => {
+    try {
+      window.sessionStorage.setItem(PREVIEW_KEY, role);
+    } catch {
+      /* l'aperçu dure le temps de la page */
+    }
+    setPreview(role);
+    void navigate({ search: adminSearch({ tab: roleHomeFor([role], config) }) });
+  };
+  const endPreview = () => {
+    try {
+      window.sessionStorage.removeItem(PREVIEW_KEY);
+    } catch {
+      /* rien à oublier */
+    }
+    setPreview(null);
+    void navigate({ search: adminSearch({ tab: "roles" }) });
+  };
   const queryClient = useQueryClient();
   const notificationOverview = useQuery(adminNotificationQuery(isAdmin ? user?.id : undefined));
   const { data: counts } = useAdminCounts();
@@ -303,6 +348,9 @@ function AdminTabs() {
         canAccess={(id) => canUseAdminTab(roles, id)}
         roles={roles}
         refusedTab={refusedTab}
+        config={config}
+        preview={activePreview}
+        onEndPreview={() => endPreview()}
         searchItems={searchItems}
         onOpenItem={openItem}
       >
@@ -339,8 +387,15 @@ function AdminTabs() {
         <TabsContent value="users">
           <UsersAdmin />
         </TabsContent>
+        <TabsContent value="roles">
+          <RolesAdmin onPreview={startPreview} />
+        </TabsContent>
         <TabsContent value="overview">
-          <AdminHome onNavigate={navigateTo} can={(id) => canUseAdminTab(roles, id)} />
+          <AdminHome
+            onNavigate={navigateTo}
+            can={(id) => canUseAdminTab(roles, id)}
+            roles={roles}
+          />
           {canUseAdminTab(roles, "reference") && (
             <ReferenceDataReminder onOpen={() => navigateTo("reference")} />
           )}

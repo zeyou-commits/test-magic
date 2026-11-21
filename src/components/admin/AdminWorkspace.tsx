@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import { Bell } from "lucide-react";
+import { Bell, Eye } from "lucide-react";
 import { adminSections as sections, adminSpaces, sectionLabel } from "./adminSections";
 import { BackofficeShell, type ShellSearchItem } from "./BackofficeShell";
-import { ROLE_CATALOG, rolesForTab, staffRoles } from "@/lib/admin/permissions";
+import { ROLE_CATALOG, rolesForTab, staffRoles, type RoleConfig } from "@/lib/admin/permissions";
 
 /** Fiche retrouvable depuis la recherche du menu (port, navire, compagnie…). */
 export type AdminSearchItem = ShellSearchItem;
@@ -18,6 +18,9 @@ export function AdminWorkspace({
   onOpenItem,
   roles = [],
   refusedTab,
+  config,
+  preview,
+  onEndPreview,
 }: {
   tab: string;
   onNavigate: (tab: string) => void;
@@ -30,12 +33,17 @@ export function AdminWorkspace({
   roles?: readonly string[];
   /** Rubrique demandée (lien, adresse) mais fermée à ce rôle : on explique au lieu de rediriger en silence. */
   refusedTab?: string | undefined;
+  /** Réglage des rôles par l'administrateur. */
+  config?: RoleConfig | undefined;
+  /** Aperçu « voir comme un éditeur / modérateur » (administrateur seulement). */
+  preview?: string | null | undefined;
+  onEndPreview?: (() => void) | undefined;
 }) {
   const mine = staffRoles(roles);
   const available = sections.filter((section) => canAccess(section.id));
   const current = sections.find((section) => section.id === tab) ?? sections[0]!;
   const pending = badges["notifications"] ?? 0;
-  const refusedBy = refusedTab ? rolesForTab(refusedTab) : [];
+  const refusedBy = refusedTab ? rolesForTab(refusedTab, config) : [];
   return (
     <BackofficeShell
       kind="team"
@@ -77,7 +85,19 @@ export function AdminWorkspace({
         ) : null
       }
       notice={
-        refusedTab ? (
+        preview ? (
+          <div role="status" className="bo-preview">
+            <span>
+              <Eye aria-hidden />
+              Aperçu : vous voyez l'espace comme un{" "}
+              <strong>{ROLE_CATALOG[mine[0] ?? "admin"].label.toLowerCase()}</strong>. Les données
+              restent lues avec vos droits.
+            </span>
+            <button type="button" className="bo-btn" onClick={onEndPreview}>
+              Quitter l'aperçu
+            </button>
+          </div>
+        ) : refusedTab ? (
           <div role="alert" className="bo-notice" data-tone="warn">
             <strong>
               « {sectionLabel(refusedTab)} » est réservée aux{" "}

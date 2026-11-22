@@ -318,7 +318,6 @@ export function SearchPanel({
   const [wideCalOpen, setWideCalOpen] = useState(false);
   // Barre PC : Compagnie et Navire restent derrière « Filtres » tant qu'aucun n'est choisi.
   const [wideFiltersOpen, setWideFiltersOpen] = useState(false);
-  const wideFiltersShown = wideFiltersOpen || Boolean(filters.companyId || filters.vesselId);
   const [travellersOpen, setTravellersOpen] = useState(false);
   // Enchaînement : chaque choix ouvre le suivant (Départ → Arrivée → Dates → Voyageurs).
   const [portOpen, setPortOpen] = useState<"departure" | "arrival" | null>(null);
@@ -1011,13 +1010,10 @@ export function SearchPanel({
                 {wideCount ? `Afficher ${wideCount}` : "Afficher les départs"}
               </button>
             </div>
-            {/* Options du voyage, sur une seule ligne sous les champs, comme sur un comparateur. */}
-            <div className="mt-2.5 flex items-center gap-2">
-              <div
-                className="batogo-tabbar inline-grid grid-cols-2 gap-0.5 !rounded-full !p-0.5"
-                role="radiogroup"
-                aria-label={tr("ui.searchPanel.typeDeVoyage")}
-              >
+            {/* Options du voyage : type de trajet, filtres dans une fenêtre, trajets populaires.
+                Le sens se change avec ⇄ entre Départ et Arrivée (plus de doublon ici). */}
+            <div className="bw-wide-opts mt-3 flex items-center gap-2">
+              <div className="bw-wide-trip" role="radiogroup" aria-label={tr("ui.searchPanel.typeDeVoyage")}>
                 {[true, false].map((round) => (
                   <button
                     key={String(round)}
@@ -1026,61 +1022,73 @@ export function SearchPanel({
                     aria-checked={filters.roundTrip === round}
                     data-active={filters.roundTrip === round}
                     onClick={() => set({ roundTrip: round, returnDate: round ? filters.returnDate : null })}
-                    className="batogo-tab !min-h-8 !rounded-full px-3 !text-xs"
                   >
                     {round ? tr("ui.searchPanel.allerRetour") : tr("ui.searchPanel.allerSimple")}
                   </button>
                 ))}
               </div>
-              <button
-                type="button"
-                title={tr("ui.searchPanel.inverserLeSens")}
-                onClick={() => onFiltersChange(swapDirection(filters))}
-                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground"
-              >
-                <ArrowLeftRight className="size-3.5" aria-hidden />
-                {reversed ? tr("ui.searchPanel.algerieEurope") : tr("ui.searchPanel.europeAlgerie")}
-              </button>
-              <span className="mx-1 h-6 w-px bg-border" aria-hidden />
-              {wideFiltersShown ? (
-                <div className="grid w-[330px] shrink grid-cols-2 gap-1.5">
-                  <FilterSelect
-                    label={tr("ui.searchPanel.compagnie")}
-                    open={companyMenuOpen}
-                    onOpenChange={setCompanyMenuOpen}
-                    value={filters.companyId}
-                    onChange={(value) => set({ companyId: value })}
-                    options={companies.map((company) => ({
-                      value: company.id,
-                      label: company.name,
-                      leading: <CompanyBadge name={company.name} logoUrl={company.logo_url} size={20} />,
-                    }))}
-                  />
-                  <FilterSelect
-                    label={tr("ui.searchPanel.navire")}
-                    value={filters.vesselId}
-                    onChange={(value) => set({ vesselId: value })}
-                    options={vessels
-                      .filter(
-                        (vessel) =>
-                          !filters.companyId ||
-                          vesselCompanyIds(vessel.id, vessels, [...recentDepartures, ...departures]).includes(
-                            filters.companyId,
-                          ),
-                      )
-                      .map((vessel) => ({ value: vessel.id, label: vessel.name }))}
-                  />
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setWideFiltersOpen(true)}
-                  className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-semibold text-foreground transition hover:bg-secondary"
-                >
-                  <SlidersHorizontal className="size-3.5" aria-hidden />
-                  Filtres
-                </button>
-              )}
+              <Popover open={wideFiltersOpen || companyMenuOpen} onOpenChange={setWideFiltersOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="bw-wide-chip"
+                    data-on={Boolean(filters.companyId || filters.vesselId)}
+                  >
+                    <SlidersHorizontal className="size-3.5" aria-hidden />
+                    <span className="truncate">
+                      {filters.companyId || filters.vesselId
+                        ? [
+                            companies.find((company) => company.id === filters.companyId)?.name,
+                            vessels.find((vessel) => vessel.id === filters.vesselId)?.name,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")
+                        : "Compagnie, navire"}
+                    </span>
+                    <ChevronDown className="size-3.5 opacity-60" aria-hidden />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="start" sideOffset={8} className="bw-wide-filters w-[320px] p-3">
+                  <p className="bw-wide-filters__title">Affiner les départs</p>
+                  <div className="grid gap-2">
+                    <FilterSelect
+                      label={tr("ui.searchPanel.compagnie")}
+                      open={companyMenuOpen}
+                      onOpenChange={setCompanyMenuOpen}
+                      value={filters.companyId}
+                      onChange={(value) => set({ companyId: value })}
+                      options={companies.map((company) => ({
+                        value: company.id,
+                        label: company.name,
+                        leading: <CompanyBadge name={company.name} logoUrl={company.logo_url} size={20} />,
+                      }))}
+                    />
+                    <FilterSelect
+                      label={tr("ui.searchPanel.navire")}
+                      value={filters.vesselId}
+                      onChange={(value) => set({ vesselId: value })}
+                      options={vessels
+                        .filter(
+                          (vessel) =>
+                            !filters.companyId ||
+                            vesselCompanyIds(vessel.id, vessels, [...recentDepartures, ...departures]).includes(
+                              filters.companyId,
+                            ),
+                        )
+                        .map((vessel) => ({ value: vessel.id, label: vessel.name }))}
+                    />
+                  </div>
+                  {filters.companyId || filters.vesselId ? (
+                    <button
+                      type="button"
+                      className="bw-wide-filters__clear"
+                      onClick={() => set({ companyId: null, vesselId: null })}
+                    >
+                      Toutes les compagnies et tous les navires
+                    </button>
+                  ) : null}
+                </PopoverContent>
+              </Popover>
               {/* Tri en un geste, seulement quand il y a des départs à trier. */}
               {wideCount ? (
                 <div
@@ -1108,8 +1116,8 @@ export function SearchPanel({
                 </div>
               ) : null}
               {busiestRoutes.length ? (
-                <div className="bw-wide-quick" role="group" aria-label="Lignes les plus desservies">
-                  <span className="mx-1 h-6 w-px bg-border" aria-hidden />
+                <div className="bw-wide-quick" role="group" aria-label="Trajets populaires">
+                  <span className="bw-wide-quick__label">Populaires</span>
                   {busiestRoutes.map(({ route, from, to }) => (
                     <button
                       key={route.id}
@@ -1125,7 +1133,9 @@ export function SearchPanel({
                         )
                       }
                     >
-                      {from!.name} → {to!.name}
+                      {from!.name}
+                      <ArrowRight className="size-3" aria-hidden />
+                      {to!.name}
                     </button>
                   ))}
                 </div>

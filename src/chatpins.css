@@ -305,3 +305,24 @@
   border-radius: 12px;
   box-shadow: 0 6px 20px #16324a33;
 }
+
+/* Accueil (Réserver) : la carte sert à chercher une traversée. Les messages se réduisent à un
+   point discret ; la pastille complète revient au survol ou au clavier. */
+.bw-home--landing .bw-chat-pin:not([data-active="true"]):not(:hover):not(:focus-visible) {
+  width: 9px;
+  min-width: 9px;
+  height: 9px;
+  padding: 0;
+  border-radius: 50%;
+  background: #0e7a43;
+  opacity: 0.85;
+  box-shadow: 0 0 0 1.5px #fff;
+}
+.bw-home--landing
+  .bw-chat-pin:not([data-active="true"]):not(:hover):not(:focus-visible)
+  :is(.bw-chat-pin__icon, .bw-chat-pin__count, .bw-chat-pin__peek) {
+  display: none;
+}
+.bw-home--landing .bw-chat-pin[data-fresh="true"]::after {
+  display: none;
+}

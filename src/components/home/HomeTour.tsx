@@ -109,7 +109,7 @@ const DESKTOP = [
 const SLIDE_MS = 5000;
 
 /**
- * « Voyez ce qui vous attend » : les écrans de BledWay défilent dans un ordinateur et un téléphone.
+ * « Des papiers au débarquement » : les écrans de BledWay défilent dans un ordinateur et un téléphone.
  * La barre de progression pilote le défilement : elle ne tourne que si la section est à l'écran,
  * s'arrête au survol, au clavier et avec le bouton pause, et reste immobile si le système
  * demande moins d'animations.
@@ -151,9 +151,9 @@ export function HomeTour() {
     <section ref={root} className="bw-container bw-tour" data-reveal aria-labelledby="tour-title">
       <div className="bw-section-heading">
         <div>
-          <p className="bw-eyebrow">BledWay en vrai</p>
+          <p className="bw-eyebrow">Après la réservation</p>
           <h2 id="tour-title">
-            Voyez ce qui vous attend, <em>écran par écran.</em>
+            Des papiers au débarquement, <em>tout se suit ici.</em>
           </h2>
         </div>
         <button

@@ -317,6 +317,8 @@
   background: #0e7a43;
   opacity: 0.85;
   box-shadow: 0 0 0 1.5px #fff;
+  /* Le point se pose sur le navire, pas sur son nom. */
+  transform: translate(24px, 18px);
 }
 .bw-home--landing
   .bw-chat-pin:not([data-active="true"]):not(:hover):not(:focus-visible)

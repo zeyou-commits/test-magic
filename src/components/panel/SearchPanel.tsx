@@ -318,6 +318,8 @@ export function SearchPanel({
   const [wideCalOpen, setWideCalOpen] = useState(false);
   // Barre PC : Compagnie et Navire restent derrière « Filtres » tant qu'aucun n'est choisi.
   const [wideFiltersOpen, setWideFiltersOpen] = useState(false);
+  // Le bouton ⇄ fait un demi-tour à chaque inversion.
+  const [swapTurns, setSwapTurns] = useState(0);
   const [travellersOpen, setTravellersOpen] = useState(false);
   // Enchaînement : chaque choix ouvre le suivant (Départ → Arrivée → Dates → Voyageurs).
   const [portOpen, setPortOpen] = useState<"departure" | "arrival" | null>(null);
@@ -875,10 +877,17 @@ export function SearchPanel({
                     type="button"
                     title={tr("ui.searchPanel.inverserLeSens")}
                     aria-label={`Inverser le sens : actuellement ${reversed ? "Algérie → Europe" : "Europe → Algérie"}`}
-                    onClick={() => onFiltersChange(swapDirection(filters))}
-                    className="absolute -left-[17px] top-1/2 z-10 grid size-8 -translate-y-1/2 place-items-center rounded-full border border-border bg-card text-primary shadow-sm transition hover:bg-primary hover:text-primary-foreground"
+                    onClick={() => {
+                      setSwapTurns((turns) => turns + 1);
+                      onFiltersChange(swapDirection(filters));
+                    }}
+                    className="bw-wide-swap"
                   >
-                    <ArrowLeftRight className="size-3.5" aria-hidden />
+                    <ArrowLeftRight
+                      className="size-4"
+                      aria-hidden
+                      style={{ transform: `rotate(${swapTurns * 180}deg)` }}
+                    />
                   </button>
                   <div className="pl-3">
                     <PortMultiPicker
@@ -897,11 +906,11 @@ export function SearchPanel({
                     />
                   </div>
                 </div>
-                <div className={wideSegment}>
+                <div className={`${wideSegment} bw-wide-dates`}>
                   <TripCalendar
                     side="bottom"
                     anchor={
-                      <div className={`grid h-16 w-full ${filters.roundTrip ? "grid-cols-2" : "grid-cols-1"}`}>
+                      <div className={`bw-wide-legs grid h-16 w-full ${filters.roundTrip ? "grid-cols-2" : "grid-cols-1"}`}>
                         {(filters.roundTrip ? (["out", "ret"] as const) : (["out"] as const)).map((leg) => {
                           const value = leg === "out" ? filters.date : filters.returnDate;
                           const on = wideCalOpen && calField === leg;
@@ -909,6 +918,7 @@ export function SearchPanel({
                             <button
                               key={leg}
                               type="button"
+                              data-on={on || undefined}
                               disabled={leg === "ret" && !filters.date}
                               onClick={() => {
                                 setCalField(leg);
@@ -1005,9 +1015,10 @@ export function SearchPanel({
                     60,
                   );
                 }}
-                className="h-auto shrink-0 rounded-2xl bg-primary px-7 text-sm font-bold text-primary-foreground shadow-sm transition hover:brightness-110"
+                className="bw-wide-cta"
               >
                 {wideCount ? `Afficher ${wideCount}` : "Afficher les départs"}
+                <ArrowRight className="size-4" aria-hidden />
               </button>
             </div>
             {/* Options du voyage : type de trajet, filtres dans une fenêtre, trajets populaires.
@@ -1089,6 +1100,19 @@ export function SearchPanel({
                   ) : null}
                 </PopoverContent>
               </Popover>
+              {active ? (
+                <button
+                  type="button"
+                  className="bw-wide-reset"
+                  onClick={() => {
+                    onFiltersChange({ ...emptyFilters, roundTrip: filters.roundTrip });
+                    window.dispatchEvent(new Event("bledway:wide-results-hide"));
+                  }}
+                >
+                  <RotateCcw className="size-3.5" aria-hidden />
+                  {tr("ui.searchPanel.reinitialiser")}
+                </button>
+              ) : null}
               {/* Tri en un geste, seulement quand il y a des départs à trier. */}
               {wideCount ? (
                 <div
@@ -1141,24 +1165,11 @@ export function SearchPanel({
                 </div>
               ) : null}
               <span className="flex-1" />
-              {active ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onFiltersChange({ ...emptyFilters, roundTrip: filters.roundTrip });
-                    window.dispatchEvent(new Event("bledway:wide-results-hide"));
-                  }}
-                  className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground"
-                >
-                  <RotateCcw className="size-3.5" aria-hidden />
-                  {tr("ui.searchPanel.reinitialiser")}
-                </button>
-              ) : null}
               <button
                 type="button"
                 onClick={closeSearch}
                 aria-label={tr("ui.searchPanel.fermerLaRecherche")}
-                className="grid size-9 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
+                className="bw-wide-close grid size-9 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
               >
                 <X className="size-4" aria-hidden />
               </button>

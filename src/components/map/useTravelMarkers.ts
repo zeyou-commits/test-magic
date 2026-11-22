@@ -297,8 +297,9 @@ export function useTravelMarkers(
       });
       const marker = new Marker({
         element: button,
-        anchor: south ? "top-right" : isPort ? "bottom-right" : "bottom-left",
-        offset: [shift[0] + (isPort ? 4 : -4), shift[1] + (south ? 8 : -8)],
+        // Port d'Europe : au-dessus de son nom (posé sur le point ou à sa gauche), qui reste lisible.
+        anchor: south ? "top-right" : isPort ? "bottom" : "bottom-left",
+        offset: [shift[0] + (isPort && !south ? 14 : -4), shift[1] + (south ? 8 : isPort ? -26 : -8)],
       })
         .setLngLat(point)
         .addTo(map);

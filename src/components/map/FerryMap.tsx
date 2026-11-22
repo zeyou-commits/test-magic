@@ -625,17 +625,18 @@ export default function FerryMap({
       // Fond maritime calme : les ports et les traversées portent la hiérarchie.
       for (const layer of map.getStyle().layers) {
         if (layer.type === "background")
-          map.setPaintProperty(layer.id, "background-color", "#f6f2ea");
+          map.setPaintProperty(layer.id, "background-color", "#f4ede0");
         if (layer.type === "fill") {
           map.setPaintProperty(
             layer.id,
             "fill-color",
-            /water/.test(layer.id) ? "#e5eff0" : "#f6f2ea",
+            // Charte : mer bleu-vert lumineux, terres sable chaud (comme l'en-tête).
+            /water/.test(layer.id) ? "#d3eae8" : "#f4ede0",
           );
         }
         if (
           layer.type === "raster" ||
-          /hillshade|landcover|landuse|building|road|highway|bridge|tunnel|aeroway|airport|poi|railway|peak/.test(
+          /hillshade|landcover|landuse|park|building|road|highway|bridge|tunnel|aeroway|airport|poi|railway|peak/.test(
             layer.id,
           )
         ) {
@@ -643,7 +644,7 @@ export default function FerryMap({
         }
         if (layer.type === "symbol" && /label_country|water_name/.test(layer.id)) {
           map.setPaintProperty(layer.id, "text-color", "#627d8a");
-          map.setPaintProperty(layer.id, "text-halo-color", "#f6f2ea");
+          map.setPaintProperty(layer.id, "text-halo-color", "#f4ede0");
           // Téléphone : pays et mers en petit, pour laisser la place aux ports et aux navires.
           if (narrowScreen) map.setLayoutProperty(layer.id, "text-size", /water/.test(layer.id) ? 10 : 11.5);
         }

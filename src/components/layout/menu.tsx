@@ -75,12 +75,12 @@ export function PrepareBadge({ className = "" }: { className?: string }) {
     );
   return (
     <span
-      className={`bw-todo-dot ${className}`}
+      className={`bw-todo-dot bw-todo-dot--todo ${className}`}
       role="img"
       aria-label={t("menu.prepareUnfinished")}
       title={t("menu.prepareUnfinished")}
     >
-      !
+      <ListChecks size={11} strokeWidth={2.4} aria-hidden />
     </span>
   );
 }

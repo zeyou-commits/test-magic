@@ -28,7 +28,7 @@
   --border: #dcded8;
   --input: #7a8995;
   --ring: #1e5b7a;
-  --sea: #e5eff0;
+  --sea: #d3eae8;
   --map-country-highlight: #f6f2ea;
   --map-country-outline: #9baaa7;
   --map-route: #1e5b7a;
@@ -5404,4 +5404,187 @@ body:has(.bw-home--app) {
   .bw-on-water__card:hover {
     transform: none;
   }
+}
+
+/* ─── Finitions du 23/11/2026 : barre de recherche en surfaces, contrôles de carte en verre,
+   en-tête apaisé. ─── */
+@media (min-width: 1180px) {
+  /* Chaque champ est une surface sable ; actif, il passe en blanc avec un anneau vert. */
+  .bw-wide-bar {
+    gap: 8px !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+  .bw-wide-bar > div {
+    border-radius: 16px;
+    background: #f4efe6 !important;
+    transition:
+      background 0.18s var(--bw-ease),
+      box-shadow 0.18s var(--bw-ease);
+  }
+  .bw-wide-bar > div:not(.bw-wide-dates):hover,
+  .bw-wide-legs > button:not(:disabled):hover {
+    background: #fff !important;
+    box-shadow:
+      0 0 0 1px #e6e1d6,
+      0 8px 20px -14px #16324a59;
+  }
+  .bw-wide-bar > div:not(.bw-wide-dates):has([data-state="open"]),
+  .bw-wide-bar > div:not(.bw-wide-dates):focus-within,
+  .bw-wide-legs > button[data-on] {
+    background: #fff !important;
+    box-shadow:
+      0 0 0 2px #0e7a43,
+      0 10px 26px -16px #0e7a4380 !important;
+  }
+  .bw-wide-bar .batogo-control,
+  .bw-wide-bar button[data-state="open"] {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  .bw-wide-bar > div > button,
+  .bw-wide-bar .batogo-control {
+    border-radius: 16px !important;
+  }
+  /* Aller et retour : deux surfaces côte à côte. */
+  .bw-wide-bar > .bw-wide-dates {
+    background: transparent !important;
+  }
+  .bw-wide-legs {
+    gap: 8px;
+  }
+  .bw-wide-legs > button {
+    border: 0 !important;
+    border-radius: 16px;
+    background: #f4efe6;
+    box-shadow: none;
+    transition:
+      background 0.18s var(--bw-ease),
+      box-shadow 0.18s var(--bw-ease);
+  }
+  /* ⇄ : vrai bouton rond, blanc et surélevé, à cheval sur Départ et Arrivée. */
+  .bw-wide-swap {
+    position: absolute;
+    top: 50%;
+    left: -22px;
+    z-index: 10;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid #e6e1d6;
+    border-radius: 999px;
+    background: #fff;
+    color: #0e7a43;
+    box-shadow: 0 6px 14px -6px #16324a59;
+    transform: translateY(-50%);
+    transition:
+      box-shadow 0.18s var(--bw-ease),
+      transform 0.18s var(--bw-ease);
+  }
+  .bw-wide-swap:hover {
+    box-shadow: 0 10px 20px -8px #16324a73;
+    transform: translateY(-50%) scale(1.06);
+  }
+  .bw-wide-swap svg {
+    transition: transform 0.35s var(--bw-ease);
+  }
+  /* Bouton principal : léger dégradé vers le vert sapin, ombre verte diffuse, flèche. */
+  .bw-wide-cta {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 8px;
+    padding: 0 26px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #13894c 0%, #0e7a43 45%, #0a5c37 100%);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    box-shadow:
+      0 14px 30px -14px #0e7a43b3,
+      inset 0 1px 0 #ffffff2e;
+    transition:
+      transform 0.18s var(--bw-ease),
+      box-shadow 0.18s var(--bw-ease);
+  }
+  .bw-wide-cta:hover {
+    box-shadow:
+      0 18px 34px -14px #0e7a43cc,
+      inset 0 1px 0 #ffffff2e;
+    transform: translateY(-1px);
+  }
+  .bw-wide-cta svg {
+    transition: transform 0.18s var(--bw-ease);
+  }
+  .bw-wide-cta:hover svg {
+    transform: translateX(3px);
+  }
+  /* Réinitialiser : lien texte à côté des filtres. */
+  .bw-wide-reset {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 5px;
+    height: 36px;
+    padding: 0 6px;
+    color: #1e5b7a;
+    font-size: 12.5px;
+    font-weight: 650;
+  }
+  .bw-wide-reset:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  /* Sans liste ouverte, la croix n'a rien à fermer. */
+  .bw-map-stage[data-wide-idle="true"] .bw-wide-close {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-wide-swap svg,
+  .bw-wide-cta,
+  .bw-wide-cta svg {
+    transition: none;
+  }
+}
+
+/* Contrôles flottants de la carte : même verre dépoli, mêmes coins, traits fins. */
+.bw-map-stats [data-tour="filters"],
+.bw-on-water__title,
+.bw-on-water__card {
+  border: 1px solid #ffffffb3 !important;
+  background: #ffffffc2 !important;
+  box-shadow: 0 12px 30px -18px #16324a66 !important;
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+}
+.bw-map-stats [data-tour="filters"],
+.bw-on-water__card {
+  border-radius: 18px !important;
+}
+.bw-map-stats [data-tour="filters"] svg {
+  stroke-width: 1.6;
+}
+.bw-on-water__card:hover {
+  border-color: #0e7a43 !important;
+}
+
+/* En-tête : préparation en cours = petite liste verte (plus de « ! » d'erreur). */
+.bw-todo-dot--todo {
+  background: #e3f1e8;
+  color: #0e7a43;
+  box-shadow: inset 0 0 0 1px #0e7a4333;
+}
+/* Notifications non lues : le terracotta du badge BÊTA. */
+.bw-usermenu-badge {
+  background: #cf4427 !important;
+}
+/* BÊTA posé sur la ligne de base du logo, plus en apesanteur au-dessus de la voiture. */
+.bw-brand-link .bw-beta {
+  align-self: flex-end;
+  margin-bottom: 7px;
+  margin-left: 4px;
 }

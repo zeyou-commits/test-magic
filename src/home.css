@@ -5100,142 +5100,6 @@ body:has(.bw-home--app) {
   font-weight: 700;
 }
 
-/* ─── Haut de l'accueil vitrine : pastille « En direct », titre, accroche. ─── */
-.bw-landing-intro {
-  display: grid;
-  justify-items: start;
-  gap: 12px;
-  padding-block: 22px 18px;
-}
-.bw-landing-intro__title {
-  max-width: 22ch;
-  color: #16324a;
-  font-size: clamp(32px, 3vw, 44px);
-  font-weight: 750;
-  letter-spacing: -0.045em;
-  line-height: 1.06;
-}
-.bw-landing-intro__title em {
-  display: block;
-  color: #0e7a43;
-  font-style: normal;
-}
-.bw-landing-intro__lead {
-  max-width: 62ch;
-  color: #53636b;
-  font-size: 16px;
-  line-height: 1.65;
-}
-.bw-live-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  max-width: min(100%, 760px);
-  min-height: 40px;
-  padding: 4px 6px 4px 4px;
-  border: 1px solid #e2ddd1;
-  border-radius: 999px;
-  background: #fffcf6;
-  box-shadow: 0 10px 26px -18px #16324a66;
-}
-.bw-live-pill__tag {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 7px;
-  height: 30px;
-  padding: 0 12px;
-  border-radius: 999px;
-  background: #e3f1e7;
-  color: #0b6236;
-  font-size: 11.5px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.bw-live-pill__tag i {
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: #0e7a43;
-  animation: bw-live-pulse 1.8s infinite;
-}
-@keyframes bw-live-pulse {
-  0% {
-    box-shadow: 0 0 0 0 #0e7a438c;
-  }
-  70% {
-    box-shadow: 0 0 0 7px #0e7a4300;
-  }
-  100% {
-    box-shadow: 0 0 0 0 #0e7a4300;
-  }
-}
-.bw-live-pill__text {
-  min-width: 0;
-  overflow: hidden;
-  color: #16324a;
-  font-size: 14px;
-  font-weight: 650;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  animation: bw-live-in 0.45s var(--bw-ease) both;
-}
-.bw-live-pill__text:hover {
-  color: #0e7a43;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-@keyframes bw-live-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-}
-.bw-live-pill__next {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 2px;
-  height: 30px;
-  padding: 0 6px 0 10px;
-  border-radius: 999px;
-  color: #53636b;
-  font-size: 12px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  transition: background 0.18s var(--bw-ease);
-}
-.bw-live-pill__next:hover {
-  background: #f1ece2;
-  color: #16324a;
-}
-/* Téléphone : la pastille au-dessus de la carte Réserver. */
-.bw-landing-live-m {
-  padding: 12px 16px 0;
-}
-.bw-live-pill[data-compact] {
-  display: flex;
-  max-width: 100%;
-  gap: 8px;
-}
-.bw-live-pill[data-compact] .bw-live-pill__tag {
-  padding: 0 10px;
-  font-size: 10.5px;
-}
-.bw-live-pill[data-compact] .bw-live-pill__text {
-  flex: 1;
-  font-size: 13px;
-}
-.bw-live-pill[data-compact] .bw-live-pill__next > span {
-  display: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  .bw-live-pill__tag i,
-  .bw-live-pill__text {
-    animation: none;
-  }
-}
 /* Lignes les plus desservies, sous la barre de recherche PC (assez de place à partir de 1320 px). */
 .bw-wide-quick {
   display: inline-flex;
@@ -5247,8 +5111,8 @@ body:has(.bw-home--app) {
   height: 32px;
   padding: 0 12px;
   border-radius: 999px;
-  background: #edf6ef;
-  color: #0b6236;
+  background: #f1ece2;
+  color: #435566;
   font-size: 12px;
   font-weight: 650;
   white-space: nowrap;
@@ -5257,8 +5121,8 @@ body:has(.bw-home--app) {
     color 0.18s var(--bw-ease);
 }
 .bw-wide-quick button:hover {
-  background: #0e7a43;
-  color: #fff;
+  background: #e6dfd1;
+  color: #16324a;
 }
 @media (max-width: 1319px) {
   .bw-wide-quick {
@@ -5305,7 +5169,7 @@ body:has(.bw-home--app) {
 /* ─── Accueil PC : « Sur l'eau maintenant », en bas à gauche de la carte. ─── */
 .bw-on-water {
   position: absolute;
-  bottom: 22px;
+  top: calc(var(--wide-bar-h, 150px) + 40px);
   left: 22px;
   z-index: 30;
   display: grid;
@@ -5362,6 +5226,14 @@ body:has(.bw-home--app) {
   background: #e5eff0;
   color: #1e5b7a;
 }
+.bw-on-water__photo {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: #e5eff0;
+  object-fit: cover;
+}
 .bw-on-water__icon[data-sea] {
   background: #edf6ef;
   color: #0e7a43;
@@ -5413,8 +5285,8 @@ body:has(.bw-home--app) {
   background: #0f2638;
 }
 @media (max-width: 1319px) {
-  .bw-on-water__badge {
-    display: none;
+  .bw-on-water__text {
+    max-width: 150px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

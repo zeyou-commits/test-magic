@@ -32,11 +32,11 @@ const SCREENS: Screen[] = [
     title: "Préparer",
     text: "Un guide pas à pas : papiers voyageur par voyageur, calendrier à rebours, budget et rappels.",
     pill: "Rappel : vos papiers à vérifier",
-    link: { label: "Préparer mon voyage", to: "/preparer-mon-voyage" },
+    link: { label: "Préparer mes papiers", to: "/papiers-voyage-algerie" },
     phone: {
-      src: "/images/espace-compagnie/preparer.webp",
+      src: "/images/accueil/papiers-mobile.webp",
       height: 1560,
-      alt: "Écran « Préparer mon voyage » de BledWay sur téléphone",
+      alt: "Écran « Mes papiers » de BledWay sur téléphone : la première question du parcours",
     },
     desktop: 0,
   },
@@ -99,7 +99,7 @@ const SCREENS: Screen[] = [
 ];
 
 const DESKTOP = [
-  { src: "/images/accueil/preparer.webp", alt: "Préparer mon voyage sur ordinateur" },
+  { src: "/images/accueil/papiers.webp", alt: "Parcours « Mes papiers » sur ordinateur" },
   { src: "/images/accueil/reserver.webp", alt: "Recherche de traversées sur ordinateur" },
   { src: "/images/accueil/traverser.webp", alt: "Carte en direct des navires sur ordinateur" },
   { src: "/images/accueil/arriver.webp", alt: "Dossier pratique sur ordinateur" },

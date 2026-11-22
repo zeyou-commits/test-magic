@@ -1,5 +1,35 @@
+import { useQuery } from "@tanstack/react-query";
 import { Anchor, ArrowRight, Ship } from "lucide-react";
 import type { FleetShip } from "@/lib/ferry/fleet";
+import type { Vessel } from "@/lib/ferry/types";
+import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
+
+type VesselRef = Pick<Vessel, "id" | "name" | "photo_url">;
+
+/** La vraie photo du navire (celle de sa fiche, sinon une photo libre de Commons), sinon l'icône. */
+function ShipPhoto({ vessel, atSea }: { vessel: VesselRef | undefined; atSea: boolean }) {
+  const photo = useQuery({
+    ...vesselPhotoQuery(vessel ?? { id: "", name: "", photo_url: null }),
+    enabled: Boolean(vessel),
+  }).data;
+  if (photo?.url)
+    return (
+      <img
+        src={photo.url}
+        alt=""
+        width={52}
+        height={52}
+        loading="lazy"
+        decoding="async"
+        className="bw-on-water__photo"
+      />
+    );
+  return (
+    <span className="bw-on-water__icon" data-sea={atSea || undefined} aria-hidden>
+      {atSea ? <Ship size={19} /> : <Anchor size={19} />}
+    </span>
+  );
+}
 
 type Info = { dock: string; destination: string };
 
@@ -12,12 +42,14 @@ export function HomeOnWater({
   atSea,
   docked,
   infoOf,
+  vesselOf,
   onOpen,
   onLive,
 }: {
   atSea: FleetShip[];
   docked: FleetShip[];
   infoOf: (ship: FleetShip) => Info;
+  vesselOf: (ship: FleetShip) => VesselRef | undefined;
   onOpen: (ship: FleetShip) => void;
   onLive: () => void;
 }) {
@@ -38,9 +70,7 @@ export function HomeOnWater({
               className="bw-on-water__card"
               onClick={() => onOpen(ship)}
             >
-              <span className="bw-on-water__icon" data-sea={atSeaNow || undefined} aria-hidden>
-                {atSeaNow ? <Ship size={19} /> : <Anchor size={19} />}
-              </span>
+              <ShipPhoto vessel={vesselOf(ship)} atSea={atSeaNow} />
               <span className="bw-on-water__text">
                 <strong>{ship.name}</strong>
                 <span>{atSeaNow ? `${info.dock} → ${info.destination}` : info.dock}</span>
@@ -48,8 +78,8 @@ export function HomeOnWater({
               <span className="bw-on-water__badge" data-sea={atSeaNow || undefined}>
                 {atSeaNow
                   ? ship.source === "live"
-                    ? "En mer · position réelle"
-                    : "En mer · estimée"
+                    ? "Position réelle"
+                    : "Position estimée"
                   : "À quai"}
               </span>
             </button>

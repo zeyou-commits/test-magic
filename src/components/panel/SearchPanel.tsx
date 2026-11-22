@@ -316,6 +316,9 @@ export function SearchPanel({
   // Grand écran : pas de formulaire pas à pas, la barre horizontale reste au-dessus des résultats.
   const formOpen = editing && !wide;
   const [wideCalOpen, setWideCalOpen] = useState(false);
+  // Barre PC : Compagnie et Navire restent derrière « Filtres » tant qu'aucun n'est choisi.
+  const [wideFiltersOpen, setWideFiltersOpen] = useState(false);
+  const wideFiltersShown = wideFiltersOpen || Boolean(filters.companyId || filters.vesselId);
   const [travellersOpen, setTravellersOpen] = useState(false);
   // Enchaînement : chaque choix ouvre le suivant (Départ → Arrivée → Dates → Voyageurs).
   const [portOpen, setPortOpen] = useState<"departure" | "arrival" | null>(null);
@@ -1039,34 +1042,45 @@ export function SearchPanel({
                 {reversed ? tr("ui.searchPanel.algerieEurope") : tr("ui.searchPanel.europeAlgerie")}
               </button>
               <span className="mx-1 h-6 w-px bg-border" aria-hidden />
-              <div className="grid w-[330px] shrink grid-cols-2 gap-1.5">
-                <FilterSelect
-                  label={tr("ui.searchPanel.compagnie")}
-                  open={companyMenuOpen}
-                  onOpenChange={setCompanyMenuOpen}
-                  value={filters.companyId}
-                  onChange={(value) => set({ companyId: value })}
-                  options={companies.map((company) => ({
-                    value: company.id,
-                    label: company.name,
-                    leading: <CompanyBadge name={company.name} logoUrl={company.logo_url} size={20} />,
-                  }))}
-                />
-                <FilterSelect
-                  label={tr("ui.searchPanel.navire")}
-                  value={filters.vesselId}
-                  onChange={(value) => set({ vesselId: value })}
-                  options={vessels
-                    .filter(
-                      (vessel) =>
-                        !filters.companyId ||
-                        vesselCompanyIds(vessel.id, vessels, [...recentDepartures, ...departures]).includes(
-                          filters.companyId,
-                        ),
-                    )
-                    .map((vessel) => ({ value: vessel.id, label: vessel.name }))}
-                />
-              </div>
+              {wideFiltersShown ? (
+                <div className="grid w-[330px] shrink grid-cols-2 gap-1.5">
+                  <FilterSelect
+                    label={tr("ui.searchPanel.compagnie")}
+                    open={companyMenuOpen}
+                    onOpenChange={setCompanyMenuOpen}
+                    value={filters.companyId}
+                    onChange={(value) => set({ companyId: value })}
+                    options={companies.map((company) => ({
+                      value: company.id,
+                      label: company.name,
+                      leading: <CompanyBadge name={company.name} logoUrl={company.logo_url} size={20} />,
+                    }))}
+                  />
+                  <FilterSelect
+                    label={tr("ui.searchPanel.navire")}
+                    value={filters.vesselId}
+                    onChange={(value) => set({ vesselId: value })}
+                    options={vessels
+                      .filter(
+                        (vessel) =>
+                          !filters.companyId ||
+                          vesselCompanyIds(vessel.id, vessels, [...recentDepartures, ...departures]).includes(
+                            filters.companyId,
+                          ),
+                      )
+                      .map((vessel) => ({ value: vessel.id, label: vessel.name }))}
+                  />
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setWideFiltersOpen(true)}
+                  className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-semibold text-foreground transition hover:bg-secondary"
+                >
+                  <SlidersHorizontal className="size-3.5" aria-hidden />
+                  Filtres
+                </button>
+              )}
               {/* Tri en un geste, seulement quand il y a des départs à trier. */}
               {wideCount ? (
                 <div

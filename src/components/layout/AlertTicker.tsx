@@ -13,7 +13,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { tr } from "@/lib/i18n";
 import { encodeDismiss, isDismissed } from "@/lib/ferry/tickerRules";
-import { useHomeLanding } from "@/lib/home/landing";
 
 const DISMISSED_KEY = "bledway:alert-ticker-dismissed";
 const RAIL_DISMISSED_KEY = "bledway:news-rail-dismissed";
@@ -65,8 +64,6 @@ function AlertTickerBar() {
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  // Accueil vitrine : le fil passe dans la pastille « En direct » du haut de page.
-  const landing = useHomeLanding() && pathname === "/";
   const [dismissed, setDismissed] = useState<string | null>(null);
   const [railDismissed, setRailDismissed] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
@@ -167,8 +164,7 @@ function AlertTickerBar() {
     .slice(0, 8);
   const railVersion = rail.map((item) => item.id).join("|");
   const showAlerts = alerts.length > 0 && !isDismissed(dismissed, version, Date.now());
-  const showRail =
-    !landing && rail.length > 0 && !isDismissed(railDismissed, railVersion, Date.now());
+  const showRail = rail.length > 0 && !isDismissed(railDismissed, railVersion, Date.now());
   // Données reçues (ou en erreur) et préférences lues : on sait si le bandeau s'affiche.
   const settled =
     ready && newsResult.status !== "pending" && incidentsResult.status !== "pending";

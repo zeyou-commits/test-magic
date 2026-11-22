@@ -8,7 +8,6 @@ import {
   ClipboardList,
   Images,
   Map as MapIcon,
-  Megaphone,
   MessageSquareReply,
   MessagesSquare,
   Pause,
@@ -16,9 +15,9 @@ import {
   Scale,
   Send,
   ShieldCheck,
-  Sparkles,
   Ticket,
   UserCheck,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import { companiesQuery } from "@/lib/ferry/queries";
@@ -71,13 +70,13 @@ const PASSENGERS: { icon: LucideIcon; title: string; text: string; image: string
 const PLACE: { icon: LucideIcon; title: string; text: string }[] = [
   {
     icon: CalendarClock,
-    title: "Des horaires justes",
-    text: "Signalez un retard, un changement de navire ou une annulation : la traversée est mise à jour tout de suite et les passagers qui la suivent sont prévenus.",
+    title: "Un bouton par traversée",
+    text: "Retard, nouvel horaire, autre navire, annulation ou simple consigne : tout part tout de suite, signé de votre compagnie, et les passagers qui suivent la traversée sont prévenus.",
   },
   {
-    icon: Megaphone,
-    title: "Vos annonces, signées",
-    text: "Envoyez un message aux passagers d'une traversée, signé du nom de votre compagnie. Il part tout de suite.",
+    icon: Users,
+    title: "Qui vous écoute",
+    text: "Vous voyez combien de personnes suivent chacune de vos traversées, et ce qui attend une réponse de votre part.",
   },
   {
     icon: MessageSquareReply,
@@ -103,7 +102,7 @@ const RULES: { icon: LucideIcon; text: string }[] = [
   },
   {
     icon: ShieldCheck,
-    text: "Pour une annonce, vous voyez le nombre de destinataires, jamais leur liste.",
+    text: "Vous voyez combien de personnes suivent vos traversées ou recevront une annonce, jamais qui elles sont.",
   },
 ];
 
@@ -323,6 +322,18 @@ export function CompanyShowcase({
                 voyage jusqu'au port. L'espace compagnie vous permet d'y prendre la parole en votre
                 nom : horaires, annonces, réponses aux avis, fiche et photos, publiés tout de suite.
               </p>
+              <ul className="mt-5 grid gap-2 text-[15px] font-semibold">
+                {[
+                  "Prévenez vos passagers en direct",
+                  "Répondez là où ils lisent les avis",
+                  "Corrigez votre fiche vous-même",
+                ].map((gain) => (
+                  <li key={gain} className="flex items-center gap-2">
+                    <Check className="size-4 flex-none text-[#f6c445]" aria-hidden />
+                    {gain}
+                  </li>
+                ))}
+              </ul>
               <div className="mt-7 flex flex-wrap gap-3">
                 <a
                   href="#demande"
@@ -414,16 +425,12 @@ export function CompanyShowcase({
               <AccessRequestFormCard defaultEmail={signedInEmail ?? ""} />
               <aside className="grid content-start gap-4">
                 <div className="rounded-2xl bg-[#0c1f33] p-6 text-white">
-                  <p className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[.12em] text-[#f6c445]">
-                    <Sparkles className="size-4" aria-hidden />
-                    Bientôt
-                  </p>
-                  <h3 className="mt-2 text-lg font-bold">Devenir partenaire BledWay</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-white/80">
-                    Un espace partenaires est en préparation, pour faire connaître vos offres aux
-                    voyageurs, aux couleurs de votre compagnie. Si cela vous intéresse, dites-le
-                    dans votre demande.
-                  </p>
+                  <h3 className="text-lg font-bold">Après votre demande</h3>
+                  <ol className="mt-3 grid gap-2 text-sm leading-relaxed text-white/80">
+                    <li>1. L'équipe BledWay vérifie que vous représentez bien la compagnie.</li>
+                    <li>2. Vous recevez une invitation personnelle par e-mail.</li>
+                    <li>3. Vous ouvrez le lien : votre espace est prêt, avec vos traversées.</li>
+                  </ol>
                 </div>
                 {signedIn ? null : (
                   <div className="rounded-2xl border border-[#e1e7ee] p-6">
@@ -610,7 +617,7 @@ function AccessRequestFormCard({ defaultEmail }: { defaultEmail: string }) {
         <textarea
           className={`${fieldClass} min-h-24`}
           maxLength={1000}
-          placeholder="Ce que vous souhaitez faire avec l'espace compagnie, intérêt pour le partenariat…"
+          placeholder="Ce que vous souhaitez faire avec l'espace compagnie, vos lignes, vos questions…"
           value={form.message}
           onChange={(e) => set("message", e.target.value)}
         />

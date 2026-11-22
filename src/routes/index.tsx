@@ -79,6 +79,7 @@ import { SiteFooter, SiteHeader } from "@/components/layout/SiteLayout";
 import { HomeServices } from "@/components/home/HomeServices";
 import { HomeSearchCard } from "@/components/home/HomeSearchCard";
 import { HomeLivePill } from "@/components/home/HomeLivePill";
+import { HomeOnWater } from "@/components/home/HomeOnWater";
 import { setHomeLanding } from "@/lib/home/landing";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import type { ItineraryMapPreview } from "@/lib/ferry/itinerary";
@@ -2076,6 +2077,20 @@ function Index() {
             {voyage ? null : (
               <MyTripMapChip fleet={fleet} onOpen={(next) => handleSelectRef.current(next)} />
             )}
+            {/* Accueil PC, avant toute recherche affichée : les navires sur l'eau, en un clic. */}
+            {desktopIntro && wideIdle && !selection ? (
+              <HomeOnWater
+                atSea={atSea}
+                docked={upcomingShips}
+                infoOf={(ship) => fleetShortcutInfo(ship, allDepartures, routes, ports, Date.now())}
+                onOpen={(ship) =>
+                  ship.vesselId
+                    ? handleSelect({ type: "vessel", id: ship.vesselId })
+                    : handleSelect({ type: "departure", id: ship.departureId })
+                }
+                onLive={resetToMap}
+              />
+            ) : null}
             <MapStats
               search={
                 <MapSearch

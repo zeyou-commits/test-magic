@@ -21,8 +21,11 @@ import { RouteCard, courte, duree } from "@/components/routesDuBled/RouteCard";
 import { seoHead } from "@/lib/seo/site";
 import { tr } from "@/lib/i18n";
 import { calculateRoadGeometry, measureBledLegs } from "@/lib/ferry/itinerary.functions";
+import { useAuth } from "@/hooks/useAuth";
 import {
   loadCommunityStops,
+  loadMyStops,
+  locateOnRoute,
   loadDureesMer,
   loadRoutesData,
   mergeCommunity,
@@ -30,7 +33,7 @@ import {
   type StopKind,
 } from "@/lib/routesDuBled/data";
 import { PLACE_NAME, type Chain, type ChainStop } from "@/lib/routesDuBled/trajets";
-import { carnet, viaVilles, type Carnet, type Pas } from "@/lib/routesDuBled/carnet";
+import { carnet, viaVilles, type Ajout, type Carnet, type Pas } from "@/lib/routesDuBled/carnet";
 import {
   chemins,
   cleBout,
@@ -138,6 +141,15 @@ function RoutesDuBledPage() {
     queryKey: ["routes-du-bled", "community"],
     queryFn: loadCommunityStops,
     staleTime: 60_000,
+  });
+  // Mes propositions : visibles tout de suite dans mon carnet, avant la relecture de l'équipe.
+  const { user } = useAuth();
+  const mine = useQuery({
+    queryKey: ["routes-du-bled", "mine", user?.id],
+    queryFn: loadMyStops,
+    enabled: Boolean(user),
+    staleTime: 30_000,
+    retry: false,
   });
   // Durées habituelles des traversées, tenues dans les lignes par l'équipe.
   const dureesMer = useQuery({
@@ -281,6 +293,44 @@ function RoutesDuBledPage() {
   });
 
   // Le carnet de chaque route affichée ; celui de la route choisie suit le vrai tracé.
+  // Les lieux à poser dans le carnet : les miens (en attente, refusés, publiés), et ceux des voyageurs
+  // publiés loin des routes relevées (la fin de route vers Tindouf, par exemple), que la route ne montre pas.
+  const ajouts = useMemo<Ajout[]>(() => {
+    const out: Ajout[] = [];
+    const vus = new Set<string>();
+    for (const r of user ? (mine.data ?? []) : []) {
+      if (r.lat == null || r.lon == null) continue;
+      vus.add(r.id);
+      out.push({
+        id: r.id,
+        k: r.kind,
+        n: r.name,
+        place: r.place,
+        lat: r.lat,
+        lon: r.lon,
+        f: r.features,
+        etat: r.status === "pending" ? "attente" : r.status === "approved" ? "mien" : "refuse",
+        note: r.decision_note,
+      });
+    }
+    for (const r of community.data ?? []) {
+      if (vus.has(r.id) || r.lat == null || r.lon == null) continue;
+      const route = routes.find((x) => x.id === r.route_code);
+      if (route && locateOnRoute(route, r.lon, r.lat).off <= 5) continue;
+      out.push({
+        id: r.id,
+        k: r.kind,
+        n: r.name,
+        place: r.place,
+        lat: r.lat,
+        lon: r.lon,
+        f: r.features,
+        etat: "publie",
+      });
+    }
+    return out;
+  }, [user, mine.data, community.data, routes]);
+
   const carnets = useMemo(() => {
     const m = new Map<string, Carnet>();
     if (!from || !to) return m;
@@ -292,10 +342,11 @@ function RoutesDuBledPage() {
           from,
           to,
           c === sel ? { approche: geo.data?.toPort, fin: geo.data?.fromPort } : undefined,
+          ajouts,
         ),
       );
     return m;
-  }, [shown, sel, from, to, geo.data]);
+  }, [shown, sel, from, to, geo.data, ajouts]);
   const selCarnet = sel ? (carnets.get(sel.id) ?? null) : null;
   useEffect(() => {
     setOpenId(null);
@@ -434,6 +485,18 @@ function RoutesDuBledPage() {
     if (!sel || !selCarnet) return pins;
     const main = new Set<string>();
     for (const p of selCarnet.pas) {
+      if (p.ajout && p.ajout.etat !== "refuse") {
+        pins.push({
+          id: p.id,
+          lat: p.point[1],
+          lon: p.point[0],
+          k: p.ajout.k,
+          main: true,
+          vide: false,
+          attente: p.ajout.etat === "attente",
+        });
+        continue;
+      }
       if (p.n == null) continue;
       const lieu =
         p.k === "priere" ? (p.priere ?? p.etape?.best ?? p.lieu) : (p.etape?.best ?? p.lieu);

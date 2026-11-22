@@ -61,4 +61,39 @@ describe("carnet", () => {
     const { pas } = carnet(c, PARIS, ALGER);
     expect(pas.some((p) => p.k === "priere" && p.priere)).toBe(true);
   });
+  it("pose un lieu ajouté par un voyageur à sa place, même loin des routes relevées", () => {
+    const c = trajet(PARIS.point, TINDOUF.point)[0]!;
+    const sans = carnet(c, PARIS, TINDOUF);
+    // Un point posé sur la ligne de fin de route, à mi-chemin du port au village.
+    const fin = sans.pas.filter((p) => p.side === "dz" && p.k === "vide");
+    const ici = fin[Math.floor(fin.length / 2)]!.point;
+    const k = carnet(c, PARIS, TINDOUF, undefined, [
+      {
+        id: "x",
+        k: "priere",
+        n: "Mosquée de test",
+        place: "Test",
+        lon: ici[0],
+        lat: ici[1],
+        f: [],
+        etat: "attente",
+      },
+      {
+        id: "loin",
+        k: "manger",
+        n: "Trop loin",
+        place: "Test",
+        lon: 10,
+        lat: 45,
+        f: [],
+        etat: "publie",
+      },
+    ]);
+    const aj = k.pas.filter((p) => p.k === "ajout");
+    expect(aj.map((p) => p.ajout!.id)).toEqual(["x"]);
+    const i = k.pas.findIndex((p) => p.k === "ajout");
+    expect(k.pas[i]!.side).toBe("dz");
+    expect(k.pas[i - 1]!.h).toBeLessThanOrEqual(k.pas[i]!.h);
+    expect(k.pas[i + 1]!.h).toBeGreaterThanOrEqual(k.pas[i]!.h);
+  });
 });

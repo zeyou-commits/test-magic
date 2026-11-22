@@ -512,3 +512,10 @@
 .rdb-map[data-picking] .rdb-filters { display: none; }
 .rdb-mk--car img { filter: drop-shadow(0 2px 3px rgb(13 48 67 / 0.35)); transition: transform 0.3s; }
 @media (prefers-reduced-motion: reduce) { .rdb-rc__toggle svg, .rdb-leg__add { transition: none; } }
+.rdb-pas[data-k="ajout"] .rdb-pas__dot { background: var(--k); border-color: var(--k); color: #fff; }
+.rdb-pas[data-k="ajout"]:has([data-etat="attente"]) .rdb-pas__dot { background: var(--card); color: var(--k); border-style: dashed; }
+.rdb-pas[data-k="ajout"]:has([data-etat="refuse"]) { opacity: 0.6; }
+.rdb-chip-ajout { display: inline-flex; align-items: center; padding: 0.1rem 0.55rem; border-radius: 999px; font-size: 0.75rem; font-weight: 800; background: color-mix(in srgb, #0e7a43 13%, var(--card)); color: #0e7a43; }
+.rdb-chip-ajout[data-etat="attente"] { background: color-mix(in srgb, #b4560f 12%, var(--card)); color: #b4560f; }
+.rdb-chip-ajout[data-etat="refuse"] { background: var(--secondary); color: var(--muted-foreground); }
+.rdb-pas__type { font-size: 0.75rem; font-weight: 600; color: var(--muted-foreground); align-self: center; }

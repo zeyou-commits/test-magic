@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { Crosshair, LocateFixed, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -84,6 +85,7 @@ export function AddStopDialog({
   onPickOnMap: () => void;
 }) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [sending, setSending] = useState(false);
   const [locating, setLocating] = useState(false);
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
@@ -132,7 +134,15 @@ export function AddStopDialog({
         direction: draft.direction,
         note: draft.note.trim(),
       });
-      toast.success(tr("ui.pageRoutesDuBled.merciProposition"));
+      // Placée sur la carte : elle apparaît tout de suite dans le carnet, en attente de relecture.
+      toast.success(
+        tr(
+          draft.coords
+            ? "ui.pageRoutesDuBled.merciPropositionCarnet"
+            : "ui.pageRoutesDuBled.merciProposition",
+        ),
+      );
+      void queryClient.invalidateQueries({ queryKey: ["routes-du-bled", "mine"] });
       setDraft(emptyDraft(draft.route));
       onOpenChange(false);
     } catch (error) {

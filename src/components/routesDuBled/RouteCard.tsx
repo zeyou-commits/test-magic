@@ -283,7 +283,6 @@ function CarnetView({
   );
 }
 
-
 function PasView({
   p,
   c,
@@ -339,6 +338,58 @@ function PasView({
           {tr("ui.pageRoutesDuBled.preparerLien")}
         </Link>
       </p>
+    );
+  } else if (p.k === "ajout" && p.ajout) {
+    // Un lieu ajouté : le tien (en attente, publié ou pas retenu) ou celui d'un autre voyageur.
+    const a = p.ajout;
+    icon = <KindIcon kind={a.k} className="size-4" />;
+    title = a.n;
+    body = (
+      <>
+        <p className="rdb-pas__chips">
+          <span className="rdb-chip-ajout" data-etat={a.etat}>
+            {tr(
+              a.etat === "attente"
+                ? "ui.pageRoutesDuBled.ajoutAttente"
+                : a.etat === "mien"
+                  ? "ui.pageRoutesDuBled.ajoutTonAjout"
+                  : a.etat === "refuse"
+                    ? "ui.pageRoutesDuBled.ajoutRefuse"
+                    : "ui.pageRoutesDuBled.ajoutPublie",
+            )}
+          </span>
+          <span className="rdb-pas__type">{kindLabel(a.k)}</span>
+        </p>
+        <p className="rdb-pas__text">
+          {a.place}
+          {a.etat === "attente" ? ` · ${tr("ui.pageRoutesDuBled.ajoutAttenteTexte")}` : ""}
+          {a.etat === "refuse" && a.note ? ` · ${a.note}` : ""}
+        </p>
+        {a.f.length ? (
+          <ul className="rdb-tags">
+            {a.f.slice(0, 4).map((f) => (
+              <li key={f}>
+                <FeatureIcon feature={f} />
+                {featureLabel(f)}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {a.etat !== "refuse" ? (
+          <div className="rdb-step__acts">
+            <a
+              className="rdb-go"
+              href={mapsLink(a)}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(ev) => ev.stopPropagation()}
+            >
+              <Navigation className="size-4" aria-hidden />
+              {tr("ui.pageRoutesDuBled.yAller")}
+            </a>
+          </div>
+        ) : null}
+      </>
     );
   } else if (p.k === "ville") {
     return (
@@ -582,13 +633,15 @@ function PasView({
     }
   }
   const color =
-    p.k === "priere"
-      ? KIND_COLOR.priere
-      : p.k === "nuit"
-        ? undefined
-        : best && p.k === "pause"
-          ? KIND_COLOR[best.k]
-          : undefined;
+    p.k === "ajout" && p.ajout
+      ? KIND_COLOR[p.ajout.k]
+      : p.k === "priere"
+        ? KIND_COLOR.priere
+        : p.k === "nuit"
+          ? undefined
+          : best && p.k === "pause"
+            ? KIND_COLOR[best.k]
+            : undefined;
   const pauseLike = p.n != null;
   return (
     <div

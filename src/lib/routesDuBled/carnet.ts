@@ -18,7 +18,20 @@ export type PasKind =
   | "nuitvide"
   | "port"
   | "portdz"
-  | "arrivee";
+  | "arrivee"
+  | "ajout";
+/** Un lieu ajouté par un voyageur hors des routes relevées, ou par toi et pas encore relu. */
+export type Ajout = {
+  id: string;
+  k: ChainStop["k"];
+  n: string;
+  place: string;
+  lat: number;
+  lon: number;
+  f: ChainStop["f"];
+  etat: "attente" | "publie" | "mien" | "refuse";
+  note?: string | null;
+};
 export type Pas = {
   id: string;
   k: PasKind;
@@ -39,6 +52,7 @@ export type Pas = {
   jour: number;
   /** Route du bled la plus proche, pour proposer un lieu dessus. */
   route?: string;
+  ajout?: Ajout;
 };
 export type Carnet = {
   pas: Pas[];
@@ -103,6 +117,38 @@ export function villesSur(line: LonLat[], exclure: string[] = []) {
 
 const lineOf = (c: Chain | null) => (c ? c.line : []);
 
+/** Le point d'une ligne le plus proche de p : écart en km et position (0..1) sur la ligne. */
+export function surLigne(line: LonLat[], p: LonLat) {
+  if (line.length < 2) return { d: Infinity, t: 0 };
+  const kx = 111.32 * Math.cos((p[1] * Math.PI) / 180);
+  const ky = 110.57;
+  const seg: number[] = [];
+  let tot = 0;
+  for (let i = 1; i < line.length; i++) {
+    const l = distKm(line[i - 1]!, line[i]!);
+    seg.push(l);
+    tot += l;
+  }
+  let best = { d: Infinity, at: 0 };
+  let acc = 0;
+  for (let i = 1; i < line.length; i++) {
+    const a = line[i - 1]!;
+    const b = line[i]!;
+    const ax = (a[0] - p[0]) * kx;
+    const ay = (a[1] - p[1]) * ky;
+    const dx = (b[0] - a[0]) * kx;
+    const dy = (b[1] - a[1]) * ky;
+    const l2 = dx * dx + dy * dy;
+    const u = l2 === 0 ? 0 : Math.max(0, Math.min(1, -(ax * dx + ay * dy) / l2));
+    const d = Math.hypot(ax + u * dx, ay + u * dy);
+    if (d < best.d) best = { d, at: acc + u * seg[i - 1]! };
+    acc += seg[i - 1]!;
+  }
+  return { d: best.d, t: tot ? best.at / tot : 0 };
+}
+/** Un ajout est posé sur le chemin s'il est à moins de 15 km de son tracé. */
+const AJOUT_KM = 15;
+
 /** Les villes du côté Europe, pour le titre « par Perpignan · Barcelone · Valence ». */
 export function viaVilles(c: Chemin, approche?: LonLat[]) {
   const port = PLACE_NAME[c.eu.port];
@@ -123,6 +169,7 @@ export function carnet(
   from: { label: string; point: LonLat },
   to: { label: string; point: LonLat },
   geo?: { approche?: LonLat[] | undefined; fin?: LonLat[] | undefined },
+  ajouts: Ajout[] = [],
 ): Carnet {
   const ap = c.eu.approche;
   const ch = c.eu.chain;
@@ -319,6 +366,90 @@ export function carnet(
         route: routeDz,
       },
       2,
+    );
+  }
+  // Les lieux ajoutés par les voyageurs, posés à leur place sur le chemin.
+  const morceaux: {
+    line: LonLat[];
+    h0: number;
+    h: number;
+    km0: number;
+    km: number;
+    side: "eu" | "dz";
+    o: number;
+    route?: string;
+  }[] = [
+    {
+      line: apLine,
+      h0: 0,
+      h: ap.h,
+      km0: 0,
+      km: ap.km,
+      side: "eu",
+      o: 0,
+      ...(ch ? { route: ch.segs[0]!.route.id } : {}),
+    },
+    ...(ch
+      ? [
+          {
+            line: ch.line,
+            h0: ap.h,
+            h: ch.h,
+            km0: ap.km,
+            km: ch.km,
+            side: "eu" as const,
+            o: 0,
+            route: ch.segs[0]!.route.id,
+          },
+        ]
+      : []),
+    ...(dzc
+      ? [
+          {
+            line: dzc.line,
+            h0: 0,
+            h: dzc.h,
+            km0: 0,
+            km: dzc.km,
+            side: "dz" as const,
+            o: 2,
+            route: routeDz,
+          },
+        ]
+      : []),
+    {
+      line: finLine,
+      h0: dzc?.h ?? 0,
+      h: dl.h,
+      km0: dzc?.km ?? 0,
+      km: dl.km,
+      side: "dz",
+      o: 2,
+      route: routeDz,
+    },
+  ];
+  for (const a of ajouts) {
+    const p: LonLat = [a.lon, a.lat];
+    let best: { m: (typeof morceaux)[number]; t: number; d: number } | null = null;
+    for (const m of morceaux) {
+      const r = surLigne(m.line, p);
+      if (r.d < AJOUT_KM && (!best || r.d < best.d)) best = { m, t: r.t, d: r.d };
+    }
+    if (!best) continue;
+    const { m, t } = best;
+    push(
+      {
+        id: `aj-${a.id}`,
+        k: "ajout",
+        side: m.side,
+        h: m.h0 + t * m.h,
+        km: m.km0 + t * m.km,
+        point: p,
+        name: a.n,
+        ajout: a,
+        ...(m.route ? { route: m.route } : {}),
+      },
+      m.o,
     );
   }
   push(

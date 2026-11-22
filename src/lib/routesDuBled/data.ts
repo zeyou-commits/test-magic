@@ -88,6 +88,30 @@ export async function loadCommunityStops(): Promise<CommunityStopRow[]> {
   return (data ?? []) as CommunityStopRow[];
 }
 
+export type MyStopRow = {
+  id: string;
+  route_code: string;
+  kind: StopKind;
+  name: string;
+  place: string;
+  lat: number | null;
+  lon: number | null;
+  features: StopFeature[];
+  status: "pending" | "approved" | "rejected";
+  decision_note: string | null;
+  created_at: string;
+};
+
+/** Mes haltes proposées (en attente, publiées, refusées), pour les montrer tout de suite dans mon carnet. */
+export async function loadMyStops(): Promise<MyStopRow[]> {
+  const { data, error } = await db.rpc("bw_route_stops_mine");
+  if (error) {
+    if (error.code === "PGRST202") return [];
+    throw error;
+  }
+  return (data ?? []) as MyStopRow[];
+}
+
 export type StopProposal = {
   route: string;
   kind: StopKind;

@@ -39,6 +39,8 @@ export type MapPin = {
   main: boolean;
   /** Pause ou nuit sans lieu relevé : pastille en pointillé, à placer. */
   vide?: boolean;
+  /** Lieu que tu as ajouté, pas encore relu : pastille claire à contour pointillé. */
+  attente?: boolean;
 };
 export type MapPlace = { lon: number; lat: number; label: string };
 
@@ -87,6 +89,10 @@ function pastille(
 function videIcon() {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><circle cx="30" cy="30" r="25" fill="#fff8ee" stroke="${ROUTE}" stroke-width="3.2" stroke-dasharray="6 5"/><path d="M30 20v20M20 30h20" stroke="${ROUTE}" stroke-width="3.6" stroke-linecap="round"/></svg>`;
 }
+/** Ton ajout en attente de relecture : pastille claire, contour pointillé à la couleur du type. */
+function attenteIcon(color: string, glyph: string) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><circle cx="30" cy="30" r="25" fill="#ffffff" stroke="${color}" stroke-width="3.2" stroke-dasharray="6 4"/><g transform="translate(17 17) scale(1.083)" fill="none" stroke="${color}" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">${glyph}</g></svg>`;
+}
 function badge() {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="14" fill="#fff" stroke="${INK}" stroke-width="3"/></svg>`;
 }
@@ -108,6 +114,7 @@ async function addIcons(map: MapLibreMap) {
       addSvg(map, `rdb-e-${k}`, pastille(68, color, "#ffffff", 4, GLYPH[k], "#ffffff", 30)),
     );
     jobs.push(addSvg(map, `rdb-h-${k}`, pastille(48, "#ffffff", color, 3, GLYPH[k], color, 22)));
+    jobs.push(addSvg(map, `rdb-a-${k}`, attenteIcon(color, GLYPH[k])));
   }
   await Promise.all(jobs);
 }
@@ -192,7 +199,11 @@ export default function RoutesMap({
           type: "Feature" as const,
           properties: {
             id: p.id,
-            icon: p.vide ? "rdb-e-vide" : `rdb-${p.main ? "e" : "h"}-${p.k}`,
+            icon: p.vide
+              ? "rdb-e-vide"
+              : p.attente
+                ? `rdb-a-${p.k}`
+                : `rdb-${p.main ? "e" : "h"}-${p.k}`,
             main: p.main ? 1 : 0,
             label: p.label ?? "",
           },

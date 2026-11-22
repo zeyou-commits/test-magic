@@ -812,6 +812,32 @@ export function SearchPanel({
     : outList.length
       ? `${outList.length} départ${outList.length > 1 ? "s" : ""}`
       : "";
+  // Accueil PC sans port choisi : les trois lignes qui ont le plus de départs à venir, dans le
+  // sens de la recherche, en un geste. Calculé depuis les départs publiés, rien d'inventé.
+  const busiestRoutes =
+    wide && !filters.departurePortIds.length && !filters.arrivalPortIds.length
+      ? (() => {
+          const counts = new Map<string, number>();
+          for (const departure of departures)
+            counts.set(departure.route_id, (counts.get(departure.route_id) ?? 0) + 1);
+          return routes
+            .filter((route) => route.status === "active" && counts.has(route.id))
+            .map((route) => ({
+              route,
+              from: ports.find((port) => port.id === route.departure_port_id),
+              to: ports.find((port) => port.id === route.arrival_port_id),
+              count: counts.get(route.id) ?? 0,
+            }))
+            .filter(
+              (item) =>
+                item.from &&
+                item.to &&
+                (item.from.country_code === "DZ") === reversed,
+            )
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 3);
+        })()
+      : [];
   const wideSegment = "min-w-0 bg-[color-mix(in_oklab,var(--color-muted)_60%,var(--color-card))]";
   const wideBar =
     wide && !homeMode && stage
@@ -1063,6 +1089,29 @@ export function SearchPanel({
                       className={`h-8 rounded-full px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${sortBy === key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
                     >
                       {label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              {busiestRoutes.length ? (
+                <div className="bw-wide-quick" role="group" aria-label="Lignes les plus desservies">
+                  <span className="mx-1 h-6 w-px bg-border" aria-hidden />
+                  {busiestRoutes.map(({ route, from, to }) => (
+                    <button
+                      key={route.id}
+                      type="button"
+                      onClick={() =>
+                        onFiltersChange(
+                          withArrivalPorts(
+                            withDeparturePorts(filters, [from!.id], ports, routes),
+                            [to!.id],
+                            ports,
+                            routes,
+                          ),
+                        )
+                      }
+                    >
+                      {from!.name} → {to!.name}
                     </button>
                   ))}
                 </div>

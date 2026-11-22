@@ -78,6 +78,8 @@ import { useFleet } from "@/lib/ferry/useFleet";
 import { SiteFooter, SiteHeader } from "@/components/layout/SiteLayout";
 import { HomeServices } from "@/components/home/HomeServices";
 import { HomeSearchCard } from "@/components/home/HomeSearchCard";
+import { HomeLivePill } from "@/components/home/HomeLivePill";
+import { setHomeLanding } from "@/lib/home/landing";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import type { ItineraryMapPreview } from "@/lib/ferry/itinerary";
 import { toast } from "sonner";
@@ -1169,6 +1171,13 @@ function Index() {
   const landing =
     (largeDesktop && !voyage && (panelMode === "search" || panelMode === "departures")) ||
     mobileLanding;
+  // Le bandeau du haut laisse le fil d'actualités à la pastille « En direct » de l'accueil vitrine.
+  useEffect(() => {
+    setHomeLanding(landing);
+  }, [landing]);
+  useEffect(() => () => setHomeLanding(false), []);
+  // PC : titre, accroche et pastille « En direct » au-dessus de la recherche et de la carte.
+  const desktopIntro = landing && !mobileLanding;
   // L'en-tête PC allume la rubrique de ce que montre l'accueil (carte, Réserver, porte à porte).
   useEffect(() => {
     setHomeView(
@@ -1603,7 +1612,25 @@ function Index() {
       </a>
       <SiteHeader />
       <main id="contenu" tabIndex={-1}>
-        <h1 className="sr-only">{tr("ui.pageIndex.ferriesEuropeMaghrebCarteDes")}</h1>
+        {desktopIntro ? (
+          <div className="bw-container bw-landing-intro">
+            <HomeLivePill />
+            <h1 className="bw-landing-intro__title">
+              Votre traversée vers le bled, <em>de la réservation à l'arrivée.</em>
+            </h1>
+            <p className="bw-landing-intro__lead">
+              Les ferries entre l'Europe et l'Algérie comparés au même endroit, les navires suivis
+              en direct et vos papiers préparés pas à pas.
+            </p>
+          </div>
+        ) : (
+          <h1 className="sr-only">{tr("ui.pageIndex.ferriesEuropeMaghrebCarteDes")}</h1>
+        )}
+        {mobileLanding ? (
+          <div className="bw-landing-live-m">
+            <HomeLivePill compact />
+          </div>
+        ) : null}
         {mobileLanding ? (
           <HomeSearchCard
             filters={filters}

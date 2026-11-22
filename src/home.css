@@ -5588,3 +5588,33 @@ body:has(.bw-home--app) {
   margin-bottom: 7px;
   margin-left: 4px;
 }
+
+/* ─── Calendrier des dates (23/11/2026) : plus léger. Jours avec départ sur fond vert pâle,
+   saison pas encore publiée en gris simple (plus de hachures), jours sans départ estompés. ─── */
+.batogo-calendar .rdp-day button {
+  border-radius: 12px;
+}
+.batogo-day-avail button {
+  background: #eef6f0;
+  color: #16324a;
+}
+.batogo-day-avail button:hover {
+  background: #d9eee0;
+}
+.batogo-day-unpublished button {
+  background-image: none !important;
+  background-color: #f5f2ec;
+  color: #8f978f;
+}
+.batogo-unpublished-swatch {
+  background-image: none !important;
+  background-color: #e7e2d8;
+}
+[data-slot="calendar"] .rdp-disabled button {
+  opacity: 0.35;
+  text-decoration: none;
+}
+.batogo-cal-pop {
+  border-color: #e6e1d6 !important;
+  box-shadow: 0 28px 60px -28px #16324a73 !important;
+}

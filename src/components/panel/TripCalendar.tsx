@@ -266,15 +266,20 @@ export function TripCalendar({
     if (next > new Date(endMonth.getFullYear(), endMonth.getMonth(), 1)) return;
     changeMonth(next);
   };
-  const lastWheel = useRef(0);
-  const handleWheel = (e: React.WheelEvent) => {
-    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-    if (Math.abs(delta) < 20) return;
-    const now = Date.now();
-    if (now - lastWheel.current < 350) return;
-    lastWheel.current = now;
-    shiftMonth(delta > 0 ? 1 : -1);
-  };
+  // La molette ne change plus de mois : elle faisait défiler les mois et la page en même temps.
+  // Les flèches et le glissé au doigt suffisent ; la page reste immobile sous la fenêtre.
+  const [popEl, setPopEl] = useState<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!popEl) return;
+    const onWheel = (event: WheelEvent) => {
+      const { scrollTop, scrollHeight, clientHeight } = popEl;
+      const atTop = scrollTop <= 0 && event.deltaY < 0;
+      const atBottom = scrollTop + clientHeight >= scrollHeight - 1 && event.deltaY > 0;
+      if (scrollHeight <= clientHeight || atTop || atBottom) event.preventDefault();
+    };
+    popEl.addEventListener("wheel", onWheel, { passive: false });
+    return () => popEl.removeEventListener("wheel", onWheel);
+  }, [popEl]);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const handleTouchStart = (e: React.TouchEvent) => {
     const t = e.touches[0];
@@ -441,7 +446,7 @@ export function TripCalendar({
       <div className="flex flex-row items-center gap-2">
         <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">{tr("ui.tripCalendar.souplesse")}</span>
         <div
-          className="flex flex-1 rounded-full bg-muted/60 p-0.5 md:flex-none"
+          className="flex flex-1 rounded-full bg-[#f1ece2] p-[3px] md:flex-none"
           role="radiogroup"
           aria-label={tr("ui.tripCalendar.souplesseSurLaDateD")}
         >
@@ -452,7 +457,7 @@ export function TripCalendar({
               role="radio"
               aria-checked={flexDays === value}
               onClick={() => onChange({ flexDays: value })}
-              className={`h-8 min-w-0 flex-1 whitespace-nowrap rounded-full px-2 text-[11px] font-semibold transition ${flexDays === value ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"}`}
+              className={`h-8 min-w-0 flex-1 whitespace-nowrap rounded-full px-2 text-[11px] font-semibold transition md:flex-none md:px-3.5 ${flexDays === value ? "bg-card text-[#16324a] shadow-[0_1px_3px_#16324a2e]" : "text-muted-foreground hover:text-foreground"}`}
             >
               {value === 0 ? tr("ui.tripCalendar.exacte") : `± ${value} j`}
             </button>
@@ -533,7 +538,6 @@ export function TripCalendar({
             ? "bw-cal-stack"
             : `touch-pan-y overflow-hidden ${slideDir === 1 ? "bw-cal-slide-next" : slideDir === -1 ? "bw-cal-slide-prev" : ""}`
         }
-        onWheel={stacked ? undefined : handleWheel}
         onTouchStart={stacked ? undefined : handleTouchStart}
         onTouchEnd={stacked ? undefined : handleTouchEnd}
       >
@@ -784,11 +788,12 @@ export function TripCalendar({
     <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverAnchor asChild>{anchor}</PopoverAnchor>
       <PopoverContent
+        ref={setPopEl}
         align="start"
         side={side}
         sideOffset={side === "right" ? 28 : 4}
         collisionPadding={12}
-        className={`batogo-cal-pop ${isWide ? "w-[640px]" : "w-[360px]"} max-h-[var(--radix-popover-content-available-height)] max-w-[calc(100vw-1.5rem)] space-y-4 overflow-y-auto overscroll-contain rounded-2xl border-border/60 p-0 shadow-2xl`}
+        className={`batogo-cal-pop ${isWide ? "w-[700px]" : "w-[360px]"} max-h-[var(--radix-popover-content-available-height)] max-w-[calc(100vw-1.5rem)] space-y-4 overflow-y-auto overscroll-contain rounded-2xl border-border/60 p-0 shadow-2xl`}
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
         {headerBlock}

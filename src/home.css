@@ -5332,6 +5332,14 @@ body:has(.bw-home--app) {
   background: #e5eff0;
   color: #1e5b7a;
 }
+.bw-on-water__cutout {
+  flex-shrink: 0;
+  width: 60px;
+  height: 40px;
+  object-fit: contain;
+  object-position: center bottom;
+  filter: drop-shadow(0 3px 3px #16324a2e);
+}
 .bw-on-water__photo {
   flex-shrink: 0;
   width: 42px;

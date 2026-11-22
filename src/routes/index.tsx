@@ -136,6 +136,12 @@ function Index() {
   const [timelineClosed, setTimelineClosed] = useState(false);
   // Une fiche ouverte depuis « Mon voyage » : son retour ramène au voyage, pas à l'accueil.
   const [voyageBack, setVoyageBack] = useState(false);
+  // Une fiche ouverte depuis « Sur l'eau maintenant » (accueil PC) : son retour ramène à Réserver.
+  const [bookBack, setBookBack] = useState(false);
+  // Survol d'une carte « Sur l'eau maintenant » : ce navire ressort sur la carte.
+  const [homeHoverShip, setHomeHoverShip] = useState<{ id: string; routeId: string | null } | null>(
+    null,
+  );
   // Ouverture depuis une notification : son message s'affiche en tête de la fiche demandée.
   const [noticeTarget] = useState(() => ({
     id: new URLSearchParams(initialSearch).get("notice"),
@@ -190,6 +196,12 @@ function Index() {
       setSelectionHistory((prev) => prev.slice(0, -1));
       setSelection(previous ?? null);
       setFocusShipId(null);
+    } else if (bookBack) {
+      setSelection(null);
+      setSelectionHistory([]);
+      setFocusShipId(null);
+      setBookBack(false);
+      setPanelMode("search");
     } else if (voyageBack) {
       setSelection(null);
       setSelectionHistory([]);
@@ -204,6 +216,10 @@ function Index() {
       resetToMap();
     }
   };
+  // La fiche fermée autrement (en-tête, direct) : le prochain retour reprend son sens habituel.
+  useEffect(() => {
+    if (!selection) setBookBack(false);
+  }, [selection]);
   const backLabel =
     selectionHistory.length > 0
       ? selectionHistory[selectionHistory.length - 1]?.type === "vessel"
@@ -211,9 +227,11 @@ function Index() {
         : selectionHistory[selectionHistory.length - 1]?.type === "port"
           ? "Port"
           : "Précédent"
-      : voyageBack
-        ? "Mon voyage"
-        : "Accueil";
+      : bookBack
+        ? "Réserver"
+        : voyageBack
+          ? "Mon voyage"
+          : "Accueil";
   const [filters, setFiltersState] = useState<Filters>(() => filtersFromUrl(initialSearch));
   const [trafficPreview, setTrafficPreview] = useState<MapPreview | null>(null);
   const [lineVisibility, setLineVisibility] = useState<LineVisibility>("all");
@@ -736,7 +754,8 @@ function Index() {
   }, []);
   const homeMode = panelMode === null && !selection;
   const mapFilters = filters;
-  const previewRouteId = trafficPreview?.routeId ?? highlightRouteId;
+  // En mer, le survol d'une carte « Sur l'eau maintenant » éclaire aussi la ligne du navire.
+  const previewRouteId = trafficPreview?.routeId ?? homeHoverShip?.routeId ?? highlightRouteId;
   const scheduledRouteIds = useMemo(
     () => publishedRouteIds(departures, schedules, routes, ports, Date.now()),
     [departures, schedules, routes, ports],
@@ -2056,12 +2075,17 @@ function Index() {
                 docked={upcomingShips}
                 infoOf={(ship) => fleetShortcutInfo(ship, allDepartures, routes, ports, Date.now())}
                 vesselOf={(ship) => vessels.find((vessel) => vessel.id === ship.vesselId)}
-                onOpen={(ship) =>
-                  ship.vesselId
-                    ? handleSelect({ type: "vessel", id: ship.vesselId })
-                    : handleSelect({ type: "departure", id: ship.departureId })
-                }
+                onOpen={(ship) => {
+                  if (ship.vesselId) handleSelect({ type: "vessel", id: ship.vesselId });
+                  else handleSelect({ type: "departure", id: ship.departureId });
+                  setBookBack(true);
+                }}
                 onLive={resetToMap}
+                onHover={(ship) =>
+                  setHomeHoverShip(
+                    ship ? { id: ship.id, routeId: ship.state === "sea" ? ship.routeId : null } : null,
+                  )
+                }
               />
             ) : null}
             <MapStats
@@ -2248,7 +2272,7 @@ function Index() {
                   visibleRouteIds={displayedRouteIds}
                   fleetVisibleRouteIds={fleetVisibleRouteIds}
                   hoverVesselId={trafficPreview?.vesselId ?? null}
-                  hoverShipIds={hoverCompanyShipIds}
+                  hoverShipIds={homeHoverShip ? [homeHoverShip.id] : hoverCompanyShipIds}
                   hoverPortId={trafficPreview?.portId ?? null}
                   dateActiveRouteIds={scheduledRouteIds.length ? scheduledRouteIds : ["__none__"]}
                   focusRouteIds={voyage ? voyageRoutes : focusRouteIds}

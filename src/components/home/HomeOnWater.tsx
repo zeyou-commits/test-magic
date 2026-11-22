@@ -3,15 +3,40 @@ import { Anchor, ArrowRight, Ship } from "lucide-react";
 import type { FleetShip } from "@/lib/ferry/fleet";
 import type { Vessel } from "@/lib/ferry/types";
 import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
+import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
 
 type VesselRef = Pick<Vessel, "id" | "name" | "photo_url">;
 
-/** La vraie photo du navire (celle de sa fiche, sinon une photo libre de Commons), sinon l'icône. */
-function ShipPhoto({ vessel, atSea }: { vessel: VesselRef | undefined; atSea: boolean }) {
+/**
+ * Le navire tel qu'il apparaît sur la carte : son rendu détouré (fond transparent, jamais rogné).
+ * Sans rendu, la vraie photo de sa fiche (ou de Commons), sinon l'icône.
+ */
+function ShipPhoto({
+  vessel,
+  name,
+  atSea,
+}: {
+  vessel: VesselRef | undefined;
+  name: string;
+  atSea: boolean;
+}) {
+  const cutout = vesselMapIcon(name);
   const photo = useQuery({
     ...vesselPhotoQuery(vessel ?? { id: "", name: "", photo_url: null }),
-    enabled: Boolean(vessel),
+    enabled: Boolean(vessel) && !cutout,
   }).data;
+  if (cutout)
+    return (
+      <img
+        src={`/vessel-visuals/map/${cutout}.webp`}
+        alt=""
+        width={60}
+        height={40}
+        loading="lazy"
+        decoding="async"
+        className="bw-on-water__cutout"
+      />
+    );
   if (photo?.url)
     return (
       <img
@@ -45,6 +70,7 @@ export function HomeOnWater({
   vesselOf,
   onOpen,
   onLive,
+  onHover,
 }: {
   atSea: FleetShip[];
   docked: FleetShip[];
@@ -52,6 +78,8 @@ export function HomeOnWater({
   vesselOf: (ship: FleetShip) => VesselRef | undefined;
   onOpen: (ship: FleetShip) => void;
   onLive: () => void;
+  /** Survol ou focus d'une carte : le navire est mis en avant sur la carte (null à la sortie). */
+  onHover: (ship: FleetShip | null) => void;
 }) {
   const sea = atSea.slice(0, docked.length ? 2 : 3);
   const ships = [...sea, ...docked.slice(0, 3 - sea.length)];
@@ -68,9 +96,16 @@ export function HomeOnWater({
               key={ship.id}
               type="button"
               className="bw-on-water__card"
-              onClick={() => onOpen(ship)}
+              onClick={() => {
+                onHover(null);
+                onOpen(ship);
+              }}
+              onPointerEnter={() => onHover(ship)}
+              onPointerLeave={() => onHover(null)}
+              onFocus={() => onHover(ship)}
+              onBlur={() => onHover(null)}
             >
-              <ShipPhoto vessel={vesselOf(ship)} atSea={atSeaNow} />
+              <ShipPhoto vessel={vesselOf(ship)} name={ship.name} atSea={atSeaNow} />
               <span className="bw-on-water__text">
                 <strong>{ship.name}</strong>
                 <span>{atSeaNow ? `${info.dock} → ${info.destination}` : info.dock}</span>

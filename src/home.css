@@ -4178,8 +4178,8 @@ body:has(.bw-home--app) {
 }
 @media (min-width: 768px) {
   .bw-home--landing .bw-map-stage {
-    /* 86 % de la fenêtre sous l'en-tête : le début de la présentation reste visible. */
-    height: clamp(660px, calc((100dvh - var(--bw-header-height, 114px)) * 0.86), 880px);
+    /* 72 % de la fenêtre sous l'en-tête : « Voyez ce qui vous attend » apparaît sous la carte. */
+    height: clamp(560px, calc((100dvh - var(--bw-header-height, 114px)) * 0.72), 720px);
   }
 }
 .bw-services {
@@ -4258,6 +4258,10 @@ body:has(.bw-home--app) {
 /* ─── « Voyez ce qui vous attend » : les écrans défilent dans un ordinateur et un téléphone. ─── */
 .bw-tour {
   padding-block: 88px 24px;
+}
+/* Premier bloc sous la carte : pas de double marge avec le haut de .bw-services. */
+.bw-services > .bw-tour:first-child {
+  padding-top: 0;
 }
 .bw-tour .bw-section-heading {
   align-items: flex-end;

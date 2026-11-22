@@ -107,6 +107,9 @@ export function HomeServices({
 
   return (
     <div ref={root} className="bw-services" aria-label="Les services de BledWay">
+      {/* Juste sous la carte : les écrans du site, puis le récit « Tout le voyage ». */}
+      <HomeTour />
+
       <section className="bw-container bw-services-hero" data-reveal aria-labelledby="services-title">
         <div>
           <p className="bw-eyebrow">BledWay, du premier projet au retour</p>
@@ -146,7 +149,6 @@ export function HomeServices({
         ) : null}
       </section>
 
-      <HomeTour />
 
       <section className="bw-services-community" data-reveal aria-labelledby="community-title">
         <div className="bw-container">

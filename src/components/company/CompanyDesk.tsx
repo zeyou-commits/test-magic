@@ -1,6 +1,15 @@
 import { useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ClipboardList, Megaphone, PenLine, Send, Undo2, Users } from "lucide-react";
+import {
+  AlertTriangle,
+  ClipboardList,
+  Megaphone,
+  MessageSquareText,
+  PenLine,
+  Send,
+  Undo2,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -108,16 +117,20 @@ export function ChangeRequestForm({
   ctx,
   departure,
   draft,
+  fixedKind,
   onClose,
 }: {
   ctx: DeskContext;
   departure: Departure;
   draft?: CompanyRequest;
+  /** Choisi dans le panneau « Modifier ou prévenir » : ni en-tête ni second choix ici. */
+  fixedKind?: RequestKind;
   onClose: () => void;
 }) {
   const refresh = useRefresh();
   const zones = ctx.zonesOf(departure.route_id);
-  const [kind, setKind] = useState<RequestKind>(draft?.kind ?? "delay");
+  const [chosenKind, setKind] = useState<RequestKind>(draft?.kind ?? "delay");
+  const kind = fixedKind ?? chosenKind;
   const [minutes, setMinutes] = useState(String(draft?.proposed.minutes ?? 30));
   const [vesselId, setVesselId] = useState(draft?.proposed.vessel_id ?? "");
   const startIso = draft?.proposed.departure_at ?? departure.departure_at;
@@ -201,15 +214,17 @@ export function ChangeRequestForm({
           return;
         save.mutate(true);
       }}
-      aria-label="Signaler un changement"
+      aria-label={fixedKind ? REQUEST_KINDS[fixedKind].label : "Signaler un changement"}
     >
-      <p className="text-sm">
-        <strong>{ctx.lineOf(departure.route_id)}</strong>
-        <span className="block text-xs text-muted-foreground">
-          {ctx.when(departure.departure_at)} · {ctx.vesselName(departure.vessel_id)}
-        </span>
-      </p>
-      <fieldset className="grid gap-1">
+      {fixedKind ? null : (
+        <p className="text-sm">
+          <strong>{ctx.lineOf(departure.route_id)}</strong>
+          <span className="block text-xs text-muted-foreground">
+            {ctx.when(departure.departure_at)} · {ctx.vesselName(departure.vessel_id)}
+          </span>
+        </p>
+      )}
+      <fieldset className={fixedKind ? "hidden" : "grid gap-1"}>
         <legend className="mb-1 text-sm font-semibold">Ce qui change</legend>
         <div className="flex flex-wrap gap-2">
           {(Object.keys(REQUEST_KINDS) as RequestKind[]).map((option) => (
@@ -333,6 +348,84 @@ export function ChangeRequestForm({
         </Button>
       </div>
     </form>
+  );
+}
+
+// ─── Une traversée, un seul bouton : modifier ou prévenir ───────────────────────────────────────
+
+type CrossingAction = RequestKind | "message";
+const CROSSING_ACTIONS: { id: CrossingAction; label: string; hint: string }[] = [
+  ...(Object.keys(REQUEST_KINDS) as RequestKind[]).map((id) => ({
+    id,
+    label: REQUEST_KINDS[id].label,
+    hint: `${REQUEST_KINDS[id].hint} Les voyageurs qui la suivent sont prévenus.`,
+  })),
+  {
+    id: "message",
+    label: "Message aux voyageurs",
+    hint: "Rien ne change sur la traversée : une consigne ou une information, envoyée à ceux qui la suivent.",
+  },
+];
+
+/**
+ * Tout ce qu'une compagnie fait sur une traversée, depuis sa ligne : retard, nouvel horaire,
+ * autre navire, annulation (la traversée change et les voyageurs sont prévenus), ou simple message.
+ */
+export function CrossingActionPanel({
+  ctx,
+  departure,
+  onClose,
+}: {
+  ctx: DeskContext;
+  departure: Departure;
+  onClose: () => void;
+}) {
+  const [action, setAction] = useState<CrossingAction>("delay");
+  const current = CROSSING_ACTIONS.find((item) => item.id === action)!;
+  return (
+    <div className="grid gap-3 rounded-xl border border-border bg-muted/30 p-3">
+      <p className="text-sm">
+        <strong>{ctx.lineOf(departure.route_id)}</strong>
+        <span className="block text-xs text-muted-foreground">
+          {ctx.when(departure.departure_at)} · {ctx.vesselName(departure.vessel_id)}
+        </span>
+      </p>
+      <fieldset className="grid gap-1">
+        <legend className="mb-1 text-sm font-semibold">Que voulez-vous faire ?</legend>
+        <div className="flex flex-wrap gap-2">
+          {CROSSING_ACTIONS.map((option) => (
+            <label
+              key={option.id}
+              className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-full border border-border bg-background px-3 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/10"
+            >
+              <input
+                type="radio"
+                name={`action-${departure.id}`}
+                value={option.id}
+                checked={action === option.id}
+                onChange={() => setAction(option.id)}
+              />
+              {option.id === "message" ? (
+                <MessageSquareText className="size-4" aria-hidden />
+              ) : null}
+              {option.label}
+            </label>
+          ))}
+        </div>
+        <span className="text-xs text-muted-foreground">{current.hint}</span>
+      </fieldset>
+      {action === "message" ? (
+        <AnnouncementForm ctx={ctx} draft={null} departure={departure} onDone={onClose} />
+      ) : (
+        <ChangeRequestForm
+          key={action}
+          ctx={ctx}
+          departure={departure}
+          fixedKind={action}
+          onClose={onClose}
+        />
+      )}
+    </div>
   );
 }
 
@@ -520,6 +613,10 @@ export function CompanyAnnouncementsTab({ ctx }: { ctx: DeskContext }) {
             <Megaphone aria-hidden /> {editing ? "Reprendre l'annonce" : "Prévenir vos passagers"}
             <small>envoyé tout de suite, signé {ctx.companyName}</small>
           </h2>
+          <p className="bo-lead mb-2">
+            Plus rapide : dans « Mes traversées », touchez « Modifier ou prévenir » sur la traversée
+            concernée.
+          </p>
           <AnnouncementForm
             key={editing?.id ?? `new-${formKey}`}
             ctx={ctx}
@@ -612,18 +709,23 @@ export function CompanyAnnouncementsTab({ ctx }: { ctx: DeskContext }) {
 function AnnouncementForm({
   ctx,
   draft,
+  departure,
   onDone,
 }: {
   ctx: DeskContext;
   draft: CompanyAnnouncement | null;
+  /** Ouvert depuis la ligne d'une traversée : elle est déjà choisie. */
+  departure?: Departure;
   onDone: () => void;
 }) {
   const refresh = useRefresh();
   const choices = ctx.departures.filter(
     (item) => item.status !== "cancelled" || item.id === draft?.departureId,
   );
-  const [departureId, setDepartureId] = useState(draft?.departureId ?? "");
-  const [reason, setReason] = useState<AnnouncementReason>(draft?.reason ?? "delay");
+  const [departureId, setDepartureId] = useState(departure?.id ?? draft?.departureId ?? "");
+  const [reason, setReason] = useState<AnnouncementReason>(
+    draft?.reason ?? (departure ? "boarding" : "delay"),
+  );
   const [body, setBody] = useState(draft?.body ?? "");
   const [reachable, setReachable] = useState<number | null>(null);
   const [confirming, setConfirming] = useState(false);
@@ -673,7 +775,7 @@ function AnnouncementForm({
     setConfirming(false);
   };
 
-  if (!choices.length && !draft)
+  if (!choices.length && !draft && !departure)
     return <p className="bo-empty">Aucune traversée à venir : rien à annoncer pour l'instant.</p>;
 
   return (
@@ -685,26 +787,28 @@ function AnnouncementForm({
       }}
       aria-label="Nouvelle annonce"
     >
-      <Field
-        label="Traversée"
-        hint="Seules les personnes qui suivent cette traversée sont prévenues."
-      >
-        <select
-          className={selectClass}
-          value={departureId}
-          onChange={(event) => {
-            setDepartureId(event.target.value);
-            touched();
-          }}
+      {departure ? null : (
+        <Field
+          label="Traversée"
+          hint="Seules les personnes qui suivent cette traversée sont prévenues."
         >
-          <option value="">Choisir une traversée</option>
-          {choices.map((item) => (
-            <option key={item.id} value={item.id}>
-              {ctx.when(item.departure_at)} · {ctx.lineOf(item.route_id)}
-            </option>
-          ))}
-        </select>
-      </Field>
+          <select
+            className={selectClass}
+            value={departureId}
+            onChange={(event) => {
+              setDepartureId(event.target.value);
+              touched();
+            }}
+          >
+            <option value="">Choisir une traversée</option>
+            {choices.map((item) => (
+              <option key={item.id} value={item.id}>
+                {ctx.when(item.departure_at)} · {ctx.lineOf(item.route_id)}
+              </option>
+            ))}
+          </select>
+        </Field>
+      )}
       <Field label="Motif">
         <select
           className={selectClass}
@@ -781,7 +885,7 @@ function AnnouncementForm({
           >
             Enregistrer en brouillon
           </Button>
-          {draft ? (
+          {draft || departure ? (
             <Button type="button" variant="ghost" onClick={onDone}>
               Fermer
             </Button>

@@ -24,8 +24,8 @@ import {
   type ShellSpace,
 } from "@/components/admin/BackofficeShell";
 import {
-  ChangeRequestForm,
   CompanyAnnouncementsTab,
+  CrossingActionPanel,
   CompanyRequestsTab,
   useCompanyActivity,
   type DeskContext,
@@ -468,15 +468,15 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
                 type="button"
                 className="bo-link min-h-10"
                 aria-expanded={changing === item.id}
-                aria-label={`Signaler un changement : ${lineOf(item.route_id)}, ${dayFmt.format(new Date(item.departure_at))} à ${hourFmt.format(new Date(item.departure_at))}`}
+                aria-label={`Modifier ou prévenir : ${lineOf(item.route_id)}, ${dayFmt.format(new Date(item.departure_at))} à ${hourFmt.format(new Date(item.departure_at))}`}
                 onClick={() => setChanging(changing === item.id ? null : item.id)}
               >
-                Signaler un changement
+                Modifier ou prévenir
               </button>
             ) : null}
             {withAction && changing === item.id && desk && changingDeparture ? (
               <div className="w-full basis-full">
-                <ChangeRequestForm
+                <CrossingActionPanel
                   ctx={desk}
                   departure={changingDeparture}
                   onClose={() => setChanging(null)}
@@ -654,8 +654,8 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
           </h2>
           {canAct ? (
             <p className="bo-lead mb-2">
-              Un retard, un nouvel horaire, un autre navire ou une annulation ? Choisissez «
-              Signaler un changement » sur la traversée : il s'affiche tout de suite et les
+              Un retard, un nouvel horaire, un autre navire, une annulation ou une simple consigne ?
+              Touchez « Modifier ou prévenir » sur la traversée : tout part tout de suite, et les
               voyageurs qui la suivent sont prévenus.
             </p>
           ) : null}

@@ -6,7 +6,9 @@ import {
   Copy,
   ExternalLink,
   Flag,
+  Mail,
   MessageSquareReply,
+  Phone,
   Radio,
   Send,
   Star,
@@ -47,6 +49,7 @@ import {
   type ReplyKind,
   type ReplyTargetKind,
 } from "@/lib/company/desk";
+import { safeExternalUrl } from "@/components/panel/shared";
 import { alertLabel, type TravelAlert } from "@/lib/ferry/community";
 import { reviewCriteria, reviewNumber } from "@/lib/ferry/reviewCriteria";
 
@@ -537,7 +540,6 @@ function ProfileForm({
   const refresh = useDeskRefresh();
   const [editing, setEditing] = useState(false);
   const [values, setValues] = useState<Record<string, string>>({});
-  const [message, setMessage] = useState("");
   const changed = PROFILE_FIELDS.filter(
     (field) =>
       field.key in values && values[field.key]!.trim() !== (profile.fields[field.key] ?? ""),
@@ -555,13 +557,11 @@ function ProfileForm({
         action: "profile_propose",
         companyId: ctx.companyId,
         changes: Object.fromEntries(changed.map((field) => [field.key, values[field.key]!.trim()])),
-        ...(message.trim() ? { message: message.trim() } : {}),
       }),
     onSuccess: () => {
       toast.success("Fiche mise à jour : les voyageurs voient déjà la nouvelle version.");
       setEditing(false);
       setValues({});
-      setMessage("");
       refresh();
     },
     onError: (error: Error) => {
@@ -579,117 +579,130 @@ function ProfileForm({
   });
   const label = (key: string) => PROFILE_FIELDS.find((f) => f.key === key)?.label ?? key;
 
+  const shown = Object.fromEntries(
+    PROFILE_FIELDS.map((field) => [
+      field.key,
+      (values[field.key] ?? profile.fields[field.key] ?? "").trim(),
+    ]),
+  ) as Record<ProfileField, string>;
+
   return (
     <div className="grid gap-3">
-      {editing ? (
-        <form
-          className="grid gap-3"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (changed.length && !invalid) propose.mutate();
-          }}
-        >
-          <p className="bo-lead">
-            Modifiez seulement ce qui doit changer. Un champ laissé vide est effacé. Les changements
-            s'affichent tout de suite.
-          </p>
-          {PROFILE_FIELDS.map((field) => {
-            const value = values[field.key] ?? profile.fields[field.key] ?? "";
-            const error = field.key in values ? errors[field.key] : null;
-            const id = `profile-${field.key}`;
-            return (
-              <div key={field.key} className="grid gap-1 text-sm">
-                <label htmlFor={id} className="font-semibold">
-                  {field.label}
-                </label>
-                {field.key === "description" ? (
-                  <Textarea
-                    id={id}
-                    rows={4}
-                    maxLength={1000}
-                    value={value}
-                    onChange={(event) => setValues({ ...values, [field.key]: event.target.value })}
-                  />
-                ) : (
-                  <Input
-                    id={id}
-                    value={value}
-                    inputMode={
-                      field.key === "phone"
-                        ? "tel"
-                        : field.key === "contact_email"
-                          ? "email"
-                          : "url"
-                    }
-                    maxLength={field.key === "phone" ? 40 : 300}
-                    aria-invalid={Boolean(error)}
-                    onChange={(event) => setValues({ ...values, [field.key]: event.target.value })}
-                  />
-                )}
-                <span
-                  className={error ? "text-xs text-destructive" : "text-xs text-muted-foreground"}
-                >
-                  {error ?? field.hint}
-                </span>
-              </div>
-            );
-          })}
-          <label className="grid gap-1 text-sm">
-            <span className="font-semibold">Note pour l'historique (facultatif)</span>
-            <Input
-              value={message}
-              maxLength={500}
-              onChange={(event) => setMessage(event.target.value)}
-            />
-          </label>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="submit"
-              size="sm"
-              disabled={!changed.length || invalid || propose.isPending}
-            >
-              <Send className="size-4" aria-hidden />
-              {changed.length
-                ? `Enregistrer ${changed.length} modification${changed.length > 1 ? "s" : ""}`
-                : "Aucun changement"}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => (setEditing(false), setValues({}))}
-            >
-              Annuler
-            </Button>
-          </div>
-        </form>
-      ) : (
-        <>
-          <dl className="bo-facts bo-facts--wide">
-            <div>
-              <dt>Logo</dt>
-              <dd>{logo}</dd>
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,340px)]">
+        {editing ? (
+          <form
+            className="grid gap-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (changed.length && !invalid) propose.mutate();
+            }}
+          >
+            <p className="bo-lead">
+              Modifiez seulement ce qui doit changer. Un champ laissé vide est effacé. Les
+              changements s'affichent tout de suite.
+            </p>
+            {PROFILE_FIELDS.map((field) => {
+              const value = values[field.key] ?? profile.fields[field.key] ?? "";
+              const error = field.key in values ? errors[field.key] : null;
+              const id = `profile-${field.key}`;
+              return (
+                <div key={field.key} className="grid gap-1 text-sm">
+                  <label htmlFor={id} className="font-semibold">
+                    {field.label}
+                  </label>
+                  {field.key === "description" ? (
+                    <Textarea
+                      id={id}
+                      rows={4}
+                      maxLength={1000}
+                      value={value}
+                      onChange={(event) =>
+                        setValues({ ...values, [field.key]: event.target.value })
+                      }
+                    />
+                  ) : (
+                    <Input
+                      id={id}
+                      value={value}
+                      inputMode={
+                        field.key === "phone"
+                          ? "tel"
+                          : field.key === "contact_email"
+                            ? "email"
+                            : "url"
+                      }
+                      maxLength={field.key === "phone" ? 40 : 300}
+                      aria-invalid={Boolean(error)}
+                      onChange={(event) =>
+                        setValues({ ...values, [field.key]: event.target.value })
+                      }
+                    />
+                  )}
+                  <span
+                    className={error ? "text-xs text-destructive" : "text-xs text-muted-foreground"}
+                  >
+                    {error ?? field.hint}
+                  </span>
+                </div>
+              );
+            })}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="submit"
+                size="sm"
+                disabled={!changed.length || invalid || propose.isPending}
+              >
+                <Send className="size-4" aria-hidden />
+                {changed.length
+                  ? `Enregistrer ${changed.length} modification${changed.length > 1 ? "s" : ""}`
+                  : "Aucun changement"}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => (setEditing(false), setValues({}))}
+              >
+                Annuler
+              </Button>
             </div>
-            {PROFILE_FIELDS.map((field) => (
-              <div key={field.key}>
-                <dt>{field.label}</dt>
-                <dd className="break-words">{profile.fields[field.key] || "Non renseigné"}</dd>
+          </form>
+        ) : (
+          <>
+            <dl className="bo-facts bo-facts--wide">
+              <div>
+                <dt>Logo</dt>
+                <dd>{logo}</dd>
               </div>
-            ))}
-          </dl>
-          {ctx.canAct ? (
-            <Button
-              size="sm"
-              variant="outline"
-              className="justify-self-start"
-              onClick={() => setEditing(true)}
-            >
-              Modifier la fiche
-            </Button>
-          ) : null}
-          <p className="bo-lead">Le nom et le logo se changent avec votre interlocuteur BledWay.</p>
-        </>
-      )}
+              {PROFILE_FIELDS.map((field) => (
+                <div key={field.key}>
+                  <dt>{field.label}</dt>
+                  <dd className="break-words">{profile.fields[field.key] || "Non renseigné"}</dd>
+                </div>
+              ))}
+            </dl>
+            {ctx.canAct ? (
+              <Button
+                size="sm"
+                variant="outline"
+                className="justify-self-start"
+                onClick={() => setEditing(true)}
+              >
+                Modifier la fiche
+              </Button>
+            ) : null}
+            <p className="bo-lead">
+              Le nom et le logo se changent avec votre interlocuteur BledWay.
+            </p>
+          </>
+        )}
+        <ProfilePreview
+          name={ctx.companyName}
+          logo={logo}
+          values={shown}
+          live={editing && changed.length > 0}
+        />
+      </div>
       {profile.proposals.length ? (
         <div className="grid gap-2">
           <h3 className="text-sm font-semibold">Historique des modifications</h3>
@@ -733,6 +746,96 @@ function ProfileForm({
         </div>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Ce que voient les voyageurs sur la fiche de la compagnie (mêmes intitulés et même règle :
+ * un lien n'apparaît que s'il est une adresse https valide).
+ */
+function ProfilePreview({
+  name,
+  logo,
+  values,
+  live,
+}: {
+  name: string;
+  logo: ReactNode;
+  values: Record<ProfileField, string>;
+  live: boolean;
+}) {
+  const links = [
+    ["Réserver sur le site", safeExternalUrl(values.booking_url)],
+    ["Contacter le service client", safeExternalUrl(values.contact_url)],
+    ["Réclamation et droits des passagers", safeExternalUrl(values.claims_url)],
+  ] as const;
+  const site = safeExternalUrl(values.website_url);
+  const any = links.some(([, href]) => href) || values.phone || values.contact_email || site;
+  return (
+    <aside
+      className="grid gap-3 rounded-2xl border border-border bg-background p-3 lg:sticky lg:top-4"
+      aria-label="Aperçu de la fiche vue par les voyageurs"
+    >
+      <p className="flex items-center justify-between gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        Ce que voient les voyageurs
+        {live ? (
+          <em className="bo-pill" data-tone="warn">
+            Aperçu, non enregistré
+          </em>
+        ) : null}
+      </p>
+      <header className="flex items-center gap-3">
+        {logo}
+        <div>
+          <p className="text-xs text-muted-foreground">Compagnie</p>
+          <p className="text-base font-bold">{name}</p>
+        </div>
+      </header>
+      <section className="rounded-xl border border-border bg-card p-3 text-sm">
+        <h3 className="text-sm font-semibold">Contacter {name}</h3>
+        {any ? (
+          <ul className="mt-2 grid gap-1.5">
+            {values.phone ? (
+              <li className="inline-flex items-center gap-1.5 font-medium text-primary">
+                <Phone className="size-3.5" aria-hidden /> {values.phone}
+              </li>
+            ) : null}
+            {values.contact_email ? (
+              <li className="inline-flex items-center gap-1.5 break-all font-medium text-primary">
+                <Mail className="size-3.5" aria-hidden /> {values.contact_email}
+              </li>
+            ) : null}
+            {links.map(([label, href]) =>
+              href ? (
+                <li
+                  key={label}
+                  className="inline-flex items-center gap-1.5 font-medium text-primary"
+                >
+                  <ExternalLink className="size-3.5" aria-hidden /> {label}
+                </li>
+              ) : null,
+            )}
+            {site && !links.some(([, href]) => href) ? (
+              <li className="inline-flex items-center gap-1.5 font-medium text-primary">
+                <ExternalLink className="size-3.5" aria-hidden /> Site de la compagnie
+              </li>
+            ) : null}
+          </ul>
+        ) : (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Aucune coordonnée : les voyageurs ne savent pas comment vous joindre.
+          </p>
+        )}
+      </section>
+      {values.description ? (
+        <p className="whitespace-pre-line text-sm leading-relaxed">{values.description}</p>
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          Pas de présentation : quelques phrases sur vos lignes et vos services aident les voyageurs
+          à vous choisir.
+        </p>
+      )}
+    </aside>
   );
 }
 

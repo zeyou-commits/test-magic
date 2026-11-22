@@ -111,9 +111,9 @@ const footerLinks = [
  */
 export function BrandPicture({ alt, className }: { alt: string; className?: string }) {
   return (
+    // Le mot BledWay seul (sans la 504), sur téléphone comme sur ordinateur (23/11/2026).
     <picture className="bw-brand-picture">
-      <source media="(max-width: 767px)" srcSet="/bledway-wordmark.webp" />
-      <img src="/bledway-brand-entete.webp" alt={alt} className={className} />
+      <img src="/bledway-wordmark.webp" alt={alt} className={className} />
     </picture>
   );
 }

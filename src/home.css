@@ -3145,7 +3145,7 @@ html {
 }
 .bw-brand-link .bw-brand {
   width: auto;
-  height: 38px;
+  height: 30px;
 }
 /* Lancement : la version bêta s'affiche à côté du logo, DANS la largeur du lien : posée en
    absolu à droite du logo, elle dépassait de l'écran dans le pied de page et élargissait toute
@@ -5585,8 +5585,8 @@ body:has(.bw-home--app) {
 /* BÊTA posé sur la ligne de base du logo, plus en apesanteur au-dessus de la voiture. */
 .bw-brand-link .bw-beta {
   align-self: flex-end;
-  margin-bottom: 7px;
-  margin-left: 4px;
+  margin-bottom: 3px;
+  margin-left: 5px;
 }
 
 /* ─── Calendrier des dates (23/11/2026) : plus léger. Jours avec départ sur fond vert pâle,

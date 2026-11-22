@@ -72,6 +72,7 @@ export const companyAccessSchema = z.discriminatedUnion("action", [
   }),
   // Lot 2, côté compagnie.
   z.object({ action: z.literal("activity"), companyId: uuid }),
+  z.object({ action: z.literal("audience"), companyId: uuid }),
   z.object({
     action: z.literal("request_save"),
     requestId: uuid.optional(),
@@ -360,6 +361,10 @@ export async function handleCompanyAccess(
       break;
     case "activity":
       result = await call("bw_company_activity", { _user: me, _company: input.companyId });
+      break;
+    case "audience":
+      // Des chiffres seulement (personnes qui suivent les traversées à venir), jamais de compte.
+      result = await call("bw_company_audience", { _user: me, _company: input.companyId });
       break;
     case "request_save":
       result = await call("bw_company_request_save", {

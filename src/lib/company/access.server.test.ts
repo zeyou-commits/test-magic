@@ -172,6 +172,23 @@ describe("Accès professionnels côté serveur", () => {
     });
   });
 
+  it("audience : des chiffres pour le compte connecté, refusée sur une autre compagnie", async () => {
+    mocks.rpc.mockImplementation(async (name: string, args: Record<string, string>) => {
+      if (name !== "bw_company_audience") return { data: null, error: null };
+      return access[args["_user"]!]?.includes(args["_company"]!)
+        ? { data: { total: 3, travellers: 2, departures: 5, byDeparture: {} }, error: null }
+        : { data: null, error: { message: "BW_FORBIDDEN" } };
+    });
+    const ok = await call({ action: "audience", companyId: COMPANY_ONE, userId: AGENT_TWO });
+    expect(ok.status).toBe(200);
+    expect(await ok.json()).toEqual({ total: 3, travellers: 2, departures: 5, byDeparture: {} });
+    expect(mocks.rpc).toHaveBeenCalledWith("bw_company_audience", {
+      _user: OPS_ONE,
+      _company: COMPANY_ONE,
+    });
+    expect((await call({ action: "audience", companyId: COMPANY_TWO })).status).toBe(403);
+  });
+
   it("traduit les refus de la base et signale un script manquant", async () => {
     mocks.rpc.mockResolvedValue({ data: null, error: { message: "BW_MEMBER_REVOKED" } });
     as(ADMIN);

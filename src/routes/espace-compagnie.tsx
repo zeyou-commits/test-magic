@@ -2,11 +2,12 @@ import { useEffect, useState, type ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Anchor,
   Building2,
   CalendarDays,
+  CheckCircle2,
   ClipboardList,
   Gauge,
+  ListTodo,
   Megaphone,
   MessageSquare,
   PenSquare,
@@ -45,6 +46,7 @@ import {
   companyAccessKeys,
   companyAccessRequest,
   LEVEL_CATALOG,
+  type CompanyAudience,
   type MyCompanyAccess,
   type TeamMate,
 } from "@/lib/company/access";
@@ -85,7 +87,8 @@ const SECTIONS: ShellSection[] = [
   {
     id: "home",
     label: "Tableau de bord",
-    description: "Vos prochaines traversées, vos navires et ce que disent les voyageurs.",
+    description:
+      "Ce qui demande votre attention, vos prochaines traversées et ce que disent les voyageurs.",
     group: "Pilotage",
     icon: Gauge,
   },
@@ -173,6 +176,10 @@ const hourFmt = new Intl.DateTimeFormat("fr-FR", {
   minute: "2-digit",
   timeZone: "Europe/Paris",
 });
+/** « 1 avis », « 3 avis » ; « 1 annonce », « 2 annonces ». */
+const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n > 1 ? many : one}`;
+const SOON_MS = 48 * 3_600_000;
+
 const STATUS: Record<Departure["status"], { label: string; tone?: string }> = {
   scheduled: { label: "Prévue" },
   modified: { label: "Modifiée", tone: "warn" },
@@ -224,7 +231,11 @@ function CompanySpacePage() {
     return (
       <Gate
         action={
-          <button type="button" className="bw-action-primary inline-flex" onClick={() => void access.refetch()}>
+          <button
+            type="button"
+            className="bw-action-primary inline-flex"
+            onClick={() => void access.refetch()}
+          >
             Réessayer
           </button>
         }
@@ -289,7 +300,8 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
   const refused = (team.error as { status?: number } | null)?.status === 403;
   useEffect(() => {
     // Accès suspendu ou retiré entre deux écrans : on relit aussitôt l'accès du compte.
-    if (refused && user) void queryClient.invalidateQueries({ queryKey: companyAccessKeys.me(user.id) });
+    if (refused && user)
+      void queryClient.invalidateQueries({ queryKey: companyAccessKeys.me(user.id) });
   }, [refused, user, queryClient]);
   const reviews = useQuery({
     ...entityReviewsQuery("company", company?.id ?? ""),
@@ -326,6 +338,16 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
     company?.id ?? "",
     Boolean(company) && ["home", "requests", "announce", "crossings"].includes(tab),
   );
+  const audience = useQuery({
+    queryKey: companyAccessKeys.audience(user?.id ?? "", company?.id ?? ""),
+    queryFn: () =>
+      companyAccessRequest<CompanyAudience>({ action: "audience", companyId: company!.id }),
+    enabled: Boolean(user && company) && ["home", "crossings"].includes(tab),
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+    retry: false,
+  });
+  const followers = (departureId: string) => audience.data?.byDeparture[departureId] ?? 0;
   const inReview =
     (activity.data?.requests ?? []).filter((item) => item.status === "submitted").length +
     (activity.data?.announcements ?? []).filter((item) => item.status === "submitted").length;
@@ -337,19 +359,72 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
         when: (iso) => `${dayFmt.format(new Date(iso))} à ${hourFmt.format(new Date(iso))}`,
       }
     : null;
-  // Avis sans réponse, pour le badge de la rubrique (seulement si on peut répondre).
-  const feedback = useCompanyFeedback(company?.id ?? "", Boolean(company) && canAct);
-  const unanswered = canAct
-    ? (feedback.data?.reviews ?? []).filter(
-        (review) =>
-          !(feedback.data?.replies ?? []).some(
-            (reply) =>
-              reply.targetId === review.id &&
-              reply.kind === "reply" &&
-              !["withdrawn", "replaced"].includes(reply.status),
-          ),
-      ).length
-    : 0;
+  // Avis sans réponse : liste « À traiter » pour tous, badge de la rubrique si on peut répondre.
+  const feedback = useCompanyFeedback(
+    company?.id ?? "",
+    Boolean(company) && (canAct || tab === "home"),
+  );
+  const unanswered = (feedback.data?.reviews ?? []).filter(
+    (review) =>
+      !(feedback.data?.replies ?? []).some(
+        (reply) =>
+          reply.targetId === review.id &&
+          reply.kind === "reply" &&
+          !["withdrawn", "replaced"].includes(reply.status),
+      ),
+  ).length;
+  const drafts = {
+    requests: (activity.data?.requests ?? []).filter((item) => item.status === "draft").length,
+    announcements: (activity.data?.announcements ?? []).filter((item) => item.status === "draft")
+      .length,
+  };
+  const soon = mine.filter(
+    (item) => item.status !== "cancelled" && Date.parse(item.departure_at) - Date.now() < SOON_MS,
+  );
+  const todo = [
+    unanswered
+      ? {
+          key: "reviews",
+          icon: Star,
+          label: `${plural(unanswered, "avis", "avis")} sans réponse`,
+          hint: canAct
+            ? "Votre réponse s'affiche tout de suite sous l'avis."
+            : "Le niveau Opérations permet de répondre.",
+          action: canAct ? "Répondre" : "Voir",
+          tab: "reviews",
+        }
+      : null,
+    alerts.length
+      ? {
+          key: "signals",
+          icon: Radio,
+          label: `${plural(alerts.length, "signalement")} en cours sur vos navires`,
+          hint: "Ce que les voyageurs voient en ce moment : répondre ou contester.",
+          action: "Voir",
+          tab: "signals",
+        }
+      : null,
+    drafts.announcements
+      ? {
+          key: "announce",
+          icon: Megaphone,
+          label: `${plural(drafts.announcements, "annonce")} en brouillon`,
+          hint: "Pas encore envoyée aux voyageurs.",
+          action: "Reprendre",
+          tab: "announce",
+        }
+      : null,
+    drafts.requests
+      ? {
+          key: "requests",
+          icon: ClipboardList,
+          label: `${plural(drafts.requests, "changement")} en brouillon`,
+          hint: "Pas encore appliqué sur la traversée.",
+          action: "Reprendre",
+          tab: "requests",
+        }
+      : null,
+  ].filter((item) => item !== null);
   const desk: DeskContext | null = company
     ? {
         companyId: company.id,
@@ -378,7 +453,12 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
             </time>
             <span>
               <strong>{lineOf(item.route_id)}</strong>
-              <small>{vesselName(item.vessel_id)}</small>
+              <small>
+                {vesselName(item.vessel_id)}
+                {audience.data && followers(item.id)
+                  ? ` · ${followers(item.id)} ${followers(item.id) > 1 ? "personnes suivent" : "personne suit"}`
+                  : ""}
+              </small>
             </span>
             <em className="bo-pill" data-tone={STATUS[item.status].tone}>
               {STATUS[item.status].label}
@@ -487,7 +567,7 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
       sections={SECTIONS}
       tab={SECTIONS.some((section) => section.id === tab) ? tab : "home"}
       onNavigate={go}
-      badges={{ signals: alerts.length, requests: inReview, reviews: unanswered }}
+      badges={{ signals: alerts.length, requests: inReview, reviews: canAct ? unanswered : 0 }}
       notice={
         allowed ? (
           <div className="bo-notice" data-tone="info" role="note">
@@ -574,9 +654,9 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
           </h2>
           {canAct ? (
             <p className="bo-lead mb-2">
-              Un retard, un nouvel horaire, un autre navire ou une annulation ? Choisissez « Signaler
-              un changement » sur la traversée : il s'affiche tout de suite et les voyageurs qui la
-              suivent sont prévenus.
+              Un retard, un nouvel horaire, un autre navire ou une annulation ? Choisissez «
+              Signaler un changement » sur la traversée : il s'affiche tout de suite et les
+              voyageurs qui la suivent sont prévenus.
             </p>
           ) : null}
           {crossingRows(mine, true)}
@@ -689,6 +769,51 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
               </button>
             </div>
           </div>
+          <section className="bo-card mb-3.5" aria-labelledby="bo-todo-title">
+            <h2 id="bo-todo-title">
+              <ListTodo aria-hidden /> À traiter
+              <small className="max-sm:hidden">mis à jour chaque minute</small>
+            </h2>
+            {todo.length ? (
+              <ul className="bo-rows">
+                {todo.map((item) => (
+                  <li key={item.key}>
+                    <item.icon aria-hidden className="size-5 flex-none text-[var(--bo-muted)]" />
+                    <span>
+                      <strong>{item.label}</strong>
+                      <small className="!whitespace-normal">{item.hint}</small>
+                    </span>
+                    <button
+                      type="button"
+                      className="bo-link min-h-10 flex-none"
+                      onClick={() => go(item.tab)}
+                    >
+                      {item.action}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="bo-empty flex items-center gap-2">
+                <CheckCircle2 aria-hidden className="size-4" /> Rien à traiter pour le moment.
+              </p>
+            )}
+            <h3 className="mt-3 text-sm font-semibold">
+              Dans les 48 heures{" "}
+              <span className="font-normal text-[var(--bo-muted)]">
+                · {plural(soon.length, "traversée")}
+              </span>
+            </h3>
+            {soon.length ? (
+              crossingRows(soon, true)
+            ) : (
+              <p className="bo-empty">
+                {departures.isPending
+                  ? "Chargement des traversées…"
+                  : "Aucune traversée dans les 48 prochaines heures."}
+              </p>
+            )}
+          </section>
           <div className="bo-kpis">
             <button type="button" className="bo-kpi" onClick={() => go("crossings")}>
               <span className="bo-kpi__top">
@@ -697,22 +822,19 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
               <strong>{departures.isPending ? "–" : overview.upcoming}</strong>
               <small>{String(overview.perWeek).replace(".", ",")} par semaine sur 8 semaines</small>
             </button>
-            <button type="button" className="bo-kpi" onClick={() => go("lines")}>
+            <button type="button" className="bo-kpi" onClick={() => go("crossings")}>
               <span className="bo-kpi__top">
-                Lignes <Anchor aria-hidden />
+                Personnes qui suivent <Users aria-hidden />
               </span>
-              <strong>{overview.lines.length}</strong>
-              <small>entre les deux rives</small>
-            </button>
-            <button type="button" className="bo-kpi" onClick={() => go("fleet")}>
-              <span className="bo-kpi__top">
-                Navires en service <Ship aria-hidden />
-              </span>
-              <strong>{fleet.length}</strong>
+              <strong>{audience.data ? audience.data.total : "–"}</strong>
               <small>
-                {overview.averageAge !== null
-                  ? `âge moyen ${overview.averageAge} ans`
-                  : "âge non renseigné"}
+                {audience.isError
+                  ? "chiffre indisponible"
+                  : !audience.data
+                    ? "calcul en cours"
+                    : audience.data.total
+                      ? `vos traversées à venir, dont ${audience.data.travellers} qui voyage${audience.data.travellers > 1 ? "nt" : ""}`
+                      : "personne ne suit encore vos traversées"}
               </small>
             </button>
             <button type="button" className="bo-kpi" onClick={() => go("reviews")}>
@@ -728,6 +850,18 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
                   ? `${reviews.data.count} avis publié${reviews.data.count > 1 ? "s" : ""}`
                   : "pas encore d'avis publié"}
               </small>
+            </button>
+            <button
+              type="button"
+              className="bo-kpi"
+              data-tone={unanswered ? "todo" : "ok"}
+              onClick={() => go("reviews")}
+            >
+              <span className="bo-kpi__top">
+                Avis sans réponse <MessageSquare aria-hidden />
+              </span>
+              <strong>{feedback.data ? unanswered : "–"}</strong>
+              <small>{unanswered ? "une réponse rassure les voyageurs" : "Tout est à jour"}</small>
             </button>
             <button
               type="button"

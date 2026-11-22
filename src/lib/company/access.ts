@@ -105,6 +105,8 @@ export const companyAccessKeys = {
     ["company-access", userId, "overview", companyId] as const,
   activity: (userId: string, companyId: string) =>
     ["company-access", userId, "activity", companyId] as const,
+  audience: (userId: string, companyId: string) =>
+    ["company-access", userId, "audience", companyId] as const,
   queue: (userId: string) => ["company-access", userId, "queue"] as const,
 };
 
@@ -296,6 +298,18 @@ export const EVENT_LABELS: Record<string, string> = {
   refused: "Refusée par BledWay",
   stale: "Dépassée",
 };
+
+/**
+ * Personnes qui suivent les traversées à venir (90 jours, hors annulées) : des chiffres calculés
+ * par la base, sans aucun compte. Une personne suivant plusieurs traversées compte une fois.
+ */
+export interface CompanyAudience {
+  total: number;
+  /** Dont les personnes qui ont indiqué voyager (les autres suivent pour un proche). */
+  travellers: number;
+  departures: number;
+  byDeparture: Record<string, number>;
+}
 
 /** Signature montrée aux voyageurs ; la base la calcule de la même façon. */
 export const announcementTitle = (companyName: string) =>

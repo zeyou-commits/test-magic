@@ -382,7 +382,8 @@ function Index() {
     onSelect: (next) => handleSelectRef.current(next),
     onAsk: () => (window.innerWidth < 768 ? setSalonDialog(true) : setSalonOpen(true)),
   });
-  // Téléphone, dans le navigateur (pas l'appli installée) : l'accueil devient une page qui défile.
+  // Téléphone (navigateur et appli installée, alignés le 22/11/2026) : l'accueil devient une page
+  // qui défile.
   // Réserver en carte compacte, la carte encadrée, puis la présentation de BledWay. Recherche,
   // résultats, fiches et direct restent l'écran d'application habituel.
   // null tant que la largeur n'est pas mesurée (rendu serveur, premier rendu).
@@ -395,13 +396,9 @@ function Index() {
   const fromMobileHome = useRef(false);
   const mobileHomeDone = useRef(false);
   useEffect(() => {
-    const installed =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      window.matchMedia("(display-mode: fullscreen)").matches ||
-      (navigator as Navigator & { standalone?: boolean }).standalone === true ||
-      document.referrer.startsWith("android-app://");
+    // L'appli installée (PWA, Play Store) montre le même accueil que le navigateur du téléphone.
     const mq = window.matchMedia("(max-width: 767px)");
-    const sync = () => setPhoneBrowser(mq.matches && !installed);
+    const sync = () => setPhoneBrowser(mq.matches);
     sync();
     mq.addEventListener("change", sync);
     return () => mq.removeEventListener("change", sync);

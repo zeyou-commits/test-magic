@@ -16,7 +16,7 @@ export function MapLegend({
 
   return (
     <div
-      className={`absolute left-3 top-3 z-20 md:left-auto md:top-auto ${open ? "md:bottom-2.5 md:right-[60px]" : "md:bottom-[100px] md:right-2.5"}`}
+      className={`absolute left-3 top-3 z-20 md:left-auto md:top-auto ${open ? "md:bottom-2.5 md:right-[60px]" : "md:bottom-2.5 md:right-2.5"}`}
     >
       {open ? (
         <div className="mt-10 w-56 md:mt-0 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-border bg-background/95 p-3 text-xs shadow-[var(--shadow-panel)] backdrop-blur md:mt-0 md:w-64 md:p-4 md:text-sm">

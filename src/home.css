@@ -4960,7 +4960,7 @@ body:has(.bw-home--app) {
   }
 }
 
-/* ─── Accueil du navigateur mobile (pas l'appli installée) : une page qui défile. ─── */
+/* ─── Accueil du téléphone (navigateur et appli installée) : une page qui défile. ─── */
 @media (max-width: 767px) {
   .bw-home--landing-m {
     padding-bottom: calc(60px + env(safe-area-inset-bottom));

@@ -3,6 +3,11 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isExplicitJpeg } from "@/lib/photos/chatPhoto.server";
 import { NSFW_REFUSAL } from "@/lib/photos/nsfwVerdict";
+import {
+  ALL_PHOTO_CATEGORIES,
+  PORT_PHOTO_CATEGORIES,
+  VESSEL_PHOTO_CATEGORIES,
+} from "./galleryCategories";
 
 /**
  * Lot 3 de l'espace compagnie : avis, signalements, fiche publique, photos et responsable.
@@ -10,6 +15,7 @@ import { NSFW_REFUSAL } from "@/lib/photos/nsfwVerdict";
  * une fonction bw_company_* qui revérifie le compte, la compagnie et le niveau.
  * Les photos sont déposées par le serveur seulement. Depuis le 22/11/2026, une photo JPEG est
  * contrôlée (contenu explicite) puis publiée tout de suite ; BledWay peut la retirer après coup.
+ * L'équipe BledWay publie aussi ses propres photos (navire, compagnie, port), par le même filtre.
  */
 export const GALLERY_PENDING_BUCKET = "bledway-galeries-attente";
 export const GALLERY_PUBLIC_BUCKET = "bledway-galeries";
@@ -17,6 +23,11 @@ export const PHOTO_MAX_BYTES = 2 * 1024 * 1024;
 
 const uuid = z.string().uuid();
 const note = z.string().trim().max(500);
+/** Image déjà réduite et réencodée dans le navigateur, en base64 (sans préfixe data:). */
+const photoImage = z
+  .string()
+  .max(Math.ceil((PHOTO_MAX_BYTES * 4) / 3) + 8)
+  .regex(/^[A-Za-z0-9+/]+=*$/);
 const httpsUrl = z.string().trim().max(300);
 const profileChanges = z
   .object({
@@ -56,16 +67,14 @@ export const companyDeskActions = [
     action: z.literal("photo_add"),
     companyId: uuid,
     vesselId: uuid.nullable(),
+    /** Absente sur une page restée ouverte sur l'ancien site : rangée en « Autres ». */
+    category: z.enum(VESSEL_PHOTO_CATEGORIES).default("other"),
     caption: z.string().trim().min(3).max(200),
     credit: z.string().trim().max(120).optional(),
     rights: z.literal(true),
     width: z.number().int().min(200).max(4000),
     height: z.number().int().min(200).max(4000),
-    /** Image déjà réduite et réencodée dans le navigateur, en base64 (sans préfixe data:). */
-    image: z
-      .string()
-      .max(Math.ceil((PHOTO_MAX_BYTES * 4) / 3) + 8)
-      .regex(/^[A-Za-z0-9+/]+=*$/),
+    image: photoImage,
   }),
   z.object({ action: z.literal("photo_withdraw"), id: uuid }),
   z.object({ action: z.literal("manager_overview"), companyId: uuid }),
@@ -111,6 +120,21 @@ export const companyDeskActions = [
     reason: note.optional(),
   }),
   z.object({ action: z.literal("admin_managers"), companyId: uuid }),
+  // Photos publiées par l'équipe : exactement une cible (navire, compagnie ou port).
+  z.object({
+    action: z.literal("team_photo_add"),
+    vesselId: uuid.nullable(),
+    companyId: uuid.nullable(),
+    portId: uuid.nullable(),
+    category: z.enum(ALL_PHOTO_CATEGORIES),
+    caption: z.string().trim().min(3).max(200),
+    credit: z.string().trim().max(120).optional(),
+    rights: z.literal(true),
+    width: z.number().int().min(200).max(4000),
+    height: z.number().int().min(200).max(4000),
+    image: photoImage,
+  }),
+  z.object({ action: z.literal("team_photo_remove"), id: uuid, note: note.optional() }),
 ] as const;
 
 const deskSchema = z.discriminatedUnion("action", [...companyDeskActions]);
@@ -126,6 +150,9 @@ export const DESK_STAFF_ACTIONS: Record<string, StaffRole[]> = {
   reply_decide: ["admin", "moderator"],
   profile_decide: ["admin", "editor"],
   photo_decide: ["admin", "editor"],
+  // La base revérifie aussi la rubrique (Navires, Ports ou Compagnies) de la fiche visée.
+  team_photo_add: ["admin", "editor"],
+  team_photo_remove: ["admin", "editor"],
 };
 
 export const DESK_FAILURES: Record<string, { status: number; error: string }> = {
@@ -144,7 +171,9 @@ const LIMIT_TEXT: Partial<Record<string, string>> = {
   reply_save: "Limite de 50 réponses par jour atteinte pour votre compagnie.",
   profile_propose: "Limite de 10 propositions par jour atteinte.",
   photo_add:
-    "Galerie complète (12 photos) ou 30 photos déjà publiées aujourd'hui : retirez-en une ou réessayez demain.",
+    "Galerie complète (24 photos) ou 30 photos déjà publiées aujourd'hui : retirez-en une ou réessayez demain.",
+  team_photo_add:
+    "Fiche complète (60 photos) ou 60 photos déjà envoyées aujourd'hui : retirez-en une ou réessayez demain.",
   manager_invite: "Limite de 10 invitations par jour atteinte.",
 };
 
@@ -199,6 +228,46 @@ export async function handleCompanyDesk(input: CompanyDeskInput, ctx: DeskContex
       // Le chemin interne de l'espace privé n'est pas renvoyé au navigateur.
       delete photo.pendingPath;
     }
+  };
+  /**
+   * Photo JPEG : filtre de contenu explicite, dépôt dans l'espace public, puis enregistrement.
+   * Si la base refuse, le fichier déposé est effacé.
+   */
+  const publishJpeg = async (
+    bytes: Uint8Array,
+    path: string,
+    rpc: string,
+    args: Record<string, unknown>,
+  ) => {
+    let explicit: boolean;
+    try {
+      explicit = await isExplicitJpeg(bytes);
+    } catch {
+      return respond(
+        {
+          error: "Vérification de la photo impossible. Réessayez avec une autre.",
+          code: "BAD_IMAGE",
+        },
+        503,
+      );
+    }
+    if (explicit) return respond({ error: NSFW_REFUSAL, code: "BAD_IMAGE" }, 400);
+    const upload = await storage.from(GALLERY_PUBLIC_BUCKET).upload(path, bytes, {
+      contentType: "image/jpeg",
+      cacheControl: "31536000",
+      upsert: false,
+    });
+    if (upload.error)
+      return respond(
+        { error: "Envoi de la photo impossible pour le moment. Réessayez.", code: "UPLOAD" },
+        503,
+      );
+    const published = await call(rpc, { ...args, _path: path, _bytes: bytes.length });
+    if (published.response) {
+      await removeQuietly(GALLERY_PUBLIC_BUCKET, path);
+      return limited(published) ?? published.response;
+    }
+    return respond(published.data);
   };
   const finish = (result: CallResult) => result.response ?? respond(result.data ?? { ok: true });
   const limited = (result: CallResult) => {
@@ -261,49 +330,19 @@ export async function handleCompanyDesk(input: CompanyDeskInput, ctx: DeskContex
       // Publication directe (22/11/2026) : une photo JPEG passe le filtre de contenu explicite,
       // puis va droit dans l'espace public. Un WebP (ancienne version du site en cache) ne peut
       // pas être contrôlé ici : il suit l'ancien circuit, en attente de l'équipe.
-      if (format === "jpg") {
-        let explicit: boolean;
-        try {
-          explicit = await isExplicitJpeg(bytes);
-        } catch {
-          return respond(
-            {
-              error: "Vérification de la photo impossible. Réessayez avec une autre.",
-              code: "BAD_IMAGE",
-            },
-            503,
-          );
-        }
-        if (explicit) return respond({ error: NSFW_REFUSAL, code: "BAD_IMAGE" }, 400);
-        const upload = await storage.from(GALLERY_PUBLIC_BUCKET).upload(path, bytes, {
-          contentType: "image/jpeg",
-          cacheControl: "31536000",
-          upsert: false,
-        });
-        if (upload.error)
-          return respond(
-            { error: "Envoi de la photo impossible pour le moment. Réessayez.", code: "UPLOAD" },
-            503,
-          );
-        const published = await call("bw_company_photo_publish", {
+      if (format === "jpg")
+        return publishJpeg(bytes, path, "bw_company_photo_publish", {
           _user: me,
           _company: input.companyId,
           _vessel: input.vesselId,
           _id: id,
-          _path: path,
           _caption: input.caption,
           _credit: input.credit ?? null,
           _rights: input.rights,
           _width: input.width,
           _height: input.height,
-          _bytes: bytes.length,
+          _category: input.category,
         });
-        if (published.response) {
-          await removeQuietly(GALLERY_PUBLIC_BUCKET, path);
-          return limited(published) ?? published.response;
-        }
-        return respond(published.data);
-      }
       const upload = await storage.from(GALLERY_PENDING_BUCKET).upload(path, bytes, {
         contentType: format === "webp" ? "image/webp" : "image/jpeg",
         upsert: false,
@@ -331,6 +370,46 @@ export async function handleCompanyDesk(input: CompanyDeskInput, ctx: DeskContex
         return limited(result) ?? result.response;
       }
       return respond(result.data);
+    }
+    case "team_photo_add": {
+      // Exactement une cible, et une catégorie qui lui correspond (la base revérifie).
+      const targets = [input.vesselId, input.companyId, input.portId].filter(Boolean).length;
+      const allowed: readonly string[] = input.portId
+        ? PORT_PHOTO_CATEGORIES
+        : VESSEL_PHOTO_CATEGORIES;
+      if (targets !== 1 || !allowed.includes(input.category))
+        return respond({ error: "Fiche ou catégorie de photo invalide." }, 400);
+      const bytes = new Uint8Array(Buffer.from(input.image, "base64"));
+      if (photoFormat(bytes) !== "jpg" || bytes.length > PHOTO_MAX_BYTES)
+        return respond(
+          { error: "Image refusée : une photo JPEG de 2 Mo au plus.", code: "BAD_IMAGE" },
+          400,
+        );
+      const id = randomUUID();
+      return publishJpeg(bytes, `team/${id}.jpg`, "bw_team_photo_publish", {
+        _actor: me,
+        _company: input.companyId,
+        _vessel: input.vesselId,
+        _port: input.portId,
+        _id: id,
+        _category: input.category,
+        _caption: input.caption,
+        _credit: input.credit ?? null,
+        _rights: input.rights,
+        _width: input.width,
+        _height: input.height,
+      });
+    }
+    case "team_photo_remove": {
+      const result = await call("bw_team_photo_remove", {
+        _actor: me,
+        _id: input.id,
+        _note: input.note ?? null,
+      });
+      if (result.response) return result.response;
+      const paths = result.data as { publicPath?: string | null };
+      await removeQuietly(GALLERY_PUBLIC_BUCKET, paths.publicPath);
+      return respond({ ok: true });
     }
     case "photo_withdraw": {
       const result = await call("bw_company_photo_withdraw", { _user: me, _id: input.id });

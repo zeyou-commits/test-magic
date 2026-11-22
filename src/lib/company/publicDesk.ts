@@ -3,8 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Lecture publique du lot 3 : réponses publiées des compagnies et galeries relues.
- * Deux fonctions ouvertes aux visiteurs ; si le script n'est pas installé, rien ne s'affiche.
+ * Lecture publique : réponses publiées des compagnies, galeries des navires, des compagnies
+ * et des ports. Fonctions ouvertes aux visiteurs ; si le script n'est pas installé, rien ne s'affiche.
  */
 const db = supabase as unknown as SupabaseClient;
 export const GALLERY_PUBLIC_BUCKET = "bledway-galeries";
@@ -22,7 +22,10 @@ export type GalleryPhoto = {
   credit: string | null;
   width: number;
   height: number;
-  companyName: string;
+  /** Absentes avant le script des galeries (22/11/2026). */
+  category?: string;
+  source?: "company" | "team";
+  companyName?: string | null;
 };
 
 export const companyRepliesQuery = (
@@ -58,6 +61,19 @@ export const companyGalleryQuery = (companyId: string | null, vesselId: string |
       return (data ?? []) as GalleryPhoto[];
     },
     enabled: Boolean(companyId || vesselId),
+    staleTime: 10 * 60_000,
+    retry: false,
+  });
+
+export const portGalleryQuery = (portId: string | null) =>
+  queryOptions({
+    queryKey: ["port-gallery", portId ?? ""],
+    queryFn: async () => {
+      const { data, error } = await db.rpc("bw_port_gallery", { _port: portId });
+      if (error) return [] as GalleryPhoto[];
+      return (data ?? []) as GalleryPhoto[];
+    },
+    enabled: Boolean(portId),
     staleTime: 10 * 60_000,
     retry: false,
   });

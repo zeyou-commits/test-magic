@@ -126,6 +126,9 @@ export interface CompanyPhoto {
   id: string;
   vesselId: string | null;
   vesselName: string | null;
+  /** Absentes avant le script des galeries (22/11/2026) : « Autres », compagnie. */
+  category?: string;
+  source?: "company" | "team";
   caption: string;
   credit: string | null;
   status: PhotoStatus;
@@ -143,7 +146,8 @@ export interface CompanyProfile {
   photos: CompanyPhoto[];
   fleet: { id: string; name: string }[];
 }
-export const GALLERY_LIMIT = 12;
+/** Photos de la compagnie par galerie ; celles ajoutées par BledWay ne comptent pas. */
+export const GALLERY_LIMIT = 24;
 
 /** Contrôles du navigateur, identiques à ceux de la base (qui les refait). */
 export function profileFieldError(key: ProfileField, value: string): string | null {

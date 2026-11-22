@@ -21,7 +21,14 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { GalleryUploader } from "@/components/company/GalleryUploader";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  ALL_PHOTO_CATEGORIES,
+  asPhotoCategory,
+  PHOTO_CATEGORY_FORM,
+  VESSEL_PHOTO_CATEGORIES,
+} from "@/lib/company/galleryCategories";
 import {
   companyAccessKeys,
   companyAccessRequest,
@@ -523,8 +530,35 @@ export function CompanyProfileTab({
           {profile.data ? <ProfileForm ctx={ctx} profile={profile.data} logo={logo} /> : null}
         </QueryState>
       </section>
-      {profile.data ? <Galleries ctx={ctx} profile={profile.data} /> : null}
     </div>
+  );
+}
+
+/** Flotte → Photos des navires : une galerie par navire, plus la galerie générale. */
+export function CompanyPhotosTab({
+  ctx,
+  vesselId,
+}: {
+  ctx: VoiceContext;
+  vesselId: string | null;
+}) {
+  const { user } = useAuth();
+  const profile = useQuery({
+    queryKey: deskKeys.profile(user?.id ?? "", ctx.companyId),
+    queryFn: () =>
+      companyAccessRequest<CompanyProfile>({ action: "profile", companyId: ctx.companyId }),
+    enabled: Boolean(user),
+    // Les liens des photos en relecture expirent au bout de 10 minutes.
+    staleTime: 60_000,
+    refetchInterval: 5 * 60_000,
+    retry: false,
+  });
+  return (
+    <QueryState query={profile}>
+      {profile.data ? (
+        <Galleries ctx={ctx} profile={profile.data} initialVessel={vesselId} />
+      ) : null}
+    </QueryState>
   );
 }
 
@@ -839,30 +873,67 @@ function ProfilePreview({
   );
 }
 
-function Galleries({ ctx, profile }: { ctx: VoiceContext; profile: CompanyProfile }) {
-  const galleries = [{ id: null as string | null, name: ctx.companyName }, ...profile.fleet];
+function Galleries({
+  ctx,
+  profile,
+  initialVessel,
+}: {
+  ctx: VoiceContext;
+  profile: CompanyProfile;
+  initialVessel: string | null;
+}) {
+  // Une galerie à la fois : les navires d'abord (c'est ce que les voyageurs regardent), puis la
+  // galerie générale de la compagnie.
+  const galleries = [
+    ...profile.fleet.map((vessel) => ({ id: vessel.id as string | null, name: vessel.name })),
+    { id: null as string | null, name: "Galerie générale" },
+  ];
+  const [selected, setSelected] = useState<string | null>(
+    initialVessel && galleries.some((gallery) => gallery.id === initialVessel)
+      ? initialVessel
+      : (galleries[0]?.id ?? null),
+  );
+  const current = galleries.find((gallery) => gallery.id === selected) ?? galleries[0]!;
+  const photosOf = (id: string | null) => profile.photos.filter((photo) => photo.vesselId === id);
   return (
     <section className="bo-card">
       <h2>
-        <Camera aria-hidden /> Photos informatives
+        <Camera aria-hidden /> Photos des navires
         <small>publiées tout de suite</small>
       </h2>
-      <p className="bo-lead mb-2">
-        Des photos qui aident les voyageurs : ponts, cabines, espaces, embarquement. Pas de
-        publicité ni de texte incrusté. {GALLERY_LIMIT} photos par galerie au plus. Les visages et
-        les plaques sont floutés avant l'envoi.
+      <p className="bo-lead mb-3">
+        Montrez aux voyageurs ce qui les attend à bord : extérieur, ponts, cabines, restauration,
+        garage, espaces enfants, accessibilité. Pas de publicité ni de texte incrusté. Les visages
+        et les plaques sont floutés avant l'envoi.
       </p>
-      <div className="grid gap-4">
-        {galleries.map((gallery) => (
-          <Gallery
-            key={gallery.id ?? "company"}
-            ctx={ctx}
-            vesselId={gallery.id}
-            title={gallery.id ? gallery.name : `Galerie de ${gallery.name}`}
-            photos={profile.photos.filter((photo) => photo.vesselId === gallery.id)}
-          />
-        ))}
-      </div>
+      {galleries.length > 1 ? (
+        <div className="mb-3 grid gap-1.5">
+          <span className="text-sm font-semibold">Quelle galerie ?</span>
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Choisir la galerie">
+            {galleries.map((gallery) => (
+              <button
+                key={gallery.id ?? "company"}
+                type="button"
+                aria-pressed={gallery.id === current.id}
+                onClick={() => setSelected(gallery.id)}
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border px-3 text-[13px] font-medium hover:bg-muted aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground"
+              >
+                {gallery.name}
+                <span className="opacity-70">
+                  {photosOf(gallery.id).filter((photo) => photo.status === "published").length}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      <Gallery
+        key={current.id ?? "company"}
+        ctx={ctx}
+        vesselId={current.id}
+        title={current.id ? current.name : `Galerie générale de ${ctx.companyName}`}
+        photos={photosOf(current.id)}
+      />
     </section>
   );
 }
@@ -880,7 +951,10 @@ function Gallery({
 }) {
   const refresh = useDeskRefresh();
   const [adding, setAdding] = useState(false);
-  const live = photos.filter((photo) => photo.status === "pending" || photo.status === "published");
+  const own = photos.filter((photo) => (photo.source ?? "company") === "company");
+  const taken = own.filter(
+    (photo) => photo.status === "pending" || photo.status === "published",
+  ).length;
   const withdraw = useMutation({
     mutationFn: (id: string) => companyAccessRequest({ action: "photo_withdraw", id }),
     onSuccess: () => {
@@ -892,209 +966,120 @@ function Gallery({
       refresh(error);
     },
   });
+  const groups = ALL_PHOTO_CATEGORIES.map((category) => ({
+    category,
+    items: photos.filter((photo) => asPhotoCategory(photo.category) === category),
+  })).filter((group) => group.items.length);
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold">
           {title}{" "}
           <span className="font-normal text-muted-foreground">
-            {live.length}/{GALLERY_LIMIT}
+            {taken}/{GALLERY_LIMIT} photos de la compagnie
           </span>
         </h3>
-        {ctx.canAct && live.length < GALLERY_LIMIT && !adding ? (
-          <Button size="sm" variant="outline" onClick={() => setAdding(true)}>
-            <Camera className="size-4" aria-hidden /> Ajouter une photo
+        {ctx.canAct && taken < GALLERY_LIMIT && !adding ? (
+          <Button size="sm" onClick={() => setAdding(true)}>
+            <Camera className="size-4" aria-hidden /> Ajouter des photos
           </Button>
         ) : null}
       </div>
-      {adding ? <PhotoForm ctx={ctx} vesselId={vesselId} onClose={() => setAdding(false)} /> : null}
-      {photos.length ? (
-        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-          {photos.map((photo) => (
-            <li
-              key={photo.id}
-              className="grid content-start gap-1 rounded-xl border border-border p-1.5 text-xs"
-            >
-              {photo.url ? (
-                <img
-                  src={photo.url}
-                  alt={photo.caption}
-                  loading="lazy"
-                  width={photo.width}
-                  height={photo.height}
-                  className="aspect-[4/3] w-full rounded-lg object-cover"
-                />
-              ) : (
-                <span className="grid aspect-[4/3] place-items-center rounded-lg bg-muted text-muted-foreground">
-                  Aperçu indisponible
-                </span>
-              )}
-              <span className="flex items-center justify-between gap-1">
-                <em className="bo-pill" data-tone={PHOTO_STATUS[photo.status].tone}>
-                  {PHOTO_STATUS[photo.status].label}
-                </em>
-                {ctx.canAct && (photo.status === "pending" || photo.status === "published") ? (
-                  <button
-                    type="button"
-                    className="bo-link min-h-8"
-                    aria-label={`Retirer la photo « ${photo.caption} »`}
-                    disabled={withdraw.isPending}
-                    onClick={() => {
-                      if (window.confirm("Retirer cette photo ? Elle sera effacée."))
-                        withdraw.mutate(photo.id);
-                    }}
-                  >
-                    <Trash2 className="size-4" aria-hidden />
-                  </button>
-                ) : null}
-              </span>
-              <span className="line-clamp-2">{photo.caption}</span>
-              {photo.credit ? (
-                <span className="text-muted-foreground">© {photo.credit}</span>
-              ) : null}
-              {photo.decisionNote ? <Note>{photo.decisionNote}</Note> : null}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="bo-empty">Aucune photo pour l'instant.</p>
-      )}
-    </div>
-  );
-}
-
-function PhotoForm({
-  ctx,
-  vesselId,
-  onClose,
-}: {
-  ctx: VoiceContext;
-  vesselId: string | null;
-  onClose: () => void;
-}) {
-  const refresh = useDeskRefresh();
-  const [prepared, setPrepared] = useState<{
-    blob: Blob;
-    url: string;
-    width: number;
-    height: number;
-  } | null>(null);
-  const [preparing, setPreparing] = useState(false);
-  const [caption, setCaption] = useState("");
-  const [credit, setCredit] = useState("");
-  const [rights, setRights] = useState(false);
-  const send = useMutation({
-    mutationFn: async () =>
-      companyAccessRequest({
-        action: "photo_add",
-        companyId: ctx.companyId,
-        vesselId,
-        caption: caption.trim(),
-        ...(credit.trim() ? { credit: credit.trim() } : {}),
-        rights: true,
-        width: prepared!.width,
-        height: prepared!.height,
-        // Le serveur contrôle la photo en JPEG avant de la publier.
-        image: await blobToBase64(
-          await (await import("@/lib/photos/photos")).asJpeg({ ...prepared!, faces: 0, plates: 0 }),
-        ),
-      }),
-    onSuccess: () => {
-      toast.success("Photo publiée.");
-      onClose();
-      refresh();
-    },
-    onError: (error: Error) => {
-      toast.error(error.message);
-      refresh(error);
-    },
-  });
-  const pick = async (file: File | undefined) => {
-    if (!file) return;
-    setPreparing(true);
-    try {
-      const { preparePhoto } = await import("@/lib/photos/photos");
-      const result = await preparePhoto(file);
-      if (Math.min(result.width, result.height) < 200 || result.blob.size > 2 * 1024 * 1024)
-        throw new Error("Photo trop petite ou trop lourde : choisissez-en une autre.");
-      setPrepared(result);
-    } catch (error) {
-      toast.error((error as Error).message);
-    } finally {
-      setPreparing(false);
-    }
-  };
-  const ready = prepared && caption.trim().length >= 3 && rights;
-  return (
-    <form
-      className="grid gap-2 rounded-xl border border-border p-3 text-sm"
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (ready) send.mutate();
-      }}
-    >
-      <label className="grid gap-1">
-        <span className="font-semibold">Photo</span>
-        <input
-          type="file"
-          accept="image/*"
-          className="text-sm"
-          disabled={preparing || send.isPending}
-          onChange={(event) => void pick(event.target.files?.[0])}
-        />
-        <span className="text-xs text-muted-foreground">
-          {preparing
-            ? "Préparation : réduction, floutage des visages et des plaques, retrait des données de l'appareil…"
-            : "Réduite à 1 600 px, sans position GPS ni données de l'appareil."}
-        </span>
-      </label>
-      {prepared ? (
-        <img
-          src={prepared.url}
-          alt="Aperçu de la photo préparée"
-          className="max-h-48 w-auto justify-self-start rounded-lg"
+      {adding ? (
+        <GalleryUploader
+          categories={VESSEL_PHOTO_CATEGORIES}
+          remaining={GALLERY_LIMIT - taken}
+          rightsLabel={`Je déclare que ${ctx.companyName} détient les droits de diffusion de ces photos et que les personnes reconnaissables ont donné leur accord.`}
+          onSend={(photo) =>
+            companyAccessRequest({
+              action: "photo_add",
+              companyId: ctx.companyId,
+              vesselId,
+              rights: true,
+              ...photo,
+            })
+          }
+          onDone={() => refresh()}
+          onClose={() => setAdding(false)}
         />
       ) : null}
-      <label className="grid gap-1">
-        <span className="font-semibold">Légende</span>
-        <Input
-          value={caption}
-          maxLength={200}
-          placeholder="Par exemple : salon du pont 7, places assises"
-          onChange={(event) => setCaption(event.target.value)}
-        />
-      </label>
-      <label className="grid gap-1">
-        <span className="font-semibold">Crédit (facultatif)</span>
-        <Input
-          value={credit}
-          maxLength={120}
-          placeholder="Auteur ou service"
-          onChange={(event) => setCredit(event.target.value)}
-        />
-      </label>
-      <label className="flex items-start gap-2">
-        <input
-          type="checkbox"
-          className="mt-1 size-4"
-          checked={rights}
-          onChange={(event) => setRights(event.target.checked)}
-        />
-        <span>
-          Je déclare que {ctx.companyName} détient les droits de diffusion de cette photo et que les
-          personnes reconnaissables ont donné leur accord.
-        </span>
-      </label>
-      <div className="flex flex-wrap gap-2">
-        <Button type="submit" size="sm" disabled={!ready || send.isPending}>
-          <Send className="size-4" aria-hidden />{" "}
-          {send.isPending ? "Vérification…" : "Publier la photo"}
-        </Button>
-        <Button type="button" size="sm" variant="ghost" onClick={onClose}>
-          Annuler
-        </Button>
-      </div>
-    </form>
+      {groups.length ? (
+        groups.map((group) => (
+          <div key={group.category} className="grid gap-1.5">
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {PHOTO_CATEGORY_FORM[group.category].label} · {group.items.length}
+            </h4>
+            <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+              {group.items.map((photo) => {
+                const team = photo.source === "team";
+                return (
+                  <li
+                    key={photo.id}
+                    className="grid content-start gap-1 rounded-xl border border-border p-1.5 text-xs"
+                  >
+                    {photo.url ? (
+                      <img
+                        src={photo.url}
+                        alt={photo.caption}
+                        loading="lazy"
+                        width={photo.width}
+                        height={photo.height}
+                        className="aspect-[4/3] w-full rounded-lg object-cover"
+                      />
+                    ) : (
+                      <span className="grid aspect-[4/3] place-items-center rounded-lg bg-muted text-muted-foreground">
+                        Aperçu indisponible
+                      </span>
+                    )}
+                    <span className="flex items-center justify-between gap-1">
+                      {team ? (
+                        <em className="bo-pill">Ajoutée par BledWay</em>
+                      ) : (
+                        <em className="bo-pill" data-tone={PHOTO_STATUS[photo.status].tone}>
+                          {PHOTO_STATUS[photo.status].label}
+                        </em>
+                      )}
+                      {ctx.canAct &&
+                      !team &&
+                      (photo.status === "pending" || photo.status === "published") ? (
+                        <button
+                          type="button"
+                          className="bo-link min-h-8"
+                          aria-label={`Retirer la photo « ${photo.caption} »`}
+                          disabled={withdraw.isPending}
+                          onClick={() => {
+                            if (window.confirm("Retirer cette photo ? Elle sera effacée."))
+                              withdraw.mutate(photo.id);
+                          }}
+                        >
+                          <Trash2 className="size-4" aria-hidden />
+                        </button>
+                      ) : null}
+                    </span>
+                    <span className="line-clamp-2">{photo.caption}</span>
+                    {photo.credit ? (
+                      <span className="text-muted-foreground">© {photo.credit}</span>
+                    ) : null}
+                    {photo.decisionNote ? <Note>{photo.decisionNote}</Note> : null}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))
+      ) : (
+        <p className="bo-empty">
+          Aucune photo pour l'instant.
+          {ctx.canAct ? " Choisissez une catégorie, puis une ou plusieurs photos." : ""}
+        </p>
+      )}
+      {photos.some((photo) => photo.source === "team") ? (
+        <p className="text-xs text-muted-foreground">
+          Les photos ajoutées par BledWay ne prennent pas de place dans votre galerie. Pour en faire
+          retirer une, écrivez à l'équipe.
+        </p>
+      ) : null}
+    </div>
   );
 }
 

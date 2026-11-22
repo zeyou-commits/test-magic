@@ -6,6 +6,7 @@ import { AdminGate } from "@/components/admin/AdminGate";
 import { AvatarsAdmin } from "@/components/admin/AvatarsAdmin";
 import { LibraryCategoriesAdmin } from "@/components/admin/LibraryCategoriesAdmin";
 import { PhotosModeration } from "@/components/admin/PhotosModeration";
+import { TeamGallery } from "@/components/admin/TeamGallery";
 import { TicketInsightsAdmin } from "@/components/admin/TicketInsightsAdmin";
 import { ScheduleRecurrenceFields } from "@/components/admin/ScheduleRecurrence";
 import { recurrenceLabel } from "@/lib/ferry/recurrence";
@@ -2369,6 +2370,7 @@ export function VesselEditor({ vessel }: { vessel: Vessel }) {
         </Button>
       </div>
       <VesselSpecsEditor vessel={vessel as unknown as VesselSpecsRow} />
+      <TeamGallery kind="vessel" id={vessel.id} name={vessel.name} />
       <VesselDeleteButton id={vessel.id} name={vessel.name} />
     </div>
   );
@@ -3327,6 +3329,11 @@ function PortsAdmin({ itemId }: { itemId?: string | undefined } = {}) {
             ) : null}
           </Field>
         </div>
+        {editingId ? (
+          <div className="mt-3">
+            <TeamGallery kind="port" id={editingId} name={draft.name} />
+          </div>
+        ) : null}
         <div className="mt-3">
           <Field label="À savoir (embarquement, accès, fermeture…)">
             <Input value={draft.notes} onChange={(event) => set("notes")(event.target.value)} />

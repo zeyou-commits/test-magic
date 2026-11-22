@@ -249,6 +249,66 @@ describe("Lot 3 côté serveur : réponses, fiche, photos, responsable", () => {
     expect(publish._user).toBe(OPS_ONE);
     expect(publish._path).toBe(storageCalls[0]!.split(":")[2]);
     expect(rpc).not.toHaveBeenCalledWith("bw_company_photo_add", expect.anything());
+    // Ancienne page sans catégorie : rangée en « Autres ».
+    expect(publish._category).toBe("other");
+  });
+
+  it("photo JPEG avec catégorie : transmise à la base ; catégorie de port refusée", async () => {
+    await call(photoInput({ image: JPEG.toString("base64"), category: "cabins" }));
+    const publish = rpc.mock.calls.find(([name]) => name === "bw_company_photo_publish")![1];
+    expect(publish._category).toBe("cabins");
+    const response = await call(
+      photoInput({ image: JPEG.toString("base64"), category: "terminal" }),
+    );
+    expect(response.status).toBe(400);
+  });
+
+  it("photo d'équipe : réservée à l'équipe, filtrée, déposée sous team/ puis enregistrée", async () => {
+    const port = "00000000-0000-4000-8000-000000000401";
+    const input = {
+      action: "team_photo_add",
+      vesselId: null,
+      companyId: null,
+      portId: port,
+      category: "terminal",
+      caption: "Hall de la gare maritime",
+      rights: true,
+      width: 1600,
+      height: 1067,
+      image: JPEG.toString("base64"),
+    };
+    expect((await call(input)).status).toBe(403);
+    expect(storageCalls).toEqual([]);
+    state.user = EDITOR;
+    expect((await call({ ...input, category: "cabins" })).status).toBe(400);
+    expect((await call({ ...input, vesselId: port })).status).toBe(400);
+    expect((await call({ ...input, image: WEBP.toString("base64") })).status).toBe(400);
+    expect(storageCalls).toEqual([]);
+    nsfw.explicit = true;
+    expect((await call(input)).status).toBe(400);
+    expect(storageCalls).toEqual([]);
+    nsfw.explicit = false;
+    expect((await call(input)).status).toBe(200);
+    expect(storageCalls[0]).toMatch(
+      new RegExp(`^upload:${GALLERY_PUBLIC_BUCKET}:team/[0-9a-f-]{36}\\.jpg$`),
+    );
+    const publish = rpc.mock.calls.find(([name]) => name === "bw_team_photo_publish")![1];
+    expect(publish).toMatchObject({ _actor: EDITOR, _port: port, _category: "terminal" });
+    expect(publish._path).toBe(storageCalls[0]!.split(":")[2]);
+  });
+
+  it("photo d'équipe : la rubrique « Demandes des compagnies » fermée ne bloque pas", async () => {
+    state.user = EDITOR;
+    state.closedFor = "editor";
+    const response = await call({ action: "team_photo_remove", id: PHOTO, note: "Floue" });
+    expect(response.status).toBe(200);
+    expect(rpc).toHaveBeenCalledWith("bw_team_photo_remove", {
+      _actor: EDITOR,
+      _id: PHOTO,
+      _note: "Floue",
+    });
+    state.user = MODERATOR;
+    expect((await call({ action: "team_photo_remove", id: PHOTO })).status).toBe(403);
   });
 
   it("photo JPEG explicite : refusée, rien n'est déposé ni enregistré", async () => {

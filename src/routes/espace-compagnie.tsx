@@ -4,6 +4,7 @@ import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Building2,
   CalendarDays,
+  Camera,
   CheckCircle2,
   ClipboardList,
   Gauge,
@@ -32,6 +33,7 @@ import {
 } from "@/components/company/CompanyDesk";
 import {
   CompanyManagerPanel,
+  CompanyPhotosTab,
   CompanyProfileTab,
   CompanyReviewsTab,
   CompanySignalsTab,
@@ -64,11 +66,12 @@ import { reviewCriteria, reviewNumber } from "@/lib/ferry/reviewCriteria";
 import { routeArrivalTimeZone, routeDepartureTimeZone } from "@/lib/ferry/time";
 import type { Departure } from "@/lib/ferry/types";
 
-type Search = { c?: string; tab?: string };
+type Search = { c?: string; tab?: string; vessel?: string };
 export const Route = createFileRoute("/espace-compagnie")({
   validateSearch: (search: Record<string, unknown>): Search => ({
     ...(typeof search["c"] === "string" ? { c: search["c"] } : {}),
     ...(typeof search["tab"] === "string" ? { tab: search["tab"] } : {}),
+    ...(typeof search["vessel"] === "string" ? { vessel: search["vessel"] } : {}),
   }),
   head: () => ({
     meta: [{ title: "Espace compagnie — BledWay" }, { name: "robots", content: "noindex" }],
@@ -133,6 +136,15 @@ const SECTIONS: ShellSection[] = [
     icon: Ship,
   },
   {
+    id: "photos",
+    label: "Photos des navires",
+    short: "Photos",
+    description:
+      "Extérieur, ponts, cabines, restauration… Ce que vous publiez apparaît tout de suite sur la fiche du navire.",
+    group: "Flotte",
+    icon: Camera,
+  },
+  {
     id: "reviews",
     label: "Avis des voyageurs",
     short: "Avis",
@@ -159,7 +171,7 @@ const SECTIONS: ShellSection[] = [
   {
     id: "profile",
     label: "Ma fiche",
-    description: "Ce que les voyageurs voient de votre compagnie : contacts, présentation, photos.",
+    description: "Ce que les voyageurs voient de votre compagnie : contacts et présentation.",
     group: "Communication",
     icon: Building2,
   },
@@ -272,7 +284,7 @@ function CompanySpacePage() {
 function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
   useSignalCatalog();
   const { user } = useAuth();
-  const { c, tab = "home" } = Route.useSearch();
+  const { c, tab = "home", vessel: vesselParam } = Route.useSearch();
   const navigate = Route.useNavigate();
   const { data: allCompanies = [] } = useQuery(companiesQuery);
   const companies = allowed
@@ -722,6 +734,23 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
                     <dd>{vessel.mmsi ? "Actif" : "Non relié"}</dd>
                   </div>
                 </dl>
+                {voice ? (
+                  <button
+                    type="button"
+                    className="bo-link mt-2 inline-flex min-h-9 items-center gap-1.5"
+                    onClick={() =>
+                      void navigate({
+                        search: {
+                          ...(company ? { c: company.id } : {}),
+                          tab: "photos",
+                          vessel: vessel.id,
+                        },
+                      })
+                    }
+                  >
+                    <Camera className="size-4" aria-hidden /> Photos du navire
+                  </button>
+                ) : null}
               </article>
             );
           })}
@@ -735,6 +764,8 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
         <div className="grid gap-3.5">
           <CompanyAnnouncementsTab ctx={desk} />
         </div>
+      ) : tab === "photos" && voice ? (
+        <CompanyPhotosTab ctx={voice} vesselId={vesselParam ?? null} />
       ) : tab === "profile" && voice ? (
         <CompanyProfileTab
           ctx={voice}

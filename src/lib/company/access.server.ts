@@ -220,8 +220,9 @@ export async function handleCompanyAccess(
       .limit(1)
       .maybeSingle();
     // Réglage de l'administrateur (Rôles et droits) : « Demandes des compagnies » fermée à ce rôle.
+    // Les photos d'équipe relèvent des rubriques Navires, Ports ou Compagnies : la base les vérifie.
     let closed = false;
-    if (role && role.role !== "admin") {
+    if (role && role.role !== "admin" && !input.action.startsWith("team_photo_")) {
       const { data: setting } = await (db as unknown as SupabaseClient)
         .from("bw_staff_role_config")
         .select("removed_tabs")

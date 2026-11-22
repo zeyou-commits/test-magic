@@ -25,6 +25,7 @@ const state = {
   user: OPS_ONE as string,
   announcement: { departure_id: DEP_ONE, status: "submitted", message_id: null as string | null },
   departureAt: new Date(Date.now() + 86_400_000).toISOString(),
+  sendLimited: false,
 };
 
 /** Lecture simulée des tables : rôles d'équipe, annonce à valider, horaire de la traversée. */
@@ -87,6 +88,7 @@ beforeEach(() => {
   state.user = OPS_ONE;
   state.announcement = { departure_id: DEP_ONE, status: "submitted", message_id: null };
   state.departureAt = new Date(Date.now() + 86_400_000).toISOString();
+  state.sendLimited = false;
   preview.mockResolvedValue(reach(12));
   dispatch.mockResolvedValue(undefined);
   // Base simulée : mêmes refus que les fonctions SQL du lot 2.
@@ -97,6 +99,12 @@ beforeEach(() => {
       return { data: null, error: { message: "BW_FORBIDDEN" } };
     if (name === "bw_company_departure_check")
       return { data: { companyId: departureCompany[departure!] }, error: null };
+    if (name === "bw_company_announcement_save")
+      return { data: { id: ANNOUNCE, status: "draft" }, error: null };
+    if (name === "bw_company_announcement_send")
+      return state.sendLimited
+        ? { data: null, error: { message: "BW_LIMIT" } }
+        : { data: { messageId: "msg-direct", already: false }, error: null };
     if (name === "bw_company_announcement_approve")
       return roles[user]?.includes("admin")
         ? { data: { messageId: "msg-1", already: false }, error: null }
@@ -155,9 +163,60 @@ describe("Demandes et annonces des compagnies côté serveur", () => {
       _preview_count: 9999,
     });
     expect(rpc).toHaveBeenCalledWith(
-      "bw_company_announcement_save",
-      expect.objectContaining({ _user: OPS_ONE, _preview_count: 12, _submit: true }),
+      "bw_company_announcement_send",
+      expect.objectContaining({ _user: OPS_ONE, _id: ANNOUNCE, _reachable: 12 }),
     );
+  });
+
+  it("publication directe : l'annonce part tout de suite, sans relecture BledWay", async () => {
+    const response = await call({
+      action: "announce_save",
+      departureId: DEP_ONE,
+      reason: "boarding",
+      body: "Embarquement des véhicules à partir de 16 h.",
+      submit: true,
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      status: "approved",
+      reachable: 12,
+      sentNow: true,
+    });
+    // Enregistrée d'abord en brouillon, puis envoyée par la fonction réservée à la compagnie.
+    expect(rpc).toHaveBeenCalledWith(
+      "bw_company_announcement_save",
+      expect.objectContaining({ _submit: false, _urgent: false }),
+    );
+    expect(rpc).not.toHaveBeenCalledWith("bw_company_announcement_approve", expect.anything());
+    expect(dispatch).toHaveBeenCalledWith("msg-direct");
+  });
+
+  it("personne ne suit la traversée : rien n'est enregistré ni envoyé", async () => {
+    preview.mockResolvedValue(reach(0));
+    const response = await call({
+      action: "announce_save",
+      departureId: DEP_ONE,
+      reason: "other",
+      body: "Message de test assez long.",
+      submit: true,
+    });
+    expect(response.status).toBe(409);
+    expect(rpc).not.toHaveBeenCalledWith("bw_company_announcement_save", expect.anything());
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("limite atteinte : le texte reste en brouillon, rien ne part", async () => {
+    state.sendLimited = true;
+    const response = await call({
+      action: "announce_save",
+      departureId: DEP_ONE,
+      reason: "other",
+      body: "Message de test assez long.",
+      submit: true,
+    });
+    expect(response.status).toBe(429);
+    expect((await response.json()).error).toContain("brouillon");
+    expect(dispatch).not.toHaveBeenCalled();
   });
 
   it("refuse une adresse ou une liste de destinataires choisie par la compagnie", async () => {

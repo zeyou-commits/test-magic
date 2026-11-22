@@ -12,7 +12,7 @@ export const LEVEL_CATALOG: Record<CompanyLevel, { label: string; summary: strin
   operations: {
     label: "Opérations",
     summary:
-      "Lecture, plus les demandes de changement de traversée et les annonces aux passagers, relues par BledWay.",
+      "Lecture, plus les changements de traversée et les annonces aux passagers, publiés tout de suite.",
   },
 };
 
@@ -121,7 +121,7 @@ export const LOG_LABELS: Record<string, string> = {
   company_space_active: "Espace réactivé",
 };
 
-// ─── Lot 2 : demandes de changement et annonces, relues par BledWay ───────────────────────────
+// ─── Lot 2 : changements de traversée et annonces, publiés par la compagnie ────────────────────────
 
 export type RequestKind = "delay" | "cancel" | "vessel" | "time";
 export type RequestStatus = "draft" | "submitted" | "applied" | "refused" | "stale" | "withdrawn";
@@ -146,7 +146,7 @@ export const REQUEST_KINDS: Record<RequestKind, { label: string; hint: string }>
 };
 export const REQUEST_STATUS: Record<RequestStatus, { label: string; tone?: string }> = {
   draft: { label: "Brouillon", tone: "mute" },
-  submitted: { label: "En relecture", tone: "warn" },
+  submitted: { label: "En attente", tone: "warn" },
   applied: { label: "Appliquée" },
   refused: { label: "Refusée", tone: "bad" },
   stale: { label: "Dépassée", tone: "mute" },
@@ -160,8 +160,8 @@ export const ANNOUNCEMENT_REASONS: Record<AnnouncementReason, string> = {
 };
 export const ANNOUNCEMENT_STATUS: Record<AnnouncementStatus, { label: string; tone?: string }> = {
   draft: { label: "Brouillon", tone: "mute" },
-  submitted: { label: "En relecture", tone: "warn" },
-  approved: { label: "Validée" },
+  submitted: { label: "En attente", tone: "warn" },
+  approved: { label: "Envoyée" },
   refused: { label: "Refusée", tone: "bad" },
   stale: { label: "Dépassée", tone: "mute" },
   withdrawn: { label: "Retirée", tone: "mute" },
@@ -288,7 +288,10 @@ export const EVENT_LABELS: Record<string, string> = {
   edited: "Modifiée",
   submitted: "Envoyée à BledWay",
   withdrawn: "Retirée",
-  applied: "Appliquée par BledWay",
+  // Depuis le 22/11/2026, « applied » et « sent » sont faits par la compagnie elle-même.
+  applied: "Appliquée",
+  sent: "Envoyée aux voyageurs",
+  published: "Publiée",
   approved: "Validée par BledWay",
   refused: "Refusée par BledWay",
   stale: "Dépassée",

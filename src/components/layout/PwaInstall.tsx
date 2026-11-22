@@ -98,6 +98,14 @@ export function PwaInstall() {
 
   // Le compagnon pas à pas : la bannière cacherait les questions sur téléphone.
   if (pathname === "/preparer-mon-voyage" || pathname === "/ma-preparation") return null;
+  // Espaces de travail (équipe, compagnie) : la bannière couvrait les boutons d'action.
+  if (
+    pathname === "/espace-compagnie" ||
+    pathname === "/rejoindre-compagnie" ||
+    pathname === "/admin" ||
+    pathname.startsWith("/admin/")
+  )
+    return null;
   if (dismissed || (!prompt && !showIos && !manual)) return null;
   return (
     <aside
@@ -105,17 +113,19 @@ export function PwaInstall() {
       aria-label={tr("ui.pwaInstall.installerBledway")}
     >
       <div className="flex items-start gap-3">
-            <img src="/pwa-icon-192.png" alt="" className="size-11 rounded-xl" />
-            <div className="min-w-0 flex-1">
-              <strong className="block text-sm text-foreground">{tr("ui.pwaInstall.bledwayAPorteeDeMain")}</strong>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                {showIos && !prompt
-                  ? tr("ui.pwaInstall.surIphoneTouchezPartagerPuis")
-                  : prompt
-                    ? tr("ui.pwaInstall.retrouvezLaCarteEtVos")
-                    : tr("ui.pwaInstall.ouvrezLeMenuDeVotre")}
-              </p>
-            </div>
+        <img src="/pwa-icon-192.png" alt="" className="size-11 rounded-xl" />
+        <div className="min-w-0 flex-1">
+          <strong className="block text-sm text-foreground">
+            {tr("ui.pwaInstall.bledwayAPorteeDeMain")}
+          </strong>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            {showIos && !prompt
+              ? tr("ui.pwaInstall.surIphoneTouchezPartagerPuis")
+              : prompt
+                ? tr("ui.pwaInstall.retrouvezLaCarteEtVos")
+                : tr("ui.pwaInstall.ouvrezLeMenuDeVotre")}
+          </p>
+        </div>
         <button
           type="button"
           onClick={() => {
@@ -139,7 +149,8 @@ export function PwaInstall() {
           }}
           className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground"
         >
-          <Download size={16} aria-hidden />{tr("ui.pwaInstall.installerBledway2")}
+          <Download size={16} aria-hidden />
+          {tr("ui.pwaInstall.installerBledway2")}
         </button>
       ) : null}
     </aside>

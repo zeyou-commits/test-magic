@@ -1818,7 +1818,7 @@ export const ui = {
     reponseDe: "Réponse de {company}",
     photosTitre: "Photos de {company}",
     photosNavire: "Photos du navire",
-    photosLegende: "Photos fournies par la compagnie, relues par BledWay.",
+    photosLegende: "Photos publiées par la compagnie.",
     photoSuivante: "Photo suivante",
     photoPrecedente: "Photo précédente",
     agrandir: "Agrandir la photo : {caption}",

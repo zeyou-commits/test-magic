@@ -54,7 +54,7 @@ export interface CompanyFeedback {
 }
 
 export const REPLY_STATUS: Record<ReplyStatus, { label: string; tone?: string }> = {
-  submitted: { label: "En relecture", tone: "warn" },
+  submitted: { label: "En examen par BledWay", tone: "warn" },
   published: { label: "Publiée" },
   acknowledged: { label: "Prise en compte" },
   refused: { label: "Refusée", tone: "bad" },
@@ -98,7 +98,7 @@ export type ProfileValues = Record<ProfileField, string | null>;
 
 export type ProposalStatus = "submitted" | "applied" | "refused" | "stale" | "withdrawn";
 export const PROPOSAL_STATUS: Record<ProposalStatus, { label: string; tone?: string }> = {
-  submitted: { label: "En relecture", tone: "warn" },
+  submitted: { label: "En attente", tone: "warn" },
   applied: { label: "Appliquée" },
   refused: { label: "Refusée", tone: "bad" },
   stale: { label: "Dépassée", tone: "mute" },
@@ -116,7 +116,7 @@ export interface ProfileProposal {
 
 export type PhotoStatus = "pending" | "published" | "refused" | "withdrawn" | "removed";
 export const PHOTO_STATUS: Record<PhotoStatus, { label: string; tone?: string }> = {
-  pending: { label: "En relecture", tone: "warn" },
+  pending: { label: "En attente", tone: "warn" },
   published: { label: "Publiée" },
   refused: { label: "Refusée", tone: "bad" },
   withdrawn: { label: "Retirée", tone: "mute" },

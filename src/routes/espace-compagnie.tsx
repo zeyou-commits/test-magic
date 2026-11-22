@@ -115,10 +115,10 @@ const SECTIONS: ShellSection[] = [
   },
   {
     id: "requests",
-    label: "Mes demandes",
-    short: "Demandes",
+    label: "Historique des changements",
+    short: "Changements",
     description:
-      "Retards, nouveaux horaires, changements de navire et annulations envoyés à BledWay, et leur suite.",
+      "Retards, nouveaux horaires, changements de navire et annulations appliqués, et leur historique.",
     group: "Traversées",
     icon: ClipboardList,
   },
@@ -149,7 +149,7 @@ const SECTIONS: ShellSection[] = [
     id: "announce",
     label: "Annonces",
     description:
-      "Prévenir les voyageurs d'une traversée : retard, changement de navire, consigne. Relu par BledWay.",
+      "Prévenir les voyageurs d'une traversée : retard, changement de navire, consigne. Envoyé tout de suite.",
     group: "Communication",
     icon: Megaphone,
   },
@@ -497,7 +497,7 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
             </strong>
             <span>
               {canAct
-                ? "Vos demandes, annonces, réponses aux avis, corrections de fiche et photos sont relues par BledWay avant d'être appliquées ou publiées."
+                ? "Ce que vous publiez part tout de suite, sous le nom de votre compagnie. BledWay peut retirer après coup ce qui enfreint les règles communes."
                 : "Vous suivez les traversées, les demandes, les annonces et les avis de votre compagnie. Le niveau Opérations permet d'agir."}
             </span>
           </div>
@@ -568,14 +568,15 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
             <CalendarDays aria-hidden /> {mine.length} traversée{mine.length > 1 ? "s" : ""} à venir
             <small>
               <button type="button" className="bo-link" onClick={() => go("requests")}>
-                Mes demandes{inReview ? ` (${inReview} en relecture)` : ""}
+                Historique des changements{inReview ? ` (${inReview} en attente)` : ""}
               </button>
             </small>
           </h2>
           {canAct ? (
             <p className="bo-lead mb-2">
               Un retard, un nouvel horaire, un autre navire ou une annulation ? Choisissez « Signaler
-              un changement » sur la traversée. BledWay relit puis applique.
+              un changement » sur la traversée : il s'affiche tout de suite et les voyageurs qui la
+              suivent sont prévenus.
             </p>
           ) : null}
           {crossingRows(mine, true)}

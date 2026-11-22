@@ -4,6 +4,12 @@ import type { Database } from "@/integrations/supabase/types";
 import { handleCompanyAccess, hashInviteToken } from "./access.server";
 import { GALLERY_PENDING_BUCKET, GALLERY_PUBLIC_BUCKET, photoFormat } from "./desk.server";
 
+// Filtre de contenu explicite simulé : le vrai modèle n'est pas chargé dans les tests.
+const nsfw = vi.hoisted(() => ({ explicit: false }));
+vi.mock("@/lib/photos/chatPhoto.server", () => ({
+  isExplicitJpeg: async () => nsfw.explicit,
+}));
+
 // Comptes fictifs : deux compagnies, un responsable, un collaborateur Lecture, l'équipe BledWay.
 const ADMIN = "00000000-0000-4000-8000-000000000001";
 const EDITOR = "00000000-0000-4000-8000-000000000002";
@@ -29,6 +35,8 @@ const WEBP = Buffer.concat([
   Buffer.from("WEBPVP8 "),
   Buffer.alloc(64),
 ]);
+
+const JPEG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(64)]);
 
 const state = { user: OPS_ONE as string, photoStatus: "pending", closedFor: "" };
 const storageCalls: string[] = [];
@@ -117,6 +125,7 @@ beforeEach(() => {
   storageCalls.length = 0;
   state.user = OPS_ONE;
   state.photoStatus = "pending";
+  nsfw.explicit = false;
   // Base simulée : mêmes refus que les fonctions SQL du lot 3.
   rpc.mockImplementation(async (name: string, args: Record<string, unknown>) => {
     const user = (args["_user"] ?? args["_actor"]) as string;
@@ -227,6 +236,38 @@ describe("Lot 3 côté serveur : réponses, fiche, photos, responsable", () => {
     );
     const add = rpc.mock.calls.find(([name]) => name === "bw_company_photo_add")![1];
     expect(add._path).toBe(storageCalls[0]!.split(":")[2]);
+  });
+
+  it("photo JPEG : contrôlée puis publiée tout de suite dans l'espace public", async () => {
+    const response = await call(photoInput({ image: JPEG.toString("base64") }));
+    expect(response.status).toBe(200);
+    expect(storageCalls).toHaveLength(1);
+    expect(storageCalls[0]).toMatch(
+      new RegExp(`^upload:${GALLERY_PUBLIC_BUCKET}:${COMPANY_ONE}/[0-9a-f-]{36}\\.jpg$`),
+    );
+    const publish = rpc.mock.calls.find(([name]) => name === "bw_company_photo_publish")![1];
+    expect(publish._user).toBe(OPS_ONE);
+    expect(publish._path).toBe(storageCalls[0]!.split(":")[2]);
+    expect(rpc).not.toHaveBeenCalledWith("bw_company_photo_add", expect.anything());
+  });
+
+  it("photo JPEG explicite : refusée, rien n'est déposé ni enregistré", async () => {
+    nsfw.explicit = true;
+    const response = await call(photoInput({ image: JPEG.toString("base64") }));
+    expect(response.status).toBe(400);
+    expect(storageCalls).toEqual([]);
+    expect(rpc).not.toHaveBeenCalledWith("bw_company_photo_publish", expect.anything());
+  });
+
+  it("photo JPEG : si la base refuse, le fichier public est effacé", async () => {
+    rpc.mockImplementation(async (name: string) =>
+      name === "bw_company_photo_publish"
+        ? { data: null, error: { message: "BW_LIMIT" } }
+        : { data: null, error: null },
+    );
+    const response = await call(photoInput({ image: JPEG.toString("base64") }));
+    expect(response.status).toBe(429);
+    expect(storageCalls[1]).toMatch(new RegExp(`^remove:${GALLERY_PUBLIC_BUCKET}:`));
   });
 
   it("si l'enregistrement échoue, le fichier déposé est effacé", async () => {

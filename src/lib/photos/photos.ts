@@ -170,8 +170,11 @@ export const myProfilePhotoQuery = (userId?: string) =>
     },
   });
 
-/** Le serveur relit les photos de salon en JPEG : une photo WebP est réencodée avant l'envoi. */
-async function asJpeg(photo: PreparedPhoto) {
+/**
+ * Le serveur relit les photos en JPEG (salon, galeries des compagnies) : une photo WebP est
+ * réencodée avant l'envoi.
+ */
+export async function asJpeg(photo: PreparedPhoto) {
   if (photo.blob.type === "image/jpeg") return photo.blob;
   const bitmap = await createImageBitmap(photo.blob);
   const canvas = document.createElement("canvas");

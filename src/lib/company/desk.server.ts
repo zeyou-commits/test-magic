@@ -1,13 +1,15 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isExplicitJpeg } from "@/lib/photos/chatPhoto.server";
+import { NSFW_REFUSAL } from "@/lib/photos/nsfwVerdict";
 
 /**
  * Lot 3 de l'espace compagnie : avis, signalements, fiche publique, photos et responsable.
  * Appelé par handleCompanyAccess après la vérification de session ; chaque action repasse par
  * une fonction bw_company_* qui revérifie le compte, la compagnie et le niveau.
- * Les photos sont déposées par le serveur seulement : d'abord dans un espace privé (relecture),
- * puis copiées dans l'espace public quand l'équipe BledWay les publie.
+ * Les photos sont déposées par le serveur seulement. Depuis le 22/11/2026, une photo JPEG est
+ * contrôlée (contenu explicite) puis publiée tout de suite ; BledWay peut la retirer après coup.
  */
 export const GALLERY_PENDING_BUCKET = "bledway-galeries-attente";
 export const GALLERY_PUBLIC_BUCKET = "bledway-galeries";
@@ -142,7 +144,7 @@ const LIMIT_TEXT: Partial<Record<string, string>> = {
   reply_save: "Limite de 50 réponses par jour atteinte pour votre compagnie.",
   profile_propose: "Limite de 10 propositions par jour atteinte.",
   photo_add:
-    "Galerie complète (12 photos) ou 20 photos déjà en attente de relecture : retirez-en une d'abord.",
+    "Galerie complète (12 photos) ou 30 photos déjà publiées aujourd'hui : retirez-en une ou réessayez demain.",
   manager_invite: "Limite de 10 invitations par jour atteinte.",
 };
 
@@ -256,6 +258,52 @@ export async function handleCompanyDesk(input: CompanyDeskInput, ctx: DeskContex
         );
       const id = randomUUID();
       const path = `${input.companyId}/${id}.${format}`;
+      // Publication directe (22/11/2026) : une photo JPEG passe le filtre de contenu explicite,
+      // puis va droit dans l'espace public. Un WebP (ancienne version du site en cache) ne peut
+      // pas être contrôlé ici : il suit l'ancien circuit, en attente de l'équipe.
+      if (format === "jpg") {
+        let explicit: boolean;
+        try {
+          explicit = await isExplicitJpeg(bytes);
+        } catch {
+          return respond(
+            {
+              error: "Vérification de la photo impossible. Réessayez avec une autre.",
+              code: "BAD_IMAGE",
+            },
+            503,
+          );
+        }
+        if (explicit) return respond({ error: NSFW_REFUSAL, code: "BAD_IMAGE" }, 400);
+        const upload = await storage.from(GALLERY_PUBLIC_BUCKET).upload(path, bytes, {
+          contentType: "image/jpeg",
+          cacheControl: "31536000",
+          upsert: false,
+        });
+        if (upload.error)
+          return respond(
+            { error: "Envoi de la photo impossible pour le moment. Réessayez.", code: "UPLOAD" },
+            503,
+          );
+        const published = await call("bw_company_photo_publish", {
+          _user: me,
+          _company: input.companyId,
+          _vessel: input.vesselId,
+          _id: id,
+          _path: path,
+          _caption: input.caption,
+          _credit: input.credit ?? null,
+          _rights: input.rights,
+          _width: input.width,
+          _height: input.height,
+          _bytes: bytes.length,
+        });
+        if (published.response) {
+          await removeQuietly(GALLERY_PUBLIC_BUCKET, path);
+          return limited(published) ?? published.response;
+        }
+        return respond(published.data);
+      }
       const upload = await storage.from(GALLERY_PENDING_BUCKET).upload(path, bytes, {
         contentType: format === "webp" ? "image/webp" : "image/jpeg",
         upsert: false,

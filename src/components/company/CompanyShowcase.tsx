@@ -72,12 +72,12 @@ const PLACE: { icon: LucideIcon; title: string; text: string }[] = [
   {
     icon: CalendarClock,
     title: "Des horaires justes",
-    text: "Signalez un retard, un changement de navire ou une annulation. Après relecture, la traversée est mise à jour et les passagers qui la suivent sont prévenus.",
+    text: "Signalez un retard, un changement de navire ou une annulation : la traversée est mise à jour tout de suite et les passagers qui la suivent sont prévenus.",
   },
   {
     icon: Megaphone,
     title: "Vos annonces, signées",
-    text: "Envoyez un message aux passagers d'une traversée, signé du nom de votre compagnie.",
+    text: "Envoyez un message aux passagers d'une traversée, signé du nom de votre compagnie. Il part tout de suite.",
   },
   {
     icon: MessageSquareReply,
@@ -87,12 +87,15 @@ const PLACE: { icon: LucideIcon; title: string; text: string }[] = [
   {
     icon: Images,
     title: "Votre fiche et vos photos",
-    text: "Proposez des corrections de votre fiche et des photos informatives de vos navires.",
+    text: "Modifiez vous-même votre fiche et publiez des photos informatives de vos navires.",
   },
 ];
 
 const RULES: { icon: LucideIcon; text: string }[] = [
-  { icon: BadgeCheck, text: "Tout est relu par l'équipe BledWay avant publication." },
+  {
+    icon: BadgeCheck,
+    text: "Publié sous votre nom, tout de suite. BledWay peut retirer après coup ce qui enfreint les règles communes.",
+  },
   { icon: Scale, text: "Aucun avis n'est masqué, noté ni effacé par une compagnie." },
   {
     icon: UserCheck,
@@ -312,12 +315,13 @@ export function CompanyShowcase({
                 Pour les compagnies maritimes
               </p>
               <h1 className="mt-3 text-3xl font-bold leading-[1.15] md:text-[2.6rem]">
-                Vos passagers préparent et suivent leur traversée sur BledWay. Soyez-y avec eux.
+                Vos passagers préparent et suivent leur traversée sur BledWay. Parlez-leur
+                directement.
               </h1>
               <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-white/80 md:text-base">
                 BledWay accompagne les voyageurs entre l'Europe et l'Algérie, de la préparation du
                 voyage jusqu'au port. L'espace compagnie vous permet d'y prendre la parole en votre
-                nom, avec des informations relues.
+                nom : horaires, annonces, réponses aux avis, fiche et photos, publiés tout de suite.
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <a

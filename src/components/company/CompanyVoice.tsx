@@ -151,7 +151,7 @@ function ReplyBlock({
       toast.success(
         kind === "contest"
           ? "Contestation envoyée à BledWay. Le signalement reste affiché pendant l'examen."
-          : "Réponse envoyée : elle sera publiée après relecture par BledWay.",
+          : "Réponse publiée sous l'avis.",
       );
       setOpen(false);
       setBody("");
@@ -274,13 +274,14 @@ function ReplyBlock({
             <span className="text-xs text-muted-foreground">
               {kind === "contest"
                 ? "Lue par l'équipe BledWay seulement. Le signalement n'est ni supprimé ni masqué pendant l'examen."
-                : `Publiée sous « Réponse de ${ctx.companyName} » après relecture par BledWay. L'avis reste affiché tel quel.`}{" "}
+                : `Publiée tout de suite sous « Réponse de ${ctx.companyName} ». L'avis reste affiché tel quel. BledWay peut retirer une réponse qui enfreint les règles communes.`}{" "}
               {body.trim().length}/1000
             </span>
           </label>
           <div className="flex flex-wrap gap-2">
             <Button size="sm" type="submit" disabled={!valid || save.isPending}>
-              <Send className="size-4" aria-hidden /> Envoyer à BledWay
+              <Send className="size-4" aria-hidden />{" "}
+              {kind === "contest" ? "Envoyer à BledWay" : "Publier la réponse"}
             </Button>
             <Button size="sm" type="button" variant="ghost" onClick={() => setOpen(false)}>
               Annuler
@@ -322,7 +323,7 @@ export function CompanyReviewsTab({ ctx, summary }: { ctx: VoiceContext; summary
       <section className="bo-card">
         <h2>
           <MessageSquareReply aria-hidden /> Avis publiés
-          <small>votre réponse est relue par BledWay</small>
+          <small>votre réponse est publiée tout de suite</small>
         </h2>
         <p className="bo-lead mb-2">
           Vous pouvez répondre à chaque avis publié sur votre compagnie ou vos navires. Un avis
@@ -427,7 +428,7 @@ export function CompanySignalsTab({ ctx, live }: { ctx: VoiceContext; live: Reac
           <small>répondre ou contester</small>
         </h2>
         <p className="bo-lead mb-2">
-          Une réponse est publiée sous le signalement après relecture. Une contestation est lue par
+          Une réponse est publiée tout de suite sous le signalement. Une contestation est lue par
           BledWay seulement : elle ne supprime ni ne masque rien.
         </p>
         <QueryState query={feedback}>
@@ -548,7 +549,6 @@ function ProfileForm({
     ]),
   ) as Record<ProfileField, string | null>;
   const invalid = changed.some((field) => errors[field.key]);
-  const open = profile.proposals.find((item) => item.status === "submitted");
   const propose = useMutation({
     mutationFn: () =>
       companyAccessRequest({
@@ -558,7 +558,7 @@ function ProfileForm({
         ...(message.trim() ? { message: message.trim() } : {}),
       }),
     onSuccess: () => {
-      toast.success("Proposition envoyée : BledWay la relit avant de modifier la fiche.");
+      toast.success("Fiche mise à jour : les voyageurs voient déjà la nouvelle version.");
       setEditing(false);
       setValues({});
       setMessage("");
@@ -590,8 +590,8 @@ function ProfileForm({
           }}
         >
           <p className="bo-lead">
-            Modifiez seulement ce qui doit changer. Laisser un champ vide demande de l'effacer.
-            {open ? " Votre proposition en relecture sera remplacée par celle-ci." : ""}
+            Modifiez seulement ce qui doit changer. Un champ laissé vide est effacé. Les changements
+            s'affichent tout de suite.
           </p>
           {PROFILE_FIELDS.map((field) => {
             const value = values[field.key] ?? profile.fields[field.key] ?? "";
@@ -635,7 +635,7 @@ function ProfileForm({
             );
           })}
           <label className="grid gap-1 text-sm">
-            <span className="font-semibold">Message pour BledWay (facultatif)</span>
+            <span className="font-semibold">Note pour l'historique (facultatif)</span>
             <Input
               value={message}
               maxLength={500}
@@ -650,7 +650,7 @@ function ProfileForm({
             >
               <Send className="size-4" aria-hidden />
               {changed.length
-                ? `Proposer ${changed.length} correction${changed.length > 1 ? "s" : ""}`
+                ? `Enregistrer ${changed.length} modification${changed.length > 1 ? "s" : ""}`
                 : "Aucun changement"}
             </Button>
             <Button
@@ -684,7 +684,7 @@ function ProfileForm({
               className="justify-self-start"
               onClick={() => setEditing(true)}
             >
-              Proposer une correction
+              Modifier la fiche
             </Button>
           ) : null}
           <p className="bo-lead">Le nom et le logo se changent avec votre interlocuteur BledWay.</p>
@@ -692,7 +692,7 @@ function ProfileForm({
       )}
       {profile.proposals.length ? (
         <div className="grid gap-2">
-          <h3 className="text-sm font-semibold">Vos propositions</h3>
+          <h3 className="text-sm font-semibold">Historique des modifications</h3>
           <ul className="grid gap-2">
             {profile.proposals.map((item) => (
               <li key={item.id} className="grid gap-1 rounded-xl border border-border p-3 text-sm">
@@ -742,7 +742,7 @@ function Galleries({ ctx, profile }: { ctx: VoiceContext; profile: CompanyProfil
     <section className="bo-card">
       <h2>
         <Camera aria-hidden /> Photos informatives
-        <small>relues par BledWay</small>
+        <small>publiées tout de suite</small>
       </h2>
       <p className="bo-lead mb-2">
         Des photos qui aident les voyageurs : ponts, cabines, espaces, embarquement. Pas de
@@ -891,10 +891,13 @@ function PhotoForm({
         rights: true,
         width: prepared!.width,
         height: prepared!.height,
-        image: await blobToBase64(prepared!.blob),
+        // Le serveur contrôle la photo en JPEG avant de la publier.
+        image: await blobToBase64(
+          await (await import("@/lib/photos/photos")).asJpeg({ ...prepared!, faces: 0, plates: 0 }),
+        ),
       }),
     onSuccess: () => {
-      toast.success("Photo envoyée : elle sera publiée après relecture par BledWay.");
+      toast.success("Photo publiée.");
       onClose();
       refresh();
     },
@@ -981,7 +984,8 @@ function PhotoForm({
       </label>
       <div className="flex flex-wrap gap-2">
         <Button type="submit" size="sm" disabled={!ready || send.isPending}>
-          <Send className="size-4" aria-hidden /> Envoyer à BledWay
+          <Send className="size-4" aria-hidden />{" "}
+          {send.isPending ? "Vérification…" : "Publier la photo"}
         </Button>
         <Button type="button" size="sm" variant="ghost" onClick={onClose}>
           Annuler

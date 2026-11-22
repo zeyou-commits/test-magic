@@ -646,7 +646,7 @@ function ProStory() {
         </h2>
         <ul className="mt-4 grid gap-2 text-sm text-white/85">
           {[
-            "Horaires, annonces et réponses relus par BledWay",
+            "Horaires, annonces et réponses publiés en votre nom",
             "Un compte nominatif par collaborateur",
             "Accès sur invitation uniquement",
           ].map((item) => (

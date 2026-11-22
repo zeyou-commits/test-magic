@@ -60,7 +60,7 @@ export function useCompanyQueue(enabled = true) {
   });
 }
 
-/** Badge du menu : demandes et annonces en attente de relecture. */
+/** Badge du menu : demandes et annonces encore en attente (ancien circuit, avant le 22/11/2026). */
 export function useCompanyQueueCount() {
   const queue = useCompanyQueue();
   return (queue.data?.pending.requests ?? 0) + (queue.data?.pending.announcements ?? 0);
@@ -70,7 +70,8 @@ type Filter = "pending" | "done";
 
 /**
  * Rubrique « Demandes des compagnies » de l'espace équipe : les changements de traversée et les
- * annonces envoyés par les compagnies, à appliquer, valider ou refuser. Les urgents en premier.
+ * annonces des compagnies. Depuis le 22/11/2026, elles les publient elles-mêmes : la rubrique
+ * sert à suivre et à corriger après coup ; ce qui attendait encore se traite comme avant.
  */
 export function CompanyRequestsAdmin() {
   const { isAdmin, roles } = useAuth();
@@ -78,7 +79,7 @@ export function CompanyRequestsAdmin() {
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
-  const [filter, setFilter] = useState<Filter>("pending");
+  const [filter, setFilter] = useState<Filter>("done");
   const portName = (id: string | undefined) => ports.find((port) => port.id === id)?.name ?? "—";
   const lineOf = (routeId: string | null) => {
     const route = routes.find((item) => item.id === routeId);
@@ -118,8 +119,8 @@ export function CompanyRequestsAdmin() {
       value={filter}
       onChange={setFilter}
       options={[
-        { value: "pending", label: "À traiter" },
-        { value: "done", label: "Traitées (30 jours)" },
+        { value: "done", label: "Publié (30 jours)" },
+        { value: "pending", label: "En attente" },
       ]}
     />
   );
@@ -129,7 +130,7 @@ export function CompanyRequestsAdmin() {
       <ModerationSection
         title="Changements de traversée"
         count={data.pending.requests}
-        hint="Proposés par les compagnies (niveau Opérations). Appliquer modifie la traversée et prévient automatiquement les voyageurs qui la suivent."
+        hint="Appliqués directement par les compagnies (niveau Opérations) ; les voyageurs qui suivent la traversée sont prévenus. Pour corriger une erreur, modifiez la traversée dans la gestion des horaires."
         toolbar={filterBar}
       >
         {requests.length ? (
@@ -141,8 +142,8 @@ export function CompanyRequestsAdmin() {
         ) : (
           moderationEmpty(
             filter === "pending"
-              ? "Aucune demande à traiter."
-              : "Aucune demande traitée ces 30 derniers jours.",
+              ? "Aucun changement en attente."
+              : "Aucun changement ces 30 derniers jours.",
           )
         )}
       </ModerationSection>
@@ -151,8 +152,8 @@ export function CompanyRequestsAdmin() {
         count={data.pending.announcements}
         hint={
           isAdmin
-            ? "Signées « Information de [compagnie] », envoyées seulement aux personnes qui suivent la traversée. Vous voyez le nombre de destinataires avant de valider."
-            : "La validation des annonces est réservée aux administrateurs. Vous pouvez les lire."
+            ? "Envoyées directement par les compagnies, signées « Information de [compagnie] », aux seules personnes qui suivent la traversée."
+            : "Envoyées directement par les compagnies. Vous pouvez les lire."
         }
       >
         {announcements.length ? (
@@ -164,8 +165,8 @@ export function CompanyRequestsAdmin() {
         ) : (
           moderationEmpty(
             filter === "pending"
-              ? "Aucune annonce à relire."
-              : "Aucune annonce traitée ces 30 derniers jours.",
+              ? "Aucune annonce en attente."
+              : "Aucune annonce ces 30 derniers jours.",
           )
         )}
       </ModerationSection>

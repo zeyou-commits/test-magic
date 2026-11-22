@@ -17,7 +17,8 @@ import {
  * - Collaborateur : « me », « team », « accept ».
  * - Équipe BledWay (administrateurs) : actions « admin_* ».
  * - Lot 2 : demandes de changement de traversée et annonces aux passagers, soumises par la
- *   compagnie (niveau Opérations) puis relues par BledWay (« queue », « *_decide »).
+ *   compagnie (niveau Opérations) et appliqués tout de suite depuis le 22/11/2026 ; BledWay garde
+ *   l'historique et corrige après coup (« queue », « *_decide » pour les anciennes demandes).
  * - Lot 3 (desk.server.ts) : réponses aux avis et signalements, fiche publique, photos,
  *   responsable de compagnie.
  * L'identité vient uniquement du jeton vérifié auprès de Supabase Auth ; un identifiant de
@@ -139,7 +140,7 @@ const FAILURES: Record<string, { status: number; error: string }> = {
   },
   BW_DUPLICATE: {
     status: 409,
-    error: "Une demande du même type attend déjà la relecture de BledWay pour cette traversée.",
+    error: "Une demande du même type est déjà en cours pour cette traversée.",
   },
   BW_NO_AUDIENCE: {
     status: 409,
@@ -368,9 +369,18 @@ export async function handleCompanyAccess(
         _kind: input.kind,
         _proposed: input.proposed,
         _message: input.message ?? null,
-        _urgent: input.urgent,
+        _urgent: false,
         _submit: input.submit,
       });
+      if (result.response?.status === 429)
+        return respond(
+          {
+            error:
+              "Limite atteinte : 6 changements par traversée et 40 par compagnie sur 24 heures. Pour aller plus loin, écrivez à BledWay.",
+            code: "BW_LIMIT",
+          },
+          429,
+        );
       break;
     case "request_withdraw":
       result = await call("bw_company_request_withdraw", { _user: me, _request: input.requestId });
@@ -388,7 +398,9 @@ export async function handleCompanyAccess(
       return respond({ reachable: count });
     }
     case "announce_save": {
-      let count: number | null = null;
+      // Publication directe (22/11/2026) : l'annonce part tout de suite, sans relecture BledWay.
+      // Le texte est d'abord enregistré en brouillon, puis envoyé si les destinataires existent.
+      let preview: AudiencePreview | null = null;
       if (input.submit) {
         const check = await call("bw_company_departure_check", {
           _user: me,
@@ -397,20 +409,58 @@ export async function handleCompanyAccess(
         });
         if (check.response) return check.response;
         // Le nombre est recalculé ici ; celui affiché dans le navigateur n'est jamais repris.
-        count = await reachableCount(input.departureId);
-        if (count === null) return audienceUnavailable();
+        try {
+          preview = await notifier.preview(announcementAudience(input.departureId));
+        } catch {
+          return audienceUnavailable();
+        }
+        if (preview.reachable < 1) return failure("BW_NO_AUDIENCE");
       }
-      result = await call("bw_company_announcement_save", {
+      const saved = await call("bw_company_announcement_save", {
         _user: me,
         _id: input.id ?? null,
         _departure: input.departureId,
         _reason: input.reason,
         _body: input.body,
-        _urgent: input.urgent,
-        _submit: input.submit,
-        _preview_count: count,
+        _urgent: false,
+        _submit: false,
+        _preview_count: null,
       });
-      break;
+      if (saved.response || !preview) {
+        result = saved;
+        break;
+      }
+      const id = (saved.data as { id: string }).id;
+      const sent = await call("bw_company_announcement_send", {
+        _user: me,
+        _id: id,
+        _audience: announcementAudience(input.departureId),
+        _label: preview.label,
+        _url: preview.context.url,
+        _valid_until: validUntil(preview),
+        _reachable: preview.reachable,
+      });
+      if (sent.response?.status === 429)
+        return respond(
+          {
+            error:
+              "Limite atteinte : 3 annonces par traversée et 15 par compagnie sur 24 heures. Votre texte est gardé en brouillon.",
+            code: "BW_LIMIT",
+            id,
+          },
+          429,
+        );
+      if (sent.response) return sent.response;
+      const message = sent.data as { messageId?: string; already?: boolean };
+      if (!message.messageId || message.already) return respond({ id, status: "approved" });
+      // Envoi immédiat ; s'il échoue, l'envoi programmé reprend le message, resté « prévu ».
+      let sentNow = true;
+      try {
+        await notifier.dispatch(message.messageId);
+      } catch {
+        sentNow = false;
+      }
+      return respond({ id, status: "approved", reachable: preview.reachable, sentNow });
     }
     case "announce_withdraw":
       result = await call("bw_company_announcement_withdraw", { _user: me, _id: input.id });

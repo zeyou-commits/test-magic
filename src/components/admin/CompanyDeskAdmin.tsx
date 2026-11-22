@@ -59,7 +59,7 @@ export function useDeskQueue(enabled = true) {
   });
 }
 
-/** Badge du menu : réponses, fiches et photos à relire selon le rôle. */
+/** Badge du menu : ce qui attend encore une décision (contestations surtout, depuis le 22/11/2026). */
 export function useDeskQueueCount() {
   const queue = useDeskQueue();
   const pending = queue.data?.pending;
@@ -123,7 +123,9 @@ type Filter = "pending" | "done";
  */
 export function CompanyDeskAdmin() {
   const queue = useDeskQueue();
-  const [filter, setFilter] = useState<Filter>("pending");
+  // Depuis le 22/11/2026, les compagnies publient sans relecture : on montre d'abord ce qui est
+  // publié (à retirer si besoin), puis ce qui attend encore une décision (contestations).
+  const [filter, setFilter] = useState<Filter>("done");
   if (queue.isPending)
     return <p className="bo-empty">Chargement des réponses, fiches et photos…</p>;
   if (queue.isError)
@@ -150,19 +152,19 @@ export function CompanyDeskAdmin() {
       value={filter}
       onChange={setFilter}
       options={[
-        { value: "pending", label: "À traiter" },
-        { value: "done", label: "Traitées et publiées" },
+        { value: "done", label: "Publié (30 jours)" },
+        { value: "pending", label: "À examiner" },
       ]}
     />
   );
-  const empty = filter === "pending" ? "Rien à relire." : "Rien ces 30 derniers jours.";
+  const empty = filter === "pending" ? "Rien à examiner." : "Rien ces 30 derniers jours.";
   return (
     <div className="mt-5 grid gap-5">
       {data.replies ? (
         <ModerationSection
           title="Réponses aux avis et signalements"
           count={data.pending.replies}
-          hint="Publiées sous l'avis ou le signalement, signées par la compagnie. Une contestation n'est jamais publiée : « Prendre en compte » signifie que vous vérifiez, puis vous agissez avec les outils habituels (Avis, Signalements)."
+          hint="Publiées directement par la compagnie, sous l'avis ou le signalement. « Retirer » les masque avec un motif que la compagnie voit. Une contestation n'est jamais publiée : elle attend dans « À examiner » ; « Prendre en compte » signifie que vous vérifiez, puis vous agissez avec les outils habituels (Avis, Signalements)."
           toolbar={filterBar}
         >
           {pick(data.replies).length ? (
@@ -180,7 +182,7 @@ export function CompanyDeskAdmin() {
         <ModerationSection
           title="Corrections de fiche"
           count={data.pending.profiles}
-          hint="Appliquer modifie la fiche publique. Si la fiche a changé depuis la proposition, rien n'est écrasé : la proposition est classée « dépassée »."
+          hint="Appliquées directement par la compagnie ; l'état d'avant reste dans l'historique de la compagnie. Pour corriger, modifiez la fiche dans Réseau → Fiches compagnies."
           toolbar={data.replies ? undefined : filterBar}
         >
           {pick(data.profiles).length ? (
@@ -198,7 +200,7 @@ export function CompanyDeskAdmin() {
         <ModerationSection
           title="Photos des compagnies"
           count={data.pending.photos}
-          hint="Photos informatives (ponts, cabines, embarquement), droits déclarés par la compagnie. Refusez la publicité, le texte incrusté, les personnes reconnaissables."
+          hint="Publiées directement par la compagnie, après le filtre automatique de contenu explicite. Droits déclarés par la compagnie. Retirez la publicité, le texte incrusté, les personnes reconnaissables."
         >
           {pick(data.photos).length ? (
             <ul className="bo-modlist">

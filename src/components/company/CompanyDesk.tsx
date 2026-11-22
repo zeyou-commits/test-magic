@@ -131,7 +131,6 @@ export function ChangeRequestForm({
     arrivalIso ? wallTimeInZone(arrivalIso, zones.arrival) : "",
   );
   const [message, setMessage] = useState(draft?.message ?? "");
-  const [urgent, setUrgent] = useState(draft?.urgent ?? false);
   const otherVessels = ctx.fleet.filter((vessel) => vessel.id !== departure.vessel_id);
 
   const proposal = (): RequestProposal | string => {
@@ -169,14 +168,13 @@ export function ChangeRequestForm({
         kind,
         proposed,
         message: message.trim() || undefined,
-        urgent,
         submit,
       });
     },
     onSuccess: (data) => {
       toast.success(
-        data.status === "submitted"
-          ? "Demande envoyée. BledWay la relit avant de l'appliquer."
+        data.status === "applied"
+          ? "Traversée mise à jour. Les voyageurs qui la suivent sont prévenus."
           : "Brouillon enregistré.",
       );
       refresh();
@@ -193,6 +191,14 @@ export function ChangeRequestForm({
       className="grid gap-3 rounded-xl border border-border bg-muted/30 p-3"
       onSubmit={(event) => {
         event.preventDefault();
+        // Une annulation se voit tout de suite et ne se défait pas depuis l'espace compagnie.
+        if (
+          kind === "cancel" &&
+          !window.confirm(
+            "Annuler cette traversée ? Elle s'affiche « Annulée » tout de suite et les voyageurs qui la suivent sont prévenus. Pour revenir en arrière, il faudra écrire à BledWay.",
+          )
+        )
+          return;
         save.mutate(true);
       }}
       aria-label="Signaler un changement"
@@ -256,8 +262,8 @@ export function ChangeRequestForm({
           </Field>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Aucun autre navire en service dans votre flotte. Écrivez le nom du navire dans le
-            message : BledWay vérifiera.
+            Aucun autre navire en service dans votre flotte. Pour en ajouter un, écrivez à votre
+            interlocuteur BledWay.
           </p>
         )
       ) : kind === "time" ? (
@@ -294,7 +300,10 @@ export function ChangeRequestForm({
         </div>
       ) : null}
 
-      <Field label="Message pour BledWay" hint="Facultatif. 500 caractères au plus.">
+      <Field
+        label="Note pour l'historique"
+        hint="Facultatif. Lue par votre équipe et par BledWay, jamais par les voyageurs."
+      >
         <Textarea
           value={message}
           maxLength={500}
@@ -303,21 +312,13 @@ export function ChangeRequestForm({
           placeholder="Ex. : avarie technique, nouveau créneau confirmé par le port."
         />
       </Field>
-      <label className="inline-flex items-center gap-2 text-sm">
-        <input
-          type="checkbox"
-          checked={urgent}
-          onChange={(event) => setUrgent(event.target.checked)}
-        />
-        Urgent : à relire en priorité
-      </label>
       <p className="text-xs text-muted-foreground">
-        BledWay relit votre demande puis l'applique. Une fois appliquée, les voyageurs qui suivent
-        cette traversée sont prévenus automatiquement.
+        Le changement s'affiche tout de suite sur BledWay et les voyageurs qui suivent cette
+        traversée sont prévenus.
       </p>
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={save.isPending}>
-          <Send className="size-4" aria-hidden /> Envoyer à BledWay
+          <Send className="size-4" aria-hidden /> Appliquer le changement
         </Button>
         <Button
           type="button"
@@ -335,7 +336,7 @@ export function ChangeRequestForm({
   );
 }
 
-// ─── Rubrique « Mes demandes » ────────────────────────────────────────────────────────────────
+// ─── Rubrique « Historique des changements » ────────────────────────────────────────────────────────────────
 
 export function CompanyRequestsTab({ ctx }: { ctx: DeskContext }) {
   const activity = useCompanyActivity(ctx.companyId);
@@ -362,8 +363,8 @@ export function CompanyRequestsTab({ ctx }: { ctx: DeskContext }) {
   return (
     <section className="bo-card">
       <h2>
-        <ClipboardList aria-hidden /> Demandes de changement
-        <small>{waiting ? `${waiting} en relecture` : "relues par BledWay"}</small>
+        <ClipboardList aria-hidden /> Changements de traversée
+        <small>{waiting ? `${waiting} en attente` : "appliqués à l'envoi"}</small>
       </h2>
       {editing && editingDeparture ? (
         <ChangeRequestForm
@@ -396,11 +397,6 @@ export function CompanyRequestsTab({ ctx }: { ctx: DeskContext }) {
                       </span>
                     </span>
                     <span className="flex flex-none items-center gap-1">
-                      {item.urgent && open ? (
-                        <em className="bo-pill" data-tone="bad">
-                          Urgent
-                        </em>
-                      ) : null}
                       <em className="bo-pill" data-tone={status.tone}>
                         {status.label}
                       </em>
@@ -427,7 +423,7 @@ export function CompanyRequestsTab({ ctx }: { ctx: DeskContext }) {
                         variant="ghost"
                         disabled={withdraw.isPending}
                         onClick={() => {
-                          if (window.confirm("Retirer cette demande ? BledWay ne la traitera pas."))
+                          if (window.confirm("Retirer ce changement ? Il ne sera pas appliqué."))
                             withdraw.mutate(item.id);
                         }}
                       >
@@ -442,7 +438,7 @@ export function CompanyRequestsTab({ ctx }: { ctx: DeskContext }) {
           </ul>
         ) : (
           <p className="bo-empty">
-            Aucune demande pour l'instant.
+            Aucun changement pour l'instant.
             {ctx.canAct
               ? " Pour signaler un retard, un nouvel horaire, un changement de navire ou une annulation, ouvrez « Mes traversées »."
               : ""}
@@ -457,8 +453,8 @@ export function CompanyRequestsTab({ ctx }: { ctx: DeskContext }) {
 function ReadOnlyNote() {
   return (
     <p className="bo-lead mt-3">
-      Votre accès Lecture permet de suivre les demandes et les annonces. Pour en envoyer, demandez
-      le niveau Opérations à votre interlocuteur BledWay.
+      Votre accès Lecture permet de suivre les changements et les annonces. Pour agir, demandez le
+      niveau Opérations à votre interlocuteur BledWay.
     </p>
   );
 }
@@ -522,7 +518,7 @@ export function CompanyAnnouncementsTab({ ctx }: { ctx: DeskContext }) {
         <section className="bo-card">
           <h2>
             <Megaphone aria-hidden /> {editing ? "Reprendre l'annonce" : "Prévenir vos passagers"}
-            <small>relu par BledWay avant l'envoi</small>
+            <small>envoyé tout de suite, signé {ctx.companyName}</small>
           </h2>
           <AnnouncementForm
             key={editing?.id ?? `new-${formKey}`}
@@ -569,7 +565,7 @@ export function CompanyAnnouncementsTab({ ctx }: { ctx: DeskContext }) {
                               : ""
                           }`
                         : item.previewCount !== null
-                          ? `${item.previewCount} personne${item.previewCount > 1 ? "s" : ""} à prévenir au moment de l'envoi à BledWay`
+                          ? `${item.previewCount} personne${item.previewCount > 1 ? "s" : ""} à prévenir`
                           : null}
                     </p>
                     {item.decisionNote ? (
@@ -629,7 +625,6 @@ function AnnouncementForm({
   const [departureId, setDepartureId] = useState(draft?.departureId ?? "");
   const [reason, setReason] = useState<AnnouncementReason>(draft?.reason ?? "delay");
   const [body, setBody] = useState(draft?.body ?? "");
-  const [urgent, setUrgent] = useState(draft?.urgent ?? false);
   const [reachable, setReachable] = useState<number | null>(null);
   const [confirming, setConfirming] = useState(false);
   const text = body.trim();
@@ -655,13 +650,12 @@ function AnnouncementForm({
         departureId,
         reason,
         body: text,
-        urgent,
         submit,
       }),
     onSuccess: (data) => {
       toast.success(
-        data.status === "submitted"
-          ? "Annonce envoyée à BledWay. Elle partira après relecture."
+        data.status === "approved"
+          ? "Annonce envoyée aux voyageurs qui suivent cette traversée."
           : "Brouillon enregistré.",
       );
       refresh();
@@ -739,17 +733,6 @@ function AnnouncementForm({
           placeholder="Ex. : embarquement des véhicules à partir de 16 h, quai 3."
         />
       </Field>
-      <label className="inline-flex items-center gap-2 text-sm">
-        <input
-          type="checkbox"
-          checked={urgent}
-          onChange={(event) => {
-            setUrgent(event.target.checked);
-            touched();
-          }}
-        />
-        Urgent : à relire en priorité
-      </label>
 
       {reachable === 0 ? (
         <p className="flex items-start gap-2 rounded-lg bg-muted/60 p-3 text-sm" role="status">
@@ -769,7 +752,7 @@ function AnnouncementForm({
           </p>
           <p className="text-xs text-muted-foreground">
             Voyageurs et proches qui suivent cette traversée et acceptent ces messages. Ce nombre
-            est recalculé par BledWay au moment de l'envoi.
+            est recalculé au moment de l'envoi.
           </p>
           <div className="rounded-lg bg-background p-2">
             <p className="text-xs font-semibold">{announcementTitle(ctx.companyName)}</p>
@@ -777,7 +760,7 @@ function AnnouncementForm({
           </div>
           <div className="flex flex-wrap gap-2">
             <Button type="button" disabled={save.isPending} onClick={() => save.mutate(true)}>
-              <Send className="size-4" aria-hidden /> Envoyer à BledWay pour relecture
+              <Send className="size-4" aria-hidden /> Envoyer maintenant
             </Button>
             <Button type="button" variant="ghost" onClick={() => setConfirming(false)}>
               Modifier
@@ -788,7 +771,7 @@ function AnnouncementForm({
         <div className="flex flex-wrap gap-2">
           <Button type="submit" disabled={!valid || preview.isPending}>
             <Users className="size-4" aria-hidden />{" "}
-            {preview.isPending ? "Vérification…" : "Vérifier les destinataires"}
+            {preview.isPending ? "Calcul…" : "Voir l'aperçu et les destinataires"}
           </Button>
           <Button
             type="button"

@@ -7,7 +7,6 @@ import {
   Droplets,
   Fuel,
   MapPin,
-  MoonStar,
   ShieldCheck,
   Ship,
   ShowerHead,
@@ -17,16 +16,25 @@ import {
   Truck,
   UtensilsCrossed,
   Wrench,
+  createLucideIcon,
   type LucideIcon,
 } from "lucide-react";
 import { tr } from "@/lib/i18n";
 import type { StopFeature, StopKind, StopSource } from "@/lib/routesDuBled/data";
 
+/** Une mosquée (coupole, minaret, porte) : plus parlant qu'une lune pour dire « on peut prier ici ». */
+export const Mosque = createLucideIcon("mosque", [
+  ["path", { d: "M3 21h18", key: "m1" }],
+  ["path", { d: "M5 21v-6.5c0-2.6 3.1-4.9 7-7.5 3.9 2.6 7 4.9 7 7.5V21", key: "m2" }],
+  ["path", { d: "M12 7V3.5", key: "m3" }],
+  ["path", { d: "M10 21v-3a2 2 0 0 1 4 0v3", key: "m4" }],
+]);
+
 const KIND_ICON: Record<StopKind, LucideIcon> = {
   carburant: Fuel,
   aire: Signpost,
   manger: UtensilsCrossed,
-  priere: MoonStar,
+  priere: Mosque,
   dormir: BedDouble,
   garage: Wrench,
   billets: Ticket,
@@ -38,7 +46,7 @@ const FEATURE_ICON: Record<StopFeature, LucideIcon> = {
   h24: Clock,
   manger: UtensilsCrossed,
   halal: UtensilsCrossed,
-  priere: MoonStar,
+  priere: Mosque,
   ablutions: Droplets,
   dormir: BedDouble,
   parking: SquareParking,

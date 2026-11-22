@@ -1,15 +1,14 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
-  ChevronDown,
-  Coffee,
-  MoonStar,
+  BedDouble,
+  Fuel,
   Navigation,
-  Plus,
   Ship,
-  Waypoints,
+  Signpost,
+  UtensilsCrossed,
 } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/layout/SiteLayout";
 import { Breadcrumbs, FaqSection } from "@/components/editorial/Editorial";
@@ -17,39 +16,24 @@ import { Bw504Button, Bw504Note, BwKnow } from "@/components/companion/Bw504Note
 import { AddStopDialog, emptyDraft, type Draft } from "@/components/routesDuBled/AddStopDialog";
 import { PlaceField } from "@/components/routesDuBled/PlaceField";
 import type { MapLine, MapPin, MapPlace } from "@/components/routesDuBled/RoutesMap";
-import {
-  FeatureIcon,
-  KindIcon,
-  featureLabel,
-  kindLabel,
-  sourceLabel,
-} from "@/components/routesDuBled/StopVisuals";
+import { Mosque } from "@/components/routesDuBled/StopVisuals";
+import { RouteCard, courte, duree } from "@/components/routesDuBled/RouteCard";
 import { seoHead } from "@/lib/seo/site";
 import { tr } from "@/lib/i18n";
 import { calculateRoadGeometry, measureBledLegs } from "@/lib/ferry/itinerary.functions";
 import {
-  KIND_COLOR,
   loadCommunityStops,
   loadDureesMer,
   loadRoutesData,
-  mapsLink,
   mergeCommunity,
   type BledRoute,
+  type StopKind,
 } from "@/lib/routesDuBled/data";
-import {
-  anonyme,
-  dureeRonde,
-  ecartKm,
-  PAUSE_MIN,
-  PLACE_NAME,
-  type Chain,
-  type ChainStop,
-  type Etape,
-} from "@/lib/routesDuBled/trajets";
+import { PLACE_NAME, type Chain, type ChainStop } from "@/lib/routesDuBled/trajets";
+import { carnet, viaVilles, type Carnet, type Pas } from "@/lib/routesDuBled/carnet";
 import {
   chemins,
   cleBout,
-  heuresEnTout,
   optionsAlgerie,
   optionsEurope,
   parPort,
@@ -105,34 +89,6 @@ const isLieu = (x: unknown): x is Lieu =>
   Array.isArray((x as Lieu).point) &&
   (x as Lieu).point.every((n) => typeof n === "number" && Number.isFinite(n));
 
-/** Nom affiché d'une halte, même quand OpenStreetMap ne lui en donne pas. */
-const stopName = (s: ChainStop) => {
-  if (!anonyme(s)) return s.n;
-  if (s.k === "priere") return tr("ui.pageRoutesDuBled.sansNomPriere");
-  if (s.k === "dormir") return tr("ui.pageRoutesDuBled.sansNomHotel");
-  if (s.k === "aire") return tr("ui.pageRoutesDuBled.sansNomAire");
-  return kindLabel(s.k);
-};
-/** « 12 Rue X, 42000, Saint-Étienne, France » devient « Saint-Étienne » sur la carte. */
-const courte = (label: string) => {
-  const p = label.split(", ");
-  return p.length >= 3 ? (p[p.length - 2] ?? label) : (p[0] ?? label);
-};
-/** Le nom que les voyageurs donnent à la route qu'ils rejoignent. */
-const NOM_ROUTE: Record<string, string> = {
-  E1: "l'Autoroute du Soleil",
-  E2: "la Languedocienne",
-  E3: "la route de la Méditerranée",
-  E4: "la route d'Almería",
-  E5: "la route de Bordeaux et Madrid",
-  E6: "la route d'Alicante",
-  E7: "la route d'Almería par Grenade",
-  E8: "la route du port de Sète",
-};
-const nomRoute = (r: BledRoute) => NOM_ROUTE[r.id] ?? routeName(r);
-const routeName = (r: BledRoute) => r.name.replace(/ \(.*\)$/, "");
-const portDe = (p: string) => (/^[aeiouyéè]/i.test(p) ? `d'${p}` : `de ${p}`);
-
 /** Une traversée dessinée en léger arc, pour la distinguer des routes. */
 function arc(a: LonLat, b: LonLat): LonLat[] {
   const mx = (a[0] + b[0]) / 2;
@@ -150,7 +106,27 @@ function arc(a: LonLat, b: LonLat): LonLat[] {
 }
 const troncons = (c: Chain) =>
   trous(c).map(([a, b]) => c.line.filter((_, i) => c.lineKm[i]! >= a && c.lineKm[i]! <= b));
-const duree = (b: Bout) => (b.mesure ? dureeRonde(b.h) : `≈ ${dureeRonde(b.h)}`);
+/** Les services qu'on peut afficher sur la carte. La prière d'abord, cochée d'entrée. */
+type Service = "priere" | "halal" | "carburant" | "manger" | "aire" | "dormir";
+const SERVICES: { id: Service; icon: typeof Fuel; label: string }[] = [
+  { id: "priere", icon: Mosque, label: "svcPriere" },
+  { id: "halal", icon: UtensilsCrossed, label: "svcHalal" },
+  { id: "carburant", icon: Fuel, label: "svcCarburant" },
+  { id: "manger", icon: UtensilsCrossed, label: "svcManger" },
+  { id: "aire", icon: Signpost, label: "svcAire" },
+  { id: "dormir", icon: BedDouble, label: "svcDormir" },
+];
+const offre = (s: ChainStop, svc: Service) =>
+  svc === "halal"
+    ? s.f.includes("halal")
+    : svc === "priere"
+      ? s.k === "priere" || s.f.includes("priere")
+      : s.k === svc;
+const PIN_KIND: Partial<Record<Pas["k"], StopKind>> = {
+  priere: "priere",
+  nuit: "dormir",
+  nuitvide: "dormir",
+};
 
 function RoutesDuBledPage() {
   const data = useQuery({
@@ -184,6 +160,10 @@ function RoutesDuBledPage() {
   const [geoError, setGeoError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState<Draft>(() => emptyDraft("E2"));
+  // Une seule route dépliée à la fois ; « null » : toutes repliées.
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [services, setServices] = useState<Service[]>(["priere"]);
+  const [carAt, setCarAt] = useState<string | null>(null);
 
   // Un ancien lien ?depart=lyon part de cette ville ; sinon le dernier trajet revient
   // à la visite suivante (sur cet appareil seulement).
@@ -300,6 +280,28 @@ function RoutesDuBledPage() {
     retry: false,
   });
 
+  // Le carnet de chaque route affichée ; celui de la route choisie suit le vrai tracé.
+  const carnets = useMemo(() => {
+    const m = new Map<string, Carnet>();
+    if (!from || !to) return m;
+    for (const c of shown)
+      m.set(
+        c.id,
+        carnet(
+          c,
+          from,
+          to,
+          c === sel ? { approche: geo.data?.toPort, fin: geo.data?.fromPort } : undefined,
+        ),
+      );
+    return m;
+  }, [shown, sel, from, to, geo.data]);
+  const selCarnet = sel ? (carnets.get(sel.id) ?? null) : null;
+  useEffect(() => {
+    setOpenId(null);
+    setCarAt(null);
+  }, [from, to]);
+
   const choose = (which: "from" | "to", lieu: Lieu) => {
     (which === "from" ? setFrom : setTo)(lieu);
     setSelId(null);
@@ -334,8 +336,12 @@ function RoutesDuBledPage() {
     );
   }
 
-  const startAdd = (routeId?: string) => {
-    setDraft((d) => ({ ...d, route: routeId ?? sel?.eu.chain?.segs[0]?.route.id ?? d.route }));
+  const startAdd = (routeId?: string, point?: LonLat | null) => {
+    setDraft((d) => ({
+      ...d,
+      route: routeId ?? sel?.eu.chain?.segs[0]?.route.id ?? d.route,
+      ...(point ? { coords: { lat: +point[1].toFixed(5), lon: +point[0].toFixed(5) } } : {}),
+    }));
     setAdding(true);
   };
   const startPick = () => {
@@ -343,10 +349,45 @@ function RoutesDuBledPage() {
     setPicking("halte");
     document.getElementById("rdb-planner")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
-  const focusEtape = (id: string) => {
+  // Toucher une étape sur la carte déplie la route et fait défiler le carnet jusqu'à elle.
+  const focusPas = (id: string) => {
+    if (sel) setOpenId(sel.id);
     setFocusId(id);
-    document.getElementById(`etape-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setTimeout(
+      () =>
+        document
+          .getElementById(`pas-${id}`)
+          ?.scrollIntoView({ behavior: "smooth", block: "center" }),
+      60,
+    );
   };
+  const selectRoute = (id: string) => {
+    setSelId(id);
+    setOpenId(id);
+    setFocusId(null);
+    setTimeout(
+      () =>
+        document.getElementById(`rc-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      60,
+    );
+  };
+  // La 504 de la carte suit l'étape lue dans le carnet ouvert.
+  const bookRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const root = bookRef.current;
+    if (!root || !openId || openId !== sel?.id) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        const vis = entries.filter((e) => e.isIntersecting);
+        const top = vis.sort((x, y) => x.boundingClientRect.top - y.boundingClientRect.top)[0];
+        const id = (top?.target as HTMLElement | undefined)?.dataset["pas"];
+        if (id) setCarAt(id);
+      },
+      { rootMargin: "-35% 0px -45% 0px" },
+    );
+    root.querySelectorAll("[data-pas]").forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [openId, sel, selCarnet]);
 
   // La carte : le chemin choisi en avant, les autres chemins en léger, les bons plans dessus.
   const mapLines = useMemo<MapLine[]>(() => {
@@ -390,27 +431,54 @@ function RoutesDuBledPage() {
 
   const mapPins = useMemo<MapPin[]>(() => {
     const pins: MapPin[] = [];
-    if (!sel) return pins;
+    if (!sel || !selCarnet) return pins;
     const main = new Set<string>();
-    sel.etapes.forEach((e) => {
-      if (!e.best) return;
-      main.add(e.best.id);
+    for (const p of selCarnet.pas) {
+      if (p.n == null) continue;
+      const lieu =
+        p.k === "priere" ? (p.priere ?? p.etape?.best ?? p.lieu) : (p.etape?.best ?? p.lieu);
+      if (lieu) main.add(lieu.id);
       pins.push({
-        id: e.id,
-        lat: e.best.lat,
-        lon: e.best.lon,
-        k: e.type === "nuit" ? "dormir" : e.best.k,
-        label: String(e.n),
+        id: p.id,
+        lat: p.point[1],
+        lon: p.point[0],
+        k: PIN_KIND[p.k] ?? lieu?.k ?? "aire",
+        label: String(p.n),
         main: true,
+        vide: p.k === "vide" || p.k === "nuitvide",
       });
-    });
-    // Les autres bons plans du chemin apparaissent quand on zoome.
-    for (const ch of [sel.eu.chain, sel.dz.chain])
-      for (const s of ch?.stops ?? [])
-        if (!main.has(s.id) && s.k !== "billets" && s.k !== "port")
-          pins.push({ id: `s-${s.id}`, lat: s.lat, lon: s.lon, k: s.k, main: false });
+    }
+    // Les services cochés, le long de la route choisie.
+    if (services.length)
+      for (const ch of [sel.eu.chain, sel.dz.chain])
+        for (const s of ch?.stops ?? [])
+          if (
+            !main.has(s.id) &&
+            s.k !== "billets" &&
+            s.k !== "port" &&
+            services.some((v) => offre(s, v))
+          )
+            pins.push({
+              id: `s-${s.id}`,
+              lat: s.lat,
+              lon: s.lon,
+              k: services.includes("priere") && offre(s, "priere") ? "priere" : s.k,
+              main: false,
+            });
     return pins;
-  }, [sel]);
+  }, [sel, selCarnet, services]);
+  const mapVilles = useMemo<MapPlace[]>(
+    () =>
+      (selCarnet?.pas ?? [])
+        .filter((p) => p.k === "ville")
+        .map((p) => ({ lon: p.point[0], lat: p.point[1], label: p.name ?? "" })),
+    [selCarnet],
+  );
+  const carPas = carAt ? selCarnet?.pas.find((p) => p.id === carAt) : null;
+  const car = useMemo(
+    () => (carPas && carPas.k !== "depart" ? { lon: carPas.point[0], lat: carPas.point[1] } : null),
+    [carPas],
+  );
   const mapPorts = useMemo<MapPlace[]>(() => {
     const out: MapPlace[] = [];
     const add = (p: string, name: string) => {
@@ -425,8 +493,8 @@ function RoutesDuBledPage() {
     return out;
   }, [routes, sel, from, to, ports, dz]);
   const focus = (() => {
-    const e = sel?.etapes.find((x) => x.id === focusId);
-    return e?.best ? { lat: e.best.lat, lon: e.best.lon } : null;
+    const p = selCarnet?.pas.find((x) => x.id === focusId);
+    return p ? { lat: p.point[1], lon: p.point[0] } : null;
   })();
   const fitKey = `${from?.point.join() ?? ""}|${to?.point.join() ?? ""}|${sel?.id ?? ""}|${routes.length}`;
 
@@ -504,6 +572,31 @@ function RoutesDuBledPage() {
                   </button>
                 </div>
               ) : null}
+              {sel && from && to ? (
+                <div
+                  className="rdb-filters"
+                  role="group"
+                  aria-label={tr("ui.pageRoutesDuBled.filtresAria")}
+                >
+                  {SERVICES.map(({ id, icon: Icon, label }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      className="rdb-filter"
+                      data-k={id}
+                      aria-pressed={services.includes(id)}
+                      onClick={() =>
+                        setServices((v) =>
+                          v.includes(id) ? v.filter((x) => x !== id) : [...v, id],
+                        )
+                      }
+                    >
+                      <Icon className="size-3.5" aria-hidden />
+                      {tr(`ui.pageRoutesDuBled.${label}` as never)}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
               <Suspense
                 fallback={
                   <div className="rdb-map__wait">{tr("ui.pageRoutesDuBled.chargementCarte")}</div>
@@ -519,13 +612,18 @@ function RoutesDuBledPage() {
                   }
                   end={to ? { lon: to.point[0], lat: to.point[1], label: courte(to.label) } : null}
                   ports={mapPorts}
+                  villes={mapVilles}
+                  car={car}
                   focus={focus}
                   fitKey={fitKey}
                   onSelectPin={(id) => {
-                    if (!id.startsWith("s-")) focusEtape(id);
+                    if (!id.startsWith("s-")) focusPas(id);
                   }}
                   onSelectLine={(id) => {
-                    if (list.some((c) => c.id === id)) setSelId(id);
+                    if (!list.some((c) => c.id === id)) return;
+                    // Un chemin pris parmi les ports cachés : on montre toute la liste.
+                    if (!shown.some((c) => c.id === id)) setTous(true);
+                    selectRoute(id);
                   }}
                   picking={Boolean(picking)}
                   onPick={(lon, lat) => {
@@ -625,44 +723,62 @@ function RoutesDuBledPage() {
                   </div>
                 ) : (
                   <div className="rdb-panel__stack">
-                    <p className="rdb-panel__eyebrow">{tr("ui.pageRoutesDuBled.tesChemins")}</p>
-                    {shown.map((c, i) => (
-                      <CheminCard
-                        key={c.id}
-                        c={c}
-                        via={viaDe(c, list)}
-                        first={i === 0}
-                        selected={c === sel}
-                        onSelect={() => setSelId(c.id)}
-                      />
-                    ))}
+                    <p className="rdb-panel__eyebrow">
+                      {tr("ui.pageRoutesDuBled.tesRoutesDuBled")}
+                    </p>
+                    <div className="rdb-rcs" ref={bookRef}>
+                      {shown.map((c, i) => {
+                        const k = carnets.get(c.id);
+                        if (!k) return null;
+                        const open = openId === c.id;
+                        return (
+                          <div
+                            key={c.id}
+                            id={`rc-${c.id}`}
+                            data-sel={c === sel || undefined}
+                            className="rdb-rcw"
+                          >
+                            <RouteCard
+                              c={c}
+                              k={k}
+                              from={courte(from!.label)}
+                              to={courte(to!.label)}
+                              via={viaVilles(c, c === sel ? geo.data?.toPort : undefined)}
+                              variante={viaDe(c, list)}
+                              first={i === 0}
+                              open={open}
+                              onToggle={() => {
+                                setSelId(c.id);
+                                setFocusId(null);
+                                setOpenId(open ? null : c.id);
+                              }}
+                              focusId={focusId}
+                              onFocus={(p) => {
+                                setSelId(c.id);
+                                setFocusId(p.id);
+                              }}
+                              onAdd={(r, pt) => startAdd(r, pt)}
+                              portStop={
+                                c.eu.chain?.stops
+                                  .filter((s) => s.k === "port" || s.k === "billets")
+                                  .at(-1) ?? null
+                              }
+                              routes={routes}
+                            />
+                            {open ? <Manques c={c} onAdd={startAdd} /> : null}
+                          </div>
+                        );
+                      })}
+                    </div>
                     {caches.length && !tous ? (
                       <button type="button" className="rdb-autres" onClick={() => setTous(true)}>
                         {tr("ui.pageRoutesDuBled.autresChemins", { n: caches.length })}
                       </button>
                     ) : null}
-                    <a href="#rdb-etapes" className="rdb-cta rdb-cta--etapes">
-                      {tr("ui.pageRoutesDuBled.voirMesEtapes")}
-                    </a>
                     <p className="rdb-panel__note">{tr("ui.pageRoutesDuBled.noteDurees")}</p>
                   </div>
                 )}
               </aside>
-              {/* Sur ordinateur, les étapes défilent à côté de la carte, qui reste en vue. */}
-              {sel && from && to ? (
-                <TripSteps
-                  c={sel}
-                  from={from}
-                  to={to}
-                  focusId={focusId}
-                  setFocusId={setFocusId}
-                  onAdd={startAdd}
-                  portStop={
-                    sel.eu.chain?.stops.filter((s) => s.k === "port" || s.k === "billets").at(-1) ??
-                    null
-                  }
-                />
-              ) : null}
             </div>
           </div>
         </section>
@@ -702,7 +818,6 @@ function RoutesDuBledPage() {
   );
 }
 
-/** Un chemin proposé : l'essentiel sur une ligne ; la frise et les bons plans quand il est choisi. */
 /** « Par Madrid » ou « par la côte », quand deux chemins mènent aux mêmes ports. */
 function viaDe(c: Chemin, all: Chemin[]): string | null {
   const twin = all.some((x) => x !== c && x.eu.port === c.eu.port && x.dz.port === c.dz.port);
@@ -712,148 +827,12 @@ function viaDe(c: Chemin, all: Chemin[]): string | null {
     : tr("ui.pageRoutesDuBled.parLaCote");
 }
 
-function CheminCard({
-  c,
-  via,
-  first,
-  selected,
-  onSelect,
-}: {
-  c: Chemin;
-  via: string | null;
-  first: boolean;
-  selected: boolean;
-  onSelect: () => void;
-}) {
-  const pauses = c.etapes.filter((e) => e.type === "pause").length;
-  const nuits = c.etapes.length - pauses;
-  const total: Bout = {
-    km: c.km,
-    h: c.h + (pauses * PAUSE_MIN) / 60,
-    mesure: c.eu.approche.mesure && c.dz.dernier.mesure,
-  };
-  const enTout = heuresEnTout(c);
+/** Ce qui manque encore sur la route : routes sans relevé, longs bouts sans bon plan. */
+function Manques({ c, onAdd }: { c: Chemin; onAdd: (routeId?: string) => void }) {
+  const sansReleve = [...(c.eu.chain?.sansReleve ?? []), ...(c.dz.chain?.sansReleve ?? [])];
+  if (!sansReleve.length && c.trousKm <= 0) return null;
   return (
-    <button type="button" className="rdb-chemin" aria-pressed={selected} onClick={onSelect}>
-      <span className="rdb-chemin__top">
-        <b>
-          {PLACE_NAME[c.eu.port]} → {PLACE_NAME[c.dz.port]}
-          {via ? <small className="rdb-chemin__via">{via}</small> : null}
-        </b>
-        {first ? (
-          <span className="rdb-chemin__tag">{tr("ui.pageRoutesDuBled.lePlusCourt")}</span>
-        ) : null}
-      </span>
-      {enTout != null ? (
-        <span className="rdb-chemin__total">
-          {tr("ui.pageRoutesDuBled.enTout", {
-            duree: duree({ ...total, h: enTout + (pauses * PAUSE_MIN) / 60 }),
-          })}
-        </span>
-      ) : null}
-      <span className="rdb-chemin__facts">
-        {tr("ui.pageRoutesDuBled.deRoute", { duree: duree(total) })}
-        {c.mer != null
-          ? ` + ${tr("ui.pageRoutesDuBled.deMer", { duree: dureeRonde(c.mer / 60) })}`
-          : ""}
-        {pauses
-          ? ` · ${tr(pauses > 1 ? "ui.pageRoutesDuBled.nPauses" : "ui.pageRoutesDuBled.unePause", { n: pauses })}`
-          : ""}
-        {nuits
-          ? ` · ${tr(nuits > 1 ? "ui.pageRoutesDuBled.nNuits" : "ui.pageRoutesDuBled.uneNuit", { n: nuits })}`
-          : ""}
-      </span>
-      {selected ? (
-        <>
-          <Frise c={c} />
-          <span className="rdb-chemin__facts">
-            {tr(
-              c.bonsPlans > 1
-                ? "ui.pageRoutesDuBled.bonsPlansSurTaRoute"
-                : "ui.pageRoutesDuBled.unBonPlanSurTaRoute",
-              { n: c.bonsPlans },
-            )}
-          </span>
-        </>
-      ) : null}
-    </button>
-  );
-}
-
-/** La frise d'un chemin : maison, autoroute, pauses, port, puis la route au bled. Proportionnelle aux heures de route. */
-function Frise({ c }: { c: Chemin }) {
-  const T = Math.max(0.1, c.h);
-  const a = c.eu.approche.h / T;
-  const e = (c.eu.chain?.h ?? 0) / T;
-  const pct = (x: number) => `${(Math.max(0, Math.min(1, x)) * 100).toFixed(1)}%`;
-  return (
-    <span className="rdb-strip" aria-hidden>
-      <i className="rdb-strip__approche" style={{ left: 0, width: pct(a) }} />
-      <i className="rdb-strip__route" style={{ left: pct(a), width: pct(e) }} />
-      <i className="rdb-strip__dz" style={{ left: pct(a + e), width: pct(1 - a - e) }} />
-      <b className="rdb-strip__port" style={{ left: pct(a + e) }}>
-        <Ship className="size-3" />
-      </b>
-      {c.etapes.map((x) => (
-        <b
-          key={x.id}
-          className="rdb-strip__dot"
-          data-type={x.type}
-          style={{ left: pct(x.h / T) }}
-        />
-      ))}
-    </span>
-  );
-}
-
-/** Le trajet choisi, déroulé de la porte au village. */
-function TripSteps({
-  c,
-  from,
-  to,
-  focusId,
-  setFocusId,
-  onAdd,
-  portStop,
-}: {
-  c: Chemin;
-  from: Lieu;
-  to: Lieu;
-  focusId: string | null;
-  setFocusId: (id: string) => void;
-  onAdd: (routeId?: string) => void;
-  portStop: ChainStop | null;
-}) {
-  const pauses = c.etapes.filter((e) => e.type === "pause").length;
-  const auPort = c.eu.approche.h + (c.eu.chain?.h ?? 0) + (pauses * PAUSE_MIN) / 60;
-  const pe = PLACE_NAME[c.eu.port];
-  const pd = PLACE_NAME[c.dz.port];
-  const dzChain = c.dz.chain;
-  const nuits = c.etapes.length - pauses;
-  const sansReleve = [...(c.eu.chain?.sansReleve ?? []), ...(dzChain?.sansReleve ?? [])];
-  return (
-    <section className="rdb-trip" id="rdb-etapes" aria-labelledby="rdb-trip-title">
-      <h2 id="rdb-trip-title" className="font-display text-2xl font-bold">
-        {tr("ui.pageRoutesDuBled.tonTrajet")}
-      </h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {courte(from.label)} → {pe} → {pd} → {courte(to.label)}
-      </p>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {pauses
-          ? tr("ui.pageRoutesDuBled.resumeTrajet", {
-              km: fmt(c.km),
-              route: dureeRonde(c.h),
-              total: dureeRonde(c.h + (pauses * PAUSE_MIN) / 60),
-              pauses,
-            })
-          : tr("ui.pageRoutesDuBled.resumeTrajetSansPause", {
-              km: fmt(c.km),
-              route: dureeRonde(c.h),
-            })}
-        {nuits === 1 ? ` ${tr("ui.pageRoutesDuBled.resumeNuit1")}` : ""}
-        {nuits > 1 ? ` ${tr("ui.pageRoutesDuBled.resumeNuits", { n: nuits })}` : ""}
-      </p>
+    <div className="rdb-manques">
       {sansReleve.length ? (
         <p className="rdb-gap">
           {tr("ui.pageRoutesDuBled.sansReleve", {
@@ -872,391 +851,6 @@ function TripSteps({
           </button>
         </p>
       ) : null}
-
-      <ol className="rdb-road mt-6">
-        <li className="rdb-step" data-type="depart">
-          <span className="rdb-step__marker" aria-hidden>
-            <img src="/cabas/persos/voiture_504.webp" alt="" width={40} height={40} />
-          </span>
-          <div className="rdb-step__card">
-            <p className="rdb-step__when">{tr("ui.pageRoutesDuBled.depart")}</p>
-            <h3 className="rdb-step__title">{courte(from.label)}</h3>
-            <p className="rdb-step__text">
-              {tr("ui.pageRoutesDuBled.departConseil")}{" "}
-              <Link to="/preparer-mon-voyage" className="underline underline-offset-2">
-                {tr("ui.pageRoutesDuBled.preparerLien")}
-              </Link>
-            </p>
-          </div>
-        </li>
-
-        {c.etapes
-          .filter((e) => e.horsAxe)
-          .map((e) => (
-            <EtapeCard
-              key={e.id}
-              etape={e}
-              focused={focusId === e.id}
-              onFocus={() => setFocusId(e.id)}
-              onAdd={() => onAdd(e.route.id)}
-            />
-          ))}
-
-        {c.eu.chain && c.eu.approche.km > 3 ? (
-          <li className="rdb-step" data-type="rejoindre">
-            <span className="rdb-step__marker" aria-hidden>
-              <Waypoints className="size-5" />
-            </span>
-            <div className="rdb-step__card">
-              <p className="rdb-step__when">
-                {tr("ui.pageRoutesDuBled.apresDeRoute", { duree: duree(c.eu.approche) })}
-              </p>
-              <h3 className="rdb-step__title">
-                {tr("ui.pageRoutesDuBled.tuRejoins", {
-                  route: nomRoute(c.eu.chain.segs[0]!.route),
-                })}
-              </h3>
-              <p className="rdb-step__text">
-                {tr(
-                  c.eu.approche.mesure
-                    ? "ui.pageRoutesDuBled.boutCalcule"
-                    : "ui.pageRoutesDuBled.boutEstime",
-                  {
-                    km: fmt(c.eu.approche.km),
-                  },
-                )}
-              </p>
-            </div>
-          </li>
-        ) : null}
-
-        {c.etapes
-          .filter((e) => !e.horsAxe)
-          .map((e) => (
-            <EtapeCard
-              key={e.id}
-              etape={e}
-              focused={focusId === e.id}
-              onFocus={() => setFocusId(e.id)}
-              onAdd={() => onAdd(e.route.id)}
-            />
-          ))}
-
-        <li className="rdb-step" data-type="port">
-          <span className="rdb-step__marker" aria-hidden>
-            <Ship className="size-5" />
-          </span>
-          <div className="rdb-step__card">
-            <p className="rdb-step__when">
-              {tr("ui.pageRoutesDuBled.arriveeApres", { duree: dureeRonde(auPort) })}
-            </p>
-            <h3 className="rdb-step__title">
-              {tr("ui.pageRoutesDuBled.portNom", { de: portDe(pe) })}
-            </h3>
-            {portStop ? (
-              <p className="rdb-step__text">
-                {portStop.n}{" "}
-                <a
-                  className="rdb-go rdb-go--inline"
-                  href={mapsLink(portStop)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Navigation className="size-3.5" aria-hidden />
-                  {tr("ui.pageRoutesDuBled.yAller")}
-                </a>
-              </p>
-            ) : null}
-            <p className="rdb-step__text">{tr("ui.pageRoutesDuBled.portConseil")}</p>
-          </div>
-        </li>
-
-        <li className="rdb-step" data-type="mer">
-          <span className="rdb-step__marker" aria-hidden>
-            <Ship className="size-5" />
-          </span>
-          <div className="rdb-step__card">
-            <p className="rdb-step__when">{tr("ui.pageRoutesDuBled.traversee")}</p>
-            <h3 className="rdb-step__title">
-              {pe} → {pd}
-            </h3>
-            <p className="rdb-step__text">
-              {c.mer != null
-                ? `${tr("ui.pageRoutesDuBled.merHabituelle", { duree: dureeRonde(c.mer / 60) })} `
-                : ""}
-              {tr("ui.pageRoutesDuBled.traverseeTexte")}{" "}
-              <Link to="/lignes" className="underline underline-offset-2">
-                {tr("ui.pageRoutesDuBled.voirLesLignes")}
-              </Link>
-            </p>
-          </div>
-        </li>
-
-        {dzChain ? (
-          <DzRoute chain={dzChain} onAdd={() => onAdd(dzChain.segs[0]!.route.id)} port={pd} />
-        ) : null}
-
-        <li className="rdb-step" data-type="arrivee">
-          <span className="rdb-step__marker" aria-hidden>
-            <img src="/cabas/persos/voiture_504.webp" alt="" width={40} height={40} />
-          </span>
-          <div className="rdb-step__card">
-            <p className="rdb-step__when">{tr("ui.pageRoutesDuBled.arrivee")}</p>
-            <h3 className="rdb-step__title">{courte(to.label)}</h3>
-            <p className="rdb-step__text">
-              {c.dz.dernier.km > 3
-                ? tr(
-                    c.dz.dernier.mesure
-                      ? "ui.pageRoutesDuBled.finCalculee"
-                      : "ui.pageRoutesDuBled.finEstimee",
-                    {
-                      km: fmt(c.dz.dernier.km),
-                      duree: duree(c.dz.dernier),
-                    },
-                  )
-                : dzChain
-                  ? tr("ui.pageRoutesDuBled.finAuBout")
-                  : tr("ui.pageRoutesDuBled.finAuPort", { port: portDe(pd) })}
-            </p>
-            {c.mer != null ? (
-              <p className="rdb-step__text">
-                {tr(
-                  c.etapes.some((x) => x.type === "nuit")
-                    ? "ui.pageRoutesDuBled.enToutNuits"
-                    : "ui.pageRoutesDuBled.enToutTexte",
-                  {
-                    duree: duree({
-                      km: 0,
-                      h: auPort + c.mer / 60 + c.dz.h,
-                      mesure: c.eu.approche.mesure && c.dz.dernier.mesure,
-                    }),
-                  },
-                )}
-              </p>
-            ) : null}
-          </div>
-        </li>
-      </ol>
-    </section>
-  );
-}
-
-function etapeTitle(e: Etape) {
-  return e.type === "nuit"
-    ? tr("ui.pageRoutesDuBled.nuitN", { n: e.n })
-    : tr("ui.pageRoutesDuBled.pauseN", { n: e.n });
-}
-
-function EtapeCard({
-  etape: e,
-  focused,
-  onFocus,
-  onAdd,
-}: {
-  etape: Etape;
-  focused: boolean;
-  onFocus: () => void;
-  onAdd: () => void;
-}) {
-  const [more, setMore] = useState(false);
-  const best = e.best;
-  const color = best ? KIND_COLOR[e.type === "nuit" ? "dormir" : best.k] : undefined;
-  return (
-    <li
-      id={`etape-${e.id}`}
-      className="rdb-step"
-      data-type={e.type}
-      data-focused={focused || undefined}
-      data-empty={!best || undefined}
-      style={color ? { ["--k" as string]: color } : undefined}
-      onClick={onFocus}
-    >
-      <span className="rdb-step__marker" aria-hidden>
-        {e.type === "nuit" ? <MoonStar className="size-5" /> : <Coffee className="size-5" />}
-      </span>
-      <div className="rdb-step__card">
-        <p className="rdb-step__when">
-          {etapeTitle(e)} · {tr("ui.pageRoutesDuBled.apresDeRoute", { duree: dureeRonde(e.h) })}
-        </p>
-        {best ? (
-          <>
-            <h3 className="rdb-step__title">{stopName(best)}</h3>
-            <p className="rdb-step__kind">
-              <KindIcon kind={best.k} className="size-4" />
-              {kindLabel(best.k)}
-              {best.src !== "osm" ? ` · ${sourceLabel(best.src)}` : ""}
-            </p>
-            {best.f.length ? (
-              <ul className="rdb-tags">
-                {best.f.slice(0, 5).map((f) => (
-                  <li key={f}>
-                    <FeatureIcon feature={f} />
-                    {featureLabel(f)}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-            {best.note ? <p className="rdb-step__text">« {best.note} »</p> : null}
-            <ul className="rdb-near">
-              {e.priere.map((s) => (
-                <li key={s.id}>
-                  <KindIcon kind="priere" className="size-4" />
-                  {tr("ui.pageRoutesDuBled.prierPres", { nom: stopName(s), km: ecartKm(s, best) })}
-                </li>
-              ))}
-              {e.manger.map((s) => (
-                <li key={s.id}>
-                  <KindIcon kind="manger" className="size-4" />
-                  {tr("ui.pageRoutesDuBled.mangerPres", { nom: stopName(s), km: ecartKm(s, best) })}
-                </li>
-              ))}
-            </ul>
-            <div className="rdb-step__acts">
-              <a
-                className="rdb-go"
-                href={mapsLink(best)}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(ev) => ev.stopPropagation()}
-              >
-                <Navigation className="size-4" aria-hidden />
-                {tr("ui.pageRoutesDuBled.yAller")}
-              </a>
-              {e.others.length ? (
-                <button
-                  type="button"
-                  className="rdb-more"
-                  aria-expanded={more}
-                  onClick={(ev) => {
-                    ev.stopPropagation();
-                    setMore(!more);
-                  }}
-                >
-                  {tr("ui.pageRoutesDuBled.autresOptions", { n: e.others.length })}
-                  <ChevronDown className="size-4" aria-hidden />
-                </button>
-              ) : null}
-            </div>
-            {more ? (
-              <ul className="rdb-others">
-                {e.others.map((s) => (
-                  <li key={s.id}>
-                    <KindIcon kind={s.k} className="size-4" />
-                    <span className="min-w-0 flex-1">
-                      <b>{stopName(s)}</b>
-                      <span className="text-muted-foreground">
-                        {" · "}
-                        {tr(
-                          s.km < best.km
-                            ? "ui.pageRoutesDuBled.kmAvant"
-                            : "ui.pageRoutesDuBled.kmApres",
-                          {
-                            km: ecartKm(s, best),
-                          },
-                        )}
-                      </span>
-                    </span>
-                    <a
-                      href={mapsLink(s)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={tr("ui.pageRoutesDuBled.yAller")}
-                    >
-                      <Navigation className="size-4" aria-hidden />
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </>
-        ) : (
-          <>
-            <h3 className="rdb-step__title">
-              {e.horsAxe
-                ? tr("ui.pageRoutesDuBled.pauseAvantAutoroute")
-                : e.type === "nuit"
-                  ? tr("ui.pageRoutesDuBled.nuitVide")
-                  : tr("ui.pageRoutesDuBled.pauseVide")}
-            </h3>
-            <p className="rdb-step__text">
-              {e.horsAxe
-                ? tr("ui.pageRoutesDuBled.pauseAvantTexte")
-                : tr("ui.pageRoutesDuBled.etapeVideTexte", { route: routeName(e.route) })}
-            </p>
-          </>
-        )}
-        <button
-          type="button"
-          className="rdb-add"
-          onClick={(ev) => {
-            ev.stopPropagation();
-            onAdd();
-          }}
-        >
-          <Plus className="size-3.5" aria-hidden />
-          {best ? tr("ui.pageRoutesDuBled.tuConnaisMieux") : tr("ui.pageRoutesDuBled.ajouterIci")}
-        </button>
-      </div>
-    </li>
-  );
-}
-
-/** La route en Algérie après le port, coupée au plus près du village. */
-function DzRoute({ chain, onAdd, port }: { chain: Chain; onAdd: () => void; port: string }) {
-  const route = chain.segs[0]!.route;
-  const cles = chain.stops
-    .filter(
-      (s) =>
-        s.km > 3 && (s.k === "carburant" || s.k === "aire" || s.k === "priere" || s.k === "manger"),
-    )
-    .filter((s, i, all) => all.findIndex((x) => x.k === s.k) === i || s.src !== "osm")
-    .slice(0, 4);
-  return (
-    <li className="rdb-step" data-type="dz" data-empty={!cles.length || undefined}>
-      <span className="rdb-step__marker" aria-hidden>
-        <Coffee className="size-5" />
-      </span>
-      <div className="rdb-step__card">
-        <p className="rdb-step__when">
-          {tr("ui.pageRoutesDuBled.apresLePort", { port: portDe(port) })}
-        </p>
-        <h3 className="rdb-step__title">{routeName(route)}</h3>
-        <p className="rdb-step__text">
-          {tr("ui.pageRoutesDuBled.resumeCourt", { km: fmt(chain.km), duree: dureeRonde(chain.h) })}
-        </p>
-        {cles.length ? (
-          <ul className="rdb-near">
-            {cles.map((s) => (
-              <li key={s.id}>
-                <KindIcon kind={s.k} className="size-4" />
-                <span className="min-w-0 flex-1">
-                  {stopName(s)}
-                  <span className="text-muted-foreground">
-                    {" · "}
-                    {tr("ui.pageRoutesDuBled.apresDeRoute", {
-                      duree: dureeRonde((route.h * s.km) / route.km),
-                    })}
-                  </span>
-                </span>
-                <a
-                  href={mapsLink(s)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={tr("ui.pageRoutesDuBled.yAller")}
-                >
-                  <Navigation className="size-4" aria-hidden />
-                </a>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="rdb-step__text">{tr("ui.pageRoutesDuBled.dzVide")}</p>
-        )}
-        <button type="button" className="rdb-add" onClick={onAdd}>
-          <Plus className="size-3.5" aria-hidden />
-          {tr("ui.pageRoutesDuBled.ajouterSurCetteRoute")}
-        </button>
-      </div>
-    </li>
+    </div>
   );
 }

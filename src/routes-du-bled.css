@@ -436,3 +436,79 @@
 @media (prefers-reduced-motion: reduce) {
   .rdb-step__card, .rdb-more svg { transition: none; }
 }
+
+/* ——— Tes routes du bled : une carte par route, pliable, avec son carnet d'étapes ——— */
+.rdb-rcs { display: grid; gap: 0.7rem; --rt: #d9861c; --dz: #0e7a43; --mer: #4f86b5; --pray: #7c4dbd; --todo: #b4560f; --night: #0d3043; }
+.rdb-rc { border: 1px solid var(--border); border-radius: 1.1rem; background: var(--card); overflow: hidden; }
+.rdb-rcw[data-sel] .rdb-rc { border-color: color-mix(in srgb, var(--rt) 55%, var(--border)); }
+.rdb-rc[data-open] { border: 2px solid var(--rt); box-shadow: 0 10px 28px rgb(13 48 67 / 0.12), 0 2px 6px rgb(13 48 67 / 0.06); }
+.rdb-rc__head { display: grid; gap: 0.25rem; width: 100%; padding: 0.85rem 0.95rem; text-align: left; cursor: pointer; }
+.rdb-rc[data-open] .rdb-rc__head { padding: calc(0.85rem - 1px) calc(0.95rem - 1px) 0.6rem; }
+.rdb-rc__title { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+.rdb-rc__title b { font-family: var(--font-display); font-size: 1.15rem; line-height: 1.2; overflow-wrap: anywhere; }
+.rdb-rc__via { font-size: 0.86rem; font-weight: 600; color: var(--foreground); }
+.rdb-rc__port { display: inline-flex; align-items: center; gap: 0.25rem; color: var(--mer); font-weight: 800; white-space: nowrap; }
+.rdb-rc__variante { color: var(--muted-foreground); font-weight: 600; }
+.rdb-rc__facts { font-size: 0.82rem; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+.rdb-rc__facts strong { color: var(--foreground); }
+.rdb-rc__toggle { display: inline-flex; align-items: center; gap: 0.25rem; justify-self: start; margin-top: 0.15rem; font-size: 0.8rem; font-weight: 700; color: var(--rt); }
+.rdb-rc__toggle svg { transition: transform 0.2s; }
+.rdb-rc[data-open] .rdb-rc__toggle svg { transform: rotate(180deg); }
+.rdb-manques { margin-top: 0.4rem; }
+
+.rdb-book { padding: 0.15rem 0.85rem 1rem; border-top: 1px solid var(--border); }
+.rdb-book__day { display: flex; align-items: center; gap: 0.5rem; margin: 0.85rem 0 0.35rem; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted-foreground); }
+.rdb-book__day::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.rdb-pas { position: relative; display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 0.6rem; scroll-margin-top: 6rem; cursor: pointer; --k: var(--rt); }
+.rdb-pas__dot { position: relative; z-index: 1; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--card); border: 2.5px solid var(--rt); color: var(--rt); }
+.rdb-pas__dot img { width: 30px; height: 30px; object-fit: contain; }
+.rdb-pas[data-k="ville"] { cursor: default; }
+.rdb-pas[data-k="ville"] .rdb-pas__dot { width: 16px; height: 16px; margin: 0.55rem 11px 0; border-width: 3px; }
+.rdb-pas[data-side="dz"] .rdb-pas__dot { border-color: var(--dz); color: var(--dz); }
+.rdb-pas[data-k="pause"] .rdb-pas__dot { background: var(--k); border-color: var(--k); color: #fff; }
+.rdb-pas[data-k="priere"] .rdb-pas__dot { background: var(--pray); border-color: var(--pray); color: #fff; }
+.rdb-pas[data-k="nuit"] .rdb-pas__dot { background: var(--night); border-color: var(--night); color: #f2b33d; }
+.rdb-pas[data-k="port"] .rdb-pas__dot, .rdb-pas[data-k="portdz"] .rdb-pas__dot { background: var(--mer); border-color: var(--mer); color: #fff; }
+.rdb-pas[data-k="arrivee"] .rdb-pas__dot { background: var(--dz); border-color: var(--dz); color: #fff; }
+.rdb-pas[data-k="vide"] .rdb-pas__dot, .rdb-pas[data-k="nuitvide"] .rdb-pas__dot { border-style: dashed; border-color: var(--todo); color: var(--todo); background: color-mix(in srgb, var(--todo) 7%, var(--card)); }
+.rdb-pas[data-k="depart"] .rdb-pas__dot { border-color: transparent; background: transparent; }
+.rdb-pas__body { min-width: 0; padding: 0.4rem 0 0.25rem; }
+.rdb-pas__ville { padding-top: 0.35rem; font-size: 0.88rem; font-weight: 700; }
+.rdb-pas__ville span { font-weight: 500; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+.rdb-pas__when { font-size: 0.74rem; font-weight: 700; color: var(--rt); }
+.rdb-pas[data-side="dz"] .rdb-pas__when { color: var(--dz); }
+.rdb-pas__title { font-weight: 800; font-size: 0.95rem; line-height: 1.3; overflow-wrap: anywhere; }
+.rdb-pas__text { margin-top: 0.15rem; font-size: 0.82rem; color: var(--muted-foreground); }
+.rdb-pas__chips { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.35rem; }
+.rdb-chip-pray { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.1rem 0.55rem; border-radius: 999px; background: color-mix(in srgb, var(--pray) 13%, var(--card)); color: var(--pray); font-size: 0.75rem; font-weight: 800; }
+.rdb-pas[data-focused] .rdb-pas__title { color: #1f6fd1; }
+.rdb-pas[data-focused] .rdb-pas__dot { box-shadow: 0 0 0 5px color-mix(in srgb, #1f6fd1 22%, transparent); }
+.rdb-pas .rdb-tags { margin-top: 0.4rem; }
+.rdb-pas .rdb-step__acts { margin-top: 0.5rem; }
+.rdb-pas .rdb-add { margin-top: 0.5rem; }
+
+.rdb-leg { position: relative; display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 0.6rem; min-height: 2rem; }
+.rdb-leg::before { content: ""; justify-self: center; width: 3px; height: 100%; border-radius: 2px; background: var(--rt); }
+.rdb-leg[data-side="dz"]::before { background: var(--dz); }
+.rdb-leg[data-k="mer"]::before { width: 0; border-left: 3px dashed var(--mer); background: none; }
+.rdb-leg[data-k="todo"]::before { width: 0; border-left: 3px dashed var(--todo); background: none; }
+.rdb-leg[data-k="approche"]::before { width: 0; border-left: 3px dotted var(--rt); background: none; }
+.rdb-leg__in { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; padding: 0.25rem 0; font-size: 0.75rem; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+.rdb-leg[data-k="mer"] .rdb-leg__in { color: var(--mer); font-weight: 700; }
+.rdb-leg__add { display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.15rem 0.55rem; border-radius: 999px; border: 1px dashed var(--border); color: #1f6fd1; font-weight: 700; font-size: 0.74rem; opacity: 0.6; transition: opacity 0.15s; }
+.rdb-leg:hover .rdb-leg__add, .rdb-leg__add:focus-visible, .rdb-leg[data-k="todo"] .rdb-leg__add { opacity: 1; }
+@media (hover: none) { .rdb-leg__add { opacity: 1; } }
+.rdb-todo { margin: 0.25rem 0 0.4rem; padding: 0.75rem 0.8rem; border-radius: 0.9rem; background: color-mix(in srgb, var(--todo) 8%, var(--card)); border: 1px dashed var(--todo); }
+.rdb-todo b { display: block; font-size: 0.88rem; color: var(--todo); }
+.rdb-todo p { margin: 0.2rem 0 0.5rem; font-size: 0.82rem; }
+.rdb-todo button { padding: 0.45rem 0.75rem; border-radius: 0.65rem; background: var(--todo); color: #fff; font-weight: 700; font-size: 0.82rem; }
+
+/* Filtres par service, posés sur la carte. */
+.rdb-filters { position: absolute; z-index: 3; top: 0.6rem; left: 0.6rem; right: 3.2rem; display: flex; gap: 0.35rem; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.rdb-filters::-webkit-scrollbar { display: none; }
+.rdb-filter { flex: none; display: inline-flex; align-items: center; gap: 0.3rem; min-height: 2rem; padding: 0 0.7rem; border-radius: 999px; border: 1px solid var(--border); background: color-mix(in srgb, var(--card) 94%, transparent); box-shadow: 0 2px 8px rgb(13 48 67 / 0.12); font-size: 0.78rem; font-weight: 700; color: var(--foreground); }
+.rdb-filter[aria-pressed="true"] { background: #0d3043; border-color: #0d3043; color: #fff; }
+.rdb-filter[data-k="priere"][aria-pressed="true"] { background: #7c4dbd; border-color: #7c4dbd; }
+.rdb-map[data-picking] .rdb-filters { display: none; }
+.rdb-mk--car img { filter: drop-shadow(0 2px 3px rgb(13 48 67 / 0.35)); transition: transform 0.3s; }
+@media (prefers-reduced-motion: reduce) { .rdb-rc__toggle svg, .rdb-leg__add { transition: none; } }

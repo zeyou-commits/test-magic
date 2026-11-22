@@ -1,0 +1,356 @@
+import type { Chemin, LonLat } from "./porteAPorte";
+import { PLACE_NAME, ROUTES_DZ, type Chain, type ChainStop, type Etape } from "./trajets";
+import { VILLES, nomVille } from "./villes";
+
+/**
+ * Le carnet d'un chemin, comme un carnet de voyage : départ, villes traversées, pauses (la prière
+ * d'abord), nuits, port, mer, puis la route au bled jusqu'au village. Chaque pas sait où il est
+ * sur la carte, à quelle heure de route, et quel jour.
+ */
+export type PasKind =
+  | "depart"
+  | "ville"
+  | "joint"
+  | "pause"
+  | "priere"
+  | "nuit"
+  | "vide"
+  | "nuitvide"
+  | "port"
+  | "portdz"
+  | "arrivee";
+export type Pas = {
+  id: string;
+  k: PasKind;
+  side: "eu" | "dz";
+  /** Heures de route depuis la maison (côté Europe) ou depuis le port (côté Algérie). */
+  h: number;
+  /** Kilomètres depuis la maison (côté Europe) ou depuis le port (côté Algérie). */
+  km: number;
+  point: LonLat;
+  name?: string;
+  etape?: Etape;
+  /** Lieu de prière mis en tête de la pause. */
+  priere?: ChainStop | null;
+  /** Lieu relevé retenu pour une pause côté Algérie. */
+  lieu?: ChainStop | null;
+  /** Numéro de la pause ou de la nuit. */
+  n?: number;
+  jour: number;
+  /** Route du bled la plus proche, pour proposer un lieu dessus. */
+  route?: string;
+};
+export type Carnet = {
+  pas: Pas[];
+  /** La route jusqu'au village n'a pas (encore) de lieux relevés : à raconter. */
+  aRaconter: { km: number; h: number } | null;
+  /** Jour d'arrivée au bled (après la traversée). */
+  jourBled: number;
+};
+
+const R = Math.PI / 180;
+export function distKm(a: LonLat, b: LonLat) {
+  const x =
+    Math.sin(((b[1] - a[1]) * R) / 2) ** 2 +
+    Math.cos(a[1] * R) * Math.cos(b[1] * R) * Math.sin(((b[0] - a[0]) * R) / 2) ** 2;
+  return 12742 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+}
+export const isPriere = (s: { k: string; f?: string[] } | null | undefined) =>
+  !!s && (s.k === "priere" || (s.f ?? []).includes("priere"));
+
+/** Point à une fraction t (0..1) d'une ligne. */
+export function pointAt(line: LonLat[], t: number): LonLat {
+  if (line.length < 2) return line[0] ?? [0, 0];
+  const cum = [0];
+  for (let i = 1; i < line.length; i++) cum.push(cum[i - 1]! + distKm(line[i - 1]!, line[i]!));
+  const goal = cum.at(-1)! * Math.max(0, Math.min(1, t));
+  for (let i = 1; i < line.length; i++)
+    if (cum[i]! >= goal) {
+      const l = cum[i]! - cum[i - 1]!;
+      const f = l ? (goal - cum[i - 1]!) / l : 0;
+      const a = line[i - 1]!;
+      const b = line[i]!;
+      return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+    }
+  return line.at(-1)!;
+}
+
+/** Villes à moins de 12 km d'une ligne (hors extrémités), avec leur position (0..1) sur la ligne. */
+export function villesSur(line: LonLat[], exclure: string[] = []) {
+  if (line.length < 3) return [];
+  const cum = [0];
+  for (let i = 1; i < line.length; i++) cum.push(cum[i - 1]! + distKm(line[i - 1]!, line[i]!));
+  const tot = cum.at(-1)! || 1;
+  const out: { n: string; t: number; point: LonLat }[] = [];
+  for (const [n, p] of Object.entries(VILLES)) {
+    if (exclure.includes(nomVille(n))) continue;
+    // Tri grossier avant le calcul fin.
+    if (!line.some((q) => Math.abs(q[0] - p[0]) < 0.6 && Math.abs(q[1] - p[1]) < 0.6)) continue;
+    let bi = -1;
+    let bd = Infinity;
+    line.forEach((q, i) => {
+      const d = distKm(p, q);
+      if (d < bd) {
+        bd = d;
+        bi = i;
+      }
+    });
+    if (bd < 12 && cum[bi]! > 8 && tot - cum[bi]! > 8)
+      out.push({ n: nomVille(n), t: cum[bi]! / tot, point: p });
+  }
+  return out.sort((a, b) => a.t - b.t);
+}
+
+const lineOf = (c: Chain | null) => (c ? c.line : []);
+
+/** Les villes du côté Europe, pour le titre « par Perpignan · Barcelone · Valence ». */
+export function viaVilles(c: Chemin, approche?: LonLat[]) {
+  const port = PLACE_NAME[c.eu.port];
+  const v = [...villesSur(approche ?? []), ...villesSur(lineOf(c.eu.chain))]
+    .map((x) => x.n)
+    .filter((n, i, a) => n !== port && a.indexOf(n) === i);
+  return v.length <= 3
+    ? v
+    : [v[Math.floor(v.length * 0.25)]!, v[Math.floor(v.length * 0.6)]!, v.at(-1)!].filter(
+        (n, i, a) => a.indexOf(n) === i,
+      );
+}
+
+const PAUSE_TOUTES = 2.25;
+
+export function carnet(
+  c: Chemin,
+  from: { label: string; point: LonLat },
+  to: { label: string; point: LonLat },
+  geo?: { approche?: LonLat[] | undefined; fin?: LonLat[] | undefined },
+): Carnet {
+  const ap = c.eu.approche;
+  const ch = c.eu.chain;
+  const dzc = c.dz.chain;
+  const dl = c.dz.dernier;
+  const apLine = geo?.approche ?? [from.point, c.eu.joint];
+  const finLine = geo?.fin ?? [c.dz.sortie, to.point];
+  const pe = PLACE_NAME[c.eu.port];
+  const pd = PLACE_NAME[c.dz.port];
+  const exclure = [from.label, to.label, pe, pd];
+  const pas: Omit<Pas, "jour">[] = [];
+  const ord = new Map<Omit<Pas, "jour">, number>();
+  const push = (p: Omit<Pas, "jour">, o: number) => {
+    pas.push(p);
+    ord.set(p, o);
+  };
+
+  push(
+    { id: "depart", k: "depart", side: "eu", h: 0, km: 0, point: from.point, name: from.label },
+    0,
+  );
+  for (const v of villesSur(apLine, exclure))
+    push(
+      {
+        id: `v-a-${v.n}`,
+        k: "ville",
+        side: "eu",
+        h: v.t * ap.h,
+        km: v.t * ap.km,
+        point: v.point,
+        name: v.n,
+      },
+      0,
+    );
+  if (ch && ap.km > 3)
+    push(
+      {
+        id: "joint",
+        k: "joint",
+        side: "eu",
+        h: ap.h - 1e-3,
+        km: ap.km,
+        point: c.eu.joint,
+        route: ch.segs[0]!.route.id,
+      },
+      0,
+    );
+  if (ch) {
+    for (const v of villesSur(ch.line, exclure))
+      push(
+        {
+          id: `v-e-${v.n}`,
+          k: "ville",
+          side: "eu",
+          h: ap.h + v.t * ch.h,
+          km: ap.km + v.t * ch.km,
+          point: v.point,
+          name: v.n,
+        },
+        0,
+      );
+    for (const e of c.etapes) {
+      // Une pause « avant l'autoroute » qui tomberait après l'arrivée sur l'autoroute n'a plus lieu d'être.
+      if (e.horsAxe && e.h > ap.h - 0.25) continue;
+      const priere = e.horsAxe
+        ? null
+        : (e.priere[0] ??
+          ch.stops
+            .filter((s) => isPriere(s) && Math.abs(s.km - e.km) < 30)
+            .sort((a, b) => Math.abs(a.km - e.km) - Math.abs(b.km - e.km))[0] ??
+          null);
+      const point: LonLat = e.best
+        ? [e.best.lon, e.best.lat]
+        : e.horsAxe
+          ? pointAt(apLine, e.h / Math.max(ap.h, 0.01))
+          : pointAt(ch.line, e.km / Math.max(ch.km, 1));
+      const k: PasKind =
+        e.type === "nuit"
+          ? e.best
+            ? "nuit"
+            : "nuitvide"
+          : isPriere(e.best) || priere
+            ? "priere"
+            : e.best
+              ? "pause"
+              : "vide";
+      push(
+        {
+          id: e.id,
+          k,
+          side: "eu",
+          h: e.h,
+          km: e.horsAxe ? (e.h / Math.max(ap.h, 0.01)) * ap.km : ap.km + e.km,
+          point,
+          etape: e,
+          priere,
+          route: e.route.id,
+        },
+        0,
+      );
+    }
+  }
+  const auPort = ap.h + (ch?.h ?? 0);
+  const kmPort = ap.km + (ch?.km ?? 0);
+  push(
+    {
+      id: "port",
+      k: "port",
+      side: "eu",
+      h: auPort,
+      km: kmPort,
+      point: ch ? ch.line.at(-1)! : c.eu.joint,
+      name: pe,
+    },
+    1,
+  );
+
+  // Côté Algérie : on recompte depuis le port d'arrivée.
+  const portDz: LonLat = dzc ? dzc.line[0]! : c.dz.sortie;
+  push({ id: "portdz", k: "portdz", side: "dz", h: 0, km: 0, point: portDz, name: pd }, 2);
+  const dzH = (dzc?.h ?? 0) + dl.h;
+  const dzKm = (dzc?.km ?? 0) + dl.km;
+  if (dzc)
+    for (const v of villesSur(dzc.line, exclure))
+      push(
+        {
+          id: `v-d-${v.n}`,
+          k: "ville",
+          side: "dz",
+          h: v.t * dzc.h,
+          km: v.t * dzc.km,
+          point: v.point,
+          name: v.n,
+        },
+        2,
+      );
+  for (const v of villesSur(finLine, exclure))
+    push(
+      {
+        id: `v-f-${v.n}`,
+        k: "ville",
+        side: "dz",
+        h: (dzc?.h ?? 0) + v.t * dl.h,
+        km: (dzc?.km ?? 0) + v.t * dl.km,
+        point: v.point,
+        name: v.n,
+      },
+      2,
+    );
+  // Pauses côté Algérie, à l'heure : un lieu relevé s'il y en a un tout près, sinon « à placer ».
+  const routeDz = dzc?.segs[0]?.route.id ?? ROUTES_DZ[c.dz.port][0] ?? "A3";
+  let nDz = 0;
+  for (let t = PAUSE_TOUTES; t < dzH - 0.75; t += PAUSE_TOUTES) {
+    nDz++;
+    const nuit = nDz === 4 && dzH > 10;
+    let lieu: ChainStop | null = null;
+    let point: LonLat;
+    let kmT: number;
+    if (dzc && t <= dzc.h) {
+      const kmc = (t / dzc.h) * dzc.km;
+      kmT = kmc;
+      const cands = dzc.stops.filter(
+        (s) => s.k !== "port" && s.k !== "billets" && Math.abs(s.km - kmc) < 25,
+      );
+      lieu =
+        cands.find(isPriere) ??
+        cands.sort((a, b) => Math.abs(a.km - kmc) - Math.abs(b.km - kmc))[0] ??
+        null;
+      point = lieu ? [lieu.lon, lieu.lat] : pointAt(dzc.line, kmc / dzc.km);
+    } else {
+      const f = (t - (dzc?.h ?? 0)) / Math.max(dl.h, 0.01);
+      kmT = (dzc?.km ?? 0) + f * dl.km;
+      point = pointAt(finLine, f);
+    }
+    const k: PasKind = nuit
+      ? lieu
+        ? "nuit"
+        : "nuitvide"
+      : lieu
+        ? isPriere(lieu)
+          ? "priere"
+          : "pause"
+        : "vide";
+    push(
+      {
+        id: `dz-${nDz}`,
+        k,
+        side: "dz",
+        h: t,
+        km: kmT,
+        point,
+        lieu,
+        priere: isPriere(lieu) ? lieu : null,
+        route: routeDz,
+      },
+      2,
+    );
+  }
+  push(
+    {
+      id: "arrivee",
+      k: "arrivee",
+      side: "dz",
+      h: dzH + 1e-3,
+      km: dzKm,
+      point: to.point,
+      name: to.label,
+    },
+    3,
+  );
+
+  pas.sort((a, b) => ord.get(a)! - ord.get(b)! || a.h - b.h);
+  // Numéros des pauses et des nuits, et jours.
+  let n = 0;
+  let jour = 1;
+  let jourBled = 1;
+  const out: Pas[] = [];
+  for (const p of pas) {
+    if (p.k === "portdz") {
+      if ((c.mer ?? 0) >= 8 * 60) jour++;
+      jourBled = jour;
+    }
+    const x: Pas = { ...p, jour };
+    if (["pause", "priere", "nuit", "vide", "nuitvide"].includes(p.k)) x.n = ++n;
+    out.push(x);
+    if (p.k === "nuit" || p.k === "nuitvide") jour++;
+  }
+  // Plus de 150 km hors des routes relevées jusqu'au village : personne ne l'a encore racontée.
+  const aRaconter = dl.km > 150 ? { km: dl.km, h: dl.h } : null;
+  return { pas: out, aRaconter, jourBled };
+}

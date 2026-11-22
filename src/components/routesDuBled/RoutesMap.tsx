@@ -35,8 +35,10 @@ export type MapPin = {
   k: StopKind;
   /** Numéro de l'étape, posé dans une petite pastille. */
   label?: string;
-  /** Étape du trajet (grosse pastille) ou halte voisine (petite, au zoom). */
+  /** Étape du trajet (grosse pastille) ou halte voisine (petite). */
   main: boolean;
+  /** Pause ou nuit sans lieu relevé : pastille en pointillé, à placer. */
+  vide?: boolean;
 };
 export type MapPlace = { lon: number; lat: number; label: string };
 
@@ -47,8 +49,9 @@ const GLYPH: Record<StopKind, string> = {
   aire: '<path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/>',
   manger:
     '<path d="m16 2-2.3 2.3a3 3 0 0 0 0 4.2l1.8 1.8a3 3 0 0 0 4.2 0L22 8"/><path d="M15 15 3.3 3.3a4.2 4.2 0 0 0 0 6l7.3 7.3c.7.7 2 .7 2.8 0L15 15Zm0 0 7 7"/><path d="m2.1 21.8 6.4-6.3"/><path d="m19 5-7 7"/>',
+  // Une mosquée : coupole, minaret, porte.
   priere:
-    '<path d="M18 5h4"/><path d="M20 3v4"/><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/>',
+    '<path d="M3 21h18"/><path d="M5 21v-6.5c0-2.6 3.1-4.9 7-7.5 3.9 2.6 7 4.9 7 7.5V21"/><path d="M12 7V3.5"/><path d="M10 21v-3a2 2 0 0 1 4 0v3"/>',
   dormir:
     '<path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8"/><path d="M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"/><path d="M12 4v6"/><path d="M2 18h20"/>',
   garage:
@@ -80,6 +83,10 @@ function pastille(
 <circle cx="${c}" cy="${c}" r="${r}" fill="${fill}" stroke="${ring}" stroke-width="${ringW}" filter="url(#o)"/>
 <g transform="translate(${c - g / 2} ${c - g / 2}) scale(${s})" fill="none" stroke="${ink}" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">${glyph}</g></svg>`;
 }
+/** Pause à placer : cercle en pointillé et un plus, pour inviter à ajouter un lieu. */
+function videIcon() {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><circle cx="30" cy="30" r="25" fill="#fff8ee" stroke="${ROUTE}" stroke-width="3.2" stroke-dasharray="6 5"/><path d="M30 20v20M20 30h20" stroke="${ROUTE}" stroke-width="3.6" stroke-linecap="round"/></svg>`;
+}
 function badge() {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="14" fill="#fff" stroke="${INK}" stroke-width="3"/></svg>`;
 }
@@ -91,7 +98,10 @@ async function addSvg(map: MapLibreMap, name: string, svg: string) {
   if (!map.hasImage(name)) map.addImage(name, img, { pixelRatio: 2 });
 }
 async function addIcons(map: MapLibreMap) {
-  const jobs: Promise<void>[] = [addSvg(map, "rdb-badge", badge())];
+  const jobs: Promise<void>[] = [
+    addSvg(map, "rdb-badge", badge()),
+    addSvg(map, "rdb-e-vide", videIcon()),
+  ];
   for (const k of Object.keys(GLYPH) as StopKind[]) {
     const color = KIND_COLOR[k];
     jobs.push(
@@ -124,6 +134,8 @@ export default function RoutesMap({
   start,
   end,
   ports = [],
+  villes = [],
+  car = null,
   focus,
   fitKey,
   onSelectPin,
@@ -136,6 +148,10 @@ export default function RoutesMap({
   start?: MapPlace | null;
   end?: MapPlace | null;
   ports?: MapPlace[];
+  /** Grandes villes traversées, toujours nommées. */
+  villes?: MapPlace[];
+  /** La petite 504 qui suit l'étape lue dans le carnet. */
+  car?: { lon: number; lat: number } | null;
   /** Point à centrer (étape regardée). */
   focus: { lat: number; lon: number } | null;
   /** Change quand le trajet change : la carte se recadre sur lui. */
@@ -156,6 +172,7 @@ export default function RoutesMap({
   const lastBounds = useRef<LngLatBounds | null>(null);
   type Placed = { key: string; marker: Marker } | null;
   const markers = useRef<{ start: Placed; end: Placed }>({ start: null, end: null });
+  const carRef = useRef<Marker | null>(null);
 
   draw.current = () => {
     const map = mapRef.current;
@@ -175,7 +192,7 @@ export default function RoutesMap({
           type: "Feature" as const,
           properties: {
             id: p.id,
-            icon: `rdb-${p.main ? "e" : "h"}-${p.k}`,
+            icon: p.vide ? "rdb-e-vide" : `rdb-${p.main ? "e" : "h"}-${p.k}`,
             main: p.main ? 1 : 0,
             label: p.label ?? "",
           },
@@ -188,6 +205,23 @@ export default function RoutesMap({
         })),
       ],
     });
+    (map.getSource("rdb-villes") as GeoJSONSource).setData({
+      type: "FeatureCollection",
+      features: villes.map((v) => ({
+        type: "Feature" as const,
+        properties: { name: v.label },
+        geometry: { type: "Point" as const, coordinates: [v.lon, v.lat] },
+      })),
+    });
+    if (car) {
+      if (!carRef.current) {
+        const el = document.createElement("div");
+        el.className = "rdb-mk rdb-mk--car";
+        el.innerHTML = '<img src="/cabas/persos/voiture_504.webp" alt="" width="34" height="34">';
+        carRef.current = new Marker({ element: el, anchor: "bottom" });
+      }
+      carRef.current.setLngLat([car.lon, car.lat]).addTo(map);
+    } else carRef.current?.remove();
     // La 504 et l'épingle ne sont recréées que si le lieu change.
     for (const kind of ["start", "end"] as const) {
       const place = kind === "start" ? start : end;
@@ -257,6 +291,10 @@ export default function RoutesMap({
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
       });
+      map.addSource("rdb-villes", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
       map.addSource("rdb-stops", {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
@@ -276,6 +314,8 @@ export default function RoutesMap({
         "line-opacity": 0.45,
       });
       line("rdb-autre", "autre", { "line-color": ROUTE, "line-width": 3.5, "line-opacity": 0.38 });
+      // Zone de clic large et invisible : on choisit un chemin en touchant son trait, comme sur Google Maps.
+      line("rdb-autre-hit", "autre", { "line-color": ROUTE, "line-width": 22, "line-opacity": 0 });
       line(
         "rdb-mer",
         "mer",
@@ -303,15 +343,41 @@ export default function RoutesMap({
         "line-width": 4,
         "line-dasharray": [0.1, 1.9],
       });
+      // Les villes traversées : un point et leur nom, toujours visibles.
+      map.addLayer({
+        id: "rdb-villes-pt",
+        type: "circle",
+        source: "rdb-villes",
+        paint: {
+          "circle-radius": 4,
+          "circle-color": "#ffffff",
+          "circle-stroke-color": INK,
+          "circle-stroke-width": 2,
+        },
+      });
+      map.addLayer({
+        id: "rdb-villes",
+        type: "symbol",
+        source: "rdb-villes",
+        layout: {
+          "text-field": ["get", "name"],
+          "text-font": ["Noto Sans Bold"],
+          "text-size": ["interpolate", ["linear"], ["zoom"], 4, 11.5, 9, 14],
+          "text-variable-anchor": ["left", "right", "top", "bottom"],
+          "text-radial-offset": 0.7,
+          // Toujours visibles : les villes traversées passent avant les noms du fond de carte.
+          "text-allow-overlap": true,
+        },
+        paint: { "text-color": INK, "text-halo-color": "#ffffff", "text-halo-width": 2 },
+      });
       map.addLayer({
         id: "rdb-haltes",
         type: "symbol",
         source: "rdb-stops",
-        minzoom: 6.5,
         filter: ["==", ["get", "main"], 0],
         layout: {
           "icon-image": ["get", "icon"],
-          "icon-size": ["interpolate", ["linear"], ["zoom"], 6.5, 0.75, 10, 1],
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 4, 0.6, 10, 1],
           "icon-allow-overlap": false,
         },
       });
@@ -367,7 +433,7 @@ export default function RoutesMap({
         map.on("mouseenter", layer, () => (map.getCanvas().style.cursor = "pointer"));
         map.on("mouseleave", layer, () => (map.getCanvas().style.cursor = ""));
       }
-      map.on("click", "rdb-autre", (e: MapLayerMouseEvent) => {
+      map.on("click", "rdb-autre-hit", (e: MapLayerMouseEvent) => {
         if (handlers.current.picking) return;
         // Une pastille posée sur le trait passe avant le trait.
         if (map.queryRenderedFeatures(e.point, { layers: ["rdb-etapes", "rdb-haltes"] }).length)
@@ -375,8 +441,8 @@ export default function RoutesMap({
         const id = e.features?.[0]?.properties?.["id"];
         if (typeof id === "string") handlers.current.onSelectLine?.(id);
       });
-      map.on("mouseenter", "rdb-autre", () => (map.getCanvas().style.cursor = "pointer"));
-      map.on("mouseleave", "rdb-autre", () => (map.getCanvas().style.cursor = ""));
+      map.on("mouseenter", "rdb-autre-hit", () => (map.getCanvas().style.cursor = "pointer"));
+      map.on("mouseleave", "rdb-autre-hit", () => (map.getCanvas().style.cursor = ""));
       loaded.current = true;
       draw.current();
     });
@@ -397,7 +463,7 @@ export default function RoutesMap({
 
   useEffect(() => {
     draw.current();
-  }, [lines, pins, start, end, ports, focus, fitKey]);
+  }, [lines, pins, start, end, ports, villes, car, focus, fitKey]);
 
   useEffect(() => {
     const map = mapRef.current;

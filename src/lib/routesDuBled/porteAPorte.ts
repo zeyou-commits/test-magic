@@ -209,7 +209,9 @@ export function optionsAlgerie(
     // Et, comme côté Europe, le bout mesuré passe avant les bouts estimés.
     const cout = (c: OptionDz) => (c.dernier.mesure ? 0 : 1000) + c.h + c.dernier.km / 50;
     const best = cands.sort((a, b) => cout(a) - cout(b))[0]!;
-    if (estimeBout(best.sortie, dest).km <= 300) out.push(best);
+    // Même loin de toute route relevée (Tindouf, Adrar…), on va au port puis on trace la route :
+    // ce bout-là reste « à raconter ».
+    out.push(best);
   }
   return out.sort((a, b) => a.h - b.h);
 }

@@ -55,6 +55,7 @@ import {
 import { alertLabel, communityQuery, useSignalCatalog } from "@/lib/ferry/community";
 import { companyOverview } from "@/lib/ferry/companyOverview";
 import { entityReviewsQuery } from "@/lib/ferry/entityReviews";
+import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
 import {
   companiesQuery,
   portsQuery,
@@ -325,6 +326,13 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
   const fleet = overview?.fleet ?? [];
   const vesselNotes = useQueries({
     queries: fleet.map((vessel) => entityReviewsQuery("vessel", vessel.id)),
+  });
+  // Même visuel que la fiche publique du navire (photo BledWay, sinon photo libre).
+  const vesselPhotos = useQueries({
+    queries: fleet.map((vessel) => ({
+      ...vesselPhotoQuery(vessel),
+      enabled: tab === "fleet",
+    })),
   });
   const mine = (departures.data ?? [])
     .filter((item) => item.company_id === company?.id)
@@ -708,8 +716,22 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
         <div className="bo-fleet">
           {fleet.map((vessel, index) => {
             const note = vesselNotes[index]?.data;
+            const photo = vesselPhotos[index]?.data;
             return (
               <article className="bo-card" key={vessel.id}>
+                {photo ? (
+                  <img
+                    src={photo.url}
+                    alt={vessel.name}
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                    className="bo-fleet__photo"
+                  />
+                ) : (
+                  <span className="bo-fleet__photo bo-fleet__photo--empty" aria-hidden>
+                    <Ship />
+                  </span>
+                )}
                 <h2>
                   <Ship aria-hidden /> {vessel.name}
                   <small>

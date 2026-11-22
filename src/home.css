@@ -5166,55 +5166,57 @@ body:has(.bw-home--app) {
   }
 }
 
-/* ─── Accueil PC : « Sur l'eau maintenant », en bas à gauche de la carte. ─── */
+/* ─── Accueil PC : « Sur l'eau maintenant », colonne compacte en bas à gauche de la carte
+   (Portugal et Atlantique) : le centre de la carte et la côte algérienne restent dégagés. ─── */
 .bw-on-water {
   position: absolute;
-  top: calc(var(--wide-bar-h, 150px) + 40px);
+  bottom: 22px;
   left: 22px;
   z-index: 30;
   display: grid;
-  justify-items: start;
-  gap: 8px;
-  max-width: calc(100% - 140px);
+  justify-items: stretch;
+  gap: 6px;
+  width: 316px;
   pointer-events: none;
 }
 .bw-on-water__title {
-  padding: 6px 12px;
+  justify-self: start;
+  padding: 5px 10px;
   border: 1px solid #e2e6dd;
   border-radius: 999px;
   background: #ffffffeb;
   color: #16324a;
-  font-size: 11.5px;
+  font-size: 10.5px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 .bw-on-water__row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  display: grid;
+  gap: 6px;
 }
 .bw-on-water__card,
 .bw-on-water__live {
   pointer-events: auto;
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-height: 64px;
-  padding: 10px 14px 10px 10px;
+  gap: 10px;
+  width: 100%;
+  min-height: 54px;
+  padding: 6px 10px 6px 6px;
   border: 1px solid #e2e6dd;
-  border-radius: 18px;
+  border-radius: 15px;
   background: #fffffff2;
   color: #16324a;
   text-align: left;
-  box-shadow: 0 16px 34px -22px #16324a8c;
+  box-shadow: 0 12px 28px -20px #16324a8c;
   transition:
     transform 0.18s var(--bw-ease),
     border-color 0.18s var(--bw-ease);
 }
 .bw-on-water__card:hover {
   border-color: #0e7a43;
-  transform: translateY(-2px);
+  transform: translateX(2px);
 }
 .bw-on-water__icon {
   display: grid;
@@ -5222,15 +5224,15 @@ body:has(.bw-home--app) {
   place-items: center;
   width: 42px;
   height: 42px;
-  border-radius: 13px;
+  border-radius: 11px;
   background: #e5eff0;
   color: #1e5b7a;
 }
 .bw-on-water__photo {
   flex-shrink: 0;
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
   background: #e5eff0;
   object-fit: cover;
 }
@@ -5240,13 +5242,13 @@ body:has(.bw-home--app) {
 }
 .bw-on-water__text {
   display: grid;
-  gap: 2px;
+  flex: 1;
+  gap: 1px;
   min-width: 0;
-  max-width: 190px;
 }
 .bw-on-water__text strong {
   overflow: hidden;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -5254,17 +5256,17 @@ body:has(.bw-home--app) {
 .bw-on-water__text span {
   overflow: hidden;
   color: #5d6b78;
-  font-size: 12px;
+  font-size: 11.5px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .bw-on-water__badge {
   flex-shrink: 0;
-  padding: 4px 8px;
+  padding: 3px 7px;
   border-radius: 999px;
   background: #e5eff0;
   color: #1e5b7a;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -5274,20 +5276,17 @@ body:has(.bw-home--app) {
 }
 .bw-on-water__live {
   justify-content: center;
-  padding-inline: 18px;
+  gap: 6px;
+  min-height: 40px;
+  padding-inline: 14px;
   border-color: #16324a;
   background: #16324a;
   color: #fff;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
 }
 .bw-on-water__live:hover {
   background: #0f2638;
-}
-@media (max-width: 1319px) {
-  .bw-on-water__text {
-    max-width: 150px;
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   .bw-on-water__card:hover {

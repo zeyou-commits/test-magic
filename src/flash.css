@@ -17631,7 +17631,7 @@ button.bw-delay-badge:focus-visible {
   padding: 0 10px;
   border: 0;
   border-radius: 13px;
-  background: #0b1a1373;
+  background: #0b1a13cc;
   color: #ffffff;
   font-size: 11.5px;
   font-weight: 700;
@@ -17650,7 +17650,7 @@ button.bw-delay-badge:focus-visible {
   font-weight: 600;
 }
 .bw-ticker[data-off] .bw-ticker__switch {
-  background: #12261d99;
+  background: #0b1a13a6;
 }
 .bw-ticker__general:focus-visible,
 .bw-ticker__switch:focus-visible,
@@ -17703,17 +17703,18 @@ button.bw-delay-badge:focus-visible {
   padding: 3px 9px 3px 3px;
   border: 0;
   border-radius: 11px;
-  background: #0b1a1352;
+  /* Voile assez sombre et flou fort : la carte (noms de villes, tracés) ne se lit plus à travers. */
+  background: #0b1a13b8;
   color: #ffffff;
   text-align: left;
-  text-shadow: 0 1px 2px #000000b3;
+  text-shadow: none;
   cursor: pointer;
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(10px) saturate(120%);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
   transition: background 0.15s ease;
 }
 .bw-ticker__line:hover {
-  background: #0b1a138c;
+  background: #0b1a13e0;
 }
 .bw-ticker__line > :first-child {
   flex: none;
@@ -17736,7 +17737,7 @@ button.bw-delay-badge:focus-visible {
   font-weight: 800;
 }
 .bw-ticker__text > small {
-  color: #ffffffb3;
+  color: #ffffffc7;
   font-size: 10.5px;
   font-weight: 600;
 }

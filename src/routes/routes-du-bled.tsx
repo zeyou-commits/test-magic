@@ -424,11 +424,13 @@ function RoutesDuBledPage() {
   const focusPas = (id: string) => {
     if (sel) setOpenId(sel.id);
     setFocusId(id);
+    // Téléphone : la carte reste collée en haut, l'étape vient juste sous elle (scroll-margin-top).
+    const pc = window.matchMedia("(min-width: 1024px)").matches;
     setTimeout(
       () =>
         document
           .getElementById(`pas-${id}`)
-          ?.scrollIntoView({ behavior: "smooth", block: "center" }),
+          ?.scrollIntoView({ behavior: "smooth", block: pc ? "center" : "start" }),
       60,
     );
   };
@@ -454,7 +456,12 @@ function RoutesDuBledPage() {
         const id = (top?.target as HTMLElement | undefined)?.dataset["pas"];
         if (id) setCarAt(id);
       },
-      { rootMargin: "-35% 0px -45% 0px" },
+      // Téléphone : on lit sous la carte collée en haut, la ligne de lecture descend.
+      {
+        rootMargin: window.matchMedia("(min-width: 1024px)").matches
+          ? "-35% 0px -45% 0px"
+          : "-62% 0px -22% 0px",
+      },
     );
     root.querySelectorAll("[data-pas]").forEach((el) => io.observe(el));
     return () => io.disconnect();
@@ -595,6 +602,7 @@ function RoutesDuBledPage() {
       <main
         className="rdb mx-auto max-w-6xl px-4 pb-20 pt-4 sm:px-6 sm:pt-5"
         data-trip={from && to ? "" : undefined}
+        data-book={from && to && openId ? "" : undefined}
       >
         <div className="rdb-crumbs">
           <Breadcrumbs

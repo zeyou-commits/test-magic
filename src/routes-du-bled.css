@@ -550,3 +550,35 @@
 .rdb-book__add svg { flex: none; color: var(--primary); }
 .rdb-book__add b { color: var(--primary); }
 .rdb-book__add:hover { background: var(--secondary); }
+
+/*
+ * Téléphone et tablette, trajet choisi : la carte d'abord. Elle reste collée sous l'en-tête du site
+ * pendant que les routes puis le carnet défilent dessous ; elle se réduit quand un carnet est ouvert.
+ */
+@media (max-width: 1023px) {
+  .rdb[data-trip] .rdb-planner__grid > .rdb-map {
+    position: sticky;
+    top: var(--bw-header-h, 64px);
+    z-index: 4;
+    height: 46svh;
+    min-height: 15rem;
+    max-height: none;
+    margin-inline: -1rem;
+    border-radius: 0 0 1.25rem 1.25rem;
+    border-inline: 0;
+    border-top: 0;
+    box-shadow: 0 10px 24px rgb(13 48 67 / 0.14);
+    transition: height 0.3s ease;
+  }
+  .rdb[data-trip][data-book] .rdb-planner__grid > .rdb-map { height: 34svh; }
+  .rdb[data-trip] .rdb-rc,
+  .rdb[data-trip] .rdb-pas { scroll-margin-top: calc(var(--bw-header-h, 64px) + 46svh + 0.75rem); }
+  .rdb[data-trip][data-book] .rdb-rc,
+  .rdb[data-trip][data-book] .rdb-pas { scroll-margin-top: calc(var(--bw-header-h, 64px) + 34svh + 0.75rem); }
+}
+@media (max-width: 1023px) and (min-width: 640px) {
+  .rdb[data-trip] .rdb-planner__grid > .rdb-map { margin-inline: -1.5rem; }
+}
+@media (max-width: 1023px) and (prefers-reduced-motion: reduce) {
+  .rdb[data-trip] .rdb-planner__grid > .rdb-map { transition: none; }
+}

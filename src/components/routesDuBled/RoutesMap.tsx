@@ -180,6 +180,7 @@ export default function RoutesMap({
   type Placed = { key: string; marker: Marker } | null;
   const markers = useRef<{ start: Placed; end: Placed }>({ start: null, end: null });
   const carRef = useRef<Marker | null>(null);
+  const lastCar = useRef<string | null>(null);
 
   draw.current = () => {
     const map = mapRef.current;
@@ -232,7 +233,25 @@ export default function RoutesMap({
         carRef.current = new Marker({ element: el, anchor: "bottom" });
       }
       carRef.current.setLngLat([car.lon, car.lat]).addTo(map);
-    } else carRef.current?.remove();
+      // La carte suit la 504 : sur téléphone (petite carte) elle s'approche et la garde au centre ;
+      // sur ordinateur elle ne bouge que si la 504 sort du cadre.
+      const carKey = `${car.lon},${car.lat}`;
+      if (carKey !== lastCar.current) {
+        lastCar.current = carKey;
+        const petit = !window.matchMedia("(min-width: 1024px)").matches;
+        if (petit)
+          map.easeTo({
+            center: [car.lon, car.lat],
+            zoom: Math.max(map.getZoom(), 6.5),
+            duration: 600,
+          });
+        else if (!map.getBounds().contains([car.lon, car.lat]))
+          map.easeTo({ center: [car.lon, car.lat], duration: 500 });
+      }
+    } else {
+      carRef.current?.remove();
+      lastCar.current = null;
+    }
     // La 504 et l'épingle ne sont recréées que si le lieu change.
     for (const kind of ["start", "end"] as const) {
       const place = kind === "start" ? start : end;

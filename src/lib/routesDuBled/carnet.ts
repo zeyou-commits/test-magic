@@ -497,6 +497,14 @@ export function carnet(
   );
 
   pas.sort((a, b) => ord.get(a)! - ord.get(b)! || a.h - b.h);
+  // Deux villes du même nom (Valence en France puis en Espagne) : un identifiant chacune.
+  const vus = new Set<string>();
+  for (const p of pas) {
+    let id = p.id;
+    for (let n = 2; vus.has(id); n++) id = `${p.id}-${n}`;
+    vus.add(id);
+    p.id = id;
+  }
   // Numéros des pauses et des nuits (deux comptes séparés : Pause 3, Nuit 1, Pause 4), et jours.
   let nPause = 0;
   let nNuit = 0;

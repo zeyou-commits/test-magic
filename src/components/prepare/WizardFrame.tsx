@@ -225,114 +225,92 @@ export function WizardFrame({
             : { height: "100dvh" }
         }
       >
+        {/* En-tête compact : une ligne (sortir · fil des étapes · passer), le titre, puis un filet
+            de progression. Le chapitre reste dit aux lecteurs d'écran. */}
         <header className="shrink-0 border-b bg-card/95 shadow-sm backdrop-blur">
-          <div className="mx-auto w-full max-w-2xl px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-            {/* Sortir du guide : toujours en haut à gauche, jamais confondu avec « Précédent ». */}
-            <div className="flex items-center justify-between gap-3">
+          <div className="mx-auto w-full max-w-2xl px-3 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] md:px-4">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="-ml-2 inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full px-2 text-sm font-semibold text-foreground hover:bg-secondary"
+                aria-label="Quitter le guide : Préparer mon voyage"
+                title="Préparer mon voyage"
+                className="grid size-9 shrink-0 place-items-center rounded-full hover:bg-secondary"
               >
-                <ArrowLeft size={16} aria-hidden /> Préparer mon voyage
+                <ArrowLeft size={18} aria-hidden />
               </button>
-              <p className="min-w-0 truncate text-right text-[11px] font-bold uppercase leading-tight tracking-wider text-primary">
-                {chapter}
-              </p>
-            </div>
-            {/* Le fil : où l'on en est, toujours sous les yeux (inutile avec une seule étape). */}
-            {steps.length > 1 ? (
-              <nav aria-label="Les étapes du voyage" className="mt-2">
-                <ol
-                  className="relative grid"
-                  style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0,1fr))` }}
-                >
-                  <span
-                    className="absolute left-[8%] right-[8%] top-4 h-0.5 bg-border"
-                    aria-hidden
-                  />
-                  <span
-                    className="absolute left-[8%] top-4 h-0.5 bg-primary transition-[width] duration-500"
-                    style={{ width: `${(current / Math.max(1, steps.length - 1)) * 84}%` }}
-                    aria-hidden
-                  />
-                  {steps.map((item, index) => {
-                    const here = index === current;
-                    const Icon = item.done && !here ? Check : item.icon;
-                    return (
-                      <li key={item.key} className="relative flex justify-center">
-                        <button
-                          type="button"
-                          onClick={() => onOpen(index)}
-                          aria-current={here ? "step" : undefined}
-                          aria-label={`${item.title}${item.done ? " · fait" : ""}${item.recap && item.done ? " · récap disponible" : ""}`}
-                          className="flex flex-col items-center gap-1"
+              {steps.length > 1 ? (
+                <nav aria-label="Les étapes du voyage" className="min-w-0 flex-1">
+                  <ol className="bw-wizsteps">
+                    {steps.map((item, index) => {
+                      const here = index === current;
+                      const Icon = item.done && !here ? Check : item.icon;
+                      return (
+                        <li
+                          key={item.key}
+                          data-state={here ? "here" : item.done ? "done" : "todo"}
+                          data-reached={index <= current || undefined}
                         >
-                          <span
-                            className={`relative grid size-8 place-items-center rounded-full border-2 transition-all ${
-                              here
-                                ? "scale-110 border-primary bg-primary text-primary-foreground ring-4 ring-primary/20"
-                                : item.done
-                                  ? "border-primary bg-primary text-primary-foreground"
-                                  : "border-border bg-background text-muted-foreground"
-                            }`}
+                          <button
+                            type="button"
+                            onClick={() => onOpen(index)}
+                            aria-current={here ? "step" : undefined}
+                            aria-label={`${item.title}${item.done ? " · fait" : ""}${item.recap && item.done ? " · récap disponible" : ""}`}
+                            title={item.short}
                           >
-                            <Icon size={15} strokeWidth={item.done && !here ? 3 : 2} aria-hidden />
-                            {item.recap && item.done && !here ? (
-                              <span className="bw-recap-badge" aria-hidden>
-                                <FileText size={9} strokeWidth={2.5} />
-                              </span>
-                            ) : null}
-                          </span>
-                          <span
-                            className={`text-[10px] leading-none md:text-xs ${here ? "font-bold text-foreground" : "text-muted-foreground"}`}
-                          >
-                            {item.short}
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ol>
-              </nav>
-            ) : null}
-            <div
-              className={`${steps.length > 1 ? "mt-3" : "mt-2"} flex items-end justify-between gap-3`}
-            >
+                            <span className="bw-wizsteps__dot">
+                              <Icon size={13} strokeWidth={item.done && !here ? 3 : 2} aria-hidden />
+                              {item.recap && item.done && !here ? (
+                                <span className="bw-recap-badge" aria-hidden>
+                                  <FileText size={8} strokeWidth={2.5} />
+                                </span>
+                              ) : null}
+                            </span>
+                            {here ? <span className="bw-wizsteps__label">{item.short}</span> : null}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </nav>
+              ) : (
+                <span className="flex-1" />
+              )}
+              {onSkip ? (
+                <button
+                  type="button"
+                  onClick={onSkip}
+                  className="inline-flex min-h-8 shrink-0 items-center gap-0.5 rounded-full border px-2.5 text-xs font-semibold text-muted-foreground hover:bg-secondary"
+                >
+                  Passer <ArrowRight size={12} aria-hidden />
+                </button>
+              ) : null}
+            </div>
+            <div className="mt-1 flex items-baseline justify-between gap-3 pl-1">
               <h2
                 id="wiz-title"
-                className="min-w-0 font-display text-lg font-bold leading-tight md:text-xl"
+                className="min-w-0 truncate font-display text-base font-bold leading-tight md:text-lg"
               >
                 {step.title}
+                <span className="sr-only"> · {chapter}</span>
               </h2>
-              <span className="flex shrink-0 items-center gap-2 text-xs font-semibold text-muted-foreground">
-                {shown && shown.total > 1 ? (
-                  <span>
-                    {shown.index + 1} / {shown.total}
-                  </span>
-                ) : null}
-                {onSkip ? (
-                  <button
-                    type="button"
-                    onClick={onSkip}
-                    className="inline-flex min-h-8 items-center gap-0.5 rounded-full border px-2.5 hover:bg-secondary"
-                  >
-                    Passer l'étape <ArrowRight size={12} aria-hidden />
-                  </button>
-                ) : null}
-              </span>
+              {shown && shown.total > 1 ? (
+                <span className="shrink-0 text-xs font-semibold tabular-nums text-muted-foreground">
+                  {shown.index + 1} / {shown.total}
+                </span>
+              ) : null}
             </div>
-            {shown && shown.total > 1 ? (
-              <div className="mt-2 flex gap-1" aria-hidden>
-                {Array.from({ length: shown.total }, (_, i) => (
-                  <span
-                    key={i}
-                    className={`h-1 flex-1 rounded-full transition-colors duration-300 ${i <= shown.index ? "bg-primary" : "bg-border"}`}
-                  />
-                ))}
-              </div>
-            ) : null}
           </div>
+          {shown && shown.total > 1 ? (
+            <div className="flex h-[3px] gap-px" aria-hidden>
+              {Array.from({ length: shown.total }, (_, i) => (
+                <span
+                  key={i}
+                  className={`flex-1 transition-colors duration-300 ${i <= shown.index ? "bg-primary" : "bg-border"}`}
+                />
+              ))}
+            </div>
+          ) : null}
         </header>
         <div
           ref={main}

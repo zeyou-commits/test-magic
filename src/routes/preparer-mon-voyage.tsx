@@ -744,7 +744,9 @@ function CompanionPage() {
         <Breadcrumbs items={[{ name: "Préparer mon voyage", path: PATH }]} />
       </div>
       <EmbeddedPapers.Provider value>
-        <div className="mx-auto max-w-3xl pb-6 pt-3 md:py-10">
+        <div
+          className={`mx-auto max-w-3xl pb-6 pt-3 md:py-10 ${allDone && !locked && (!inWizard || open === null) ? "lg:max-w-6xl" : ""}`}
+        >
           {!plan.started ? (
             <Welcome
               onStart={() => {
@@ -815,9 +817,9 @@ function CompanionPage() {
                       onOpenStep={openStep}
                       onBook={goBooking}
                       onShare={() => void navigate({ to: "/ma-preparation" })}
+                      todo={<PlanTodo plan={plan} papers={papers} onOpenStep={openStep} />}
                     />
-                  ) : null}
-                  {plan.done.includes("profile") ? (
+                  ) : plan.done.includes("profile") ? (
                     <PlanTodo plan={plan} papers={papers} onOpenStep={openStep} />
                   ) : null}
                   {ready ? null : (
@@ -1608,7 +1610,7 @@ function RouteStep({
     <div className="bw-route pt-3">
       {!plan.home ? (
         <>
-          <div className="mb-4 rounded-2xl bg-secondary/40 p-4">
+          <div className="mb-4">
             <ResidenceQuestion
               papers={papers}
               plan={plan}
@@ -3101,6 +3103,7 @@ function ReadyDashboard({
   onOpenStep,
   onBook,
   onShare,
+  todo: todoBlock,
 }: {
   plan: CompanionPlan;
   papers: PapersState;
@@ -3110,8 +3113,9 @@ function ReadyDashboard({
   onOpenStep: (step: CompanionStep) => void;
   onBook: () => void;
   onShare: () => void;
+  /** « À faire » : juste sous le récap sur téléphone, en colonne à droite sur grand écran. */
+  todo: ReactNode;
 }) {
-  const { todo } = usePlanTodo(plan, papers);
   const tasks = useMemo(() => tasksFor(papers.answers), [papers.answers]);
   // Ce que le récap ne peut pas encore dire (route sans ports, donc ni budget ni billet).
   const missing = rows.filter(
@@ -3131,10 +3135,11 @@ function ReadyDashboard({
     ? `Le voyage de ${named.length > 1 ? `${named.slice(0, -1).join(", ")} et ${named.at(-1)}` : named[0]}`
     : "Votre voyage au bled";
   return (
-    <section id="pret" aria-labelledby="pret-titre" className="bw-ready mt-4">
+    <section id="pret" aria-labelledby="pret-titre" className="bw-ready bw-readygrid mt-4">
       <h2 id="pret-titre" className="sr-only">
         Votre récap est prêt
       </h2>
+      <div className="bw-readygrid__main">
       {/* Le fil du voyage : chaque ligne rouvre son étape. */}
       <div className="bw-ready__recap">
         <RecapPreview
@@ -3151,15 +3156,6 @@ function ReadyDashboard({
         deadlines={deadlines}
         onPick={() => onOpenStep("papers")}
       />
-      <div className="mt-3">
-        <TripBudget
-          plan={plan}
-          fromChoice={fromChoice}
-          toPort={toPort}
-          people={people(papers.answers)}
-          onDetail={() => onOpenStep("budget")}
-        />
-      </div>
       {missing.length ? (
         <Bw504Note
           tone="stuck"
@@ -3191,6 +3187,18 @@ function ReadyDashboard({
           Envoie-le à la famille ou imprime-le. Touche une ligne du récap pour la revoir.
         </Bw504Note>
       )}
+      </div>
+      <div className="bw-readygrid__todo">{todoBlock}</div>
+      <div className="bw-readygrid__more">
+      <div className="mt-3">
+        <TripBudget
+          plan={plan}
+          fromChoice={fromChoice}
+          toPort={toPort}
+          people={people(papers.answers)}
+          onDetail={() => onOpenStep("budget")}
+        />
+      </div>
       <div className="mt-3">
         <SailingsOutlook
           plan={plan}
@@ -3199,24 +3207,6 @@ function ReadyDashboard({
           onSee={onBook}
         />
       </div>
-      <button
-        type="button"
-        onClick={() =>
-          document.getElementById("a-faire")?.scrollIntoView({ block: "start", behavior: "smooth" })
-        }
-        className={`mt-3 flex w-full items-center gap-3 rounded-xl border bg-background p-3 text-left ${todo.length ? "border-primary" : ""}`}
-      >
-        <ListChecks size={20} className="shrink-0 text-primary" aria-hidden />
-        <span className="min-w-0 flex-1">
-          <span className="block font-semibold">
-            {todo.length ? "Il reste des actions" : "Toutes les actions sont faites"}
-          </span>
-          <span className="block text-sm text-muted-foreground">{todoSummary(todo, plan)}</span>
-        </span>
-        {todo.length ? (
-          <ArrowRight size={16} className="shrink-0 text-primary" aria-hidden />
-        ) : null}
-      </button>
       <div className="mt-4 rounded-xl border bg-background p-3">
         <p className="flex items-center gap-2 font-semibold">
           <Bell size={17} className="text-primary" aria-hidden /> Être prévenu avant chaque échéance
@@ -3241,6 +3231,7 @@ function ReadyDashboard({
       >
         <MapIcon size={16} aria-hidden /> Suivre en direct
       </a>
+      </div>
     </section>
   );
 }

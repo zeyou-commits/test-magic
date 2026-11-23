@@ -228,6 +228,17 @@ export function Question({
 }) {
   const embedded = useContext(EmbeddedPapers);
   const Heading = embedded ? "h3" : "h1";
+  // Dans le guide : la question en carte, sur le modèle du récap (bandeau vert, corps clair).
+  if (embedded)
+    return (
+      <section className="bw-qcard">
+        <div className="bw-qcard__head">
+          <Heading className="bw-qcard__title">{title}</Heading>
+          {hint ? <p className="bw-qcard__hint">{hint}</p> : null}
+        </div>
+        <div className="bw-qcard__body">{children}</div>
+      </section>
+    );
   return (
     <div className={embedded ? "mt-4" : "mt-6"}>
       <Heading

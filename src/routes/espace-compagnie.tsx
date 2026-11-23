@@ -9,6 +9,11 @@ import {
   ClipboardList,
   Gauge,
   ListTodo,
+  Loader2,
+  Lock,
+  RefreshCw,
+  ShieldCheck,
+  WifiOff,
   Megaphone,
   MessageSquare,
   PenSquare,
@@ -44,6 +49,7 @@ import { CompanyShowcase } from "@/components/company/CompanyShowcase";
 import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { useAuth } from "@/hooks/useAuth";
 import { STAFF_ROLES } from "@/lib/admin/permissions";
+import { AdminRequestError } from "@/lib/admin/request";
 import {
   companyAccessKeys,
   companyAccessRequest,
@@ -199,24 +205,46 @@ const STATUS: Record<Departure["status"], { label: string; tone?: string }> = {
   cancelled: { label: "Annulée", tone: "bad" },
 };
 
+/**
+ * L'écran d'attente ou de blocage de l'espace compagnie : une carte claire, la 504 qui dit ce qui
+ * se passe, une suite possible. `tone` : « error » (service coupé), « locked » (accès suspendu).
+ */
 function Gate({
   title = "Espace compagnie",
   children,
   action,
+  tone = "locked",
+  footnote,
 }: {
   title?: string;
   children: ReactNode;
   action?: ReactNode;
+  tone?: "error" | "locked";
+  footnote?: ReactNode;
 }) {
+  const Icon = tone === "error" ? WifiOff : Lock;
   return (
-    <div className="mx-auto max-w-lg p-8 text-center" role="status">
-      <h1 className="text-xl font-bold">{title}</h1>
-      <div className="mt-2 grid gap-2 text-sm text-muted-foreground">{children}</div>
-      <div className="mt-4 flex flex-wrap justify-center gap-2">
-        {action}
-        <Link to="/" className="bw-action-secondary inline-flex">
-          Retour au site
-        </Link>
+    <div className="bw-gate" role="status" data-tone={tone}>
+      <div className="bw-gate__card">
+        <div className="bw-gate__art" aria-hidden>
+          <span className="bw-gate__halo" />
+          <img src="/cabas/persos/voiture_504.webp" alt="" width={96} height={96} />
+          <span className="bw-gate__badge">
+            <Icon size={18} strokeWidth={2.4} />
+          </span>
+        </div>
+        <p className="bw-gate__kicker">
+          <Building2 size={13} aria-hidden /> Espace compagnie
+        </p>
+        <h1 className="bw-gate__title">{title}</h1>
+        <div className="bw-gate__body">{children}</div>
+        <div className="bw-gate__acts">
+          {action}
+          <Link to="/" className="bw-gate__b2">
+            Retour au site
+          </Link>
+        </div>
+        {footnote ? <p className="bw-gate__foot">{footnote}</p> : null}
       </div>
     </div>
   );
@@ -233,29 +261,65 @@ function CompanySpacePage() {
     enabled: Boolean(user) && !staff && !loading,
     staleTime: 0,
     refetchInterval: 60_000,
-    retry: false,
+    // Une coupure passagère du serveur se rattrape seule (2 essais) ; un refus net, non.
+    retry: (count, error) =>
+      count < 2 && (!(error instanceof AdminRequestError) || error.status >= 500),
+    retryDelay: (count) => 800 * (count + 1),
   });
   if (loading) return <p className="bo-empty p-6">Chargement…</p>;
   // Personne connectée : page d'accueil professionnelle, avec les deux portes.
   if (!user) return <CompanyShowcase />;
   if (staff) return <CompanySpace allowed={null} />;
   if (access.isPending) return <p className="bo-empty p-6">Vérification de votre accès…</p>;
-  if (access.isError)
+  if (access.isError) {
+    const code = access.error instanceof AdminRequestError ? access.error.code : undefined;
     return (
       <Gate
+        tone="error"
+        title="Connexion à votre espace interrompue"
         action={
           <button
             type="button"
-            className="bw-action-primary inline-flex"
+            className="bw-gate__b1"
+            disabled={access.isFetching}
             onClick={() => void access.refetch()}
           >
-            Réessayer
+            {access.isFetching ? (
+              <Loader2 size={16} className="animate-spin" aria-hidden />
+            ) : (
+              <RefreshCw size={16} aria-hidden />
+            )}
+            {access.isFetching ? "Nouvel essai…" : "Réessayer"}
           </button>
         }
+        footnote={
+          <>
+            Le problème continue ? Écrivez à votre interlocuteur BledWay
+            {code ? (
+              <>
+                {" "}
+                en indiquant le code <code>{code}</code>
+              </>
+            ) : null}
+            .
+          </>
+        }
       >
-        <p>Votre accès n'a pas pu être vérifié. {(access.error as Error).message}</p>
+        <p>
+          Nous n'avons pas pu vérifier votre accès à l'instant : le service a mis trop de temps à
+          répondre.
+        </p>
+        <ul className="bw-gate__list">
+          <li>
+            <ShieldCheck size={15} aria-hidden /> Votre accès et vos données sont intacts.
+          </li>
+          <li>
+            <RefreshCw size={15} aria-hidden /> Un nouvel essai suffit le plus souvent.
+          </li>
+        </ul>
       </Gate>
     );
+  }
   const usable = access.data.filter((item) => item.usable);
   if (!usable.length) {
     const suspended = access.data.find((item) => item.status === "suspended");

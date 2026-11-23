@@ -1,6 +1,23 @@
-import { useMemo } from "react";
+import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, CalendarCheck, CalendarClock, Loader2, Wallet } from "lucide-react";
+import {
+  ArrowRight,
+  BedDouble,
+  CalendarCheck,
+  CalendarClock,
+  ChevronDown,
+  Coins,
+  FileText,
+  Fuel,
+  Gift,
+  Lightbulb,
+  Loader2,
+  Plus,
+  Ship,
+  UtensilsCrossed,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 import { SalesAlertForm } from "@/components/panel/SalesAlertForm";
 import {
   companiesQuery,
@@ -15,6 +32,7 @@ import {
   planHasWhen,
   planWhenLabel,
   seasonLabels,
+  type BudgetExtras,
   type CompanionPlan,
   type PortChoice,
 } from "@/lib/ferry/companion";
@@ -46,16 +64,21 @@ const dayMonth = (key: string) =>
     .replace(/^1 /, "1er ");
 const countOf = (n: number, word: string) => `${n} ${word}${n > 1 ? "s" : ""}`;
 
+/** Les frais de papiers de la liste (visa, dossier…), avec le libellé de chaque ligne. */
+export type PapersFees = { eur: number; items: { label: string; eur: number }[] };
+
 /**
  * Le budget du voyage, en chiffres : bateau aller, bateau retour (prix moyens de la ligne, ajustés
- * à la saison, aux voyageurs, au véhicule), essence et péages jusqu'au port. Le même calcul sert
- * au bloc « Votre budget » et à la ligne Budget du récap.
+ * à la saison, aux voyageurs, au véhicule), essence et péages jusqu'au port, frais de papiers
+ * connus, et les dépenses que le voyageur ajoute lui-même. Le même calcul sert au bloc
+ * « Votre budget » et à la ligne Budget du récap.
  */
 export function tripBudget(
   plan: CompanionPlan,
   fromChoice: PortChoice,
   toPort: Port,
   people: { adults: number; children: number },
+  papers: PapersFees | null = null,
 ) {
   const out = planFare(plan, fromChoice.port, toPort, people);
   const back = plan.returnDate
@@ -63,27 +86,131 @@ export function tripBudget(
     : null;
   // La route jusqu'au port : la distance à vol d'oiseau, allongée d'un quart pour la route.
   const roadKm = plan.vehicle !== "none" && fromChoice.km !== null ? fromChoice.km * 1.25 : 0;
-  const tolls = plan.country === "FR" ? TOLL_EURO_PER_KM : 0;
-  const roadCost = roadKm * ((FUEL_L_PER_100 / 100) * FUEL_EURO_PER_L + tolls) * (back ? 2 : 1);
+  const trips = back ? 2 : 1;
+  const fuelRaw = roadKm * (FUEL_L_PER_100 / 100) * FUEL_EURO_PER_L * trips;
+  const tollsRaw = plan.country === "FR" ? roadKm * TOLL_EURO_PER_KM * trips : 0;
   // Le port à côté de chez soi : pas de ligne « ≈ 0 € ».
-  const road = roadCost >= 15 ? roadCost : 0;
+  const onRoad = fuelRaw + tollsRaw >= 15;
+  const fuel = onRoad ? fuelRaw : 0;
+  const tolls = onRoad ? tollsRaw : 0;
+  const road = fuel + tolls;
+  const fees = papers?.eur ?? 0;
+  const extras = plan.extras ?? {};
+  const own = (extras.hotel ?? 0) + (extras.food ?? 0) + (extras.onsite ?? 0);
+  const fixed = fees + own;
   return {
     out,
     back,
     road,
-    total: out.amount + (back?.amount ?? 0) + road,
-    low: out.low + (back?.low ?? 0) + road * 0.85,
-    high: out.high + (back?.high ?? 0) + road * 1.15,
+    fuel,
+    tolls,
+    roadKm: onRoad ? roadKm : 0,
+    trips,
+    fees,
+    own,
+    total: out.amount + (back?.amount ?? 0) + road + fixed,
+    low: out.low + (back?.low ?? 0) + road * 0.85 + fixed,
+    high: out.high + (back?.high ?? 0) + road * 1.15 + fixed,
   };
 }
 
-/** « Environ 3 000 € », pour la ligne Budget du récap. */
-export const budgetSummary = (b: ReturnType<typeof tripBudget>) =>
-  `Environ ${nice(b.total)}, bateau${b.road ? " et route" : ""}${b.back ? ", aller et retour" : ", aller"}`;
+/** « Environ 3 000 €, bateau, route et papiers, aller et retour », pour la ligne Budget du récap. */
+export const budgetSummary = (b: ReturnType<typeof tripBudget>) => {
+  const parts = [
+    "bateau",
+    b.road ? "route" : null,
+    b.fees ? "papiers" : null,
+    b.own ? "vos dépenses" : null,
+  ]
+    .filter(Boolean)
+    .join(", ")
+    .replace(/, ([^,]+)$/, " et $1");
+  return `Environ ${nice(b.total)}, ${parts}${b.back ? ", aller et retour" : ", aller"}`;
+};
+
+type Slice = {
+  key: string;
+  label: string;
+  icon: LucideIcon;
+  color: string;
+  amount: number;
+  /** En mots simples : comment ce chiffre est obtenu. */
+  how: ReactNode;
+  mine?: boolean;
+};
+
+const EXTRA_FIELDS: {
+  key: keyof BudgetExtras;
+  label: string;
+  icon: LucideIcon;
+  color: string;
+  hint: string;
+}[] = [
+  {
+    key: "hotel",
+    label: "Hôtel d'étape",
+    icon: BedDouble,
+    color: "#e2725b",
+    hint: "Une nuit sur la route, à l'aller ou au retour.",
+  },
+  {
+    key: "food",
+    label: "Repas et pauses",
+    icon: UtensilsCrossed,
+    color: "#c9579b",
+    hint: "Sur la route et à bord : le prix du bateau ne les compte pas.",
+  },
+  {
+    key: "onsite",
+    label: "Au bled",
+    icon: Gift,
+    color: "#3aa8a0",
+    hint: "Cadeaux, sorties, essence en Algérie…",
+  },
+];
+
+const pct = (part: number, total: number) => (total > 0 ? Math.round((part / total) * 100) : 0);
+const euros = (n: number) => `${Math.round(n).toLocaleString("fr-FR")} €`;
+
+/** Le camembert (anneau) : une part par poste, le total au centre. */
+function BudgetDonut({ slices, total }: { slices: Slice[]; total: number }) {
+  let offset = 0;
+  const gap = slices.length > 1 ? 0.8 : 0;
+  return (
+    <div className="bw-bdonut">
+      <svg viewBox="0 0 120 120" aria-hidden>
+        <circle cx="60" cy="60" r="46" className="bw-bdonut__track" />
+        {slices.map((slice) => {
+          const share = total > 0 ? (slice.amount / total) * 100 : 0;
+          const dash = Math.max(0, share - gap);
+          const el = (
+            <circle
+              key={slice.key}
+              cx="60"
+              cy="60"
+              r="46"
+              pathLength={100}
+              stroke={slice.color}
+              strokeDasharray={`${dash} ${100 - dash}`}
+              strokeDashoffset={-offset}
+            />
+          );
+          offset += share;
+          return el;
+        })}
+      </svg>
+      <span className="bw-bdonut__center">
+        <b>{nice(total)}</b>
+        <small>au total</small>
+      </span>
+    </div>
+  );
+}
 
 /**
- * « Votre budget » : un chiffre arrondi d'abord, puis ce qu'il comprend, poste par poste, en mots
- * simples. La fourchette dit seulement pourquoi le prix peut bouger.
+ * « Votre budget » : un chiffre arrondi d'abord, le camembert des postes, puis chaque poste
+ * expliqué en mots simples (on touche une ligne pour voir le calcul). Le voyageur peut ajouter
+ * ses propres dépenses : elles entrent dans le total et dans le camembert.
  */
 export function TripBudget({
   plan,
@@ -91,17 +218,22 @@ export function TripBudget({
   toPort,
   people,
   onDetail,
+  papers = null,
+  onExtras,
 }: {
   plan: CompanionPlan;
   fromChoice: PortChoice | null;
   toPort: Port | null;
   people: { adults: number; children: number };
   onDetail: () => void;
+  papers?: PapersFees | null;
+  /** Fourni : le voyageur peut ajouter ses dépenses (hôtel, repas, sur place). */
+  onExtras?: (extras: BudgetExtras) => void;
 }) {
+  const [editing, setEditing] = useState(false);
   if (!fromChoice || !toPort) return null;
-  const b = tripBudget(plan, fromChoice, toPort, people);
+  const b = tripBudget(plan, fromChoice, toPort, people, papers);
   const line = `${fromChoice.port.name} → ${toPort.name}`;
-  const lineBack = `${toPort.name} → ${fromChoice.port.name}`;
   const vehicle = VEHICLES.find((v) => v.id === plan.vehicle);
   const who = [
     countOf(Math.max(1, people.adults), "adulte"),
@@ -109,38 +241,103 @@ export function TripBudget({
   ]
     .filter(Boolean)
     .join(", ");
-  const withWhat = plan.vehicle === "none" ? "sans voiture" : `et la ${vehicle?.label.toLowerCase() ?? "voiture"}`;
+  const withWhat =
+    plan.vehicle === "none" ? "sans voiture" : `et la ${vehicle?.label.toLowerCase() ?? "voiture"}`;
   const outDay = planHasWhen(plan) ? dayMonth(planDay(plan)) : null;
-  const items: { key: string; label: string; detail: string; amount: number }[] = [
+  const km = Math.round(b.roadKm).toLocaleString("fr-FR");
+  const extras = plan.extras ?? {};
+  const slices: Slice[] = [
     {
-      key: "out",
-      label: "Le bateau à l'aller",
-      detail: [line, outDay, seasonLabels[b.out.season].toLowerCase()].filter(Boolean).join(" · "),
-      amount: b.out.amount,
+      key: "boat",
+      label: "La traversée",
+      icon: Ship,
+      color: "#1f6fb2",
+      amount: b.out.amount + (b.back?.amount ?? 0),
+      how: (
+        <>
+          Aller {line}
+          {outDay ? ` le ${outDay}` : ""} : ≈ {nice(b.out.amount)} (
+          {seasonLabels[b.out.season].toLowerCase()}).
+          {b.back ? (
+            <>
+              {" "}
+              Retour{plan.returnDate ? ` le ${dayMonth(plan.returnDate)}` : ""} : ≈{" "}
+              {nice(b.back.amount)} ({seasonLabels[b.back.season].toLowerCase()}).
+            </>
+          ) : (
+            " Pas de retour choisi : il n'est pas compté."
+          )}{" "}
+          C'est le prix moyen de la ligne pour {who} {withWhat}.
+        </>
+      ),
     },
-    ...(b.back
+    ...(b.fuel
       ? [
           {
-            key: "back",
-            label: "Le bateau au retour",
-            detail: [lineBack, plan.returnDate ? dayMonth(plan.returnDate) : null, seasonLabels[b.back.season].toLowerCase()]
-              .filter(Boolean)
-              .join(" · "),
-            amount: b.back.amount,
+            key: "fuel",
+            label: "L'essence",
+            icon: Fuel,
+            color: "#e0a030",
+            amount: b.fuel,
+            how: (
+              <>
+                {plan.home?.name ?? "Chez vous"} → {fromChoice.port.name} : environ {km} km
+                {b.trips > 1 ? ", à faire 2 fois (aller et retour)" : ""}. Une voiture moyenne
+                consomme {FUEL_L_PER_100} L aux 100 km, à{" "}
+                {FUEL_EURO_PER_L.toLocaleString("fr-FR")} € le litre.
+              </>
+            ),
           },
         ]
       : []),
-    ...(b.road
+    ...(b.tolls
       ? [
           {
-            key: "road",
-            label: plan.country === "FR" ? "L'essence et les péages" : "L'essence",
-            detail: `${plan.home?.name ?? "Chez vous"} ↔ ${fromChoice.port.name}${b.back ? ", aller et retour" : ""}`,
-            amount: b.road,
+            key: "tolls",
+            label: "Les péages",
+            icon: Coins,
+            color: "#8a6bd1",
+            amount: b.tolls,
+            how: (
+              <>
+                Les autoroutes françaises coûtent environ {Math.round(TOLL_EURO_PER_KM * 100)}{" "}
+                centimes par kilomètre : {km} km{b.trips > 1 ? " × 2" : ""}.
+              </>
+            ),
           },
         ]
       : []),
+    ...(b.fees && papers
+      ? [
+          {
+            key: "papers",
+            label: "Les papiers",
+            icon: FileText,
+            color: "#2e9e6a",
+            amount: b.fees,
+            how: (
+              <>
+                Les frais connus de votre liste :{" "}
+                {papers.items.map((item) => `${item.label} (${euros(item.eur)})`).join(", ")}. Les
+                papiers sans tarif officiel publié ne sont pas comptés.
+              </>
+            ),
+          },
+        ]
+      : []),
+    ...EXTRA_FIELDS.filter((field) => (extras[field.key] ?? 0) > 0).map((field) => ({
+      key: field.key,
+      label: field.label,
+      icon: field.icon,
+      color: field.color,
+      amount: extras[field.key]!,
+      how: <>Le montant que vous avez indiqué. {field.hint}</>,
+      mine: true,
+    })),
   ];
+  const biggest = [...slices].sort((x, y) => y.amount - x.amount)[0]!;
+  // Une longue route jusqu'au port : la nuit d'étape mérite d'être prévue.
+  const driveHours = b.roadKm / 90;
   return (
     <section className="bw-tbudget" aria-labelledby="budget-estime">
       <p className="bw-tbudget__head">
@@ -151,26 +348,99 @@ export function TripBudget({
       <p className="bw-tbudget__who">
         Pour {who} {withWhat}, {b.back ? "aller et retour" : "l'aller seulement"}.
       </p>
-      <div className="bw-tbudget__bar" aria-hidden>
-        {items.map((item) => (
-          <span key={item.key} data-k={item.key} style={{ flexGrow: item.amount }} />
-        ))}
+      <div className="bw-tbudget__chart">
+        <BudgetDonut slices={slices} total={b.total} />
+        <ul className="bw-tbudget__legend">
+          {slices.map((slice) => {
+            const Icon = slice.icon;
+            return (
+              <li key={slice.key} style={{ "--k": slice.color } as CSSProperties}>
+                <details>
+                  <summary>
+                    <span className="bw-tbudget__ico" aria-hidden>
+                      <Icon size={15} />
+                    </span>
+                    <span className="bw-tbudget__lbl">
+                      {slice.label}
+                      {slice.mine ? <em>ajouté par vous</em> : null}
+                    </span>
+                    <span className="bw-tbudget__amt">
+                      {nice(slice.amount)}
+                      <small>{pct(slice.amount, b.total)} %</small>
+                    </span>
+                    <ChevronDown size={14} className="bw-tbudget__chev" aria-hidden />
+                  </summary>
+                  <p className="bw-tbudget__how">{slice.how}</p>
+                </details>
+              </li>
+            );
+          })}
+        </ul>
       </div>
-      <ul className="bw-tbudget__items">
-        {items.map((item) => (
-          <li key={item.key} data-k={item.key}>
-            <span className="bw-tbudget__dot" aria-hidden />
-            <span className="min-w-0">
-              <b>{item.label}</b>
-              <small>{item.detail}</small>
+      <p className="bw-tbudget__tip">
+        <Lightbulb size={16} aria-hidden />
+        <span>
+          Sur {nice(b.total)}, la plus grosse part est <b>{biggest.label.toLowerCase()}</b> (
+          {pct(biggest.amount, b.total)} %). Touchez une ligne pour voir le calcul.
+        </span>
+      </p>
+      {onExtras ? (
+        <div className="bw-tbudget__own">
+          <button
+            type="button"
+            className="bw-tbudget__ownbtn"
+            aria-expanded={editing}
+            onClick={() => setEditing((v) => !v)}
+          >
+            <Plus size={15} aria-hidden />
+            <span className="flex-1 text-left">
+              {b.own ? `Mes autres dépenses : ${nice(b.own)}` : "Ajouter mes autres dépenses"}
             </span>
-            <span className="bw-tbudget__amount">≈ {nice(item.amount)}</span>
-          </li>
-        ))}
-      </ul>
+            <ChevronDown size={14} className={editing ? "rotate-180" : ""} aria-hidden />
+          </button>
+          {editing ? (
+            <div className="bw-tbudget__fields">
+              {EXTRA_FIELDS.map((field) => {
+                const Icon = field.icon;
+                return (
+                  <label key={field.key} style={{ "--k": field.color } as CSSProperties}>
+                    <span className="bw-tbudget__ico" aria-hidden>
+                      <Icon size={15} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <b>{field.label}</b>
+                      <small>
+                        {field.key === "hotel" && driveHours >= 7
+                          ? `Environ ${Math.round(driveHours)} h de route jusqu'au port : une nuit d'étape peut être utile.`
+                          : field.hint}
+                      </small>
+                    </span>
+                    <span className="bw-tbudget__input">
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min={0}
+                        step={10}
+                        placeholder="0"
+                        value={extras[field.key] ?? ""}
+                        onChange={(event) => {
+                          const value = Math.max(0, Math.round(Number(event.target.value) || 0));
+                          onExtras({ ...extras, [field.key]: value || undefined });
+                        }}
+                        aria-label={`${field.label}, en euros`}
+                      />
+                      €
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       <p className="bw-tbudget__note">
         Le prix réel peut aller de {nice(b.low)} à {nice(b.high)} selon la compagnie, la date et
-        votre place à bord. Les repas à bord et la route en Algérie ne sont pas comptés.{" "}
+        votre place à bord.{" "}
         <button type="button" onClick={onDetail}>
           D'où viennent ces chiffres ?
         </button>

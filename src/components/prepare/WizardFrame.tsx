@@ -64,7 +64,7 @@ export function WizardNav({
               ? `Revenir à l'étape ${ctx.backLabel}`
               : "Question précédente"
           }
-          className="inline-flex min-h-12 items-center gap-2 rounded-xl px-3 text-sm font-semibold hover:bg-secondary"
+          className="inline-flex min-h-12 shrink-0 items-center gap-1.5 rounded-xl px-2 text-sm font-semibold hover:bg-secondary sm:px-3"
         >
           <ArrowLeft size={16} aria-hidden /> {backText}
         </button>
@@ -77,10 +77,10 @@ export function WizardNav({
           data-wiz-next
           onClick={next.onClick}
           disabled={next.disabled}
-          className="inline-flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground shadow-md hover:bg-primary/90 disabled:opacity-50"
+          className="inline-flex min-h-12 min-w-0 max-w-[68%] items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold leading-tight text-primary-foreground shadow-md hover:bg-primary/90 disabled:opacity-50 sm:max-w-none sm:px-5"
         >
           {Icon ? <Icon size={16} aria-hidden /> : null}
-          <span className="truncate">{next.label}</span>
+          <span className="text-balance text-center">{next.label}</span>
           {Icon ? null : <ArrowRight size={16} className="shrink-0" aria-hidden />}
         </button>
       ) : null}

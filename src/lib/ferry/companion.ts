@@ -32,6 +32,8 @@ export type CompanionPlan = {
   flexDays?: number;
   /** « J'ai mon billet » : coché par le voyageur, jamais déduit ni vérifié. */
   ticket?: boolean;
+  /** Les autres dépenses que le voyageur ajoute lui-même au budget (en euros, déclaratif). */
+  extras?: BudgetExtras;
   /** Le calendrier de vacances scolaires affiché : « FR », « FR:C », « BE:FR »… */
   holidays: string;
   /** Le départ se cale sur les vacances scolaires : on montre leur calendrier (non par défaut). */
@@ -47,6 +49,9 @@ export type CompanionPlan = {
   carDone: string[];
   done: CompanionStep[];
 };
+
+/** Dépenses ajoutées à la main dans « Mon budget » : hôtel d'étape, repas de la route, sur place. */
+export type BudgetExtras = { hotel?: number; food?: number; onsite?: number };
 
 export const COMPANION_KEY = "bledway:compagnon:v1";
 
@@ -363,7 +368,7 @@ export const companionStepTitles: Record<CompanionStep, string> = {
   car: "Ma voiture",
   route: "Ma route jusqu'à destination",
   budget: "Mon budget",
-  book: "Réserver ma traversée",
+  book: "Mon billet",
 };
 
 export const formatDuration = (minutes: number | null) => {

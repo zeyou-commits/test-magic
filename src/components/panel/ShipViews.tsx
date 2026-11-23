@@ -34,6 +34,7 @@ import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import { useFleet } from "@/lib/ferry/useFleet";
 import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
 import { departureForSignal } from "@/lib/ferry/tracking";
+import { enterRoom } from "@/lib/ferry/chat";
 import { portTimeZone } from "@/lib/ferry/time";
 import { formatDateTime } from "@/lib/ferry/format";
 import type { Selection } from "@/lib/ferry/types";
@@ -314,6 +315,7 @@ export function VesselView({
       ) : null}
       <VesselHub
         departures={roomCrossings}
+        currentId={departure && roomCrossings.some((d) => d.id === departure.id) ? departure.id : null}
         onWhere={
           departure
             ? () => {
@@ -520,12 +522,15 @@ export function DepartureView({
 /** Les tuiles de la fiche bateau, et le choix de la traversée ou de la ligne. */
 function VesselHub({
   departures,
+  currentId,
   onWhere,
   signals,
   onSignal,
   onSelect,
 }: {
   departures: { id: string; departure_at: string; route_id: string }[];
+  /** La traversée affichée sur la fiche (en mer, ou la prochaine) : « Salon » ouvre la sienne. */
+  currentId: string | null;
   onWhere: (() => void) | undefined;
   signals: number;
   onSignal: () => void;
@@ -537,7 +542,19 @@ function VesselHub({
   const tiles: HubTile[] = [
     ...(departures.length
       ? ([
-          { id: "salon", label: "Salon", count: total, onClick: () => setPicker("salon") },
+          {
+            id: "salon",
+            label: "Salon",
+            count: currentId ? (counts?.get(currentId) ?? total) : total,
+            // La fiche montre déjà une traversée : on entre dans son salon, sans passer par la
+            // liste (les autres salons restent à un geste, depuis le salon).
+            onClick: currentId
+              ? () => {
+                  onSelect({ type: "departure", id: currentId });
+                  enterRoom("crossing", currentId);
+                }
+              : () => setPicker("salon"),
+          },
           { id: "questions", label: "Questions", onClick: () => setPicker("questions") },
         ] as HubTile[])
       : []),

@@ -1301,3 +1301,120 @@
   border-color: #0e7a43;
   box-shadow: 0 0 0 3px #0e7a4322;
 }
+
+/* ---- Espace compagnie : écran d'attente ou de blocage (Gate) ---- */
+.bw-gate {
+  min-height: calc(100dvh - 120px);
+  display: grid;
+  place-items: center;
+  padding: 32px 16px;
+  background:
+    radial-gradient(60% 50% at 50% 0%, color-mix(in oklab, var(--primary) 12%, transparent), transparent 70%),
+    var(--background);
+}
+.bw-gate__card {
+  width: min(100%, 460px);
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  background: var(--card);
+  padding: 28px 24px 22px;
+  box-shadow: 0 24px 60px -28px rgb(10 40 30 / 0.35);
+}
+.bw-gate__art {
+  position: relative;
+  width: 112px;
+  height: 104px;
+  margin: 0 auto 6px;
+  display: grid;
+  place-items: center;
+}
+.bw-gate__art img { position: relative; width: 96px; height: 96px; object-fit: contain; }
+.bw-gate__halo {
+  position: absolute;
+  inset: 8px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--primary) 14%, transparent);
+}
+.bw-gate[data-tone="error"] .bw-gate__halo { background: color-mix(in oklab, #f6c445 28%, transparent); animation: bw-gate-pulse 2.4s ease-in-out infinite; }
+.bw-gate__badge {
+  position: absolute;
+  right: 2px;
+  top: 4px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: 0 0 0 4px var(--card);
+}
+.bw-gate[data-tone="error"] .bw-gate__badge { background: #f6c445; color: #3a2a00; }
+.bw-gate__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+.bw-gate__title {
+  margin-top: 6px;
+  font-family: var(--font-display, inherit);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+.bw-gate__body {
+  margin-top: 8px;
+  display: grid;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted-foreground);
+}
+.bw-gate__list {
+  display: grid;
+  gap: 6px;
+  margin: 2px auto 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: color-mix(in oklab, var(--primary) 6%, transparent);
+  text-align: left;
+  color: var(--foreground);
+  font-size: 13.5px;
+}
+.bw-gate__list li { display: flex; align-items: center; gap: 8px; }
+.bw-gate__list svg { flex: none; color: var(--primary); }
+.bw-gate__acts {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.bw-gate__b1,
+.bw-gate__b2 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 20px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 800;
+}
+.bw-gate__b1 { background: var(--primary); color: var(--primary-foreground); box-shadow: 0 8px 20px -10px var(--primary); }
+.bw-gate__b1:disabled { opacity: 0.75; }
+.bw-gate__b2 { border: 1px solid var(--border); background: var(--background); color: var(--foreground); }
+.bw-gate__b1:hover:not(:disabled) { filter: brightness(1.06); }
+.bw-gate__b2:hover { background: var(--secondary); }
+.bw-gate__foot { margin-top: 14px; font-size: 12px; color: var(--muted-foreground); }
+.bw-gate__foot code { font-size: 11px; padding: 1px 6px; border-radius: 6px; background: var(--secondary); }
+@keyframes bw-gate-pulse { 50% { transform: scale(1.08); opacity: 0.7; } }
+@media (prefers-reduced-motion: reduce) { .bw-gate__halo { animation: none !important; } }

@@ -83,6 +83,8 @@ import { HomeOnWater } from "@/components/home/HomeOnWater";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import type { ItineraryMapPreview } from "@/lib/ferry/itinerary";
 import { toast } from "sonner";
+import { favoriteWhen, useFavoriteCrossings } from "@/lib/ferry/favoriteCrossings";
+import { useTravelAction } from "@/hooks/useTravelAction";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmbeddedRoom } from "@/components/panel/LiveRoom";
@@ -509,9 +511,62 @@ function Index() {
   }, [initialSearch]);
   // Aucun voyage à montrer : on le dit, et la carte reste telle quelle.
   const hasVoyageTrip = Boolean(voyageTrip);
+  // Une traversée en favori (cœur) : « Mon voyage » propose d'en faire la sienne, d'un geste.
+  const favorites = useFavoriteCrossings();
+  const favoritesRef = useRef(favorites);
+  favoritesRef.current = favorites;
+  const requestTravel = useTravelAction();
   useEffect(() => {
     if (!voyageOn || !voyageReady || hasVoyageTrip) return;
     setVoyageOn(false);
+    const favorite = favoritesRef.current[0];
+    const prepared = loadPlan()?.started ?? false;
+    // Un favori existe : c'est lui que la 504 propose de suivre comme « Ma traversée ».
+    if (favorite) {
+      toast.custom(
+        (id) => (
+          <Bw504Note
+            title="Votre traversée est dans vos favoris ?"
+            actions={
+              <>
+                <Bw504Button
+                  primary
+                  onClick={() => {
+                    toast.dismiss(id);
+                    requestTravel({
+                      type: "follow",
+                      kind: "departure",
+                      targetId: favorite.id,
+                      label: favorite.label,
+                      traveller: true,
+                      purpose: "voyageur",
+                    });
+                  }}
+                >
+                  En faire mon voyage
+                </Bw504Button>
+                {prepared ? (
+                  <Bw504Button
+                    onClick={() => {
+                      toast.dismiss(id);
+                      window.location.assign("/preparer-mon-voyage");
+                    }}
+                  >
+                    Ma préparation
+                  </Bw504Button>
+                ) : null}
+              </>
+            }
+          >
+            {favorite.label}
+            {favorite.vesselName ? ` (${favorite.vesselName})` : ""}, {favoriteWhen(favorite.departureAt)}.
+            Si c'est votre billet, je la suis pas à pas, avec ce que vous avez préparé.
+          </Bw504Note>
+        ),
+        { duration: 12000 },
+      );
+      return;
+    }
     // La 504 dit quoi faire : ajouter son billet, ou simuler le trajet en attendant.
     toast.custom(
       (id) => (

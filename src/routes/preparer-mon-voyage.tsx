@@ -104,6 +104,7 @@ import {
   nextMonths,
   planDay,
   planFare,
+  planHasWhen,
   planWhenLabel,
   RESIDENCE_COUNTRIES,
   saveItinerarySeed,
@@ -154,6 +155,9 @@ import { ChapterBreak } from "@/components/prepare/ChapterBreak";
 import { RecapPreview, type PreviewRow } from "@/components/prepare/RecapPreview";
 import { isCheckable, planCategory } from "@/lib/papers/planCategories";
 import { PaperKpis } from "@/components/papers/RecapSheet";
+import { TripLink, useLinkedTrip, openMyVoyage } from "@/components/prepare/TripLink";
+import { TripGlance, type GlanceTile } from "@/components/prepare/TripGlance";
+import type { PapersFees } from "@/components/prepare/TripOutlook";
 
 const PATH = "/preparer-mon-voyage";
 
@@ -218,7 +222,7 @@ const stepArt: Record<
   },
   book: {
     icon: Ticket,
-    short: "Réserver",
+    short: "Billet",
     benefit: "Les traversées de votre date, prêtes à comparer.",
     scene: "/illustrations/voyage/cote-en-vue.webp",
     sceneAlt: "Sur le pont du ferry, la côte algérienne en vue",
@@ -585,7 +589,17 @@ function CompanionPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded, plan.started, plan.vehicle, syncAdults, syncChildren]);
 
-  const summaries = useSummaries(plan, papers, fromChoice, toPort);
+  // Les frais connus de la liste de papiers (visa, dossier) entrent dans le budget.
+  const papersFees = useMemo<PapersFees | null>(() => {
+    if (!papers.finished) return null;
+    const items = tasksFor(papers.answers)
+      .filter((task) => (task.cost?.eur ?? 0) > 0)
+      .map((task) => ({ label: task.title, eur: task.cost!.eur }));
+    return items.length ? { eur: items.reduce((sum, item) => sum + item.eur, 0), items } : null;
+  }, [papers.answers, papers.finished]);
+  // La traversée déjà déclarée « Ma traversée » (Mon voyage) : le billet est pris.
+  const linkedTrip = useLinkedTrip();
+  const summaries = useSummaries(plan, papers, fromChoice, toPort, papersFees, linkedTrip);
   useDeadlineSync(user?.id ?? null, plan, papers, loaded && papers.loaded);
 
   const nextStep = steps.find((step) => !isDone(step) && !isLocked(step)) ?? null;
@@ -658,6 +672,8 @@ function CompanionPage() {
           answers={papers.answers}
           fromChoice={fromChoice}
           toPort={toPort}
+          papersFees={papersFees}
+          onExtras={(extras) => patch({ extras })}
           onDone={() => complete("budget")}
           onOpenRoute={() => openStep("route")}
         />
@@ -769,7 +785,7 @@ function CompanionPage() {
                 <span
                   className={`shrink-0 rounded-full px-3 py-1 text-sm font-bold ${completeAll ? "bg-primary text-primary-foreground" : "bg-secondary"}`}
                 >
-                  {completeAll ? "Récap complet" : `${doneCount}/${steps.length}`}
+                  {completeAll ? "Récap prêt" : `${doneCount}/${steps.length}`}
                   <span className="sr-only"> étapes faites</span>
                 </span>
               </div>
@@ -813,6 +829,9 @@ function CompanionPage() {
                     <ReadyDashboard
                       plan={plan}
                       papers={papers}
+                      papersFees={papersFees}
+                      onExtras={(extras) => patch({ extras })}
+                      ticket={Boolean(plan.ticket || linkedTrip)}
                       rows={previewRows.map((row) => ({
                         ...row,
                         onClick: () => openStep(rowStep[row.label] ?? "profile"),
@@ -915,6 +934,8 @@ function useSummaries(
   papers: PapersState,
   fromChoice: PortChoice | null,
   toPort: Port | null,
+  papersFees: PapersFees | null = null,
+  linkedTrip: { label: string; at: string } | null = null,
 ): Record<CompanionStep, string | null> {
   const { adults, children } = people(papers.answers);
   const vehicle = VEHICLES.find((v) => v.id === plan.vehicle);
@@ -950,11 +971,13 @@ function useSummaries(
     // Le même chiffre que le bloc « Votre budget » : bateau et route, arrondi.
     budget:
       fromChoice && toPort
-        ? budgetSummary(tripBudget(plan, fromChoice, toPort, { adults, children }))
+        ? budgetSummary(tripBudget(plan, fromChoice, toPort, { adults, children }, papersFees))
         : null,
-    book: line
-      ? `${line} · ${planWhenLabel(plan)} · ${plan.ticket ? "billet pris" : "billet à prendre"}`
-      : null,
+    book: linkedTrip
+      ? `${linkedTrip.label} · billet pris, suivi dans Mon voyage`
+      : line
+        ? `${line} · ${planWhenLabel(plan)} · ${plan.ticket ? "billet pris" : "billet à prendre"}`
+        : null,
   };
 }
 
@@ -1830,6 +1853,8 @@ function BudgetStep({
   answers,
   fromChoice,
   toPort,
+  papersFees,
+  onExtras,
   onDone,
   onOpenRoute,
 }: {
@@ -1837,6 +1862,8 @@ function BudgetStep({
   answers: Answers;
   fromChoice: PortChoice | null;
   toPort: Port | null;
+  papersFees: PapersFees | null;
+  onExtras: (extras: NonNullable<CompanionPlan["extras"]>) => void;
   onDone: () => void;
   onOpenRoute: () => void;
 }) {
@@ -1873,6 +1900,8 @@ function BudgetStep({
         fromChoice={fromChoice}
         toPort={toPort}
         people={group}
+        papers={papersFees}
+        onExtras={onExtras}
         onDetail={() =>
           document.getElementById("budget-aller")?.scrollIntoView({ block: "start", behavior: "smooth" })
         }
@@ -1950,7 +1979,7 @@ function BudgetStep({
         </a>
       </div>
       <div className="mt-6">
-        <NextButton label="Continuer : réserver" onClick={onDone} />
+        <NextButton label="Continuer : mon billet" onClick={onDone} />
       </div>
     </div>
   );
@@ -2013,6 +2042,7 @@ function BookStep({
         ))}
       </dl>
       <div className="mt-4 grid gap-3">
+        <TripLink fromPortId={fromChoice?.port.id ?? null} toPortId={toPort?.id ?? null} />
         {/* Le budget vient d'être vu à l'étape d'avant et revient dans le récap : ici, un lien suffit. */}
         <button
           type="button"
@@ -2037,7 +2067,7 @@ function BookStep({
           <span>
             J'ai mon billet
             <span className="block text-xs font-normal text-muted-foreground">
-              À cocher quand vous l'avez : la ligne « Réserver » de votre liste passe alors à fait.
+              À cocher quand vous l'avez : la ligne « Billet » de votre récap passe alors à fait.
             </span>
           </span>
         </label>
@@ -3094,6 +3124,9 @@ function TodoItem({
 function ReadyDashboard({
   plan,
   papers,
+  papersFees,
+  onExtras,
+  ticket,
   rows,
   fromChoice,
   toPort,
@@ -3104,6 +3137,10 @@ function ReadyDashboard({
 }: {
   plan: CompanionPlan;
   papers: PapersState;
+  papersFees: PapersFees | null;
+  onExtras: (extras: NonNullable<CompanionPlan["extras"]>) => void;
+  /** Billet coché, ou traversée déjà suivie dans « Mon voyage ». */
+  ticket: boolean;
   rows: PreviewRow[];
   fromChoice: PortChoice | null;
   toPort: Port | null;
@@ -3127,6 +3164,88 @@ function ReadyDashboard({
       ),
     [plan, papers.answers.travellers],
   );
+  // Les papiers : seulement ce qui se coche (même décompte que la liste), voiture comprise.
+  const checkable = tasks.filter((t) => isCheckable(planCategory(t)));
+  const withCar = plan.vehicle !== "none";
+  const papersTotal = checkable.length + (withCar ? carItems.length : 0);
+  const papersReady =
+    checkable.filter((t) => papers.done.includes(t.id)).length +
+    (withCar ? carItems.filter((item) => plan.carDone.includes(item.id)).length : 0);
+  const group = people(papers.answers);
+  const vehicle = VEHICLES.find((v) => v.id === plan.vehicle);
+  const duration =
+    fromChoice?.lines.find((l) => l.to.id === toPort?.id)?.route.typical_duration_minutes ?? null;
+  const budget =
+    fromChoice && toPort ? tripBudget(plan, fromChoice, toPort, group, papersFees) : null;
+  const daysLeft = planHasWhen(plan)
+    ? Math.round(
+        (Date.parse(`${earliestDay(plan)}T12:00:00`) - Date.parse(`${todayKey()}T12:00:00`)) /
+          86_400_000,
+      )
+    : null;
+  const glance: GlanceTile[] = [
+    {
+      key: "profile",
+      label: "Départ",
+      icon: CalendarDays,
+      value: planHasWhen(plan) ? shortDate(planDay(plan)) : "Date à choisir",
+      detail: [
+        [plural(group.adults, "adulte"), group.children ? plural(group.children, "enfant") : null]
+          .filter(Boolean)
+          .join(", "),
+        plan.vehicle === "none" ? "sans voiture" : vehicle?.label.toLowerCase(),
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      status: planHasWhen(plan) ? "ok" : "todo",
+      onClick: () => onOpenStep("profile"),
+    },
+    {
+      key: "papers",
+      label: "Papiers",
+      icon: FileText,
+      value: papersTotal ? `${papersReady}/${papersTotal}` : "Rien à prévoir",
+      detail: papersTotal
+        ? `papiers prêts${withCar ? ", voiture comprise" : ""}`
+        : "aucun papier à cocher",
+      status: !papers.finished ? "missing" : papersReady >= papersTotal ? "ok" : "todo",
+      ...(papersTotal ? { progress: papersReady / papersTotal } : {}),
+      onClick: () => onOpenStep("papers"),
+    },
+    {
+      key: "route",
+      label: "Route",
+      icon: RouteIcon,
+      value: fromChoice && toPort ? `${fromChoice.port.name} → ${toPort.name}` : "Ports à choisir",
+      detail: duration ? `${formatDuration(duration)} de traversée` : "le trajet de porte à porte",
+      status: fromChoice && toPort ? "ok" : "missing",
+      onClick: () => onOpenStep("route"),
+    },
+    {
+      key: "budget",
+      label: "Budget",
+      icon: Wallet,
+      value: budget
+        ? `≈ ${(Math.round(budget.total / 100) * 100).toLocaleString("fr-FR")} €`
+        : "À calculer",
+      detail: budget
+        ? budget.back
+          ? "aller et retour, tout compris"
+          : "l'aller, tout compris"
+        : "il faut vos ports",
+      status: budget ? "ok" : "missing",
+      onClick: () => onOpenStep("budget"),
+    },
+    {
+      key: "book",
+      label: "Billet",
+      icon: Ticket,
+      value: ticket ? "Pris" : "À prendre",
+      detail: ticket ? "suivi dans Mon voyage" : "réservez dès que possible",
+      status: ticket ? "ok" : "todo",
+      onClick: ticket && !plan.ticket ? openMyVoyage : () => onOpenStep("book"),
+    },
+  ];
   const named = papers.answers.travellers.filter((t) => t.name?.trim()).map((t) => t.name!.trim());
   const title = named.length
     ? `Le voyage de ${named.length > 1 ? `${named.slice(0, -1).join(", ")} et ${named.at(-1)}` : named[0]}`
@@ -3137,21 +3256,18 @@ function ReadyDashboard({
         Votre récap est prêt
       </h2>
       <div className="bw-readygrid__main">
-      {/* Le fil du voyage : chaque ligne rouvre son étape. */}
-      <div className="bw-ready__recap">
-        <RecapPreview
-          title={title}
-          subtitle={capitalize(planWhenLabel(plan))}
-          rows={rows}
-          filled={3}
-          fresh={null}
-        />
-      </div>
-      <PaperKpis
-        tasks={tasks}
-        done={papers.done}
-        deadlines={deadlines}
-        onPick={() => onOpenStep("papers")}
+      {/* Le récap en un coup d'œil : chaque tuile dit son état et rouvre son étape. */}
+      <TripGlance
+        title={title}
+        when={capitalize(planWhenLabel(plan))}
+        daysLeft={daysLeft}
+        line={fromChoice && toPort ? `${fromChoice.port.name} → ${toPort.name}` : null}
+        tiles={glance}
+      />
+      <TripLink
+        className="mt-3"
+        fromPortId={fromChoice?.port.id ?? null}
+        toPortId={toPort?.id ?? null}
       />
       {missing.length ? (
         <Bw504Note
@@ -3193,6 +3309,8 @@ function ReadyDashboard({
           fromChoice={fromChoice}
           toPort={toPort}
           people={people(papers.answers)}
+          papers={papersFees}
+          onExtras={onExtras}
           onDetail={() => onOpenStep("budget")}
         />
       </div>

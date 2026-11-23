@@ -331,36 +331,6 @@ export function bookingSearch(plan: CompanionPlan) {
   return `/?${params.toString()}`;
 }
 
-/** L'itinéraire de la carte, prérempli par le compagnon (lu une fois à l'ouverture). */
-export const ITINERARY_SEED_KEY = "bledway:itinerary-seed:v1";
-export type ItinerarySeed = {
-  origin: string;
-  originPoint: [number, number] | null;
-  destination: string;
-  destinationPoint: [number, number] | null;
-  period: string;
-};
-
-export function saveItinerarySeed(seed: ItinerarySeed) {
-  try {
-    window.sessionStorage.setItem(ITINERARY_SEED_KEY, JSON.stringify(seed));
-  } catch {
-    /* facultatif */
-  }
-}
-
-export function takeItinerarySeed(): ItinerarySeed | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.sessionStorage.getItem(ITINERARY_SEED_KEY);
-    if (!raw) return null;
-    window.sessionStorage.removeItem(ITINERARY_SEED_KEY);
-    return JSON.parse(raw) as ItinerarySeed;
-  } catch {
-    return null;
-  }
-}
-
 /** Les titres des étapes, partout où l'on parle du compagnon (page, accueil de la carte). */
 export const companionStepTitles: Record<CompanionStep, string> = {
   profile: "Mon départ en 3 questions",

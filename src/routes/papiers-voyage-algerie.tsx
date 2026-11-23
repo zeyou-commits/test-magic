@@ -1,16 +1,15 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { Breadcrumbs, FaqSection } from "@/components/editorial/Editorial";
 import {
   PapersDelais,
   PapersResult,
-  PapersWizard,
   Sources,
   papersSteps,
   usePapersState,
-  type PapersStep,
 } from "@/components/papers/PapersFlow";
+import { PapersQuestions } from "@/components/papers/PapersQuestions";
 import { FORMALITES_CHECKED } from "@/content/formalites";
 import { displayDate, seoHead } from "@/lib/seo/site";
 
@@ -60,7 +59,6 @@ const faq = [
 
 function PapersPage() {
   const state = usePapersState();
-  const [step, setStep] = useState<PapersStep>("home");
   const top = useRef<HTMLDivElement>(null);
   const toTop = () =>
     requestAnimationFrame(() =>
@@ -80,37 +78,35 @@ function PapersPage() {
           setDone={state.setDone}
           onEdit={() => {
             state.setFinished(false);
-            setStep("home");
             toTop();
           }}
         />
       ) : (
         <section className="mx-auto max-w-2xl py-6 md:py-10" aria-labelledby="question">
-          <PapersWizard
-            state={state}
-            steps={steps}
-            step={step}
-            setStep={(next) => {
-              setStep(next);
-              toTop();
-            }}
-            onFinish={() => {
-              state.setFinished(true);
-              toTop();
-            }}
-          />
-          {step === "home" ? (
-            <p className="mt-6 text-sm text-muted-foreground">
-              Quatre ou cinq questions, une minute. Vos réponses restent sur cet appareil. Règles
-              relues le {displayDate(FORMALITES_CHECKED)}.{" "}
-              <a
-                href="/preparer-mon-voyage"
-                className="font-semibold text-primary underline underline-offset-4"
-              >
-                Préparer tout le voyage pas à pas
-              </a>
-            </p>
+          {/* Les mêmes questions que l'étape Papiers de « Préparer mon voyage », une par écran,
+              et les mêmes réponses (enregistrées sur l'appareil) : commencer ici ou là-bas revient
+              au même. */}
+          {state.loaded ? (
+            <PapersQuestions
+              state={state}
+              steps={steps}
+              onFinish={() => {
+                state.setFinished(true);
+                toTop();
+              }}
+            />
           ) : null}
+          <p className="mt-6 text-sm text-muted-foreground">
+            Une question par écran, sans compte. Vos réponses restent sur cet appareil et
+            reprennent dans{" "}
+            <a
+              href="/preparer-mon-voyage"
+              className="font-semibold text-primary underline underline-offset-4"
+            >
+              Préparer mon voyage
+            </a>
+            . Règles relues le {displayDate(FORMALITES_CHECKED)}.
+          </p>
         </section>
       )}
       <PapersDelais />

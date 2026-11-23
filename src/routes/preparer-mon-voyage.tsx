@@ -58,7 +58,6 @@ import {
   HomeFields,
   Options,
   PapersResult,
-  PapersWizard,
   Question,
   papersSteps,
   usePapersState,
@@ -366,9 +365,9 @@ const chapterOf = (step: CompanionStep) =>
   );
 
 /**
- * L'accueil en deux temps. D'abord l'envie : l'Algérie en photos, et la 504 qui propose de charger
- * la voiture — c'est elle le bouton, visible sans faire défiler. Puis, une fois lancé, un écran
- * plein (PrepareIntro) : pourquoi BledWay pose des questions, les trois chapitres, « C'est parti ».
+ * L'accueil : la 504 qui propose de charger la voiture — c'est elle le bouton, visible sans faire
+ * défiler — et « Commencer » ouvre directement la première question. Les diapos (PrepareIntro :
+ * pourquoi ces questions, les trois chapitres) restent à la demande, derrière « Comment ça marche ? ».
  */
 function Welcome({ onStart }: { onStart: () => void }) {
   const [intro, setIntro] = useState(false);
@@ -376,14 +375,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
   return (
     <div>
       {/* L'action d'abord (la 504 et « Commencer »), les photos d'Algérie ensuite. */}
-      <button
-        type="button"
-        onClick={() => {
-          setIntro(true);
-          requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "instant" }));
-        }}
-        className="bw-prep-start"
-      >
+      <button type="button" onClick={onStart} className="bw-prep-start">
         <Bw504Note title="Salut tonton ! On charge la 504 ?">
           Je t'aide à tout préparer, avec des rappels pour ne rien oublier.
           <span className="bw-prep-start__cta">
@@ -391,6 +383,18 @@ function Welcome({ onStart }: { onStart: () => void }) {
           </span>
         </Bw504Note>
       </button>
+      <p className="mt-2 text-center md:text-left">
+        <button
+          type="button"
+          onClick={() => {
+            setIntro(true);
+            requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "instant" }));
+          }}
+          className="text-sm font-semibold text-primary underline underline-offset-4"
+        >
+          Comment ça marche ?
+        </button>
+      </p>
       <p className="mt-3 flex flex-wrap items-center justify-center gap-2 text-sm md:justify-start">
         <span className="text-muted-foreground">Bientôt :</span>
         <span className="rounded-full border px-3 py-1 text-muted-foreground">Tunisie</span>
@@ -1353,12 +1357,12 @@ function PapersStepBody({
           {plan.vehicle !== "none" ? <CarPapers plan={plan} patch={patch} /> : null}
           {allPapersTicked ? (
             <Bw504Note tone="win" className="mt-6" title="Tout est coché, bravo !">
-              Range tes papiers dans la pochette du voyage. Ta liste reste ici et dans « Mon
-              voyage ».
+              Range tes papiers dans la pochette du voyage. Ta liste t'attend ici, si tu en as
+              besoin.
             </Bw504Note>
           ) : (
             <p className="mt-6 text-sm text-muted-foreground">
-              Pas besoin de tout cocher maintenant : la liste reste ici et dans « Mon voyage ».
+              Pas besoin de tout cocher maintenant : la liste vous attend ici.
             </p>
           )}
           <div className="mt-4">
@@ -1719,8 +1723,8 @@ function RouteStep({
       <div className="bw-route__acts">
         <button type="button" onClick={onItinerary}>
           <MapIcon size={18} aria-hidden />
-          <b>Sur la carte</b>
-          <small>Autres dates, péages</small>
+          <b>Étape par étape</b>
+          <small>Pauses, prière, nuits</small>
         </button>
         <button type="button" onClick={() => setManual(!manual)} aria-expanded={manual}>
           <Ship size={18} aria-hidden />
@@ -3347,7 +3351,7 @@ function ReadyDashboard({
       </div>
       <p className="mt-4 text-sm text-muted-foreground">
         Une fois le billet enregistré, la suite (48 h avant, au port, à l'arrivée) continue dans «
-        Mon voyage », avec ce que vous avez déjà coché ici.
+        Mon voyage », étape par étape.
       </p>
       <a
         href="/"

@@ -57,8 +57,8 @@ const RoutesMap = lazy(() => import("@/components/routesDuBled/RoutesMap"));
 export const Route = createFileRoute("/routes-du-bled")({
   head: () =>
     seoHead(
-      "Routes du bled : ton trajet en voiture jusqu'au bled, porte à porte | BledWay",
-      "Pars de ton adresse ou de ta position, choisis ton village en Algérie : la carte trace ton trajet jusqu'au port puis au bled, avec les pauses, où manger, prier et dormir.",
+      "Routes du bled : votre trajet en voiture jusqu'au bled, porte à porte | BledWay",
+      "Partez de votre adresse ou de votre position, choisissez votre village en Algérie : la carte trace votre trajet jusqu'au port puis au bled, avec les pauses, où manger, prier et dormir.",
       "/routes-du-bled",
     ),
   component: RoutesDuBledPage,

@@ -76,7 +76,7 @@ export function TripLink({
       </p>
       <p className="bw-triplink__hint">
         Vous avez déjà votre billet pour l'une d'elles ? Faites-en votre traversée : « Mon voyage »
-        la suivra pas à pas, avec ce que vous avez préparé ici.
+        la suivra pas à pas, du départ à l'arrivée.
       </p>
       <ul>
         {list.map((item) => (

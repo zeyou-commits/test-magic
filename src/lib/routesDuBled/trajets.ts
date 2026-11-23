@@ -186,8 +186,26 @@ export type Etape = {
 
 // Même règle que le reste du site (ferry/itinerary.ts).
 const PAUSE_TOUTES_LES = PAUSE_EVERY_MIN / 60;
-const NUIT_AU_DELA = 10;
+/** Au plus 10 h de volant par jour ; un départ du matin s'arrête vers 20 h pour dormir. */
+const VOLANT_MAX = 10;
+const FIN_DE_JOURNEE = 20;
 export { PAUSE_MIN };
+
+/** L'heure de reprise le lendemain d'une nuit : l'heure du départ si c'est le matin, sinon 7 h. */
+export const reprise = (depart: number) => (depart <= 10 ? depart : 7);
+
+/**
+ * Heures de volant d'une journée qui commence à `debut` h. On roule jusqu'à 10 h, et pas après
+ * 20 h (pauses de 20 min comprises) ; parti l'après-midi ou le soir, on roule de nuit : seules les 10 h comptent.
+ */
+export function volantDuJour(debut: number) {
+  if (debut >= 14) return VOLANT_MAX;
+  const horloge = (L: number) =>
+    debut + L + (Math.max(0, Math.ceil(L / PAUSE_TOUTES_LES) - 1) * PAUSE_MIN) / 60;
+  let L = VOLANT_MAX;
+  while (L > 4 && horloge(L) > FIN_DE_JOURNEE) L -= 0.25;
+  return L;
+}
 
 /** Halte sans vrai nom dans OpenStreetMap (« (sans nom) », « Lieu de prière »…). */
 export const anonyme = (s: Stop) =>
@@ -231,14 +249,20 @@ const near = (
     .slice(0, max);
 
 /**
- * Découpe le trajet : nuits si plus de 10 h, puis des pauses régulières entre deux nuits.
- * `avant` : heures déjà roulées avant de rejoindre ce trajet (depuis chez toi) ; les heures
- * des étapes comptent alors depuis le départ de la maison.
+ * Découpe le trajet en journées, puis en pauses régulières. Parti à `depart` h, on roule tant que la
+ * journée le permet (voir `volantDuJour`), on dort, et on repart le lendemain matin ; s'il reste moins
+ * d'une heure, on finit d'une traite. `avant` : heures déjà roulées avant de rejoindre ce trajet
+ * (depuis chez vous) ; les heures des étapes comptent depuis le départ de la maison.
  */
-export function planEtapes(chain: Chain, avant = 0): Etape[] {
+export function planEtapes(chain: Chain, avant = 0, depart = 6): Etape[] {
   const T = chain.h + avant;
-  const nNuits = T > NUIT_AU_DELA ? Math.ceil(T / 9) - 1 : 0;
-  const nuits = Array.from({ length: nNuits }, (_, i) => (T * (i + 1)) / (nNuits + 1));
+  const nuits: number[] = [];
+  for (let h = 0, debut = depart; nuits.length < 6; debut = reprise(depart)) {
+    const L = volantDuJour(debut);
+    if (T - h <= L + 1) break;
+    h += L;
+    nuits.push(h);
+  }
   const bornes = [0, ...nuits, T];
   const marks: { type: Etape["type"]; h: number }[] = [];
   for (let i = 0; i < bornes.length - 1; i++) {

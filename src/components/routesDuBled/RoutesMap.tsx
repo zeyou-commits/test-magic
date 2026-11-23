@@ -16,8 +16,11 @@ import { KIND_COLOR, type StopKind } from "@/lib/routesDuBled/data";
 
 setWorkerUrl(workerUrl);
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
-const ROUTE = "#d9861c";
-const SEA = "#4f86b5";
+// Un bleu franc qui tranche sur le fond de carte (dont les autoroutes sont orange), bordé de foncé.
+const ROUTE = "#1a6fe0";
+const ROUTE_EDGE = "#0b3a80";
+const ALT = "#5d7284";
+const SEA = "#2f6f9a";
 const INK = "#0d3043";
 // Place en haut pour la 504 et son étiquette, posées au-dessus de leur point.
 const FIT_PAD = { top: 96, bottom: 48, left: 48, right: 48 };
@@ -151,7 +154,10 @@ export default function RoutesMap({
   picking = false,
   onPick,
   onAddHere,
+  alts = [],
 }: {
+  /** Les autres traversées possibles, nommées « Port → Port » sur la carte et cliquables. */
+  alts?: { id: string; lon: number; lat: number; label: string }[];
   lines: MapLine[];
   pins: MapPin[];
   start?: MapPlace | null;
@@ -221,6 +227,14 @@ export default function RoutesMap({
         })),
       ],
     });
+    (map.getSource("rdb-alts") as GeoJSONSource).setData({
+      type: "FeatureCollection",
+      features: alts.map((a) => ({
+        type: "Feature" as const,
+        properties: { id: a.id, label: a.label },
+        geometry: { type: "Point" as const, coordinates: [a.lon, a.lat] },
+      })),
+    });
     (map.getSource("rdb-villes") as GeoJSONSource).setData({
       type: "FeatureCollection",
       features: villes.map((v) => ({
@@ -256,6 +270,8 @@ export default function RoutesMap({
       carRef.current?.remove();
       lastCar.current = null;
     }
+    // Une seule 504 : quand elle roule dans le carnet, le départ n'est plus qu'un point.
+    markers.current.start?.marker.getElement().classList.toggle("is-parti", Boolean(car));
     // La 504 et l'épingle ne sont recréées que si le lieu change.
     for (const kind of ["start", "end"] as const) {
       const place = kind === "start" ? start : end;
@@ -310,7 +326,9 @@ export default function RoutesMap({
       center: [2, 42],
       zoom: 4.2,
       attributionControl: { compact: true },
-      cooperativeGestures: true,
+      // Au doigt, la carte se déplace d'un seul doigt (la page défile par le carnet, sous la carte) ;
+      // à la souris, la molette reste à la page sauf avec Ctrl.
+      cooperativeGestures: !window.matchMedia("(pointer: coarse)").matches,
       locale: {
         "CooperativeGesturesHandler.WindowsHelpText": tr("ui.pageRoutesDuBled.carteZoomPc"),
         "CooperativeGesturesHandler.MacHelpText": tr("ui.pageRoutesDuBled.carteZoomMac"),
@@ -318,10 +336,44 @@ export default function RoutesMap({
       },
     });
     map.addControl(new NavigationControl({ showCompass: false }), "bottom-right");
+    // « Recadrer » : revenir au trajet entier après s'être promené sur la carte.
+    map.addControl(
+      {
+        onAdd: () => {
+          const g = document.createElement("div");
+          g.className = "maplibregl-ctrl maplibregl-ctrl-group";
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "rdb-recadrer";
+          b.title = tr("ui.pageRoutesDuBled.recadrer");
+          b.setAttribute("aria-label", b.title);
+          b.innerHTML =
+            '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4"/><circle cx="12" cy="12" r="2.5"/></svg>';
+          b.onclick = () => {
+            if (!lastBounds.current) return;
+            lastFocus.current = null;
+            map.fitBounds(lastBounds.current, { padding: FIT_PAD, maxZoom: 9, duration: 600 });
+          };
+          g.append(b);
+          return g;
+        },
+        onRemove: () => {},
+      },
+      "bottom-right",
+    );
     mapRef.current = map;
     map.on("load", async () => {
       // Les noms du fond de carte en français quand la traduction existe (Espagne, Séville, Alger),
       // comme sur la carte d'accueil ; sinon le nom international, puis le nom local.
+      // Le fond de carte s'efface un peu (routes orange comprises) pour laisser le trajet ressortir.
+      for (const layer of map.getStyle().layers) {
+        if (layer.type === "line" && /road|highway|bridge|tunnel/.test(layer.id))
+          map.setPaintProperty(layer.id, "line-opacity", 0.35);
+      }
+      // Le « i » des crédits reste replié : il s'ouvre au clic.
+      box.current
+        ?.querySelector(".maplibregl-ctrl-attrib")
+        ?.classList.remove("maplibregl-compact-show");
       for (const layer of map.getStyle().layers) {
         if (layer.type !== "symbol") continue;
         const field = map.getLayoutProperty(layer.id, "text-field");
@@ -335,6 +387,10 @@ export default function RoutesMap({
       }
       await addIcons(map);
       map.addSource("rdb-lines", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+      map.addSource("rdb-alts", {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
       });
@@ -360,7 +416,8 @@ export default function RoutesMap({
         "line-width": 1.6,
         "line-opacity": 0.45,
       });
-      line("rdb-autre", "autre", { "line-color": ROUTE, "line-width": 3.5, "line-opacity": 0.38 });
+      line("rdb-autre-bord", "autre", { "line-color": "#ffffff", "line-width": 7, "line-opacity": 0.9 });
+      line("rdb-autre", "autre", { "line-color": ALT, "line-width": 3.5, "line-opacity": 0.9 });
       // Zone de clic large et invisible : on choisit un chemin en touchant son trait, comme sur Google Maps.
       line("rdb-autre-hit", "autre", { "line-color": ROUTE, "line-width": 22, "line-opacity": 0 });
       line(
@@ -375,20 +432,29 @@ export default function RoutesMap({
         source: "rdb-lines",
         filter: ["==", ["get", "kind"], "choisi"],
         layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": "#ffffff", "line-width": 10, "line-opacity": 0.9 },
+        paint: { "line-color": ROUTE_EDGE, "line-width": 9, "line-opacity": 0.95 },
       });
-      line("rdb-choisi", "choisi", { "line-color": ROUTE, "line-width": 5 });
-      // Sans bon plan relevé : des tirets clairs sur le trait du chemin.
-      line(
-        "rdb-trou",
-        "trou",
-        { "line-color": "#fff4e2", "line-width": 2.2, "line-dasharray": [1.6, 2] },
-        false,
-      );
-      line("rdb-approche", "approche", {
-        "line-color": ROUTE,
-        "line-width": 4,
-        "line-dasharray": [0.1, 1.9],
+      // Un seul trait continu, de la porte au port : approche, route du bled et arrivée se suivent.
+      line("rdb-choisi", "choisi", { "line-color": ROUTE, "line-width": 5.5 });
+      // Les autres traversées : « Almería → Oran » posé sur le port de départ, on le touche pour la choisir.
+      map.addLayer({
+        id: "rdb-alts",
+        type: "symbol",
+        source: "rdb-alts",
+        layout: {
+          "text-field": ["get", "label"],
+          "text-font": ["Noto Sans Bold"],
+          "text-size": 12.5,
+          "text-variable-anchor": ["right", "left", "top", "bottom"],
+          "text-radial-offset": 0.6,
+          "text-allow-overlap": false,
+          "text-padding": 2,
+        },
+        paint: {
+          "text-color": "#33495a",
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 2.4,
+        },
       });
       // Les villes traversées : un point et leur nom, toujours visibles.
       map.addLayer({
@@ -557,8 +623,15 @@ export default function RoutesMap({
         const id = e.features?.[0]?.properties?.["id"];
         if (typeof id === "string") handlers.current.onSelectLine?.(id);
       });
-      map.on("mouseenter", "rdb-autre-hit", () => (map.getCanvas().style.cursor = "pointer"));
-      map.on("mouseleave", "rdb-autre-hit", () => (map.getCanvas().style.cursor = ""));
+      map.on("click", "rdb-alts", (e: MapLayerMouseEvent) => {
+        if (handlers.current.picking || apresAppuiLong()) return;
+        const id = e.features?.[0]?.properties?.["id"];
+        if (typeof id === "string") handlers.current.onSelectLine?.(id);
+      });
+      for (const layer of ["rdb-autre-hit", "rdb-alts"]) {
+        map.on("mouseenter", layer, () => (map.getCanvas().style.cursor = "pointer"));
+        map.on("mouseleave", layer, () => (map.getCanvas().style.cursor = ""));
+      }
       loaded.current = true;
       draw.current();
     });
@@ -579,7 +652,7 @@ export default function RoutesMap({
 
   useEffect(() => {
     draw.current();
-  }, [lines, pins, start, end, ports, villes, car, focus, fitKey]);
+  }, [lines, pins, start, end, ports, villes, car, focus, fitKey, alts]);
 
   useEffect(() => {
     const map = mapRef.current;

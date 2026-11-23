@@ -5,6 +5,8 @@ import {
   ArrowRight,
   BedDouble,
   Fuel,
+  Maximize2,
+  Minimize2,
   Navigation,
   Ship,
   Signpost,
@@ -49,7 +51,6 @@ import {
   optionsEurope,
   parPort,
   portPoint,
-  trous,
   type Bout,
   type Chemin,
   type DureeMer,
@@ -75,6 +76,7 @@ export const Route = createFileRoute("/routes-du-bled")({
 const fmt = (n: number) => Math.round(n).toLocaleString("fr-FR");
 const STORE = "bw-routes-du-bled-v3";
 const BUDGET_KEY = "bw-routes-budget-v1";
+const DEPART_KEY = "bw-routes-depart-h";
 const VILLES: Record<string, LonLat> = {
   paris: [2.3522, 48.8566],
   lyon: [4.8357, 45.764],
@@ -117,8 +119,6 @@ function arc(a: LonLat, b: LonLat): LonLat[] {
     ] as LonLat;
   });
 }
-const troncons = (c: Chain) =>
-  trous(c).map(([a, b]) => c.line.filter((_, i) => c.lineKm[i]! >= a && c.lineKm[i]! <= b));
 /** Les services qu'on peut afficher sur la carte. La prière d'abord, cochée d'entrée. */
 type Service = "priere" | "halal" | "carburant" | "manger" | "aire" | "dormir";
 const SERVICES: { id: Service; icon: typeof Fuel; label: string }[] = [
@@ -186,6 +186,21 @@ function RoutesDuBledPage() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [services, setServices] = useState<Service[]>(["priere"]);
   const [carAt, setCarAt] = useState<string | null>(null);
+  // « Agrandir » : la carte en plein écran ; Échap ou « Réduire » pour revenir.
+  const [grand, setGrand] = useState(false);
+  useEffect(() => {
+    if (!grand) return;
+    const avant = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setGrand(false);
+    };
+    window.addEventListener("keydown", esc);
+    return () => {
+      document.body.style.overflow = avant;
+      window.removeEventListener("keydown", esc);
+    };
+  }, [grand]);
   // « Combien ça coûte ? » : rien n'est calculé tant que le voyageur ne le demande pas.
   const [prixDe, setPrixDe] = useState<Set<string>>(() => new Set());
   const [prixTous, setPrixTous] = useState(false);
@@ -315,7 +330,29 @@ function RoutesDuBledPage() {
     () => (to && routes.length ? optionsAlgerie(routes, stopsOf, to.point, mesures) : []),
     [to, routes, stopsOf, mesures],
   );
-  const list = useMemo(() => (from && to ? chemins(eu, dz, 20, mer) : []), [from, to, eu, dz, mer]);
+  // L'heure de départ de la maison place les nuits : on roule jusqu'au soir, on dort, on repart le matin.
+  const [depart, setDepart] = useState(6);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DEPART_KEY);
+      const v = Number(raw);
+      if (raw != null && v >= 0 && v < 24) setDepart(v);
+    } catch {
+      /* stockage indisponible : départ à 6 h */
+    }
+  }, []);
+  const choisirDepart = (v: number) => {
+    setDepart(v);
+    try {
+      localStorage.setItem(DEPART_KEY, String(v));
+    } catch {
+      /* rien à faire */
+    }
+  };
+  const list = useMemo(
+    () => (from && to ? chemins(eu, dz, 20, mer, depart) : []),
+    [from, to, eu, dz, mer, depart],
+  );
   // Trois chemins d'abord ; les autres ports (souvent l'Espagne) à la demande.
   const [tous, setTous] = useState(false);
   useEffect(() => setTous(false), [from, to]);
@@ -489,7 +526,7 @@ function RoutesDuBledPage() {
       {
         rootMargin: window.matchMedia("(min-width: 1024px)").matches
           ? "-35% 0px -45% 0px"
-          : "-62% 0px -22% 0px",
+          : "-66% 0px -18% 0px",
       },
     );
     root.querySelectorAll("[data-pas]").forEach((el) => io.observe(el));
@@ -518,19 +555,13 @@ function RoutesDuBledPage() {
       const pe = portPoint(routes, sel.eu.port);
       const pd = portPoint(routes, sel.dz.port);
       const g = geo.data;
-      out.push({
-        id: "approche",
-        coords: g?.toPort ?? [from.point, sel.eu.joint],
-        kind: "approche",
-      });
-      out.push({ id: "fin", coords: g?.fromPort ?? [sel.dz.sortie, to.point], kind: "approche" });
+      // L'approche et l'arrivée font partie du même trait que la route du bled : pas de pointillés.
+      out.push({ id: "approche", coords: g?.toPort ?? [from.point, sel.eu.joint], kind: "choisi" });
+      out.push({ id: "fin", coords: g?.fromPort ?? [sel.dz.sortie, to.point], kind: "choisi" });
       if (pe && pd) out.push({ id: "mer", coords: arc(pe, pd), kind: "mer" });
       for (const ch of [sel.eu.chain, sel.dz.chain]) {
         if (!ch) continue;
         out.push({ id: sel.id, coords: ch.line, kind: "choisi" });
-        troncons(ch).forEach((coords, i) =>
-          out.push({ id: `trou-${ch.key}-${i}`, coords, kind: "trou" }),
-        );
       }
     }
     return out;
@@ -598,6 +629,25 @@ function RoutesDuBledPage() {
     () => (carPas && carPas.k !== "depart" ? { lon: carPas.point[0], lat: carPas.point[1] } : null),
     [carPas],
   );
+  // Chaque autre traversée nommée sur son port de départ (une étiquette par couple de ports).
+  const mapAlts = useMemo(() => {
+    const vus = new Set<string>(sel ? [`${sel.eu.port}-${sel.dz.port}`] : []);
+    const out: { id: string; lon: number; lat: number; label: string }[] = [];
+    for (const c of list) {
+      const k = `${c.eu.port}-${c.dz.port}`;
+      if (vus.has(k)) continue;
+      vus.add(k);
+      const pt = portPoint(routes, c.eu.port);
+      if (pt)
+        out.push({
+          id: c.id,
+          lon: pt[0],
+          lat: pt[1],
+          label: `${PLACE_NAME[c.eu.port]} → ${PLACE_NAME[c.dz.port]}`,
+        });
+    }
+    return out;
+  }, [list, sel, routes]);
   const mapPorts = useMemo<MapPlace[]>(() => {
     const out: MapPlace[] = [];
     const add = (p: string, name: string) => {
@@ -677,7 +727,24 @@ function RoutesDuBledPage() {
           </div>
 
           <div className="rdb-planner__grid">
-            <div className="rdb-map" data-picking={picking || undefined}>
+            <div
+              className="rdb-map"
+              data-picking={picking || undefined}
+              data-grand={grand || undefined}
+            >
+              <button
+                type="button"
+                className="rdb-map__grand"
+                aria-pressed={grand}
+                onClick={() => setGrand(!grand)}
+              >
+                {grand ? (
+                  <Minimize2 className="size-4" aria-hidden />
+                ) : (
+                  <Maximize2 className="size-4" aria-hidden />
+                )}
+                {tr(grand ? "ui.pageRoutesDuBled.reduireCarte" : "ui.pageRoutesDuBled.agrandirCarte")}
+              </button>
               {picking ? (
                 <div className="rdb-map__hint" role="status">
                   <span>
@@ -738,6 +805,7 @@ function RoutesDuBledPage() {
                   }
                   end={to ? { lon: to.point[0], lat: to.point[1], label: courte(to.label) } : null}
                   ports={mapPorts}
+                  alts={from && to ? mapAlts : []}
                   villes={mapVilles}
                   car={car}
                   focus={focus}
@@ -918,6 +986,8 @@ function RoutesDuBledPage() {
                                   .at(-1) ?? null
                               }
                               routes={routes}
+                              depart={depart}
+                              onDepart={choisirDepart}
                               showCost={prixTous || prixDe.has(c.id)}
                               onCost={() => setPrixDe((s) => new Set(s).add(c.id))}
                               reglages={reglages}

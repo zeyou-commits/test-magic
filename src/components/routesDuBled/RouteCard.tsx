@@ -19,6 +19,7 @@ import {
   ecartKm,
   PAUSE_MIN,
   PLACE_NAME,
+  reprise,
   type ChainStop,
 } from "@/lib/routesDuBled/trajets";
 import { heuresEnTout, type Bout, type Chemin, type LonLat } from "@/lib/routesDuBled/porteAPorte";
@@ -109,12 +110,17 @@ export function RouteCard({
   routes,
   showCost,
   onCost,
+  depart,
+  onDepart,
   reglages,
   onReglages,
   ligne,
 }: {
   c: Chemin;
   k: Carnet;
+  /** Heure de départ de la maison (elle place les nuits et les heures du carnet). */
+  depart: number;
+  onDepart: (h: number) => void;
   /** Le prix n'est calculé et montré que sur demande. */
   showCost: boolean;
   onCost: () => void;
@@ -224,6 +230,8 @@ export function RouteCard({
           onAdd={onAdd}
           portStop={portStop}
           routes={routes}
+          depart={depart}
+          onDepart={onDepart}
         />
       ) : null}
     </article>
@@ -239,10 +247,14 @@ function CarnetView({
   onAdd,
   portStop,
   routes,
+  depart,
+  onDepart,
 }: {
   c: Chemin;
   k: Carnet;
   to: string;
+  depart: number;
+  onDepart: (h: number) => void;
   focusId: string | null;
   onFocus: (p: Pas) => void;
   onAdd: (routeId: string | undefined, point: LonLat | null) => void;
@@ -261,24 +273,6 @@ function CarnetView({
     (a.point[1] + b.point[1]) / 2,
   ];
   const routeOf = (id?: string) => routes.find((r) => r.id === id);
-  const [depart, setDepart] = useState(DEPART_DEFAUT);
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(DEPART_KEY);
-      const v = Number(raw);
-      if (raw != null && v >= 0 && v < 24) setDepart(v);
-    } catch {
-      /* stockage indisponible : départ à 6 h */
-    }
-  }, []);
-  const choisirDepart = (v: number) => {
-    setDepart(v);
-    try {
-      localStorage.setItem(DEPART_KEY, String(v));
-    } catch {
-      /* rien à faire */
-    }
-  };
   const clocks = useMemo(() => horaires(k.pas, depart), [k.pas, depart]);
   let jour = 1;
   return (
@@ -357,7 +351,7 @@ function CarnetView({
             route={routeOf(p.route)}
             clock={clocks.get(p)}
             depart={depart}
-            onDepart={choisirDepart}
+            onDepart={onDepart}
           />,
         );
         if ((p.k === "nuit" || p.k === "nuitvide") && i < k.pas.length - 1) {
@@ -365,7 +359,7 @@ function CarnetView({
           out.push(
             <p key={`n-${p.id}`} className="rdb-book__day">
               {p.side === "eu"
-                ? tr("ui.pageRoutesDuBled.jourDepartA", { n: jour, heure: heure(depart) })
+                ? tr("ui.pageRoutesDuBled.jourDepartA", { n: jour, heure: heure(reprise(depart)) })
                 : tr("ui.pageRoutesDuBled.jourN", { n: jour })}
             </p>,
           );
@@ -389,8 +383,6 @@ function CarnetView({
   );
 }
 
-const DEPART_KEY = "bw-routes-depart-h";
-const DEPART_DEFAUT = 6;
 
 function PasView({
   p,

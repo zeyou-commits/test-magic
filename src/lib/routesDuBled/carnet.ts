@@ -1,6 +1,13 @@
 import { PAUSE_EVERY_MIN, PAUSE_MIN } from "@/lib/ferry/itinerary";
 import type { Chemin, LonLat } from "./porteAPorte";
-import { PLACE_NAME, ROUTES_DZ, type Chain, type ChainStop, type Etape } from "./trajets";
+import {
+  PLACE_NAME,
+  reprise,
+  ROUTES_DZ,
+  type Chain,
+  type ChainStop,
+  type Etape,
+} from "./trajets";
 import { VILLES, nomVille } from "./villes";
 
 /**
@@ -167,7 +174,7 @@ const PAUSE_TOUTES = PAUSE_EVERY_MIN / 60;
 
 /**
  * L'heure de chaque moment côté Europe, pour un départ à `depart` heures : la route, plus chaque pause
- * déjà faite ; après une nuit, on repart le lendemain à la même heure. Côté Algérie, l'heure dépend du
+ * déjà faite ; après une nuit, on repart le lendemain matin (`reprise`). Côté Algérie, l'heure dépend du
  * navire : on garde le temps depuis le port.
  */
 export function horaires(pas: Pas[], depart: number, pauseMin = PAUSE_MIN) {
@@ -175,13 +182,15 @@ export function horaires(pas: Pas[], depart: number, pauseMin = PAUSE_MIN) {
   const out = new Map<Pas, number>();
   let h0 = 0;
   let pauses = 0;
+  let debut = depart;
   for (const p of pas) {
     if (p.side !== "eu") break;
-    out.set(p, depart + (p.h - h0) + (pauses * pauseMin) / 60);
+    out.set(p, debut + (p.h - h0) + (pauses * pauseMin) / 60);
     if (p.k === "pause" || p.k === "priere" || p.k === "vide") pauses++;
     if (p.k === "nuit" || p.k === "nuitvide") {
       h0 = p.h;
       pauses = 0;
+      debut = reprise(depart);
     }
   }
   return out;

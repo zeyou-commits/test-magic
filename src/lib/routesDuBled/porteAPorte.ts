@@ -253,12 +253,19 @@ export const heuresEnTout = (c: Chemin) => (c.mer == null ? null : c.h + c.mer /
  * Les chemins possibles, du plus court au plus long porte à porte ; un seul par grand axe, trois au plus.
  * Une ligne sans durée de traversée connue passe après les autres, classée par heures de route.
  */
-export function chemins(eu: OptionEu[], dz: OptionDz[], max = 3, mer?: DureeMer): Chemin[] {
+export function chemins(
+  eu: OptionEu[],
+  dz: OptionDz[],
+  max = 3,
+  mer?: DureeMer,
+  /** Heure de départ de la maison : elle place les nuits. */
+  depart = 6,
+): Chemin[] {
   const all: Chemin[] = [];
   for (const o of eu)
     for (const d of dz) {
       if (!LIGNES[o.port].includes(d.port)) continue;
-      const etapes = o.chain ? planEtapes(o.chain, o.approche.h) : [];
+      const etapes = o.chain ? planEtapes(o.chain, o.approche.h, depart) : [];
       const t = [...(o.chain ? trous(o.chain) : []), ...(d.chain ? trous(d.chain) : [])];
       all.push({
         id: `${o.key}~${d.port}`,

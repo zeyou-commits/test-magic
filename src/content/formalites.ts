@@ -165,7 +165,19 @@ export interface Traveller {
   dzTravel?: DzTravel;
   /** Tous les papiers algériens qu'il a (on peut en avoir plusieurs) ; dzDoc en est déduit. */
   dzHas?: DzHas[];
+  /**
+   * Les questions sans bonne réponse par défaut, déjà répondues par le voyageur. Tant qu'elles n'y
+   * sont pas, rien n'est coché et « Continuer » attend : un « Continuer » tapé sans lire ne doit pas
+   * faire passer un homme pour une femme (et sauter le service national). Absent des anciennes
+   * réponses : considéré comme répondu.
+   */
+  answered?: AskedQ[];
 }
+
+/** Questions qu'on ne présélectionne jamais. */
+export type AskedQ = "nat" | "man";
+
+export const hasAnswered = (t: Traveller, q: AskedQ) => !t.answered || t.answered.includes(q);
 
 /**
  * ok / exempt : recensé ou dispensé au consulat · option : déclaration d'option pour la France
@@ -278,6 +290,7 @@ export function newTraveller(kind: Traveller["kind"]): Traveller {
     man: false,
     residence: "titre",
     dzValid: "unknown",
+    answered: [],
   };
 }
 
@@ -294,6 +307,7 @@ export const defaultAnswers: Answers = {
       man: false,
       residence: "titre",
       dzValid: "unknown",
+      answered: [],
     },
   ],
   couple: "none",

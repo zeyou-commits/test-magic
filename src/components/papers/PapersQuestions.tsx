@@ -10,7 +10,13 @@ import {
   type FormaliteSourceId,
   type SnStatus,
   type Traveller,
+  type AskedQ,
+  type Nat,
+  hasAnswered,
 } from "@/content/formalites";
+
+/** Ajoute une question à celles que le voyageur a répondues. */
+const mark = (t: Traveller, q: AskedQ): AskedQ[] => [...new Set([...(t.answered ?? []), q])];
 import { Bw504Note, BwKnow } from "@/components/companion/Bw504Note";
 import { WizardNav, useWizardScreen } from "@/components/prepare/WizardFrame";
 import {
@@ -251,7 +257,7 @@ export function PapersQuestions({
           <Question
             title={me ? "Quelle est votre nationalité ?" : "Quelle est sa nationalité ?"}
           >
-            {choice("Nationalité", t.nat, (nat) => update({ nat }), [
+            {choice("Nationalité", (hasAnswered(t, "nat") ? t.nat : "") as Nat, (nat) => update({ nat, answered: mark(t, "nat") }), [
               { value: "bi", label: "Algérien et français (ou autre)", hint: "Binational" },
               {
                 value: "dz",
@@ -411,7 +417,7 @@ export function PapersQuestions({
           <Question
             title={me ? "Vous êtes un homme ou une femme ?" : "Un homme ou une femme ?"}
           >
-            {choice("Homme ou femme", t.man ? "yes" : "no", (v) => update({ man: v === "yes" }), [
+            {choice("Homme ou femme", (hasAnswered(t, "man") ? (t.man ? "yes" : "no") : "") as "yes" | "no", (v) => update({ man: v === "yes", answered: mark(t, "man") }), [
               { value: "yes", label: "Un homme" },
               { value: "no", label: "Une femme" },
             ])}
@@ -535,6 +541,9 @@ export function PapersQuestions({
         next={{
           label: at + 1 < list.length ? "Continuer" : "Voir mon plan d'action",
           onClick: forward,
+          // Nationalité et sexe : jamais de réponse par défaut, on attend le choix du voyageur.
+          disabled:
+            !!t && q.kind === "traveller" && (q.q === "nat" || q.q === "man") && !hasAnswered(t, q.q),
         }}
       />
     </div>

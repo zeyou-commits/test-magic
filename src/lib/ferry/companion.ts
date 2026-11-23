@@ -116,6 +116,8 @@ export function savePlan(plan: CompanionPlan) {
 /** La préparation n'est pas finie : pas commencée, ou une étape reste à faire. */
 export function planUnfinished(plan: CompanionPlan | null) {
   if (!plan?.started) return true;
+  // Une route traversée sans ports n'est pas finie (même règle que le récap : « à compléter »).
+  if (!plan.fromPortId || !plan.toPortId) return true;
   return companionSteps(plan).some((step) => !plan.done.includes(step));
 }
 

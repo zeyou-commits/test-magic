@@ -37,7 +37,10 @@ export function RecapPreview({
   /** Le badge « PDF · lien à partager » se pose à la fin. */
   share?: boolean;
 }) {
-  const done = rows.filter((row) => row.chapter < filled).length;
+  // Une ligne n'est « faite » que si son chapitre est passé ET qu'elle contient quelque chose :
+  // une route sans ports, un budget sans prix restent « à compléter », jamais cochés.
+  const isFilled = (row: PreviewRow) => row.chapter < filled && row.value !== null;
+  const done = rows.filter(isFilled).length;
   const isFresh = (row: PreviewRow) =>
     fresh === "all" ? row.chapter < filled : row.chapter === fresh;
   const before =
@@ -72,14 +75,15 @@ export function RecapPreview({
       </div>
       <ol className="bw-rprev__rows">
         {rows.map((row) => {
-          const isDone = row.chapter < filled;
+          const isDone = isFilled(row);
+          const missing = row.chapter < filled && row.value === null;
           const fresh = isFresh(row);
           const style = fresh ? ({ "--d": `${0.35 + order++ * 0.45}s` } as CSSProperties) : undefined;
           const Icon = row.icon;
           return (
             <li
               key={row.label}
-              data-state={isDone ? "done" : "todo"}
+              data-state={isDone ? "done" : missing ? "missing" : "todo"}
               className={fresh ? "is-fresh" : undefined}
               style={style}
             >
@@ -90,6 +94,8 @@ export function RecapPreview({
               <span className="bw-rprev__label">{row.label}</span>
               {isDone && row.value ? (
                 <span className="bw-rprev__value">{row.value}</span>
+              ) : missing ? (
+                <span className="bw-rprev__missing">À compléter</span>
               ) : (
                 <span className="bw-rprev__bar" aria-hidden />
               )}

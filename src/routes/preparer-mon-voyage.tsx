@@ -147,6 +147,7 @@ import { PrepareIntro } from "@/components/prepare/PrepareIntro";
 import { ConfirmChange } from "@/components/prepare/ConfirmChange";
 import { ChapterBreak } from "@/components/prepare/ChapterBreak";
 import { RecapPreview, type PreviewRow } from "@/components/prepare/RecapPreview";
+import { isCheckable, planCategory } from "@/lib/papers/planCategories";
 import { PaperKpis } from "@/components/papers/RecapSheet";
 
 const PATH = "/preparer-mon-voyage";
@@ -907,7 +908,12 @@ function useSummaries(
 ): Record<CompanionStep, string | null> {
   const { adults, children } = people(papers.answers);
   const vehicle = VEHICLES.find((v) => v.id === plan.vehicle);
-  const tasks = useMemo(() => tasksFor(papers.answers), [papers.answers]);
+  // Même décompte que « Votre liste » (RecapSheet) : seulement ce qui se coche, sans les points
+  // d'attention, pour que le récap et la liste disent le même chiffre.
+  const tasks = useMemo(
+    () => tasksFor(papers.answers).filter((t) => isCheckable(planCategory(t))),
+    [papers.answers],
+  );
   const ready = tasks.filter((t) => papers.done.includes(t.id)).length;
   const carReady = carItems.filter((item) => plan.carDone.includes(item.id)).length;
   const line = fromChoice && toPort ? `${fromChoice.port.name} → ${toPort.name}` : null;
@@ -3098,6 +3104,10 @@ function ReadyDashboard({
 }) {
   const { todo } = usePlanTodo(plan, papers);
   const tasks = useMemo(() => tasksFor(papers.answers), [papers.answers]);
+  // Ce que le récap ne peut pas encore dire (route sans ports, donc ni budget ni billet).
+  const missing = rows.filter(
+    (row): row is PreviewRow & { onClick: () => void } => row.value === null && !!row.onClick,
+  );
   const deadlines = useMemo(
     () =>
       papersDeadlines(
@@ -3141,18 +3151,37 @@ function ReadyDashboard({
           onDetail={() => onOpenStep("budget")}
         />
       </div>
-      <Bw504Note
-        tone="win"
-        className="mt-3"
-        title="Ton récap est prêt"
-        actions={
-          <Bw504Button primary onClick={onShare}>
-            Partager · PDF
-          </Bw504Button>
-        }
-      >
-        Envoie-le à la famille ou imprime-le. Touche une ligne du récap pour la revoir.
-      </Bw504Note>
+      {missing.length ? (
+        <Bw504Note
+          tone="stuck"
+          className="mt-3"
+          title={`Il manque encore : ${missing.map((row) => row.label.toLowerCase()).join(", ")}`}
+          actions={
+            <>
+              <Bw504Button primary onClick={missing[0]!.onClick}>
+                Compléter : {missing[0]!.label.toLowerCase()}
+              </Bw504Button>
+              <Bw504Button onClick={onShare}>Partager quand même</Bw504Button>
+            </>
+          }
+        >
+          Ton récap est presque prêt. Choisis tes ports et je calcule la route, le budget et les
+          traversées de ta période.
+        </Bw504Note>
+      ) : (
+        <Bw504Note
+          tone="win"
+          className="mt-3"
+          title="Ton récap est prêt"
+          actions={
+            <Bw504Button primary onClick={onShare}>
+              Partager · PDF
+            </Bw504Button>
+          }
+        >
+          Envoie-le à la famille ou imprime-le. Touche une ligne du récap pour la revoir.
+        </Bw504Note>
+      )}
       <div className="mt-3">
         <SailingsOutlook
           plan={plan}

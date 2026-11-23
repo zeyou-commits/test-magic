@@ -132,6 +132,12 @@ export const formaliteSources = {
     url: "https://www.service-public.gouv.fr/particuliers/vosdroits/F1922",
     updated: "vérifiée le 16 avril 2025",
   },
+  "balearia-dua": {
+    name: "Baleària : embarquement des véhicules particuliers vers ou depuis l'Algérie",
+    short: "Baleària",
+    url: "https://helpcenter.balearia.com/hc/fr/articles/24337130398493",
+    updated: "lue le 23 novembre 2026",
+  },
 } as const satisfies Record<string, { name: string; short: string; url: string; updated?: string }>;
 
 export type FormaliteSourceId = keyof typeof formaliteSources;

@@ -1409,6 +1409,37 @@ function PapersStepBody({
  * Les papiers de la voiture, à la suite de ceux des voyageurs dans « Mes papiers » : même liste,
  * cochée au même endroit, et reprise dans « Mon voyage ».
  */
+/** Slugs des ports d'où Baleària recommande le DUA d'exportation (centre d'aide Baleària, lu le 23/11/2026). */
+const DUA_PORTS = new Set(["valence", "barcelone"]);
+
+/** Avis de Baleària : voiture chargée au départ de Valence ou de Barcelone. Information seule, rien à cocher. */
+function DuaNotice() {
+  const source = formaliteSources["balearia-dua"];
+  return (
+    <div className="mt-4 flex items-start gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm">
+      <Info size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
+      <div className="min-w-0">
+        <p className="font-semibold">Voiture très chargée : pensez au DUA</p>
+        <p className="mt-1">
+          Au départ de Valence ou de Barcelone avec Baleària, si vous transportez plus de 3 colis
+          par passager, ou de la marchandise dans le véhicule, la compagnie recommande fortement
+          de présenter un DUA d'exportation (la déclaration en douane). Tout ce qui n'est pas
+          strictement un effet personnel est considéré comme marchandise commerciale.
+        </p>
+        <a
+          href={source.url}
+          target="_blank"
+          rel="noreferrer"
+          className={`${textLink} mt-1 inline-flex items-center gap-1`}
+        >
+          Source : {source.short}, {source.updated}
+          <ExternalLink size={12} aria-hidden />
+        </a>
+      </div>
+    </div>
+  );
+}
+
 function CarPapers({
   plan,
   patch,
@@ -1423,6 +1454,9 @@ function CarPapers({
         : [...plan.carDone, id],
     });
   const ready = carItems.filter((item) => plan.carDone.includes(item.id)).length;
+  // Le port de départ est rangé par identifiant : on lit son slug dans la liste des ports.
+  const { data: ports = [] } = useQuery(portsQuery);
+  const departureSlug = ports.find((port) => port.id === plan.fromPortId)?.slug ?? null;
   return (
     <section aria-labelledby="papiers-voiture" className="bw-carpapers mt-6">
       <div className="flex items-center justify-between gap-3">
@@ -1465,6 +1499,7 @@ function CarPapers({
           </span>
         </p>
       ) : null}
+      {departureSlug && DUA_PORTS.has(departureSlug) ? <DuaNotice /> : null}
       <ul className="mt-3 grid gap-2">
         {carItems.map((item) => {
           const done = plan.carDone.includes(item.id);

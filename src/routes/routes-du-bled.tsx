@@ -34,6 +34,7 @@ import {
 } from "@/lib/routesDuBled/data";
 import { PLACE_NAME, type Chain, type ChainStop } from "@/lib/routesDuBled/trajets";
 import { carnet, viaVilles, type Ajout, type Carnet, type Pas } from "@/lib/routesDuBled/carnet";
+import { REGLAGES_DEFAUT, type Reglages } from "@/lib/routesDuBled/budget";
 import {
   chemins,
   cleBout,
@@ -66,6 +67,7 @@ export const Route = createFileRoute("/routes-du-bled")({
 
 const fmt = (n: number) => Math.round(n).toLocaleString("fr-FR");
 const STORE = "bw-routes-du-bled-v3";
+const BUDGET_KEY = "bw-routes-budget-v1";
 const VILLES: Record<string, LonLat> = {
   paris: [2.3522, 48.8566],
   lyon: [4.8357, 45.764],
@@ -177,6 +179,26 @@ function RoutesDuBledPage() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [services, setServices] = useState<Service[]>(["priere"]);
   const [carAt, setCarAt] = useState<string | null>(null);
+  // « Combien ça coûte ? » : rien n'est calculé tant que le voyageur ne le demande pas.
+  const [prixDe, setPrixDe] = useState<Set<string>>(() => new Set());
+  const [prixTous, setPrixTous] = useState(false);
+  const [reglages, setReglages] = useState<Reglages>(REGLAGES_DEFAUT);
+  useEffect(() => {
+    try {
+      const r = JSON.parse(localStorage.getItem(BUDGET_KEY) ?? "null") as Partial<Reglages> | null;
+      if (r) setReglages({ ...REGLAGES_DEFAUT, ...r });
+    } catch {
+      /* stockage indisponible : réglages par défaut */
+    }
+  }, []);
+  const changeReglages = (r: Reglages) => {
+    setReglages(r);
+    try {
+      localStorage.setItem(BUDGET_KEY, JSON.stringify(r));
+    } catch {
+      /* rien à faire */
+    }
+  };
 
   // Un ancien lien ?depart=lyon part de cette ville ; sinon le dernier trajet revient
   // à la visite suivante (sur cet appareil seulement).
@@ -820,9 +842,25 @@ function RoutesDuBledPage() {
                   </div>
                 ) : (
                   <div className="rdb-panel__stack">
-                    <p className="rdb-panel__eyebrow">
-                      {tr("ui.pageRoutesDuBled.tesRoutesDuBled")}
-                    </p>
+                    <div className="rdb-panel__head">
+                      <p className="rdb-panel__eyebrow">
+                        {tr("ui.pageRoutesDuBled.tesRoutesDuBled")}
+                      </p>
+                      {shown.length > 1 ? (
+                        <button
+                          type="button"
+                          className="rdb-prix-tous"
+                          aria-pressed={prixTous}
+                          onClick={() => setPrixTous(!prixTous)}
+                        >
+                          {tr(
+                            prixTous
+                              ? "ui.pageRoutesDuBled.masquerPrix"
+                              : "ui.pageRoutesDuBled.comparerPrix",
+                          )}
+                        </button>
+                      ) : null}
+                    </div>
                     <div className="rdb-rcs" ref={bookRef}>
                       {shown.map((c, i) => {
                         const k = carnets.get(c.id);
@@ -861,6 +899,15 @@ function RoutesDuBledPage() {
                                   .at(-1) ?? null
                               }
                               routes={routes}
+                              showCost={prixTous || prixDe.has(c.id)}
+                              onCost={() => setPrixDe((s) => new Set(s).add(c.id))}
+                              reglages={reglages}
+                              onReglages={changeReglages}
+                              ligne={
+                                dureesMer.data?.[`${c.eu.port}-${c.dz.port}`] != null
+                                  ? `${c.eu.port}-${c.dz.port}`
+                                  : null
+                              }
                             />
                             {open ? <Manques c={c} onAdd={startAdd} /> : null}
                           </div>

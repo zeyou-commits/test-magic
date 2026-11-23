@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import {
   ChevronDown,
   Coffee,
+  Wallet,
   House,
   MoonStar,
   Navigation,
@@ -23,6 +24,8 @@ import {
 import { heuresEnTout, type Bout, type Chemin, type LonLat } from "@/lib/routesDuBled/porteAPorte";
 import { heure, horaires, type Carnet, type Pas } from "@/lib/routesDuBled/carnet";
 import { VILLES, nomVille } from "@/lib/routesDuBled/villes";
+import { coutRoute, type Reglages } from "@/lib/routesDuBled/budget";
+import { CostView } from "./CostView";
 import { FeatureIcon, KindIcon, Mosque, featureLabel, kindLabel, sourceLabel } from "./StopVisuals";
 
 export const fmt = (n: number) => Math.round(n).toLocaleString("fr-FR");
@@ -95,9 +98,21 @@ export function RouteCard({
   onAdd,
   portStop,
   routes,
+  showCost,
+  onCost,
+  reglages,
+  onReglages,
+  ligne,
 }: {
   c: Chemin;
   k: Carnet;
+  /** Le prix n'est calculé et montré que sur demande. */
+  showCost: boolean;
+  onCost: () => void;
+  reglages: Reglages;
+  onReglages: (r: Reglages) => void;
+  /** Page de la ligne (prochains départs), si elle existe. */
+  ligne: string | null;
   from: string;
   to: string;
   via: string[];
@@ -120,6 +135,10 @@ export function RouteCard({
   const pd = PLACE_NAME[c.dz.port];
   // Avec une nuit sur la route ou en mer, des heures « porte à porte » sans le sommeil trompent : on compte en jours.
   const jours = k.pas.at(-1)?.jour ?? 1;
+  const cout = useMemo(
+    () => (showCost ? coutRoute(c, k, reglages) : null),
+    [showCost, c, k, reglages],
+  );
   return (
     <article className="rdb-rc" data-open={open || undefined}>
       <button type="button" className="rdb-rc__head" aria-expanded={open} onClick={onToggle}>
@@ -169,6 +188,23 @@ export function RouteCard({
           <ChevronDown className="size-4" aria-hidden />
         </span>
       </button>
+      <div className="rdb-cost">
+        {cout ? (
+          <CostView
+            cout={cout}
+            de={pe}
+            a={pd}
+            ligne={ligne}
+            reglages={reglages}
+            onReglages={onReglages}
+          />
+        ) : (
+          <button type="button" className="rdb-cost__ask" onClick={onCost}>
+            <Wallet className="size-4" aria-hidden />
+            {tr("ui.pageRoutesDuBled.combienCaCoute")}
+          </button>
+        )}
+      </div>
       {open ? (
         <CarnetView
           c={c}

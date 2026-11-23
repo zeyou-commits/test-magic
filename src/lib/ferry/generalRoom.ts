@@ -74,42 +74,53 @@ export function saveOverlayOn(on: boolean) {
 }
 
 /**
- * La file du fil : chaque nouveau message attend son tour (un toutes les 3 s), reste 6 s,
- * 3 au plus à l'écran. Pure, pour être testée sans écran.
+ * La file du fil : chaque nouveau message attend son tour (un toutes les 5 s), reste 12 s,
+ * 3 au plus à l'écran. Quand la file est vide, le fil repart sur les derniers messages reçus :
+ * il tourne en boucle tant que la carte est ouverte. Pure, pour être testée sans écran.
  */
 export type TickerState = {
   seen: string[];
   queue: TickerLine[];
   shown: { line: TickerLine; until: number }[];
+  /** Les derniers messages reçus, du plus ancien au plus récent : la boucle repasse dessus. */
+  pool: TickerLine[];
 };
-export const TICKER_STEP_MS = 3_000;
-export const TICKER_LIFE_MS = 6_000;
+export const TICKER_STEP_MS = 5_000;
+export const TICKER_LIFE_MS = 12_000;
 export const TICKER_MAX = 3;
-export const emptyTicker: TickerState = { seen: [], queue: [], shown: [] };
+export const emptyTicker: TickerState = { seen: [], queue: [], shown: [], pool: [] };
 
 /** Les messages reçus (du plus récent au plus ancien) entrent dans la file, du plus ancien au plus récent. */
 export function enqueueTicker(state: TickerState, lines: TickerLine[], first: boolean): TickerState {
+  const pool = [...lines].reverse();
   const seen = new Set(state.seen);
   const fresh = lines.filter((line) => !seen.has(line.id));
-  if (!fresh.length) return state;
-  // Premier chargement : seulement les 3 derniers, pas tout l'historique de 6 h.
+  if (!fresh.length) return { ...state, pool };
+  // Premier chargement : d'abord les 3 derniers ; la boucle passera ensuite sur les autres.
   const take = first ? fresh.slice(0, TICKER_MAX) : fresh;
   return {
     seen: [...state.seen, ...fresh.map((line) => line.id)].slice(-200),
     queue: [...state.queue, ...[...take].reverse()].slice(-12),
     shown: state.shown,
+    pool,
   };
 }
 
-/** Un pas de temps : les messages expirés partent, puis le suivant de la file entre. */
+/** Un pas de temps : les messages expirés partent, puis le suivant de la file (ou de la boucle) entre. */
 export function stepTicker(state: TickerState, now: number, max = TICKER_MAX): TickerState {
   // Petite marge : le minuteur peut tomber quelques millisecondes avant l'échéance.
   const shown = state.shown.filter((item) => item.until > now + 250);
-  const [next, ...queue] = state.queue;
+  let queue = state.queue;
+  if (!queue.length) {
+    // File vide : on repart sur les derniers messages, sans répéter ceux encore à l'écran.
+    const onScreen = new Set(shown.map((item) => item.line.id));
+    queue = state.pool.filter((line) => !onScreen.has(line.id));
+  }
+  const [next, ...rest] = queue;
   if (!next) return shown.length === state.shown.length ? state : { ...state, shown };
   return {
-    seen: state.seen,
-    queue,
+    ...state,
+    queue: rest,
     shown: [...shown, { line: next, until: now + TICKER_LIFE_MS }].slice(-max),
   };
 }

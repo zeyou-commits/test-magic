@@ -17626,14 +17626,14 @@ button.bw-delay-badge:focus-visible {
 .bw-ticker__switch {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  height: 30px;
-  padding: 0 12px;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
   border: 0;
-  border-radius: 15px;
-  background: #12261dc7;
+  border-radius: 13px;
+  background: #0b1a1373;
   color: #ffffff;
-  font-size: 12.5px;
+  font-size: 11.5px;
   font-weight: 700;
   cursor: pointer;
   backdrop-filter: blur(6px);
@@ -17661,9 +17661,9 @@ button.bw-delay-badge:focus-visible {
 .bw-ticker__track {
   position: relative;
   flex: none;
-  width: 30px;
-  height: 17px;
-  border-radius: 9px;
+  width: 26px;
+  height: 15px;
+  border-radius: 8px;
   background: #9aa8a1;
   transition: background 0.2s ease;
 }
@@ -17671,8 +17671,8 @@ button.bw-delay-badge:focus-visible {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 13px;
-  height: 13px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
   background: #ffffff;
   transition: transform 0.2s ease;
@@ -17681,53 +17681,73 @@ button.bw-delay-badge:focus-visible {
   background: #4ade80;
 }
 .bw-ticker__switch[aria-checked="true"] .bw-ticker__track > span {
-  transform: translateX(13px);
+  transform: translateX(11px);
 }
 .bw-ticker__lines {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 2px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
+/* Comme dans les jeux en ligne : pas de carte blanche, un voile sombre léger et du texte blanc. */
 .bw-ticker__lines > li {
-  animation: bw-ticker-in 0.35s ease-out both, bw-ticker-out 0.5s ease-in 5.5s both;
+  animation: bw-ticker-in 0.35s ease-out both, bw-ticker-out 0.6s ease-in 11.4s both;
 }
 .bw-ticker__line {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  width: 100%;
-  padding: 7px 10px 7px 7px;
+  gap: 6px;
+  max-width: 100%;
+  padding: 3px 9px 3px 3px;
   border: 0;
-  border-radius: 14px;
-  background: #ffffffeb;
-  box-shadow: 0 4px 14px #16324a26;
-  color: #12261d;
+  border-radius: 11px;
+  background: #0b1a1352;
+  color: #ffffff;
   text-align: left;
+  text-shadow: 0 1px 2px #000000b3;
   cursor: pointer;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  transition: background 0.15s ease;
+}
+.bw-ticker__line:hover {
+  background: #0b1a138c;
+}
+.bw-ticker__line > :first-child {
+  flex: none;
+  width: 20px !important;
+  height: 20px !important;
 }
 .bw-ticker__text {
   min-width: 0;
-  font-size: 13px;
-  line-height: 1.35;
-}
-.bw-ticker__text > b {
-  color: #135c3a;
-}
-.bw-ticker__text > small {
-  color: #4f6058;
-  font-size: 11.5px;
-}
-.bw-ticker__text > span {
-  display: -webkit-box;
   overflow: hidden;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+  display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow-wrap: anywhere;
+}
+.bw-ticker__text > b {
+  color: #86efac;
+  font-weight: 800;
+}
+.bw-ticker__text > small {
+  color: #ffffffb3;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.bw-ticker__text > small::after {
+  content: " ·";
+}
+.bw-ticker__text > span {
+  display: inline;
+}
+.bw-ticker__text img {
+  vertical-align: -3px;
 }
 @keyframes bw-ticker-in {
   from {
@@ -17752,18 +17772,35 @@ button.bw-delay-badge:focus-visible {
     left: auto;
     right: calc(1.25rem + 53px + 18px);
     bottom: 1.5rem;
-    width: 380px;
+    width: 340px;
+    align-items: flex-end;
+  }
+  .bw-ticker__lines {
+    align-items: flex-end;
   }
   .bw-ticker__head {
     justify-content: flex-end;
   }
-  .bw-ticker__general,
-  .bw-ticker__switch {
-    height: 32px;
-    border-radius: 16px;
-    font-size: 13px;
-  }
   .bw-ticker__text {
-    font-size: 14px;
+    font-size: 12.5px;
   }
+}
+/* Accueil (Réserver) : le fil reste dans le cadre de la carte. */
+.bw-ticker[data-inline] {
+  position: absolute;
+  z-index: 19;
+  left: 12px;
+  /* Au-dessus du bouton « Agrandir la carte » du téléphone. */
+  bottom: 64px;
+}
+@media (min-width: 768px) {
+  .bw-ticker[data-inline] {
+    left: auto;
+    right: calc(1.25rem + 53px + 18px);
+    bottom: 1.25rem;
+  }
+}
+/* Le fil des salons joue déjà le rôle de l'invitation du bouton Salons : pas les deux à la fois. */
+body:has(.bw-ticker:not([data-off])) .bw-messages-preview {
+  display: none;
 }

@@ -2067,8 +2067,11 @@ function Index() {
             <RoomGuestAccept />
             <GeneralRoomHost />
             {/* Carte en direct : les messages des salons défilent, comme dans un jeu en ligne. */}
-            {liveMap && !voyage ? (
-              <ChatTicker onSelect={(next) => handleSelectRef.current(next)} />
+            {(liveMap || landing) && !voyage && !selection ? (
+              <ChatTicker
+                inline={landing}
+                onSelect={(next) => handleSelectRef.current(next)}
+              />
             ) : null}
             {/* Ma traversée pas encore sur la carte : chrono flottant. */}
             {voyage ? null : (

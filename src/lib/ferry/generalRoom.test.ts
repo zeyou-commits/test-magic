@@ -33,18 +33,32 @@ describe("fil des salons sur la carte", () => {
   });
 
   it("fait entrer un message par pas, 3 au plus, et retire ceux qui ont fait leur temps", () => {
-    let state = enqueueTicker(emptyTicker, ["d", "c", "b", "a"].map(line), false);
+    let state = enqueueTicker(emptyTicker, ["e", "d", "c", "b", "a"].map(line), false);
+    const ids = () => state.shown.map((item) => item.line.id);
     let now = 0;
     state = stepTicker(state, now);
-    expect(state.shown.map((item) => item.line.id)).toEqual(["a"]);
-    now += TICKER_STEP_MS;
+    expect(ids()).toEqual(["a"]);
+    for (const expected of [["a", "b"], ["a", "b", "c"]]) {
+      now += TICKER_STEP_MS;
+      state = stepTicker(state, now);
+      expect(ids()).toEqual(expected);
+    }
+    // Après son temps d'affichage, « a » laisse la place.
+    now = TICKER_LIFE_MS + 1;
     state = stepTicker(state, now);
-    expect(state.shown.map((item) => item.line.id)).toEqual(["a", "b"]);
-    now += TICKER_STEP_MS;
-    // 6 s après son entrée, « a » laisse la place.
-    expect(now).toBe(TICKER_LIFE_MS);
-    state = stepTicker(state, now);
-    expect(state.shown.map((item) => item.line.id)).toEqual(["b", "c"]);
+    expect(ids()).toEqual(["b", "c", "d"]);
+  });
+
+  it("tourne en boucle quand il n'y a plus de nouveau message", () => {
+    let state = enqueueTicker(emptyTicker, [line("b"), line("a")], false);
+    let now = 0;
+    const seenIds: string[] = [];
+    for (let i = 0; i < 6; i++) {
+      state = stepTicker(state, now);
+      seenIds.push(state.shown[state.shown.length - 1]!.line.id);
+      now += TICKER_LIFE_MS + 1;
+    }
+    expect(seenIds).toEqual(["a", "b", "a", "b", "a", "b"]);
   });
 
   it("réduction des animations : une seule ligne à la fois", () => {

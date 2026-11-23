@@ -199,10 +199,47 @@ export function RoomPicker({
               <DialogHeader>
                 <DialogTitle>{tr("ui.roomPicker.bienvenueABord")}</DialogTitle>
                 <p className="bw-room-picker__intro">
-                  {tr("ui.roomPicker.uneQuestionAvantDePartir")}
+                  Échangez avec les voyageurs, ou trouvez votre réponse dans la FAQ.
                 </p>
               </DialogHeader>
+              {/* Dans l'ordre : le salon de tous, celui de sa traversée, puis la FAQ. */}
               <div className="bw-room-picker__choices">
+                <button
+                  type="button"
+                  className="bw-room-picker__choice"
+                  data-kind="salon"
+                  onClick={() => {
+                    close();
+                    afterOverlayClose(openGeneralRoom);
+                  }}
+                >
+                  <span className="bw-room-picker__choice-icon" aria-hidden>
+                    <Globe2 size={22} />
+                  </span>
+                  <strong>{GENERAL_TITLE}</strong>
+                  <small>
+                    Tous les voyageurs, avec ou sans traversée prévue : la route, les papiers, les
+                    bons plans.
+                  </small>
+                  <span className="bw-room-picker__choice-go">
+                    Entrer dans le salon<ArrowRight size={15} aria-hidden />
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="bw-room-picker__choice"
+                  data-kind="crossing"
+                  onClick={() => setMode("salons")}
+                >
+                  <span className="bw-room-picker__choice-icon" aria-hidden>
+                    <MessagesSquare size={22} />
+                  </span>
+                  <strong>Salon d'une traversée</strong>
+                  <small>{tr("ui.roomPicker.lesVoyageursDUneTraversee")}</small>
+                  <span className="bw-room-picker__choice-go">
+                    {tr("ui.roomPicker.choisirMaTraversee")}<ArrowRight size={15} aria-hidden />
+                  </span>
+                </button>
                 <button
                   type="button"
                   className="bw-room-picker__choice"
@@ -212,29 +249,12 @@ export function RoomPicker({
                   <span className="bw-room-picker__choice-icon" aria-hidden>
                     <CircleHelp size={22} />
                   </span>
-                  <strong>{tr("ui.roomPicker.poserUneQuestion")}</strong>
+                  <strong>Questions fréquentes</strong>
                   <small>
-                    {tr("ui.roomPicker.papiersTpdHorairesPrixLa")}
+                    Papiers, TPD, horaires, prix : les réponses de BledWay, sinon les bons contacts.
                   </small>
                   <span className="bw-room-picker__choice-go">
-                    {tr("ui.roomPicker.chercherUneReponse")}<ArrowRight size={15} aria-hidden />
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  className="bw-room-picker__choice"
-                  data-kind="salon"
-                  onClick={() => setMode("salons")}
-                >
-                  <span className="bw-room-picker__choice-icon" aria-hidden>
-                    <MessagesSquare size={22} />
-                  </span>
-                  <strong>{tr("ui.roomPicker.rejoindreUnSalon")}</strong>
-                  <small>
-                    {tr("ui.roomPicker.lesVoyageursDUneTraversee")}
-                  </small>
-                  <span className="bw-room-picker__choice-go">
-                    {tr("ui.roomPicker.choisirMaTraversee")}<ArrowRight size={15} aria-hidden />
+                    Voir la FAQ<ArrowRight size={15} aria-hidden />
                   </span>
                 </button>
               </div>
@@ -243,7 +263,7 @@ export function RoomPicker({
             <>
               <DialogHeader>
                 {back}
-                <DialogTitle>{tr("ui.roomPicker.uneQuestion")}</DialogTitle>
+                <DialogTitle>Questions fréquentes</DialogTitle>
                 <p className="bw-room-picker__intro">
                   {tr("ui.roomPicker.lesReponsesDeBledwayD")}
                 </p>
@@ -425,7 +445,7 @@ export function RoomPicker({
           >
             <CircleHelp size={16} aria-hidden />
             <span>
-              <strong>{tr("ui.roomPicker.uneQuestion")}</strong>
+              <strong>Questions fréquentes</strong>
               <small>{tr("ui.roomPicker.papiersHorairesPrixTrouvezLa")}</small>
             </span>
           </button>

@@ -116,10 +116,17 @@ function useAboveSheet(ref: React.RefObject<HTMLElement | null>, active: boolean
 
 /**
  * Comme dans les jeux en ligne : les derniers messages des salons défilent sur la carte en direct.
- * Un message toutes les 3 s, chacun reste 6 s, 3 au plus. Vrais messages seulement, jamais
+ * Un message toutes les 5 s, chacun reste 12 s, 3 au plus, en boucle sur les derniers messages. Vrais messages seulement, jamais
  * d'exemple. L'interrupteur coupe ou rétablit le fil, et le choix reste sur l'appareil.
  */
-export function ChatTicker({ onSelect }: { onSelect: (selection: Selection) => void }) {
+export function ChatTicker({
+  onSelect,
+  inline = false,
+}: {
+  onSelect: (selection: Selection) => void;
+  /** Accueil (Réserver) : la carte est dans la page, le fil reste dans son cadre. */
+  inline?: boolean;
+}) {
   const lines = useQuery(tickerQuery).data;
   const reduce = useReducedMotion();
   // Lu après le premier rendu : le serveur ne connaît pas le choix de l'appareil.
@@ -128,7 +135,7 @@ export function ChatTicker({ onSelect }: { onSelect: (selection: Selection) => v
   const [state, setState] = useState(emptyTicker);
   const first = useRef(true);
   const box = useRef<HTMLElement>(null);
-  useAboveSheet(box, Boolean(lines));
+  useAboveSheet(box, Boolean(lines) && !inline);
   useEffect(() => {
     if (!lines) return;
     setState((current) => enqueueTicker(current, lines, first.current));
@@ -161,14 +168,14 @@ export function ChatTicker({ onSelect }: { onSelect: (selection: Selection) => v
   };
   if (!on)
     return (
-      <section ref={box} className="bw-ticker" data-off aria-label="Messages des salons">
+      <section ref={box} className="bw-ticker" data-off data-inline={inline || undefined} aria-label="Messages des salons">
         <div className="bw-ticker__head">
           <OverlaySwitch on={false} onToggle={toggle} />
         </div>
       </section>
     );
   return (
-    <section ref={box} className="bw-ticker" aria-label="Messages des salons">
+    <section ref={box} className="bw-ticker" data-inline={inline || undefined} aria-label="Messages des salons">
       <ol className="bw-ticker__lines" data-reduce={reduce || undefined}>
         {state.shown.map(({ line }) => (
           <li key={line.id}>
@@ -178,9 +185,9 @@ export function ChatTicker({ onSelect }: { onSelect: (selection: Selection) => v
               onClick={() => openLine(line)}
               aria-label={`${line.author.pseudo}, ${line.label} : ouvrir le salon`}
             >
-              <AuthorAvatar author={line.author} size={28} />
+              <AuthorAvatar author={line.author} size={20} />
               <span className="bw-ticker__text">
-                <b>{line.author.pseudo}</b> <small>{line.label}</small>
+                <b>{line.author.pseudo}</b> <small>{line.label}</small>{" "}
                 <span>
                   <ChatText body={line.body} size={18} />
                 </span>

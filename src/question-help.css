@@ -729,12 +729,12 @@
 
 /* Bouton Salons, nouveau visiteur : d'abord le choix « Poser une question » ou « Rejoindre un salon ». */
 .bw-room-picker.bw-room-picker--choose {
-  width: min(600px, calc(100vw - 24px));
+  width: min(860px, calc(100vw - 24px));
   grid-template-rows: auto auto;
 }
 .bw-room-picker__choices {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 .bw-room-picker__choice {
@@ -820,12 +820,30 @@
 .bw-room-picker__back:hover {
   background: #edf6ef;
 }
-@media (max-width: 480px) {
+/* La FAQ, troisième choix : plus discrète que les deux salons. */
+.bw-room-picker__choice[data-kind="question"] {
+  background: #f7f8f6;
+}
+@media (max-width: 720px) {
   .bw-room-picker__choices {
     grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
   }
   .bw-room-picker__choice {
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 12px;
+    row-gap: 2px;
     min-height: 0;
+    padding: 12px 14px;
+  }
+  .bw-room-picker__choice-icon {
+    grid-row: span 3;
+    width: 40px;
+    height: 40px;
+    margin-bottom: 0;
+  }
+  .bw-room-picker__choice-go {
+    padding-top: 2px;
   }
 }
 /* Réponses sur plusieurs lignes (accroche, puces) : les retours à la ligne sont gardés. */

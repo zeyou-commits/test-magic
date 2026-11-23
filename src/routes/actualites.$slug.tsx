@@ -11,7 +11,10 @@ import { newsKinds, type NewsItem } from "@/lib/ferry/flash";
 import { formatDateParts } from "@/lib/ferry/format";
 import {
   newsDay,
+  newsAgo,
   newsDeparturesQuery,
+  newsEndsAt,
+  newsIsOver,
   newsFeedQuery,
   newsCompanyIds,
   newsIdFromSlug,
@@ -109,7 +112,9 @@ function NewsArticlePage() {
                 <b>{ownCompanies.map((company) => company.name).join(", ")}</b>
               </span>
             ) : null}
-            <time dateTime={item.starts_at}>{newsDay(item.starts_at)}</time>
+            <time dateTime={item.starts_at}>
+              {newsDay(item.starts_at)} · {newsAgo(item.starts_at)}
+            </time>
             <span>{minutes}{tr("ui.pageActualitesSlug.minDeLecture")}</span>
           </p>
         </div>
@@ -118,6 +123,7 @@ function NewsArticlePage() {
 
       <div className="bw-article__layout">
         <article className="bw-article__body">
+          <OverNotice item={item} />
           <p className="bw-article__lead">{item.summary}</p>
           <NewsImpact ids={item.departure_ids} />
           {item.source_url ? (
@@ -240,6 +246,22 @@ function HeroVisual({ vessel, company }: { vessel?: Vessel | undefined; company?
         <Newspaper size={56} />
       )}
     </span>
+  );
+}
+
+/** Une annonce terminée le dit tout de suite, pour ne pas être prise pour une info du jour. */
+function OverNotice({ item }: { item: NewsItem }) {
+  const departures = useQuery(newsDeparturesQuery(item.departure_ids)).data ?? [];
+  const last = departures.at(-1)?.departure_at ?? null;
+  if (item.departure_ids.length && !departures.length && !item.ends_at) return null;
+  if (!newsIsOver(item, last)) return null;
+  const end = newsEndsAt(item, last);
+  return (
+    <p className="bw-news-overnote" role="note">
+      <b>Cette annonce est terminée.</b>{" "}
+      {end ? `Elle ne concerne plus de traversée à venir depuis le ${newsDay(new Date(end).toISOString())}.` : ""}{" "}
+      <Link to="/actualites">Voir les actualités récentes</Link>
+    </p>
   );
 }
 

@@ -1,8 +1,8 @@
 import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { matchesTraffic } from "@/lib/ferry/filterSync";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Anchor, ArrowDownLeft, ArrowUpRight, MapPin } from "lucide-react";
+import { Anchor, ArrowDownLeft, ArrowUpRight, ChevronDown, MapPin } from "lucide-react";
 import { TrafficCard } from "./TrafficCard";
 import { LivePeek } from "./LivePeek";
 import {
@@ -26,6 +26,24 @@ import { MyTripHero } from "./MyTripHero";
 import { useMyTrip } from "@/lib/ferry/myTrip";
 import type { MapPreview } from "@/lib/ferry/mapPresentation";
 import { tr } from "@/lib/i18n";
+
+/** Mouvements montrés d'abord, puis ajoutés à chaque « Voir plus ». */
+const PAGE = 6;
+const MORE = 8;
+
+/** « Aujourd'hui », « Demain », puis « mercredi 26 nov. ». */
+function dayLabel(key: string, todayKey: string) {
+  const at = Date.parse(`${key}T12:00:00Z`);
+  const gap = Math.round((at - Date.parse(`${todayKey}T12:00:00Z`)) / 86_400_000);
+  if (gap <= 0) return "Aujourd'hui";
+  if (gap === 1) return "Demain";
+  return new Intl.DateTimeFormat("fr-FR", {
+    timeZone: "UTC",
+    weekday: "long",
+    day: "numeric",
+    month: "short",
+  }).format(new Date(at));
+}
 
 export function HomeTraffic({
   onSelect,
@@ -58,6 +76,8 @@ export function HomeTraffic({
   const signals = useLiveShips();
   const [now, setNow] = useState(() => Date.now());
   const [filter, setFilter] = useState<"all" | "departure" | "arrival">("all");
+  // La liste s'allonge sur place : on ne quitte jamais le direct pour voir la suite.
+  const [visible, setVisible] = useState(PAGE);
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(timer);
@@ -252,6 +272,7 @@ export function HomeTraffic({
               aria-pressed={filter === value}
               onClick={() => {
                 setFilter(value);
+                setVisible(PAGE);
               }}
               className={`min-h-9 flex-1 rounded-lg text-xs font-semibold ${filter === value ? "bg-white text-primary shadow-sm" : "text-muted-foreground"}`}
             >
@@ -260,14 +281,25 @@ export function HomeTraffic({
           ))}
         </div>
         {(() => {
-          // Mouvements regroupés par port, dans l'ordre du premier mouvement de chaque port.
+          // Mouvements regroupés par jour, puis par port dans l'ordre du premier mouvement de chaque port.
           const groups = new Map<string, typeof events>();
-          events.slice(0, 6).forEach((e) => {
-            groups.set(e.port.id, [...(groups.get(e.port.id) ?? []), e]);
+          const dayOf = (e: (typeof events)[number]) => dateKeyInZone(e.iso!, portTimeZone(e.port));
+          events.slice(0, visible).forEach((e) => {
+            const key = `${dayOf(e)}|${e.port.id}`;
+            groups.set(key, [...(groups.get(key) ?? []), e]);
           });
-          return [...groups.values()].map((list) => (
+          const entries = [...groups.entries()];
+          const days = new Set(entries.map(([key]) => key.split("|")[0]));
+          const todayKey = dateKeyInZone(new Date(now), "Europe/Paris");
+          return entries.map(([key, list], index) => {
+            const day = key.split("|")[0]!;
+            const firstOfDay = index === 0 || entries[index - 1]![0].split("|")[0] !== day;
+            return (
+            <Fragment key={key}>
+            {days.size > 1 && firstOfDay ? (
+              <p className="bw-traffic-day">{dayLabel(day, todayKey)}</p>
+            ) : null}
             <div
-              key={list[0]!.port.id}
               className="mb-3 overflow-hidden rounded-xl border border-border/70 bg-white shadow-sm"
             >
               <button
@@ -339,7 +371,9 @@ export function HomeTraffic({
                 );
               })}
             </div>
-          ));
+            </Fragment>
+            );
+          });
         })()}
         {!events.length && (
           <p className="py-2 text-xs text-muted-foreground">
@@ -348,14 +382,18 @@ export function HomeTraffic({
               : tr("ui.homeTraffic.aucunMouvementPublieAVenir")}
           </p>
         )}
-        {events.length > 6 && (
-          <a
-            href="/horaires"
-            className="mt-2 flex min-h-10 w-full items-center justify-center text-xs font-semibold text-primary"
+        {events.length > visible ? (
+          <button
+            type="button"
+            onClick={() => setVisible((count) => count + MORE)}
+            className="bw-traffic-more"
           >
-            {tr("ui.homeTraffic.voirTousLesDepartsEt")}
-          </a>
-        )}
+            {filter === "arrival" ? "Voir plus d'arrivées" : "Voir plus de départs"}
+            <ChevronDown className="size-4" aria-hidden />
+          </button>
+        ) : events.length > PAGE ? (
+          <p className="bw-traffic-end">Tous les mouvements publiés sont affichés.</p>
+        ) : null}
       </section>
     </div>
   );

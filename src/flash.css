@@ -18231,3 +18231,225 @@ body:has(.bw-ticker:not([data-off])) .bw-messages-preview {
 .bw-portpick-sheet__close:focus:not(:focus-visible) {
   outline: none;
 }
+
+/* Actualités : fraîcheur, annonces terminées, plus anciennes repliées (23/11/2026). */
+.bw-news-ago {
+  color: #0e7a43;
+  font-weight: 800;
+}
+.bw-news-over {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eef1ef;
+  color: #5b6b66;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.bw-news-tile[data-over] {
+  background: #fafbfa;
+  box-shadow: none;
+}
+.bw-news-tile[data-over] h3,
+.bw-news-tile[data-over] p {
+  color: #7a8883;
+}
+.bw-news-tile[data-over] .bw-news-logos,
+.bw-news-tile[data-over] .bw-news-kind {
+  filter: grayscale(1);
+  opacity: 0.7;
+}
+.bw-news-serious em {
+  font-style: normal;
+  opacity: 0.75;
+}
+.bw-news-older {
+  margin-top: 28px;
+  border-top: 1px solid #e3ebe6;
+  padding-top: 14px;
+}
+.bw-news-older > summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  list-style: none;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #f4f7f5;
+  color: #123f2c;
+}
+.bw-news-older > summary::-webkit-details-marker {
+  display: none;
+}
+.bw-news-older > summary > span {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.bw-news-older > summary small {
+  color: #5b6b66;
+  font-size: 13px;
+}
+.bw-news-older__chev {
+  transition: transform 160ms ease;
+}
+.bw-news-older[open] .bw-news-older__chev {
+  transform: rotate(180deg);
+}
+.bw-news-overnote {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-left: 4px solid #8a9a94;
+  border-radius: 10px;
+  background: #f1f4f2;
+  color: #34443e;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.bw-news-overnote a {
+  color: #0e7a43;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+/* Salons : l'heure toujours visible, en petit à droite du message (23/11/2026). */
+.bw-chat__stamp {
+  float: right;
+  margin: 6px 0 -2px 10px;
+  color: #8a9a94;
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.bw-chat__line::after {
+  content: "";
+  display: block;
+  clear: both;
+}
+
+/* Direct : la liste des mouvements s'allonge sur place (23/11/2026). */
+.bw-traffic-day {
+  margin: 14px 2px 6px;
+  color: #123f2c;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.bw-traffic-day:first-child {
+  margin-top: 4px;
+}
+.bw-traffic-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 46px;
+  margin-top: 6px;
+  border: 1px solid #cfe3d7;
+  border-radius: 14px;
+  background: #f2f8f4;
+  color: #0e7a43;
+  font-size: 14px;
+  font-weight: 800;
+}
+.bw-traffic-more:hover {
+  background: #e6f2ea;
+}
+.bw-traffic-more small {
+  color: #5b6b66;
+  font-size: 12px;
+  font-weight: 600;
+}
+.bw-traffic-end {
+  padding: 10px 0 4px;
+  color: #5b6b66;
+  font-size: 12px;
+  text-align: center;
+}
+
+/* Choix du salon : la liste prend la place (23/11/2026). La fenêtre occupe presque tout l'écran,
+   l'en-tête, le salon général et les questions se font compacts : on voit 6 à 8 traversées d'un coup. */
+.bw-room-picker.bw-room-picker--salons {
+  height: min(92dvh, 900px);
+  max-height: 92dvh;
+  gap: 10px;
+}
+.bw-room-picker--salons .bw-room-picker__list {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.bw-room-picker--salons .bw-room-picker__list section + section {
+  margin-top: 10px;
+}
+.bw-room-picker--salons .bw-room-picker__ask {
+  min-height: 42px;
+  padding: 6px 12px;
+}
+.bw-room-picker--salons .bw-room-picker__ask small {
+  display: none;
+}
+@media (max-width: 639px) {
+  .bw-room-picker.bw-room-picker--salons {
+    width: calc(100vw - 16px);
+    height: 94dvh;
+    max-height: 94dvh;
+    padding: 14px 12px 10px;
+    border-radius: 20px;
+  }
+  .bw-room-picker--salons .bw-room-picker__hero {
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 8px;
+  }
+  .bw-room-picker--salons .bw-room-picker__hero-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+  }
+  .bw-room-picker--salons .bw-room-picker__hero h2 {
+    font-size: 17px;
+  }
+  .bw-room-picker--salons .bw-room-picker__hero .bw-room-picker__intro {
+    display: -webkit-box;
+    overflow: hidden;
+    margin-top: 2px;
+    font-size: 12.5px;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+  .bw-room-picker--salons .bw-room-picker__general {
+    min-height: 48px;
+    padding: 6px 10px;
+    gap: 10px;
+  }
+  .bw-room-picker--salons .bw-room-picker__general-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+  }
+  .bw-room-picker--salons .bw-room-picker__general small {
+    font-size: 12px;
+  }
+  .bw-room-picker--salons .bw-room-picker__search input {
+    min-height: 40px;
+  }
+  .bw-room-picker--salons .bw-room-picker__list li button {
+    min-height: 52px;
+    padding: 7px 10px;
+  }
+}
+.bw-news-lead .bw-news-ago {
+  color: #a7f3c6;
+}
+.bw-news-tile__top time {
+  flex: none;
+  white-space: nowrap;
+}

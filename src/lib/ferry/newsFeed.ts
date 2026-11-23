@@ -89,6 +89,71 @@ export const newsDay = (iso: string) =>
     year: "numeric",
   }).format(new Date(iso));
 
+const DAY = 86_400_000;
+/** Une actualité de moins de 3 semaines (ou encore en cours) reste « récente ». */
+export const NEWS_FRESH_DAYS = 21;
+
+/**
+ * Le moment où une actualité cesse d'être « en cours » :
+ * sa date de fin si l'équipe l'a posée ; sinon 24 h après la dernière traversée citée ;
+ * sinon, pour une alerte ou une perturbation, 3 jours après sa publication.
+ * Une info générale n'a pas de fin : elle vieillit seulement.
+ */
+export function newsEndsAt(
+  item: Pick<NewsItem, "kind" | "starts_at" | "ends_at">,
+  lastDeparture?: string | null,
+): number | null {
+  if (item.ends_at) return Date.parse(item.ends_at);
+  if (lastDeparture) return Date.parse(lastDeparture) + DAY;
+  if (item.kind !== "info") return Date.parse(item.starts_at) + 3 * DAY;
+  return null;
+}
+
+export const newsIsOver = (
+  item: Pick<NewsItem, "kind" | "starts_at" | "ends_at">,
+  lastDeparture?: string | null,
+  now = Date.now(),
+) => {
+  const end = newsEndsAt(item, lastDeparture);
+  return end !== null && end <= now;
+};
+
+/** Récente : publiée il y a moins de 3 semaines et pas terminée. */
+export const newsIsFresh = (
+  item: Pick<NewsItem, "kind" | "starts_at" | "ends_at">,
+  lastDeparture?: string | null,
+  now = Date.now(),
+) => !newsIsOver(item, lastDeparture, now) && now - Date.parse(item.starts_at) < NEWS_FRESH_DAYS * DAY;
+
+/** La dernière traversée citée par chaque actualité (id → date ISO). */
+export function newsLastDepartures(items: NewsItem[], departures: NewsDeparture[]) {
+  const byId = new Map(departures.map((departure) => [departure.id, departure.departure_at]));
+  const last = new Map<string, string>();
+  for (const item of items) {
+    const dates = item.departure_ids.map((id) => byId.get(id)).filter((date): date is string => Boolean(date));
+    if (dates.length) last.set(item.id, dates.sort().at(-1)!);
+  }
+  return last;
+}
+
+/** Fraîcheur lisible d'un coup d'œil : « aujourd'hui », « hier », « il y a 5 jours »… */
+export function newsAgo(iso: string, now = Date.now()) {
+  const paris = (time: number) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date(time));
+  const days = Math.round((Date.parse(paris(now)) - Date.parse(paris(Date.parse(iso)))) / DAY);
+  if (days <= 0) return "aujourd'hui";
+  if (days === 1) return "hier";
+  if (days < 7) return `il y a ${days} jours`;
+  if (days < 14) return "il y a 1 semaine";
+  if (days < 31) return `il y a ${Math.floor(days / 7)} semaines`;
+  return new Intl.DateTimeFormat("fr-FR", {
+    timeZone: "Europe/Paris",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(iso));
+}
+
 /** Sans accents ni ponctuation, mots séparés par une espace : « Algérie Ferries » → « algerie ferries ». */
 const plainWords = (text: string) =>
   text

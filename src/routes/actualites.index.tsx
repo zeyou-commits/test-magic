@@ -1,13 +1,24 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { AlertTriangle, Anchor, ArrowRight, Newspaper } from "lucide-react";
+import { AlertTriangle, Anchor, ArrowRight, Archive, ChevronDown, Newspaper } from "lucide-react";
 import { incidentHeadline, incidentsQuery } from "@/lib/ferry/incidents";
 import { Breadcrumbs } from "@/components/editorial/Editorial";
 import { PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { newsKinds, type NewsItem } from "@/lib/ferry/flash";
-import { newsCompanyIds, newsDay, newsFeedQuery, newsPath, newsSlug } from "@/lib/ferry/newsFeed";
+import {
+  newsAgo,
+  newsCompanyIds,
+  newsDay,
+  newsDeparturesQuery,
+  newsFeedQuery,
+  newsIsFresh,
+  newsIsOver,
+  newsLastDepartures,
+  newsPath,
+  newsSlug,
+} from "@/lib/ferry/newsFeed";
 import { companiesQuery, portsQuery, vesselsQuery } from "@/lib/ferry/queries";
 import type { Company, Vessel } from "@/lib/ferry/types";
 import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
@@ -20,11 +31,14 @@ const description =
 
 export const Route = createFileRoute("/actualites/")({
   loader: async ({ context }) => {
-    await Promise.all([
+    const [items] = await Promise.all([
       context.queryClient.ensureQueryData(newsFeedQuery),
       context.queryClient.ensureQueryData(companiesQuery),
       context.queryClient.ensureQueryData(vesselsQuery),
     ]);
+    // Les traversées citées disent quand une annonce est terminée : chargées avant l'affichage.
+    const ids = citedDepartureIds(items);
+    if (ids.length) await context.queryClient.ensureQueryData(newsDeparturesQuery(ids));
   },
   head: () => {
     const base = seoHead(title, description, "/actualites");
@@ -49,12 +63,8 @@ const FILTERS = [
   ...Object.entries(newsKinds).map(([id, kind]) => ({ id, label: kind.label })),
 ];
 
-const shortDay = (iso: string) =>
-  new Intl.DateTimeFormat("fr-FR", {
-    timeZone: "Europe/Paris",
-    day: "numeric",
-    month: "short",
-  }).format(new Date(iso));
+const citedDepartureIds = (items: NewsItem[]) =>
+  [...new Set(items.flatMap((item) => item.departure_ids))].sort();
 
 /** Les logos des compagnies concernées, ou un pictogramme pour une info générale. */
 function Logos({ companies }: { companies: Company[] }) {
@@ -98,13 +108,22 @@ function LeadPhoto({
  * En tête de page : ce qui est grave et en cours (navires immobilisés, alertes non levées).
  * Les salons concernés affichent la même info épinglée ; la page la réunit pour tout le monde.
  */
-function SeriousNow({ items, vessels }: { items: NewsItem[]; vessels: Vessel[] }) {
+function SeriousNow({
+  items,
+  vessels,
+  last,
+}: {
+  items: NewsItem[];
+  vessels: Vessel[];
+  last: Map<string, string>;
+}) {
   const incidents = useQuery(incidentsQuery).data ?? [];
   const ports = useQuery(portsQuery).data ?? [];
   const now = Date.now();
   const blocked = incidents.filter((incident) => incident.status === "confirmed" || incident.status === "verifying");
+  // Une alerte n'est « en cours » que tant que sa traversée n'est pas passée (ou sa fin posée).
   const alerts = items.filter(
-    (item) => item.kind === "alerte" && (!item.ends_at || Date.parse(item.ends_at) > now),
+    (item) => item.kind === "alerte" && !newsIsOver(item, last.get(item.id), now),
   );
   if (!blocked.length && !alerts.length) return null;
   return (
@@ -146,7 +165,9 @@ function SeriousNow({ items, vessels }: { items: NewsItem[]; vessels: Vessel[] }
                 <Link to="/actualites/$slug" params={{ slug: newsSlug(item) }}>
                   {item.title}
                 </Link>
-                <small>{item.summary}</small>
+                <small>
+                  {item.summary} <em>· {newsAgo(item.starts_at, now)}</em>
+                </small>
               </li>
             ))}
           </ul>
@@ -156,12 +177,60 @@ function SeriousNow({ items, vessels }: { items: NewsItem[]; vessels: Vessel[] }
   );
 }
 
+/** Une actualité en tuile : fraîcheur en clair, « Terminé » quand elle ne vaut plus. */
+function NewsTile({
+  item,
+  companies,
+  over,
+}: {
+  item: NewsItem;
+  companies: Company[];
+  over: boolean;
+}) {
+  const count = item.departure_ids.length;
+  return (
+    <Link
+      to="/actualites/$slug"
+      params={{ slug: newsSlug(item) }}
+      className="bw-news-tile"
+      data-over={over || undefined}
+    >
+      <span className="bw-news-tile__top">
+        <Logos companies={companies} />
+        <span className="bw-news-kind" data-kind={item.kind}>
+          {newsKinds[item.kind].label}
+        </span>
+        {over ? <span className="bw-news-over">Terminé</span> : null}
+        <time dateTime={item.starts_at} title={newsDay(item.starts_at)}>
+          {newsAgo(item.starts_at)}
+        </time>
+      </span>
+      <h3>{item.title}</h3>
+      <p>{item.summary}</p>
+      <span className="bw-news-tile__foot">
+        <span>
+          {item.source_name}
+          {count ? ` · ${count} traversée${count > 1 ? "s" : ""} concernée${count > 1 ? "s" : ""}` : ""}
+        </span>
+        <span className="bw-news-tile__more">
+          {tr("ui.pageActualitesIndex.lire")}
+          <ArrowRight size={14} aria-hidden />
+        </span>
+      </span>
+    </Link>
+  );
+}
+
 function NewsPage() {
   const { data: items } = useSuspenseQuery(newsFeedQuery);
   const { data: companies } = useSuspenseQuery(companiesQuery);
   const { data: vessels } = useSuspenseQuery(vesselsQuery);
+  const ids = useMemo(() => citedDepartureIds(items), [items]);
+  const departures = useQuery(newsDeparturesQuery(ids)).data ?? [];
+  const last = useMemo(() => newsLastDepartures(items, departures), [items, departures]);
   const [filter, setFilter] = useState("all");
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const now = Date.now();
   const companiesOf = (item: NewsItem) =>
     newsCompanyIds(item, vessels, companies)
       .map((id) => companies.find((company) => company.id === id))
@@ -174,7 +243,10 @@ function NewsPage() {
       (filter === "all" || item.kind === filter) &&
       (!companyId || newsCompanyIds(item, vessels, companies).includes(companyId)),
   );
-  const [lead, ...rest] = shown;
+  // La une et la grille ne montrent que le récent : une annonce passée ne se lit plus comme d'actualité.
+  const fresh = shown.filter((item) => newsIsFresh(item, last.get(item.id), now));
+  const older = shown.filter((item) => !newsIsFresh(item, last.get(item.id), now));
+  const [lead, ...rest] = fresh;
   const leadCompanies = lead ? companiesOf(lead) : [];
   const schema = {
     "@context": "https://schema.org",
@@ -205,7 +277,7 @@ function NewsPage() {
         title={tr("ui.pageActualitesIndex.ceQuiBougeSurLa")}
         intro={tr("ui.pageActualitesIndex.naviresPortsCompagniesPerturbationsL")}
       />
-      <SeriousNow items={items} vessels={vessels} />
+      <SeriousNow items={items} vessels={vessels} last={last} />
       {items.length ? (
         <div className="bw-news-filters" role="group" aria-label={tr("ui.pageActualitesIndex.filtrerLesActualites")}>
           {FILTERS.map((item) => (
@@ -244,7 +316,7 @@ function NewsPage() {
             <h2>{lead.title}</h2>
             <p>{lead.summary}</p>
             <span className="bw-news-meta">
-              {newsDay(lead.starts_at)}
+              <b className="bw-news-ago">{newsAgo(lead.starts_at, now)}</b> · {newsDay(lead.starts_at)}
               {lead.source_name ? ` · ${lead.source_name}` : ""}
             </span>
           </span>
@@ -256,7 +328,11 @@ function NewsPage() {
       ) : (
         <div className="bw-news-empty">
           <h2 className="text-lg font-bold">
-            {items.length ? tr("ui.pageActualitesIndex.rienDansCetteSelection") : tr("ui.pageActualitesIndex.lesPremieresActualitesArrivent")}
+            {older.length
+              ? "Rien de nouveau ces trois dernières semaines"
+              : items.length
+                ? tr("ui.pageActualitesIndex.rienDansCetteSelection")
+                : tr("ui.pageActualitesIndex.lesPremieresActualitesArrivent")}
           </h2>
           <p className="mt-2 text-muted-foreground">
             {tr("ui.pageActualitesIndex.enAttendantConsultezLes")}{" "}
@@ -270,35 +346,35 @@ function NewsPage() {
       {rest.length ? (
         <div className="bw-news-grid">
           {rest.map((item) => (
-            <Link
-              key={item.id}
-              to="/actualites/$slug"
-              params={{ slug: newsSlug(item) }}
-              className="bw-news-tile"
-            >
-              <span className="bw-news-tile__top">
-                <Logos companies={companiesOf(item)} />
-                <span className="bw-news-kind" data-kind={item.kind}>
-                  {newsKinds[item.kind].label}
-                </span>
-                <time dateTime={item.starts_at}>{shortDay(item.starts_at)}</time>
-              </span>
-              <h3>{item.title}</h3>
-              <p>{item.summary}</p>
-              <span className="bw-news-tile__foot">
-                <span>
-                  {item.source_name}
-                  {item.departure_ids.length
-                    ? ` · ${item.departure_ids.length} traversée${item.departure_ids.length > 1 ? "s" : ""} concernée${item.departure_ids.length > 1 ? "s" : ""}`
-                    : ""}
-                </span>
-                <span className="bw-news-tile__more">
-                  {tr("ui.pageActualitesIndex.lire")}<ArrowRight size={14} aria-hidden />
-                </span>
-              </span>
-            </Link>
+            <NewsTile key={item.id} item={item} companies={companiesOf(item)} over={false} />
           ))}
         </div>
+      ) : null}
+      {older.length ? (
+        // Les plus anciennes restent consultables, repliées et marquées « Terminé » si elles ne valent plus.
+        <details className="bw-news-older" open={!fresh.length}>
+          <summary>
+            <Archive size={18} aria-hidden />
+            <span>
+              <b>Plus anciennes</b>
+              <small>
+                {older.length} actualité{older.length > 1 ? "s" : ""} de plus de 3 semaines ou terminée
+                {older.length > 1 ? "s" : ""}
+              </small>
+            </span>
+            <ChevronDown size={18} aria-hidden className="bw-news-older__chev" />
+          </summary>
+          <div className="bw-news-grid">
+            {older.map((item) => (
+              <NewsTile
+                key={item.id}
+                item={item}
+                companies={companiesOf(item)}
+                over={newsIsOver(item, last.get(item.id), now)}
+              />
+            ))}
+          </div>
+        </details>
       ) : null}
     </SiteLayout>
   );

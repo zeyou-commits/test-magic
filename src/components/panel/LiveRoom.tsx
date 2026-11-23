@@ -173,6 +173,22 @@ const time = (iso: string) =>
     minute: "2-digit",
   }).format(new Date(iso));
 
+/** L'heure d'un message, comme sur une messagerie : « 18:45 », « hier 18:45 », « 12/11 18:45 ». */
+const stamp = (iso: string) => {
+  const day = (date: Date) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(date);
+  const at = new Date(iso);
+  const gap = Math.round((Date.parse(day(new Date())) - Date.parse(day(at))) / 86_400_000);
+  if (gap <= 0) return time(iso);
+  if (gap === 1) return `hier ${time(iso)}`;
+  const short = new Intl.DateTimeFormat("fr-FR", {
+    timeZone: "Europe/Paris",
+    day: "2-digit",
+    month: "2-digit",
+  }).format(at);
+  return `${short} ${time(iso)}`;
+};
+
 /** Le fil d'un salon ; null tant que le module n'est pas activé en base. */
 export const chatFeedQuery = (kind: RoomKind, room: string, userId: string | undefined) =>
   queryOptions({
@@ -853,6 +869,15 @@ function LiveChat({
                     <CheckCheck size={11} aria-hidden /> {message.same}
                   </em>
                 ) : null}
+                {/* L'heure toujours visible, en petit à droite du message. */}
+                <time
+                  className="bw-chat__stamp"
+                  dateTime={message.created_at}
+                  title={new Date(message.created_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" })}
+                >
+                  {message.edited ? "modifié · " : ""}
+                  {stamp(message.created_at)}
+                </time>
               </button>
               {emoji?.[message.id] && Object.keys(emoji[message.id]!.counts).length ? (
                 <p className="bw-chat__reacts">
@@ -923,10 +948,6 @@ function LiveChat({
                       </span>
                     </span>
                   )}
-                  <time dateTime={message.created_at}>
-                    {time(message.created_at)}
-                    {message.edited ? tr("ui.liveRoom.modifie") : ""}
-                  </time>
                   {closed || reader ? null : (
                     <button
                       type="button"

@@ -8,6 +8,7 @@ import {
   Ship,
 } from "lucide-react";
 import { OPEN_ROOM_PICKER_EVENT } from "@/lib/ferry/chatDemo";
+import { useFleet } from "@/lib/ferry/useFleet";
 import { useVoyageTrip } from "@/lib/ferry/voyageTrip";
 import { useT } from "@/lib/i18n";
 import { MainMenuSheet } from "./MainMenu";
@@ -42,6 +43,18 @@ interface MobileTabBarProps {
   onOpenItinerary?: () => void;
   /** Une traversée suivie : « Réserver » cède la place à « Mon voyage » (mode voyage de la carte). */
   onOpenVoyage?: () => void;
+}
+
+/** Sur l'icône « Direct » : combien de navires sont en mer maintenant (rien s'il n'y en a aucun). */
+function SeaCountBadge() {
+  const count = useFleet().filter((ship) => ship.state === "sea" && !ship.ashore).length;
+  if (!count) return null;
+  const label = `${count} navire${count > 1 ? "s" : ""} en mer en ce moment`;
+  return (
+    <span className="bw-sea-count" role="img" aria-label={label} title={label}>
+      {count > 99 ? "99+" : count}
+    </span>
+  );
 }
 
 const rememberAction = (action: "departures" | "search" | "ports" | "itinerary" | "salons") =>
@@ -160,7 +173,10 @@ export function MobileTabBar({
           data-active={activeTab === "map"}
           className={itemClass}
         >
-          <MapIcon className="size-5" aria-hidden />
+          <span className="relative">
+            <MapIcon className="size-5" aria-hidden />
+            <SeaCountBadge />
+          </span>
           <span>{t("menu.tabFollow")}</span>
         </button>
       ) : (
@@ -170,7 +186,10 @@ export function MobileTabBar({
           className={itemClass}
           data-active={familyIsActive(live, pathname)}
         >
-          <MapIcon className="size-5" aria-hidden />
+          <span className="relative">
+            <MapIcon className="size-5" aria-hidden />
+            <SeaCountBadge />
+          </span>
           <span>{t("menu.tabFollow")}</span>
         </Link>
       )}

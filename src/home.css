@@ -5751,3 +5751,43 @@ body:has(.bw-home--app) {
     transform: translateX(4px);
   }
 }
+
+/* Barre du bas : le nombre de navires en mer sur l'icône « Direct » (23/11/2026). */
+.bw-sea-count {
+  position: absolute;
+  top: -6px;
+  left: calc(100% - 6px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 18px;
+  height: 17px;
+  padding: 0 5px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: #0e7a43;
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.bw-sea-count::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: #7cf0ad;
+  animation: bw-sea-count-pulse 1.8s ease-in-out infinite;
+}
+@keyframes bw-sea-count-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-sea-count::before {
+    animation: none;
+  }
+}

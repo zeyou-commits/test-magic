@@ -3185,7 +3185,7 @@ html {
     /* Avant la mesure : en-tête (72 px) + place réservée au bandeau d'actualités. */
     height: clamp(
       540px,
-      calc(100svh - max(96px, var(--bw-header-height, (72px + var(--bw-ticker-reserve, 42px))) + 16px)),
+      calc(100svh - max(96px, var(--bw-header-height, 72px) + 16px)),
       900px
     );
     scroll-margin-top: var(--bw-header-height, 80px);
@@ -3255,7 +3255,7 @@ html {
   }
   .bw-map-stage[data-panel-open="true"] {
     /* Avant la mesure : en-tête (64 px) + place réservée au bandeau d'actualités. */
-    height: calc(100dvh - var(--bw-header-height, (64px + var(--bw-ticker-reserve, 42px))));
+    height: calc(100dvh - var(--bw-header-height, 64px));
     min-height: 320px;
   }
   .bw-map-stage[data-panel-open="true"] .bw-map-panel {

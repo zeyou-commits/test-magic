@@ -8563,12 +8563,6 @@ body:has(.bw-map-canvas [data-film="true"]:not(.bw-film-caption)) .bw-report {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
 }
-/* Place réservée au bandeau pendant le chargement : hauteur de la visite précédente, sinon celle,
-   habituelle, du fil d'actualités (il s'affiche presque toujours). */
-.bw-top-rail-slot {
-  height: var(--bw-ticker-reserve, 42px);
-  background: linear-gradient(90deg, #0d3b4f, #125a55);
-}
 @media (min-width: 1100px) {
   .bw-top-rail[data-both] {
     grid-template-columns: minmax(0, auto) minmax(320px, 1fr);
@@ -18452,4 +18446,50 @@ body:has(.bw-ticker:not([data-off])) .bw-messages-preview {
 .bw-news-tile__top time {
   flex: none;
   white-space: nowrap;
+}
+
+/* Bandeau d'actualités flottant : posé sous l'en-tête, par-dessus la page, il ne la pousse plus.
+   Il apparaît sans rien décaler. */
+.bw-header > .bw-top-rail {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  z-index: 5;
+  width: min(1480px, calc(100% - 16px));
+  transform: translateX(-50%);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(13, 59, 79, 0.22);
+}
+.bw-header > .bw-top-rail .bw-news-rail {
+  min-height: 26px;
+  padding-left: 6px;
+  padding-right: 2px;
+  font-size: 11.5px;
+}
+.bw-header > .bw-top-rail .bw-news-rail__group a {
+  padding-block: 3px;
+}
+.bw-header > .bw-top-rail .bw-news-rail__chip {
+  width: 18px;
+  height: 18px;
+}
+.bw-header > .bw-top-rail .bw-news-rail__close {
+  width: 24px;
+  height: 24px;
+}
+.bw-header > .bw-top-rail .bw-alert-ticker {
+  min-height: 26px;
+  font-size: 11.5px;
+}
+/* Fiche de la carte en plein écran (téléphone) : l'en-tête disparaît, le bandeau reprend sa place en
+   haut et la fiche se cale dessous (--bw-ticker-h). */
+@media (max-width: 767px) {
+  body:has(.bw-map-stage[data-panel-full="true"]) .bw-header > .bw-top-rail {
+    position: static;
+    width: auto;
+    transform: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
 }

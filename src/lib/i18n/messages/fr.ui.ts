@@ -318,16 +318,6 @@ export const ui = {
     uneQuestion: "Une question ?",
     lesReponsesDeBledwayD: "Les réponses de BledWay d'abord, puis les bons contacts si besoin.",
   },
-  pwaInstall: {
-    installerBledway: "Installer BledWay",
-    bledwayAPorteeDeMain: "BledWay à portée de main",
-    surIphoneTouchezPartagerPuis: "Sur iPhone, touchez Partager puis « Sur l'écran d'accueil ».",
-    retrouvezLaCarteEtVos: "Retrouvez la carte et vos traversées depuis votre écran d'accueil.",
-    ouvrezLeMenuDeVotre:
-      "Ouvrez le menu de votre navigateur (⋮), puis « Installer l'application » ou « Ajouter à l'écran d'accueil ».",
-    masquerLaPropositionDInstallation: "Masquer la proposition d'installation",
-    installerBledway2: " Installer BledWay",
-  },
   phoneInstallCard: {
     qrCodePourInstallerBledway: "QR code pour installer BledWay",
     emportezBledwaySurVotreTelephone: "Emportez BledWay sur votre téléphone",

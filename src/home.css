@@ -5731,3 +5731,23 @@ body:has(.bw-home--app) {
   width: 100% !important;
   height: 100% !important;
 }
+
+/* La 504 chargée du logo remplace la flèche, posée directement sur le marine du bouton. */
+@media (min-width: 1180px) {
+  .bw-wide-cta__go {
+    width: 64px;
+    background: transparent;
+  }
+  .bw-wide-cta__car {
+    width: 60px;
+    height: auto;
+    filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.35));
+    transition: transform 0.25s var(--bw-ease);
+  }
+  .bw-wide-cta:hover .bw-wide-cta__go {
+    transform: none;
+  }
+  .bw-wide-cta:hover .bw-wide-cta__car {
+    transform: translateX(4px);
+  }
+}

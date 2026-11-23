@@ -1021,7 +1021,7 @@ export function SearchPanel({
               >
                 {wideCount ? `Afficher ${wideCount}` : "Afficher les départs"}
                 <span className="bw-wide-cta__go" aria-hidden>
-                  <ArrowRight className="size-4" />
+                  <img src="/504-cta.webp" alt="" width={152} height={96} className="bw-wide-cta__car" />
                 </span>
               </button>
             </div>

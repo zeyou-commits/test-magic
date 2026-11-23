@@ -307,7 +307,17 @@ export function DepartureRows({
 }
 
 /** Carte d'un port : sa photo (celle de la base, sinon Wikimedia Commons), son pays, un lien. */
-export function PortTile({ port, caption }: { port: Port; caption?: string }) {
+export function PortTile({
+  port,
+  caption,
+  detail,
+}: {
+  port: Port;
+  /** Court surtitre en capitales (« Départ », « Arrivée »). */
+  caption?: string;
+  /** Ligne d'information sous le nom (nombre de lignes, prochain départ). */
+  detail?: string;
+}) {
   const photo = useQuery(portPhotoQuery(port)).data ?? null;
   const [failed, setFailed] = useState(false);
   return (
@@ -340,6 +350,9 @@ export function PortTile({ port, caption }: { port: Port; caption?: string }) {
             <MapPin className="size-3.5" aria-hidden /> {port.city ?? port.name},{" "}
             {port.country_name}
           </span>
+          {detail ? (
+            <span className="mt-1 block text-[13px] font-medium text-white/90">{detail}</span>
+          ) : null}
         </span>
         <ArrowRight className="size-5 shrink-0 transition group-hover:translate-x-1" aria-hidden />
       </span>

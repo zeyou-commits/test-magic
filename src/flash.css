@@ -18460,6 +18460,13 @@ body:has(.bw-ticker:not([data-off])) .bw-messages-preview {
   border-radius: 14px;
   overflow: hidden;
   box-shadow: 0 6px 18px rgba(13, 59, 79, 0.22);
+  transition: transform 0.25s ease, opacity 0.2s ease;
+}
+/* Effacé au défilement vers le bas ; il revient en remontant ou au clavier. */
+.bw-header > .bw-top-rail[data-away]:not(:focus-within) {
+  transform: translate(-50%, calc(-100% - 12px));
+  opacity: 0;
+  pointer-events: none;
 }
 .bw-header > .bw-top-rail .bw-news-rail {
   min-height: 26px;
@@ -18491,5 +18498,7 @@ body:has(.bw-ticker:not([data-off])) .bw-messages-preview {
     transform: none;
     border-radius: 0;
     box-shadow: none;
+    opacity: 1;
+    pointer-events: auto;
   }
 }

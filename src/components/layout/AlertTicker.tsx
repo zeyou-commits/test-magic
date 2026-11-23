@@ -42,6 +42,30 @@ export function AlertTicker() {
   return onNewsPages ? null : <AlertTickerBar />;
 }
 
+/**
+ * Le bandeau flotte par-dessus la page : il s'efface dès qu'on fait défiler vers le bas et revient
+ * en remontant (ou en haut de page). Vaut pour la page comme pour les zones qui défilent seules.
+ */
+function useAwayOnScroll() {
+  const [away, setAway] = useState(false);
+  useEffect(() => {
+    const last = new WeakMap<Element, number>();
+    const onScroll = (event: Event) => {
+      const target = event.target === document ? document.scrollingElement : event.target;
+      if (!(target instanceof Element) || target.closest(".bw-top-rail")) return;
+      const y = target.scrollTop;
+      const before = last.get(target) ?? 0;
+      last.set(target, y);
+      // Un défilement horizontal (carrousel) ne change pas scrollTop : il est ignoré.
+      if (Math.abs(y - before) < 4) return;
+      setAway(y > before && y > 24);
+    };
+    document.addEventListener("scroll", onScroll, { capture: true, passive: true });
+    return () => document.removeEventListener("scroll", onScroll, { capture: true });
+  }, []);
+  return away;
+}
+
 function AlertTickerBar() {
   const incidentsResult = useQuery(incidentsQuery);
   const incidents = incidentsResult.data ?? [];
@@ -55,6 +79,7 @@ function AlertTickerBar() {
   const [railDismissed, setRailDismissed] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [copied, setCopied] = useState(false);
+  const away = useAwayOnScroll();
   const ignored = useIgnoredFlash();
   const observer = useRef<ResizeObserver | null>(null);
   // Hauteur du bandeau : sur mobile, une fiche en plein écran se place juste en dessous.
@@ -352,7 +377,7 @@ function AlertTickerBar() {
       .length * 0.24,
   );
   return (
-    <div ref={measure} className="bw-top-rail">
+    <div ref={measure} className="bw-top-rail" data-away={away || undefined}>
       {showAlerts && !merged ? alertBlock() : null}
       {showRail ? (
         <div className="bw-news-rail" role="region" aria-label={tr("ui.alertTicker.filDActualites")}>

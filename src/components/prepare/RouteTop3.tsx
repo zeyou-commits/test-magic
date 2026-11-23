@@ -8,11 +8,12 @@ import {
   routesQuery,
   upcomingDeparturesQuery,
 } from "@/lib/ferry/queries";
-import { buildSailings } from "@/lib/ferry/trips";
+import { buildSailings, priceGapMatters } from "@/lib/ferry/trips";
 import { calculateRoadAccess } from "@/lib/ferry/itinerary.functions";
 import {
   BOARDING_BUFFER_MIN,
   DISEMBARK_BUFFER_MIN,
+  TIE_MIN,
   buildItineraryOptions,
   buildSimulatedSailings,
   distinctItineraries,
@@ -63,7 +64,7 @@ export const assetLabels: Record<Asset, string> = {
  * Notre sélection : le trajet conseillé, puis le gagnant de chaque atout (voyage, traversée,
  * route, prix). Un trajet qui gagne plusieurs atouts n'apparaît qu'une fois, avec ses badges.
  */
-export function selectionByAsset(pool: ItineraryOption[], limit = 4) {
+export function selectionByAsset(pool: ItineraryOption[], limit = 4, children = 0) {
   const leader = pool[0];
   if (!leader) return [];
   const best = (value: (option: ItineraryOption) => number) =>
@@ -74,14 +75,35 @@ export function selectionByAsset(pool: ItineraryOption[], limit = 4) {
     ["sea", best((option) => option.sailing.durationMin ?? Infinity)],
     ["road", best((option) => option.originRoad.distanceKm)],
   ];
-  const picked: { option: ItineraryOption; assets: Asset[] }[] = [];
+  const picked: { option: ItineraryOption; assets: Asset[]; reason?: string }[] = [];
   for (const [asset, option] of winners) {
     if (pool.length < 2 && asset !== "balance") continue;
     const found = picked.find((item) => item.option === option);
     if (found) found.assets.push(asset);
     else picked.push({ option, assets: [asset] });
   }
+  const advice = picked.find((item) => item.assets.includes("balance"));
+  if (advice) advice.reason = adviceReason(leader, winners[1]![1], children);
   return picked.slice(0, limit);
+}
+
+/**
+ * Pourquoi « Notre conseil » : la règle « Recommandé » (le plus rapide à un horaire confortable,
+ * sauf si un autre coûte nettement moins cher) dite en une phrase, comparée au voyage le plus court.
+ * Sans montant : le prix a son étape (Budget).
+ */
+export function adviceReason(leader: ItineraryOption, fastest: ItineraryOption, children = 0) {
+  if (leader === fastest) return "Le plus rapide porte à porte, à un horaire confortable.";
+  const gap = leader.totalMinutes - fastest.totalMinutes;
+  const other = `${fastest.sailing.from.name} → ${fastest.sailing.to.name}`;
+  const traveler = children > 0 ? "family" : "couple";
+  const cheaper =
+    leader.totalEuro < fastest.totalEuro &&
+    priceGapMatters(leader.totalEuro, fastest.totalEuro, traveler);
+  const extra = gap < TIE_MIN ? "presque aussi rapide" : `pour ${formatDuration(gap)} de plus`;
+  if (cheaper)
+    return `Nettement moins cher au total (traversée, essence et péages) que ${other}, ${extra}.`;
+  return `Un départ à une heure plus confortable${children > 0 ? " pour les enfants" : ""} que ${other}, ${extra}.`;
 }
 
 /**
@@ -222,7 +244,7 @@ export function RouteTop3({
     const sorted = distinctItineraries([...real, ...simulated], "recommended", children);
     // Les vrais départs d'abord : une simulation ne passe jamais devant un horaire publié.
     const dated = sorted.filter((option) => !option.sailing.isSimulation);
-    return selectionByAsset(dated.length ? dated : sorted);
+    return selectionByAsset(dated.length ? dated : sorted, 4, children);
   }, [
     road.data,
     sailings,
@@ -302,8 +324,9 @@ export function RouteTop3({
         </p>
       ) : (
         <ol className="grid gap-2">
-          {top.map(({ option, assets }) => (
+          {top.map(({ option, assets, reason }) => (
             <RouteCard
+              reason={reason}
               key={option.sailing.departure.id}
               option={option}
               assets={assets}
@@ -335,6 +358,7 @@ export function RouteTop3({
 function RouteCard({
   option,
   assets,
+  reason,
   open,
   chosen,
   monthLabel,
@@ -344,6 +368,8 @@ function RouteCard({
 }: {
   option: ItineraryOption;
   assets: Asset[];
+  /** Pourquoi c'est « Notre conseil » (seulement sur cette carte). */
+  reason?: string | undefined;
   open: boolean;
   chosen: boolean;
   monthLabel: string;
@@ -441,6 +467,7 @@ function RouteCard({
             <strong className="bw-rcard__name">
               {option.sailing.from.name} → {option.sailing.to.name}
             </strong>
+            {reason ? <span className="bw-rcard__why">{reason}</span> : null}
           </span>
           <span className="bw-rcard__total">
             <strong>{formatDuration(option.totalMinutes)}</strong>

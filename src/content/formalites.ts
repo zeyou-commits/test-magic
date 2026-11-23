@@ -175,7 +175,7 @@ export interface Traveller {
 }
 
 /** Questions qu'on ne présélectionne jamais. */
-export type AskedQ = "nat" | "man";
+export type AskedQ = "nat" | "man" | "age" | "dzDoc";
 
 export const hasAnswered = (t: Traveller, q: AskedQ) => !t.answered || t.answered.includes(q);
 

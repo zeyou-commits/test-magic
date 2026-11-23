@@ -1426,6 +1426,7 @@
 .bw-rcard__badges { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 3px; }
 .bw-rcard__badges span { padding: 1px 7px; border-radius: 7px; background: color-mix(in oklab, var(--primary) 10%, transparent); color: var(--primary); font-size: 0.68rem; font-weight: 800; line-height: 1.5; }
 .bw-rcard__badges [data-asset="balance"] { background: var(--primary); color: var(--primary-foreground); }
+.bw-rcard__why { display: block; margin-top: 2px; font-size: 0.78rem; line-height: 1.3; color: var(--muted-foreground); white-space: normal; }
 .bw-rcard__name { display: block; overflow: hidden; font-size: 0.98rem; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
 .bw-rcard__total { flex: none; text-align: right; }
 .bw-rcard__total strong { display: block; font-size: 1.02rem; font-variant-numeric: tabular-nums; line-height: 1.2; }

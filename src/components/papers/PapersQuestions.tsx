@@ -231,8 +231,8 @@ export function PapersQuestions({
           <Question title="Quel sera son âge le jour du départ ?">
             {choice(
               "Âge le jour du départ",
-              String(ageBandOf(t.age).age),
-              (v) => update({ age: Number(v) }),
+              hasAnswered(t, "age") ? String(ageBandOf(t.age).age) : "",
+              (v) => update({ age: Number(v), answered: mark(t, "age") }),
               ageBands.map((band) => ({
                 value: String(band.age),
                 label: band.label,
@@ -288,10 +288,13 @@ export function PapersQuestions({
             <DzDocsField
               t={t}
               me={me}
+              fresh={!hasAnswered(t, "dzDoc")}
               name={travellerLabel(t, answers.travellers)}
               onChange={(p) =>
                 patch({
-                  travellers: answers.travellers.map((x) => (x.id === t.id ? { ...x, ...p } : x)),
+                  travellers: answers.travellers.map((x) =>
+                    x.id === t.id ? { ...x, ...p, answered: mark(t, "dzDoc") } : x,
+                  ),
                 })
               }
             />
@@ -541,9 +544,12 @@ export function PapersQuestions({
         next={{
           label: at + 1 < list.length ? "Continuer" : "Voir mon plan d'action",
           onClick: forward,
-          // Nationalité et sexe : jamais de réponse par défaut, on attend le choix du voyageur.
+          // Âge, nationalité, sexe, papiers algériens : jamais de réponse par défaut.
           disabled:
-            !!t && q.kind === "traveller" && (q.q === "nat" || q.q === "man") && !hasAnswered(t, q.q),
+            !!t &&
+            q.kind === "traveller" &&
+            (q.q === "nat" || q.q === "man" || q.q === "age" || q.q === "dzDoc") &&
+            !hasAnswered(t, q.q),
         }}
       />
     </div>

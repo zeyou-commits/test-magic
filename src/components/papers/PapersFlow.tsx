@@ -307,16 +307,19 @@ export function DzDocsField({
   name,
   onChange,
   compact = false,
+  fresh = false,
 }: {
   t: Traveller;
   me: boolean;
   name: string;
   onChange: (p: Partial<Traveller>) => void;
   compact?: boolean;
+  /** Pas encore répondu : rien de coché d'avance. */
+  fresh?: boolean;
 }) {
-  const has = dzHasOf(t);
+  const has = fresh ? [] : dzHasOf(t);
   const travel = t.dzTravel ?? "dz";
-  const none = t.dzHas ? has.length === 0 : t.dzDoc === "aucun";
+  const none = fresh ? false : t.dzHas ? has.length === 0 : t.dzDoc === "aucun";
   const toggle = (value: (typeof has)[number]) => {
     const next = has.includes(value) ? has.filter((v) => v !== value) : [...has, value];
     onChange(fromDzHas(next, travel));

@@ -1809,7 +1809,12 @@ function RouteStep({
           ) : null}
         </div>
       ) : null}
-      <NextButton label="Continuer : mon budget" onClick={onDone} />
+      {/* Rien de bloqué (Préparer reste déclaratif), mais le bouton dit ce qui se passe : sans ports,
+          ni budget ni traversées à montrer ensuite. */}
+      <NextButton
+        label={fromChoice && toPortId ? "Continuer : mon budget" : "Passer sans mes ports"}
+        onClick={onDone}
+      />
       <MoreLinks
         links={[{ href: "/voyage-algerie", label: "Cabine, enfants, animaux : la traversée" }]}
       />
@@ -2006,13 +2011,14 @@ function BookStep({
         ))}
       </dl>
       <div className="mt-4 grid gap-3">
-        <TripBudget
-          plan={plan}
-          fromChoice={fromChoice}
-          toPort={toPort}
-          people={group}
-          onDetail={onBudget}
-        />
+        {/* Le budget vient d'être vu à l'étape d'avant et revient dans le récap : ici, un lien suffit. */}
+        <button
+          type="button"
+          onClick={onBudget}
+          className="flex min-h-11 items-center gap-2 text-left text-sm font-semibold text-primary underline-offset-4 hover:underline"
+        >
+          <Wallet size={16} aria-hidden /> Revoir mon budget estimé
+        </button>
         <SailingsOutlook
           plan={plan}
           fromName={fromChoice?.port.name ?? null}

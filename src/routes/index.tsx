@@ -2137,6 +2137,10 @@ function Index() {
                 }
               />
             ) : null}
+            {/* Accueil du téléphone : la carte n'est qu'un aperçu, avec le salon général en bas.
+                Le menu vertical (recherche, en mer, à quai, ports) double l'onglet Direct : il
+                reste sur la carte en grand. */}
+            {mobileLanding ? null : (
             <MapStats
               search={
                 <MapSearch
@@ -2232,6 +2236,7 @@ function Index() {
                 return companies.find((c) => c.id === dep?.company_id)?.name;
               }}
             />
+            )}
             {voyage && !isMobile ? null : (
               <MapLegend panelOpen={desktopPanelOpen} showDateHint={false} />
             )}

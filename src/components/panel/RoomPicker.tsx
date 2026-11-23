@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { QuestionHelp } from "@/components/questions/QuestionHelp";
 import { afterOverlayClose, useBackClose } from "@/lib/ferry/backStack";
 import { enterRoom } from "@/lib/ferry/chat";
+import { GENERAL_TITLE, openGeneralRoom } from "@/lib/ferry/generalRoom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, ChevronLeft, CircleHelp, MessagesSquare, Search } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, CircleHelp, Globe2, MessagesSquare, Search } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
@@ -273,6 +274,27 @@ export function RoomPicker({
               </div>
             </div>
           </DialogHeader>
+          {/* En tête : le salon de tous, ouvert à chaque compte, avec ou sans traversée. */}
+          <button
+            type="button"
+            className="bw-room-picker__general"
+            onClick={() => {
+              close();
+              afterOverlayClose(openGeneralRoom);
+            }}
+          >
+            <span className="bw-room-picker__general-icon" aria-hidden>
+              <Globe2 size={20} />
+            </span>
+            <span>
+              <strong>
+                {GENERAL_TITLE}
+                <i className="bw-room-picker__live" aria-hidden />
+              </strong>
+              <small>Tous les voyageurs, avec ou sans traversée prévue</small>
+            </span>
+            <ChevronRight size={18} aria-hidden />
+          </button>
           {departures.length ? (
             <label className="bw-room-picker__search">
               <Search size={16} aria-hidden />

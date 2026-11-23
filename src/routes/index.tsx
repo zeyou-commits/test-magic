@@ -56,6 +56,7 @@ import { MapStatusBar } from "@/components/map/MapStatusBar";
 import { MapLegend } from "@/components/map/MapLegend";
 import { QuickReport } from "@/components/map/QuickReport";
 import { MessagesFab, VoyageSalonsPicker } from "@/components/panel/MessagesFab";
+import { ChatTicker, GeneralRoomHost } from "@/components/panel/ChatTicker";
 import { OPEN_ROOM_PICKER_EVENT } from "@/lib/ferry/chatDemo";
 import { RoomInvite } from "@/components/panel/RoomInvite";
 import { enterRoom } from "@/lib/ferry/chat";
@@ -2064,6 +2065,11 @@ function Index() {
             ) : null}
             <RoomInvite onSelect={(next) => handleSelectRef.current(next)} />
             <RoomGuestAccept />
+            <GeneralRoomHost />
+            {/* Carte en direct : les messages des salons défilent, comme dans un jeu en ligne. */}
+            {liveMap && !voyage ? (
+              <ChatTicker onSelect={(next) => handleSelectRef.current(next)} />
+            ) : null}
             {/* Ma traversée pas encore sur la carte : chrono flottant. */}
             {voyage ? null : (
               <MyTripMapChip fleet={fleet} onOpen={(next) => handleSelectRef.current(next)} />

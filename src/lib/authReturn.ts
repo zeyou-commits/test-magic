@@ -13,6 +13,7 @@ export function authReturnPath(): string {
   const params = new URLSearchParams(search);
   const chat = pendingChat();
   if (chat && (chat.kind === "crossing" || chat.kind === "port")) params.set("room", "1");
+  if (chat?.kind === "general") params.set("room", "general");
   const query = params.toString();
   return `${pathname}${query ? `?${query}` : ""}`;
 }

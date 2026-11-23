@@ -85,6 +85,8 @@ const REFUSALS: Record<string, string> = {
   phone: "Pas de numéro de téléphone dans le salon.",
   word: "Ce message contient un mot refusé. Reformulez-le.",
   rate: "Doucement : attendez un peu avant de renvoyer un message.",
+  slow: "Salon général : un message toutes les 30 secondes. Patientez un instant.",
+  room: "Ce salon n'existe pas.",
   muted: "Vous ne pouvez plus écrire pendant 24 h, après plusieurs messages refusés ou masqués.",
   charter: "Acceptez d'abord la charte de la communauté : elle s'affiche à votre premier message.",
   banned: "L'équipe BledWay vous a retiré l'accès aux salons pour le moment.",

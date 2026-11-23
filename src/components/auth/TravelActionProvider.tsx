@@ -24,6 +24,7 @@ import {
   type TravelAction,
 } from "@/lib/notifications/actions";
 import { clearPendingChat, enterRoom, flushPendingChat, pendingChat } from "@/lib/ferry/chat";
+import { openGeneralRoom } from "@/lib/ferry/generalRoom";
 import { toast } from "sonner";
 import {
   isIos,
@@ -74,6 +75,10 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
               setOpen(false);
               toast.success("Vous êtes connecté : votre message est publié.");
               enterRoom(chat.kind, chat.room);
+            } else if (chat?.kind === "general") {
+              setOpen(false);
+              toast.success("Vous êtes connecté : votre message est publié.");
+              openGeneralRoom();
             }
           }
         } catch (cause) {

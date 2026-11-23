@@ -87,11 +87,11 @@ import {
 const supabase = typedSupabase as unknown as SupabaseClient;
 export const MAX_MESSAGE = 200;
 
-type RoomKind = "crossing" | "port";
+export type RoomKind = "crossing" | "port" | "general";
 type Message = {
   id: string;
   body: string;
-  place: "aboard" | "port" | "trip" | "staff" | "guest" | "visitor";
+  place: "aboard" | "port" | "trip" | "staff" | "guest" | "visitor" | "member";
   /** Fil du port : la traversée d'où vient le message. */
   crossing?: string | null;
   edited?: boolean;
@@ -130,7 +130,14 @@ const PLACE = {
   staff: "équipe BledWay",
   guest: "invité",
   visitor: "invité · autre traversée",
+  member: "voyageur",
 } as const;
+/** Salon général : des amorces qui ne supposent pas de traversée. */
+const GENERAL_STARTERS = [
+  "Quelqu'un descend en voiture cet été ?",
+  "Vos bons plans pour l'attente au port ?",
+  "Quels papiers pour voyager avec un mineur ?",
+];
 const missing = (code?: string) => code === "PGRST202" || code === "42883";
 /** En dessous, on considère que la personne suit le direct : le fil descend tout seul. */
 const FOLLOW_BOTTOM_PX = 80;
@@ -668,7 +675,7 @@ function LiveChat({
               {online ? `${online} en ligne` : tr("ui.liveRoom.vousEtesIci")}
             </button>
           </DialogDescription>
-          {kind === "crossing" ? (
+          {kind === "crossing" || kind === "general" ? (
             <DialogClose asChild>
               <button
                 type="button"
@@ -751,9 +758,11 @@ function LiveChat({
               <StaffBadge author={BLEDWAY} /> {tr("ui.liveRoom.salam")}
               {myPseudo ? ` ${myPseudo}` : ""}
               {tr("ui.liveRoom.bienvenueOnSEntraideEntre")}{" "}
-              {kind === "port"
-                ? tr("ui.liveRoom.laFileLeParkingL")
-                : tr("ui.liveRoom.laFileAuPortL")}
+              {kind === "general"
+                ? "ici, avec ou sans traversée prévue : la route, les papiers, les bons plans. Un message toutes les 30 secondes."
+                : kind === "port"
+                  ? tr("ui.liveRoom.laFileLeParkingL")
+                  : tr("ui.liveRoom.laFileAuPortL")}
             </p>
             <details className="bw-chat__rules">
               <summary>{tr("ui.liveRoom.lesReglesDuSalon")}</summary>
@@ -769,7 +778,9 @@ function LiveChat({
         {lines.length ? null : (
           <li className="bw-chat__hello">
             <Bw504Note tone="start" title="C'est calme ici pour l'instant">
-              Lance la discussion : file au port, embarquement, ambiance à bord.
+              {kind === "general"
+                ? "Lance la discussion : la route, les papiers, les bons plans."
+                : "Lance la discussion : file au port, embarquement, ambiance à bord."}
             </Bw504Note>
           </li>
         )}
@@ -1133,11 +1144,14 @@ function LiveChat({
             </div>
           ) : text || replyTo ? null : (
             <p className="bw-chat__examples">
-              {startersFor(
-                kind === "port" ? "port" : moment === "over" ? "sea" : moment,
-                starters,
-                starterContext ?? {},
-                roomExamples(kind === "port" ? "port" : moment),
+              {(kind === "general"
+                ? GENERAL_STARTERS
+                : startersFor(
+                    kind === "port" ? "port" : moment === "over" ? "sea" : moment,
+                    starters,
+                    starterContext ?? {},
+                    roomExamples(kind === "port" ? "port" : moment),
+                  )
               ).map((example) => (
                 <button key={example} type="button" onClick={() => setText(example)}>
                   {example}
@@ -1157,7 +1171,7 @@ function LiveChat({
               ))}
             </ul>
           ) : null}
-          {(showPhoto || chatPhotos.length) && canWrite && user && !visitor ? (
+          {(showPhoto || chatPhotos.length) && canWrite && user && !visitor && kind !== "general" ? (
             <div className="bw-chat__photo">
               <PhotoPicker
                 max={1}
@@ -1205,7 +1219,7 @@ function LiveChat({
             >
               <Smile size={20} aria-hidden />
             </button>
-            {canWrite && user && !visitor ? (
+            {canWrite && user && !visitor && kind !== "general" ? (
               <label
                 className="bw-chat__emote-toggle"
                 aria-label={tr("ui.liveRoom.ajouterUnePhoto")}

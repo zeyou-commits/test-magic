@@ -15,7 +15,7 @@ import { tr } from "@/lib/i18n";
  * ouverte. Un tap la déplie ; elle se replie dès qu'on fait défiler ou qu'on écrit.
  */
 
-type RoomKind = "crossing" | "port";
+type RoomKind = "crossing" | "port" | "general";
 const COMPANY_WINDOW_MS = 30 * 24 * 3_600_000;
 const SEEN_KEY = "bledway:pin-seen";
 
@@ -73,6 +73,7 @@ export function usePinnedNews(kind: RoomKind, room: string): NewsItem[] {
         !looksInternal(`${item.title} ${item.summary}`) &&
         (!item.ends_at || Date.parse(item.ends_at) > now),
     );
+    if (kind === "general") return [];
     if (kind === "port") return newsForContext(live, { portIds: [room], attachedOnly: true });
     const d = scope.data;
     if (!d) return [];

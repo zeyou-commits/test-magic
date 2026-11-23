@@ -15,7 +15,13 @@ const FLICK_MIN = 40;
 
 /** L'adresse qui ouvre directement ce salon : la fiche de la traversée (ou du port), puis le salon.
  * Avec une invitation personnelle, la personne invitée pourra aussi y écrire. */
-export function roomInviteUrl(kind: "crossing" | "port", room: string, token?: string | null) {
+export function roomInviteUrl(
+  kind: "crossing" | "port" | "general",
+  room: string,
+  token?: string | null,
+) {
+  // Le salon général n'a pas de fiche derrière : le lien l'ouvre directement.
+  if (kind === "general") return stableShareUrl(`${window.location.origin}/?room=general`);
   const params = new URLSearchParams({
     select: kind === "crossing" ? "departure" : "port",
     id: room,
@@ -26,7 +32,7 @@ export function roomInviteUrl(kind: "crossing" | "port", room: string, token?: s
 }
 
 async function inviteToRoom(
-  kind: "crossing" | "port",
+  kind: "crossing" | "port" | "general",
   room: string,
   title: string,
   token: string | null,
@@ -37,7 +43,9 @@ async function inviteToRoom(
   const line = title.replace(/^Salon · /, "");
   const text = token
     ? `Je t'invite dans le salon de ma traversée sur BledWay (${line}) : tu pourras y écrire et suivre le navire en direct jusqu'à l'arrivée.`
-    : kind === "crossing"
+    : kind === "general"
+      ? "Rejoins-moi dans le salon général de BledWay : les voyageurs s'y entraident sur la route, les papiers et les traversées."
+      : kind === "crossing"
       ? `Rejoins-moi dans le salon de cette traversée sur BledWay (${line}) : on y suit le navire en direct.`
       : `Rejoins-moi sur BledWay, dans le salon « ${title} ».`;
   // Téléphone : la feuille de partage (WhatsApp, SMS…). Ordinateur : le lien copié, plus sûr.
@@ -73,7 +81,7 @@ export function RoomSheet({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  kind: "crossing" | "port";
+  kind: "crossing" | "port" | "general";
   room: string;
   title: string;
   /** Passager de cette traversée (ou équipe) : son lien permet à l'invité d'écrire. */

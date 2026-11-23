@@ -6,7 +6,7 @@ import { chatRefusal } from "./portPassage";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 
-export type ChatKind = "crossing" | "port" | "route";
+export type ChatKind = "crossing" | "port" | "route" | "general";
 export type PendingChat = {
   kind: ChatKind;
   room: string;
@@ -156,11 +156,11 @@ export function takeRoomFocus() {
 /** Entrer directement dans un salon, même si sa fiche n'est pas encore ouverte. */
 export const ENTER_ROOM_EVENT = "bledway:enter-room";
 let wantedRoom: string | null = null;
-export function enterRoom(kind: "crossing" | "port", room: string) {
+export function enterRoom(kind: "crossing" | "port" | "general", room: string) {
   wantedRoom = `${kind}:${room}`;
   window.dispatchEvent(new Event(ENTER_ROOM_EVENT));
 }
-export function roomWanted(kind: "crossing" | "port", room: string) {
+export function roomWanted(kind: "crossing" | "port" | "general", room: string) {
   if (wantedRoom !== `${kind}:${room}`) return false;
   wantedRoom = null;
   return true;

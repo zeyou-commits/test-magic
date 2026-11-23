@@ -557,10 +557,14 @@ function CompanionPage() {
     const done = plan.done.includes(step) ? plan.done : [...plan.done, step];
     patch({ done });
     const order = companionSteps(plan);
-    const after = order.slice(order.indexOf(step) + 1).find((s) => !done.includes(s));
-    const next = after ?? order.find((s) => !done.includes(s)) ?? null;
     const finished = chapterOf(step);
     const firstTime = !plan.done.includes(step);
+    // Première fois : la prochaine étape encore à faire. Étape revue : celle qui suit, comme le
+    // dit le bouton (« Continuer : ma route »), même si elle a déjà été traversée.
+    const after = firstTime
+      ? order.slice(order.indexOf(step) + 1).find((s) => !done.includes(s))
+      : order[order.indexOf(step) + 1];
+    const next = after ?? (firstTime ? order.find((s) => !done.includes(s)) : undefined) ?? null;
     const chapterOver = !next || chapterOf(next) !== finished;
     if (firstTime && chapterOver && !isLocked(next)) {
       setPause({ finished, next });
@@ -1382,12 +1386,16 @@ function PapersStepBody({
           }}
         />
       )}
-      <MoreLinks
-        links={[
-          { href: "/papiers-voyage-algerie", label: "Les règles et leurs sources" },
-          { href: "/guide/arrivee-algerie-port-formalites", label: "Les formalités à l'arrivée" },
-        ]}
-      />
+      {/* Pendant les questions, chaque règle est repliée sous sa question : les liens généraux
+          attendent la liste. */}
+      {papers.finished ? (
+        <MoreLinks
+          links={[
+            { href: "/papiers-voyage-algerie", label: "Les règles et leurs sources" },
+            { href: "/guide/arrivee-algerie-port-formalites", label: "Les formalités à l'arrivée" },
+          ]}
+        />
+      ) : null}
     </div>
   );
 }
@@ -1835,9 +1843,15 @@ function RouteStep({
       ) : null}
       {/* Rien de bloqué (Préparer reste déclaratif), mais le bouton dit ce qui se passe : sans ports,
           ni budget ni traversées à montrer ensuite. */}
-      <NextButton
-        label={fromChoice && toPortId ? "Continuer : mon budget" : "Passer sans mes ports"}
-        onClick={onDone}
+      <WizardNav
+        next={{
+          label: "Continuer : mon budget",
+          onClick: onDone,
+          disabled: !fromChoice || !toPortId,
+        }}
+        skip={
+          fromChoice && toPortId ? undefined : { label: "Passer sans mes ports", onClick: onDone }
+        }
       />
       <MoreLinks
         links={[{ href: "/voyage-algerie", label: "Cabine, enfants, animaux : la traversée" }]}
@@ -1876,18 +1890,14 @@ function BudgetStep({
         <Bw504Note
           tone="stuck"
           title="Il me manque tes ports pour chiffrer"
-          actions={
-            <>
-              <Bw504Button primary onClick={onOpenRoute}>
-                Choisir mes ports
-              </Bw504Button>
-            </>
-          }
         >
-          Le prix dépend du port de départ et d'arrivée. Choisis-les en un geste, ou continue sans
+          Le prix dépend du port de départ et d'arrivée. Choisis-les en un geste, ou passe le
           budget : c'est toi qui décides.
         </Bw504Note>
-        <NextButton label="Continuer sans budget" onClick={onDone} />
+        <WizardNav
+          next={{ label: "Choisir mes ports", onClick: onOpenRoute }}
+          skip={{ label: "Passer le budget", onClick: onDone }}
+        />
       </div>
     );
   const fare = planFare(plan, fromChoice.port, toPort, group);

@@ -11,13 +11,22 @@ import {
   type SnStatus,
   type Traveller,
   type AskedQ,
+  type Couple,
+  type DzTravel,
+  type DzValid,
+  type GroupQ,
+  type KidsWith,
   type Nat,
+  type Residence,
+  fromDzHas,
   hasAnswered,
+  hasAsked,
+  markAsked,
 } from "@/content/formalites";
 
 /** Ajoute une question à celles que le voyageur a répondues. */
 const mark = (t: Traveller, q: AskedQ): AskedQ[] => [...new Set([...(t.answered ?? []), q])];
-import { Bw504Note, BwKnow } from "@/components/companion/Bw504Note";
+import { Bw504Note } from "@/components/companion/Bw504Note";
 import { WizardNav, useWizardScreen } from "@/components/prepare/WizardFrame";
 import {
   DzDocsField,
@@ -25,7 +34,7 @@ import {
   HomeStep,
   Options,
   Question,
-  SourceLinks,
+  RuleDetails,
   StayStep,
   type EditTarget,
   type PapersState,
@@ -82,8 +91,10 @@ export function paperQuestions(a: Answers, steps: PapersStep[]): PaperQ[] {
         // Un adulte a déjà 19 ans ou plus : seul le sexe compte pour le service national.
         if (!child && t.nat !== "etr") add("man");
         if (!child && t.nat !== "etr" && t.man) add("sn");
-        // Document algérien et passeport du voyage : une seule question.
+        // Les papiers algériens, puis (s'il a un passeport valide) celui de la frontière : deux
+        // écrans, une question chacun.
         if (t.nat === "bi") add("dzDoc");
+        if (t.nat === "bi" && (t.dzHas ?? []).includes("passeport")) add("dzTravel");
         if (travelsWithDzPassport(t)) add("dzValid");
         if (!child && t.nat === "dz") add("residence");
       }
@@ -122,13 +133,8 @@ function Who({
         <Icon size={15} aria-hidden /> {travellerLabel(t, all)}
       </p>
       {total > 1 ? (
-        <span className="bw-who-steps" aria-label={`Question ${step} sur ${total} pour ce voyageur`}>
-          {Array.from({ length: total }, (_, i) => (
-            <i key={i} data-on={i < step || undefined} />
-          ))}
-          <small>
-            {step}/{total}
-          </small>
+        <span className="sr-only">
+          Question {step} sur {total} pour ce voyageur
         </span>
       ) : null}
     </div>
@@ -186,6 +192,12 @@ export function PapersQuestions({
     patch(p);
     answered();
   };
+  // Une question du groupe : répondue, elle est marquée (rien n'est coché d'avance).
+  const setGroup = (q: GroupQ, p: Partial<Answers>) => set({ ...p, asked: markAsked(answers, q) });
+  const groupValue = <T extends string>(q: GroupQ, value: T) =>
+    (hasAsked(answers, q) ? value : "") as T;
+  const travellerValue = <T extends string>(q: AskedQ, value: T) =>
+    (t && hasAnswered(t, q) ? value : "") as T;
   const choice = <T extends string>(
     label: string,
     value: T,
@@ -202,7 +214,7 @@ export function PapersQuestions({
   ) => (
     <div className="mt-4 grid gap-3">
       <Bw504Note title={title}>{text}</Bw504Note>
-      {rule ? <BwKnow source={<SourceLinks ids={rule.sources} />}>{rule.text}</BwKnow> : null}
+      {rule ? <RuleDetails sources={rule.sources}>{rule.text}</RuleDetails> : null}
     </div>
   );
 
@@ -283,11 +295,12 @@ export function PapersQuestions({
           {who}
           <Question
             title={me ? "Quels papiers algériens avez-vous ?" : "Quels sont ses papiers algériens ?"}
-            hint="Cochez tout ce qui existe, même expiré."
+            hint="Plusieurs réponses possibles. Cochez tout ce qui existe, même expiré."
           >
             <DzDocsField
               t={t}
               me={me}
+              withTravel={false}
               fresh={!hasAnswered(t, "dzDoc")}
               name={travellerLabel(t, answers.travellers)}
               onChange={(p) =>
@@ -309,6 +322,41 @@ export function PapersQuestions({
           </Question>
         </>
       );
+    if (q.q === "dzTravel")
+      body = (
+        <>
+          {who}
+          <Question
+            title={
+              me
+                ? "Avec quel passeport passerez-vous la frontière algérienne ?"
+                : "Avec quel passeport passera-t-il la frontière algérienne ?"
+            }
+          >
+            {choice<DzTravel>(
+              "Passeport montré à la frontière",
+              travellerValue("dzTravel", t.dzTravel ?? "dz"),
+              (dzTravel) =>
+                update({
+                  ...fromDzHas(t.dzHas ?? ["passeport"], dzTravel),
+                  answered: mark(t, "dzTravel"),
+                }),
+              [
+                { value: "dz", label: "Mon passeport algérien" },
+                {
+                  value: "foreign",
+                  label: "Mon passeport français (ou autre)",
+                  hint: "Le passeport algérien reste à la maison",
+                },
+              ],
+            )}
+            {why(
+              "Pourquoi le passeport de la frontière ?",
+              "C'est lui qui décide : je regarde s'il faut un visa, et quel passeport doit tenir jusqu'au retour.",
+            )}
+          </Question>
+        </>
+      );
     if (q.q === "dzValid")
       body = (
         <>
@@ -317,10 +365,10 @@ export function PapersQuestions({
             title={`${me ? "Votre" : "Son"} passeport algérien sera-t-il encore valable au retour ?`}
             hint="La date de fin est sur la page de la photo."
           >
-            {choice(
+            {choice<DzValid>(
               "Passeport valable au retour",
-              t.dzValid ?? "unknown",
-              (dzValid) => update({ dzValid }),
+              travellerValue("dzValid", t.dzValid ?? "unknown"),
+              (dzValid) => update({ dzValid, answered: mark(t, "dzValid") }),
               [
                 { value: "yes", label: "Oui, avec de la marge" },
                 {
@@ -350,7 +398,7 @@ export function PapersQuestions({
           <Question
             title={`${me ? "Votre" : "Son"} titre de séjour sera-t-il encore valable au retour ?`}
           >
-            {choice("Titre de séjour", t.residence, (residence) => update({ residence }), [
+            {choice<Residence>("Titre de séjour", travellerValue("residence", t.residence), (residence) => update({ residence, answered: mark(t, "residence") }), [
               { value: "titre", label: "Oui" },
               { value: "fragile", label: "Non, ou j'ai un récépissé" },
             ])}
@@ -374,8 +422,8 @@ export function PapersQuestions({
           >
             {choice<SnStatus>(
               "Service national",
-              t.sn === "exempt" ? "ok" : (t.sn ?? "unknown"),
-              (sn) => update({ sn }),
+              travellerValue("sn", t.sn === "exempt" ? "ok" : (t.sn ?? "unknown")),
+              (sn) => update({ sn, answered: mark(t, "sn") }),
               [
                 {
                   value: "ok",
@@ -441,7 +489,7 @@ export function PapersQuestions({
         <Question
           title="Deux des adultes sont-ils en couple ?"
         >
-          {choice("Couple", answers.couple, (couple) => set({ couple }), [
+          {choice<Couple>("Couple", groupValue("couple", answers.couple), (couple) => setGroup("couple", { couple }), [
             { value: "married", label: "Oui, mariés" },
             { value: "unmarried", label: "Oui, sans être mariés" },
             { value: "none", label: "Non" },
@@ -461,7 +509,7 @@ export function PapersQuestions({
         <Question
           title="Le mariage est-il transcrit à l'état civil algérien ?"
         >
-          {choice("Mariage transcrit", answers.transcribed, (transcribed) => set({ transcribed }), [
+          {choice<Answers["transcribed"]>("Mariage transcrit", groupValue("transcribed", answers.transcribed), (transcribed) => setGroup("transcribed", { transcribed }), [
             { value: "yes", label: "Oui" },
             { value: "no", label: "Non" },
             { value: "unknown", label: "Je ne sais pas" },
@@ -481,7 +529,7 @@ export function PapersQuestions({
         <Question
           title="Avec qui voyagent les enfants ?"
         >
-          {choice("Les enfants voyagent avec", answers.kidsWith, (kidsWith) => set({ kidsWith }), [
+          {choice<KidsWith>("Les enfants voyagent avec", groupValue("kidsWith", answers.kidsWith), (kidsWith) => setGroup("kidsWith", { kidsWith }), [
             { value: "both", label: "Leurs deux parents" },
             { value: "father", label: "Leur père" },
             { value: "mother", label: "Leur mère, sans le père" },
@@ -503,8 +551,12 @@ export function PapersQuestions({
         <Question title="Les parents sont-ils séparés ou divorcés ?">
           {choice(
             "Parents séparés",
-            answers.separated ? "yes" : "no",
-            (v) => set({ separated: v === "yes", ...(v === "no" ? { motherCustody: false } : {}) }),
+            groupValue<"yes" | "no">("separated", answers.separated ? "yes" : "no"),
+            (v) =>
+              setGroup("separated", {
+                separated: v === "yes",
+                ...(v === "no" ? { motherCustody: false } : {}),
+              }),
             [
               { value: "no", label: "Non" },
               { value: "yes", label: "Oui" },
@@ -517,8 +569,8 @@ export function PapersQuestions({
         <Question title="La garde des enfants est-elle confiée à la mère ?">
           {choice(
             "Garde à la mère",
-            answers.motherCustody ? "yes" : "no",
-            (v) => set({ motherCustody: v === "yes" }),
+            groupValue<"yes" | "no">("custody", answers.motherCustody ? "yes" : "no"),
+            (v) => setGroup("custody", { motherCustody: v === "yes" }),
             [
               { value: "yes", label: "Oui, par jugement" },
               { value: "no", label: "Non, ou pas de jugement" },
@@ -544,12 +596,15 @@ export function PapersQuestions({
         next={{
           label: at + 1 < list.length ? "Continuer" : "Voir mon plan d'action",
           onClick: forward,
-          // Âge, nationalité, sexe, papiers algériens : jamais de réponse par défaut.
+          // Aucune réponse par défaut : « Continuer » attend que le voyageur ait choisi.
           disabled:
-            !!t &&
-            q.kind === "traveller" &&
-            (q.q === "nat" || q.q === "man" || q.q === "age" || q.q === "dzDoc") &&
-            !hasAnswered(t, q.q),
+            q.kind === "traveller"
+              ? !!t && !hasAnswered(t, q.q as AskedQ)
+              : q.kind === "family"
+                ? !hasAsked(answers, q.q)
+                : q.kind === "step" && q.step === "stay"
+                  ? !hasAsked(answers, "stay")
+                  : false,
         }}
       />
     </div>

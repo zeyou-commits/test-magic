@@ -52,9 +52,12 @@ import {
   dzHasOf,
   dzHasOptions,
   fromDzHas,
+  hasAsked,
+  markAsked,
   whenLabels,
   whenOrder,
   type Answers,
+  type Stay,
   type Consulat,
   type FormaliteSourceId,
   type Task,
@@ -319,6 +322,7 @@ export function DzDocsField({
   onChange,
   compact = false,
   fresh = false,
+  withTravel = true,
 }: {
   t: Traveller;
   me: boolean;
@@ -327,6 +331,8 @@ export function DzDocsField({
   compact?: boolean;
   /** Pas encore répondu : rien de coché d'avance. */
   fresh?: boolean;
+  /** Avec quel passeport il part : ici, ou (dans le guide) sur son propre écran. */
+  withTravel?: boolean;
 }) {
   const has = fresh ? [] : dzHasOf(t);
   const travel = t.dzTravel ?? "dz";
@@ -337,7 +343,7 @@ export function DzDocsField({
   };
   const box = (on: boolean) => (
     <span
-      className={`grid size-5 shrink-0 place-items-center rounded-md border-2 ${on ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40"}`}
+      className={`grid size-5 shrink-0 place-items-center rounded-[4px] border-2 ${on ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40"}`}
       aria-hidden
     >
       {on ? <Check size={12} strokeWidth={3} /> : null}
@@ -371,6 +377,10 @@ export function DzDocsField({
             </button>
           );
         })}
+        {/* « Aucun » exclut les autres : à part, après un « ou ». */}
+        <p className="bw-or" aria-hidden>
+          ou
+        </p>
         <button
           type="button"
           role="checkbox"
@@ -382,7 +392,7 @@ export function DzDocsField({
           <span className="block font-semibold">Aucun papier algérien</span>
         </button>
       </div>
-      {has.includes("passeport") ? (
+      {withTravel && has.includes("passeport") ? (
         <div>
           <p className="font-semibold">
             {me ? "Pour ce voyage, vous partez avec :" : "Pour ce voyage, départ avec :"}
@@ -1021,8 +1031,8 @@ export function StayStep({ answers, patch }: StepProps) {
     <Question title="Où logez-vous en Algérie ?">
       <Options
         label="Hébergement"
-        value={answers.stay}
-        onChange={(stay) => patch({ stay })}
+        value={(hasAsked(answers, "stay") ? answers.stay : "") as Stay}
+        onChange={(stay) => patch({ stay, asked: markAsked(answers, "stay") })}
         options={[
           { value: "family", label: "En famille, chez des proches" },
           { value: "hotel", label: "À l'hôtel" },
@@ -1038,19 +1048,34 @@ export function StayStep({ answers, patch }: StepProps) {
           Selon ta réponse, je mets dans ta liste le bon justificatif pour le visa, et le livret
           de famille si vous êtes un couple marié.
         </Bw504Note>
-        <BwKnow
-          source={
-            <SourceLinks
-              ids={["amb-visa", "cons-visa-familial", "justice-algerie", "be-legislation"]}
-            />
-          }
+        <RuleDetails
+          sources={["amb-visa", "cons-visa-familial", "justice-algerie", "be-legislation"]}
         >
           Pour un visa, on prouve où l'on dort : le certificat d'hébergement de la famille, ou la
           réservation d'hôtel. Certains hôtels ne mettent un couple dans la même chambre que sur
           preuve du mariage.
-        </BwKnow>
+        </RuleDetails>
       </div>
     </Question>
+  );
+}
+
+/**
+ * La règle officielle derrière une question, repliée : la bulle de la 504 dit le pourquoi en une
+ * phrase ; qui veut la règle et ses sources l'ouvre. Une seule aide visible par question.
+ */
+export function RuleDetails({
+  sources,
+  children,
+}: {
+  sources: FormaliteSourceId[];
+  children: ReactNode;
+}) {
+  return (
+    <details className="bw-rule">
+      <summary>La règle officielle et ses sources</summary>
+      <BwKnow source={<SourceLinks ids={sources} />}>{children}</BwKnow>
+    </details>
   );
 }
 

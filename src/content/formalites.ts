@@ -175,7 +175,15 @@ export interface Traveller {
 }
 
 /** Questions qu'on ne présélectionne jamais. */
-export type AskedQ = "nat" | "man" | "age" | "dzDoc";
+export type AskedQ =
+  | "nat"
+  | "man"
+  | "age"
+  | "dzDoc"
+  | "dzTravel"
+  | "dzValid"
+  | "sn"
+  | "residence";
 
 export const hasAnswered = (t: Traveller, q: AskedQ) => !t.answered || t.answered.includes(q);
 
@@ -278,7 +286,17 @@ export interface Answers {
   /** Après séparation, la garde est confiée à la mère. */
   motherCustody: boolean;
   stay: Stay;
+  /**
+   * Les questions du groupe déjà répondues (même règle que `Traveller.answered` : rien de coché
+   * d'avance). Absent des anciennes réponses : tout est considéré comme répondu.
+   */
+  asked?: GroupQ[];
 }
+
+/** Les questions du groupe, jamais présélectionnées. */
+export type GroupQ = "couple" | "transcribed" | "kidsWith" | "separated" | "custody" | "stay";
+export const hasAsked = (a: Answers, q: GroupQ) => !a.asked || a.asked.includes(q);
+export const markAsked = (a: Answers, q: GroupQ): GroupQ[] => [...new Set([...(a.asked ?? []), q])];
 
 export function newTraveller(kind: Traveller["kind"]): Traveller {
   return {
@@ -316,6 +334,7 @@ export const defaultAnswers: Answers = {
   separated: false,
   motherCustody: false,
   stay: "family",
+  asked: [],
 };
 
 /** Le prénom s'il a été donné, sinon « Vous », « Adulte 2 », « Mineur 1 »… */

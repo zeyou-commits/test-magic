@@ -2095,3 +2095,19 @@ img.bw-rload__car { width: 30px; height: 30px; object-fit: contain; scale: -1 1;
 .bw-glance__foot { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 6px; margin-top: auto; padding-top: 6px; }
 .bw-glance__go { color: var(--muted-foreground); }
 .dark .bw-glance__tiles [data-status="todo"] button { --t: #f0a35e; }
+
+/* ───────── Questions de Préparer : une seule aide visible, la règle repliée ───────── */
+.bw-rule > summary {
+  display: inline-flex; min-height: 44px; align-items: center; gap: 6px; cursor: pointer; list-style: none;
+  font-size: 0.85rem; font-weight: 700; color: var(--primary);
+}
+.bw-rule > summary::-webkit-details-marker { display: none; }
+.bw-rule > summary::before { content: "+"; display: grid; width: 18px; height: 18px; place-items: center; border-radius: 999px; border: 1.5px solid currentColor; font-size: 0.8rem; line-height: 1; }
+.bw-rule[open] > summary::before { content: "−"; }
+.bw-rule[open] > summary { margin-bottom: 6px; }
+/* « Aucun » exclut les autres réponses : séparé par un « ou ». */
+.bw-or { display: flex; align-items: center; gap: 10px; margin: 2px 0; font-size: 0.75rem; font-weight: 700; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.06em; }
+.bw-or::before, .bw-or::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+/* Passer une étape : un lien, jamais le bouton principal. */
+.bw-wiz-skip { min-height: 32px; padding: 0 4px; font-size: 0.8rem; font-weight: 600; color: var(--muted-foreground); text-decoration: underline; text-underline-offset: 3px; }
+.bw-wiz-skip:hover { color: var(--foreground); }

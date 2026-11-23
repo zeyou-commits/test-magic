@@ -42,10 +42,13 @@ export function useWizardScreen(index: number, total: number, label?: string, ac
 export function WizardNav({
   next,
   back,
+  skip,
 }: {
   next?: { label: string; onClick: () => void; disabled?: boolean; icon?: LucideIcon };
   /** `undefined` : retour à l'étape d'avant ; `null` : pas de retour. */
   back?: (() => void) | null | undefined;
+  /** Passer l'étape : un lien discret, jamais le bouton principal. */
+  skip?: { label: string; onClick: () => void } | undefined;
 }) {
   const ctx = useContext(WizardCtx);
   const onBack = back === undefined ? (ctx?.back ?? null) : back;
@@ -53,6 +56,14 @@ export function WizardNav({
   const backText = back === undefined && ctx?.backLabel ? ctx.backLabel : "Précédent";
   const Icon = next?.icon;
   const bar = (
+    <div>
+    {skip ? (
+      <div className="-mt-1 mb-1.5 flex justify-end">
+        <button type="button" onClick={skip.onClick} className="bw-wiz-skip">
+          {skip.label}
+        </button>
+      </div>
+    ) : null}
     <div className="flex items-center justify-between gap-3">
       {onBack ? (
         <button
@@ -84,6 +95,7 @@ export function WizardNav({
           {Icon ? null : <ArrowRight size={16} className="shrink-0" aria-hidden />}
         </button>
       ) : null}
+    </div>
     </div>
   );
   if (!ctx) return <div className="mt-8">{bar}</div>;
@@ -295,20 +307,18 @@ export function WizardFrame({
                 <span className="sr-only"> · {chapter}</span>
               </h2>
               {shown && shown.total > 1 ? (
-                <span className="shrink-0 text-xs font-semibold tabular-nums text-muted-foreground">
-                  {shown.index + 1} / {shown.total}
+                <span className="sr-only">
+                  Écran {shown.index + 1} sur {shown.total}
                 </span>
               ) : null}
             </div>
           </div>
           {shown && shown.total > 1 ? (
-            <div className="flex h-[3px] gap-px" aria-hidden>
-              {Array.from({ length: shown.total }, (_, i) => (
-                <span
-                  key={i}
-                  className={`flex-1 transition-colors duration-300 ${i <= shown.index ? "bg-primary" : "bg-border"}`}
-                />
-              ))}
+            <div className="h-[3px] bg-border" aria-hidden>
+              <span
+                className="block h-full bg-primary transition-[width] duration-500 ease-out"
+                style={{ width: `${Math.round(((shown.index + 1) / shown.total) * 100)}%` }}
+              />
             </div>
           ) : null}
         </header>

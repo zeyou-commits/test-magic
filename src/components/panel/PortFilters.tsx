@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
-import { Ban, CalendarX2, Car, Check, ChevronDown, Search, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Ban, CalendarX2, Car, Check, ChevronDown, Globe2, Minus, Search, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import * as SheetPrimitive from "@radix-ui/react-dialog";
 import { CountryFlag } from "./CountryFlag";
@@ -125,40 +124,36 @@ export function PortMultiPicker({
   const toggleAll = () => onChange(allMode ? [] : enabledIds);
 
   const body = (
-    <>
-      <div className="relative mb-2 shrink-0">
-        <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
+    <div className="bw-portpick" data-inline={inline || undefined}>
+      <label className="bw-portpick__search">
+        <Search aria-hidden />
+        <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={inline ? tr("ui.portFilters.rechercherUnPort") : tr("ui.portFilters.villePortOuPays")}
           aria-label={`Rechercher un port ${direction === "departure" ? "de départ" : "d'arrivée"}`}
-          className="batogo-control h-8 w-full rounded-xl pl-9 pr-9 text-xs"
+          enterKeyHint="search"
         />
         {search ? (
           <button
             type="button"
             aria-label={tr("ui.portFilters.effacerLaRecherche")}
             onClick={() => setSearch("")}
-            className="absolute right-1.5 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-secondary"
           >
-            <X className="size-3.5" />
+            <X aria-hidden />
           </button>
         ) : null}
-      </div>
+      </label>
 
-      <button
-        type="button"
-        aria-pressed={allMode}
-        onClick={toggleAll}
-        className={`mb-2 flex min-h-9 w-full shrink-0 items-center gap-2 rounded-lg px-2.5 text-left text-xs font-semibold ${allMode ? "bg-primary/10 text-primary" : "hover:bg-secondary"}`}
-      >
-        <span className="w-4 shrink-0">{allMode ? <Check className="size-4" /> : null}</span>
-        {inline ? tr("ui.portFilters.tous") : tr("ui.portFilters.tousLesPorts")}
-        <span
-          className={`ml-auto text-xs font-normal text-muted-foreground ${inline ? "hidden" : ""}`}
-        >
-          {allMode ? tr("ui.portFilters.toutDeselectionner") : tr("ui.portFilters.toutCocher")}
+      <button type="button" aria-pressed={allMode} onClick={toggleAll} className="bw-portpick__all">
+        <span className="bw-portpick__all-icon" aria-hidden>
+          <Globe2 />
+        </span>
+        <span className="bw-portpick__all-label">
+          {inline ? tr("ui.portFilters.tous") : "Tous les ports"}
+        </span>
+        <span className="bw-portpick__check" data-state={allMode ? "on" : "off"} aria-hidden>
+          {allMode ? <Check /> : null}
         </span>
       </button>
       {groups.length === 0 ? (
@@ -170,35 +165,31 @@ export function PortMultiPicker({
         />
       ) : (
         <div
-          className={`flex min-w-0 flex-col gap-2.5 pr-0.5 ${inline ? "" : "min-h-0 overflow-y-auto"}`}
+          className={`bw-portpick__list ${inline ? "" : "min-h-0 overflow-y-auto"}`}
         >
           {groups.map((group) => {
             const ids = group.ports.filter((p) => !reasons.has(p.id)).map((port) => port.id);
             const selectedCount = ids.filter(isOn).length;
             const countrySelected = selectedCount === ids.length && ids.length > 0;
+            const countryState = countrySelected ? "on" : selectedCount ? "some" : "off";
             const collapsed = collapsedCountries[group.code] ?? false;
             return (
-              <div
-                key={group.code}
-                className="min-w-0 rounded-xl border border-border/70 bg-card p-2"
-              >
-                <div className="flex min-w-0 items-center gap-1">
+              <section key={group.code} className="bw-portpick__country">
+                <div className="bw-portpick__country-head">
                   <button
                     type="button"
                     aria-expanded={!collapsed}
                     onClick={() =>
                       setCollapsedCountries((prev) => ({ ...prev, [group.code]: !collapsed }))
                     }
-                    className="flex min-w-0 flex-1 items-center gap-1.5 rounded-lg px-1 py-1 text-left text-xs font-semibold transition hover:bg-secondary"
+                    className="bw-portpick__country-toggle"
                   >
-                    <ChevronDown
-                      className={`size-3.5 shrink-0 text-muted-foreground transition-transform ${collapsed ? "-rotate-90" : ""}`}
-                    />
-                    <CountryFlag code={group.code} />
-                    <span className="truncate">{group.name}</span>
-                    <span className="ml-auto shrink-0 text-[11px] font-medium text-muted-foreground">
+                    <CountryFlag code={group.code} className="bw-portpick__flag" />
+                    <span className="bw-portpick__country-name">{group.name}</span>
+                    <span className="bw-portpick__count" data-some={selectedCount > 0 || undefined}>
                       {ids.length ? `${selectedCount}/${ids.length}` : "—"}
                     </span>
+                    <ChevronDown aria-hidden className="bw-portpick__chevron" />
                   </button>
                   <button
                     type="button"
@@ -206,17 +197,15 @@ export function PortMultiPicker({
                     aria-pressed={countrySelected}
                     disabled={!ids.length}
                     onClick={() => toggle(ids)}
-                    className={`grid size-8 shrink-0 place-items-center rounded-lg transition disabled:opacity-30 ${countrySelected ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary"}`}
+                    className="bw-portpick__country-check"
                   >
-                    {countrySelected ? (
-                      <Check className="size-4" />
-                    ) : (
-                      <span className="size-3.5 rounded border border-current" />
-                    )}
+                    <span className="bw-portpick__check" data-state={countryState} aria-hidden>
+                      {countryState === "on" ? <Check /> : countryState === "some" ? <Minus /> : null}
+                    </span>
                   </button>
                 </div>
                 {!collapsed ? (
-                  <div className="mt-1 flex min-w-0 flex-wrap gap-1">
+                  <div className="bw-portpick__chips">
                     {group.ports.map((port) => {
                       const reason = reasons.get(port.id);
                       const isSelected = !reason && isOn(port.id);
@@ -237,20 +226,19 @@ export function PortMultiPicker({
                             setOpen(false);
                             onOpenPort?.(port.id);
                           }}
-                          className={`inline-flex min-h-8 max-w-full items-center gap-1 rounded-full border px-2.5 py-1 text-left text-[11px] font-medium leading-tight transition-colors ${reason ? "border-border/50 text-muted-foreground/60 hover:bg-secondary hover:text-muted-foreground" : isSelected ? "border-primary/20 bg-primary/10 text-primary" : "border-border bg-background text-foreground hover:border-primary/30 hover:bg-secondary"}`}
+                          className="bw-portpick__chip"
+                          data-state={reason ? "off" : isSelected ? "on" : undefined}
                         >
-                          {isSelected ? <Check className="size-3.5 shrink-0" /> : null}
+                          {isSelected ? <Check aria-hidden /> : null}
                           {reason === "Aucun départ planifié pour le moment" ? (
-                            <CalendarX2 aria-hidden className="size-3 shrink-0" />
+                            <CalendarX2 aria-hidden />
                           ) : null}
-                          {reason === "Port inactif" ? (
-                            <Ban aria-hidden className="size-3 shrink-0" />
-                          ) : null}
-                          <span className="truncate">{port.name}</span>
+                          {reason === "Port inactif" ? <Ban aria-hidden /> : null}
+                          <span>{port.name}</span>
                           {port.facilities?.["dedouanement_vehicule"] === "oui" ? (
                             <Car
                               aria-label={tr("ui.portFilters.dedouanementVehiculesDeMoinsDe")}
-                              className="size-3 shrink-0 text-primary"
+                              className="bw-portpick__car"
                             />
                           ) : null}
                         </button>
@@ -258,32 +246,28 @@ export function PortMultiPicker({
                     })}
                   </div>
                 ) : null}
-              </div>
+              </section>
             );
           })}
         </div>
       )}
 
       {inline ? null : (
-        <div className="mt-3 flex shrink-0 items-center justify-between border-t pt-3">
+        <div className="bw-portpick__foot">
           <button
             type="button"
             onClick={() => onChange([])}
             disabled={!value.length}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-40"
+            className="bw-portpick__reset"
           >
             {tr("ui.portFilters.reinitialiser")}
           </button>
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
-          >
+          <button type="button" onClick={() => setOpen(false)} className="bw-portpick__ok">
             {tr("ui.portFilters.valider")}{value.length ? ` (${value.length})` : ""}
           </button>
         </div>
       )}
-    </>
+    </div>
   );
 
   if (inline) {
@@ -328,17 +312,17 @@ export function PortMultiPicker({
           <SheetPrimitive.Overlay className="fixed inset-0 z-[90] bg-foreground/40" />
           <SheetPrimitive.Content
             aria-describedby={undefined}
-            className="fixed inset-0 z-[95] flex flex-col overflow-y-auto bg-background p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+            className="bw-portpick-sheet fixed inset-0 z-[95] flex flex-col overflow-y-auto"
           >
-            <div className="mb-3 flex shrink-0 items-center justify-between">
-              <SheetPrimitive.Title className="text-base font-bold">
+            <div className="bw-portpick-sheet__head">
+              <SheetPrimitive.Title className="bw-portpick-sheet__title">
                 {tr("ui.portFilters.port")}{direction === "departure" ? tr("ui.portFilters.deDepart") : tr("ui.portFilters.dArrivee")}
               </SheetPrimitive.Title>
               <SheetPrimitive.Close
                 aria-label={tr("ui.portFilters.fermer")}
-                className="grid size-9 place-items-center rounded-full hover:bg-muted"
+                className="bw-portpick-sheet__close"
               >
-                <X className="size-4" />
+                <X className="size-5" />
               </SheetPrimitive.Close>
             </div>
             {body}
@@ -354,7 +338,7 @@ export function PortMultiPicker({
       <PopoverContent
         align="start"
         collisionPadding={12}
-        className="flex max-h-[min(34rem,var(--radix-popover-content-available-height))] w-96 max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden p-3"
+        className="bw-portpick-pop flex max-h-[min(36rem,var(--radix-popover-content-available-height))] w-[26rem] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden p-3"
       >
         {body}
       </PopoverContent>

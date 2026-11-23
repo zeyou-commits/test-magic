@@ -17805,3 +17805,429 @@ button.bw-delay-badge:focus-visible {
 body:has(.bw-ticker:not([data-off])) .bw-messages-preview {
   display: none;
 }
+
+/* ── Choix des ports (Départ / Arrivée) : champs modernes, gros touchers, coches nettes ── */
+.bw-portpick {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 10px;
+  color: #16324a;
+}
+.bw-portpick__search {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 8px 0 14px;
+  border: 1.5px solid #e2e8e4;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px #16324a0d;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+  cursor: text;
+}
+.bw-portpick__search:focus-within {
+  border-color: #0e7a43;
+  box-shadow: 0 0 0 4px #0e7a431f;
+}
+.bw-portpick__search > svg {
+  flex: none;
+  width: 19px;
+  height: 19px;
+  color: #6b7c75;
+}
+.bw-portpick__search input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: #16324a;
+  font-size: 16px;
+  font-weight: 500;
+  outline: none;
+}
+.bw-portpick__search input::placeholder {
+  color: #8a9993;
+  font-weight: 400;
+}
+.bw-portpick__search button {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #eef2ef;
+  color: #4f6058;
+}
+.bw-portpick__search button svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* Coche commune : carré arrondi, plein vert quand c'est coché, trait quand c'est partiel. */
+.bw-portpick__check {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 2px solid #c9d3ce;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #ffffff;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+.bw-portpick__check[data-state="on"],
+.bw-portpick__check[data-state="some"] {
+  border-color: #0e7a43;
+  background: #0e7a43;
+}
+.bw-portpick__check svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 3;
+}
+
+.bw-portpick__all {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 8px 14px 8px 10px;
+  border: 1.5px solid #e2e8e4;
+  border-radius: 16px;
+  background: #ffffff;
+  text-align: left;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+.bw-portpick__all:hover {
+  border-color: #b9dcc8;
+}
+.bw-portpick__all[aria-pressed="true"] {
+  border-color: #0e7a43;
+  background: #f1f9f4;
+}
+.bw-portpick__all-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  background: #e8f4ed;
+  color: #0e7a43;
+}
+.bw-portpick__all-icon svg {
+  width: 18px;
+  height: 18px;
+}
+.bw-portpick__all-label {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.bw-portpick__list {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+.bw-portpick__country {
+  min-width: 0;
+  padding: 6px 12px 12px;
+  border: 1.5px solid #e9eeea;
+  border-radius: 18px;
+  background: #ffffff;
+}
+.bw-portpick__country-head {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+}
+.bw-portpick__country-toggle {
+  display: flex;
+  min-width: 0;
+  min-height: 44px;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px;
+  text-align: left;
+}
+.bw-portpick__flag {
+  width: 24px !important;
+  height: 16px !important;
+  border-radius: 4px !important;
+}
+.bw-portpick__country-name {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.bw-portpick__count {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f0f3f1;
+  color: #5b6b66;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.bw-portpick__count[data-some] {
+  background: #e3f3ea;
+  color: #0e7a43;
+}
+.bw-portpick__chevron {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-left: auto;
+  color: #8a9993;
+  transition: transform 0.2s ease;
+}
+.bw-portpick__country-toggle[aria-expanded="false"] .bw-portpick__chevron {
+  transform: rotate(-90deg);
+}
+.bw-portpick__country-check {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+}
+.bw-portpick__country-check:hover:not(:disabled) {
+  background: #f1f5f2;
+}
+.bw-portpick__country-check:disabled {
+  opacity: 0.35;
+}
+.bw-portpick__chips {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 4px;
+}
+.bw-portpick__chip {
+  display: inline-flex;
+  max-width: 100%;
+  min-height: 40px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  border: 1.5px solid #e2e8e4;
+  border-radius: 12px;
+  background: #f8faf9;
+  color: #16324a;
+  font-size: 14px;
+  font-weight: 600;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.1s ease;
+}
+.bw-portpick__chip > span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.bw-portpick__chip svg {
+  flex: none;
+  width: 15px;
+  height: 15px;
+}
+.bw-portpick__chip:hover {
+  border-color: #9fcfb4;
+  background: #ffffff;
+}
+.bw-portpick__chip:active {
+  transform: scale(0.97);
+}
+.bw-portpick__chip[data-state="on"] {
+  border-color: #0e7a43;
+  background: #0e7a43;
+  color: #ffffff;
+}
+.bw-portpick__chip[data-state="on"] svg {
+  stroke-width: 3;
+}
+.bw-portpick__chip[data-state="on"] .bw-portpick__car {
+  color: #ffffff;
+}
+.bw-portpick__chip[data-state="off"] {
+  border-style: dashed;
+  background: transparent;
+  color: #9aa7a1;
+  font-weight: 500;
+}
+.bw-portpick__car {
+  color: #0e7a43;
+}
+.bw-portpick__chip:focus-visible,
+.bw-portpick__all:focus-visible,
+.bw-portpick__country-toggle:focus-visible,
+.bw-portpick__country-check:focus-visible,
+.bw-portpick__ok:focus-visible,
+.bw-portpick__reset:focus-visible {
+  outline: 2px solid #0e7a43;
+  outline-offset: 2px;
+}
+
+/* Pied fixe : Réinitialiser discret, Valider en grand. */
+.bw-portpick__foot {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid #e9eeea;
+  background: inherit;
+}
+.bw-portpick__reset {
+  height: 48px;
+  padding: 0 16px;
+  border-radius: 14px;
+  color: #4f6058;
+  font-size: 15px;
+  font-weight: 600;
+}
+.bw-portpick__reset:hover:not(:disabled) {
+  background: #eef2ef;
+}
+.bw-portpick__reset:disabled {
+  opacity: 0.4;
+}
+.bw-portpick__ok {
+  flex: 1;
+  height: 48px;
+  border-radius: 14px;
+  background: #0e7a43;
+  box-shadow: 0 6px 16px -8px #0e7a43;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  transition: background 0.15s ease;
+}
+.bw-portpick__ok:hover {
+  background: #0b6236;
+}
+
+/* Téléphone : plein écran. */
+.bw-portpick-sheet {
+  padding: 0 16px max(16px, env(safe-area-inset-bottom));
+  background: #f6f5f0;
+}
+.bw-portpick-sheet__head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 -16px 4px;
+  padding: 16px 16px 10px;
+  background: #f6f5f0;
+}
+.bw-portpick-sheet__title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.bw-portpick-sheet__close {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px #16324a1f;
+  color: #16324a;
+}
+.bw-portpick-sheet .bw-portpick__foot {
+  margin: auto -16px 0;
+  padding: 12px 16px max(4px, env(safe-area-inset-bottom));
+  background: #f6f5f0e6;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Ordinateur : menu déroulant, un peu plus compact. */
+.bw-portpick-pop {
+  border-radius: 20px !important;
+  background: #fbfaf7 !important;
+}
+.bw-portpick-pop .bw-portpick__search,
+.bw-portpick-pop .bw-portpick__reset,
+.bw-portpick-pop .bw-portpick__ok {
+  height: 44px;
+}
+.bw-portpick-pop .bw-portpick__search input {
+  font-size: 15px;
+}
+.bw-portpick-pop .bw-portpick__chip {
+  min-height: 36px;
+  font-size: 13.5px;
+}
+.bw-portpick-pop .bw-portpick__country-toggle,
+.bw-portpick-pop .bw-portpick__country-check {
+  min-height: 40px;
+  height: 40px;
+}
+.bw-portpick-pop .bw-portpick__ok {
+  flex: 0 0 auto;
+  padding: 0 22px;
+  margin-left: auto;
+}
+
+/* Dans le panneau (sans menu) : version resserrée. */
+.bw-portpick[data-inline] .bw-portpick__search {
+  height: 40px;
+  border-radius: 12px;
+}
+.bw-portpick[data-inline] .bw-portpick__search input {
+  font-size: 14px;
+}
+.bw-portpick[data-inline] .bw-portpick__all {
+  min-height: 42px;
+  border-radius: 12px;
+}
+.bw-portpick[data-inline] .bw-portpick__chip {
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 12.5px;
+}
+.bw-portpick[data-inline] .bw-portpick__country {
+  padding: 4px 8px 8px;
+  border-radius: 14px;
+}
+.bw-portpick-sheet__close:focus-visible {
+  outline: 2px solid #0e7a43;
+  outline-offset: 2px;
+}
+.bw-portpick-sheet__close:focus:not(:focus-visible) {
+  outline: none;
+}

@@ -591,10 +591,16 @@ function RoutesDuBledPage() {
   return (
     <>
       <SiteHeader />
-      <main className="rdb mx-auto max-w-6xl px-4 pb-20 pt-4 sm:px-6 sm:pt-5">
-        <Breadcrumbs
-          items={[{ name: tr("ui.pageRoutesDuBled.titreCourt"), path: "/routes-du-bled" }]}
-        />
+      {/* Un trajet choisi : l'en-tête se replie pour laisser la place à la carte et aux routes. */}
+      <main
+        className="rdb mx-auto max-w-6xl px-4 pb-20 pt-4 sm:px-6 sm:pt-5"
+        data-trip={from && to ? "" : undefined}
+      >
+        <div className="rdb-crumbs">
+          <Breadcrumbs
+            items={[{ name: tr("ui.pageRoutesDuBled.titreCourt"), path: "/routes-du-bled" }]}
+          />
+        </div>
 
         <header className="rdb-hero">
           <p className="text-xs font-bold uppercase tracking-[.18em] text-primary lg:hidden">

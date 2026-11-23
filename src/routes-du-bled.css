@@ -522,3 +522,31 @@
 .rdb-rc__title { align-items: center; }
 .rdb-rc__title .rdb-rc__port { color: var(--foreground); gap: 0.4rem; white-space: normal; }
 .rdb-rc__title .rdb-rc__port svg { color: var(--mer); flex: none; }
+
+/* Trajet choisi : en-tête replié (titre gardé pour les lecteurs d'écran et Google), barre sur une ligne. */
+.rdb[data-trip] { padding-top: 0.6rem; }
+.rdb[data-trip] .rdb-crumbs { display: none; }
+.rdb[data-trip] .rdb-hero { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; margin: 0; }
+.rdb[data-trip] .rdb-planner { margin-top: 0; }
+.rdb[data-trip] .rdb-bar { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; padding: 0.15rem; border-radius: 999px; box-shadow: 0 4px 14px rgb(13 48 67 / 0.1); }
+.rdb[data-trip] .rdb-bar__arrow { display: block; width: 1rem; height: 1rem; }
+.rdb[data-trip] .rdb-place,
+.rdb[data-trip] .rdb-place + .rdb-bar__arrow + .rdb-place { padding: 0.2rem 0.4rem 0.2rem 0.85rem; border-top: 0; border-radius: 999px; }
+.rdb[data-trip] .rdb-place > label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.rdb[data-trip] .rdb-place__in { min-height: 2.25rem; gap: 0.3rem; }
+.rdb[data-trip] .rdb-place input { font-size: 0.95rem; }
+.rdb[data-trip] .rdb-place__geo { width: 1.9rem; height: 1.9rem; }
+.rdb[data-trip] .rdb-planner__grid { margin-top: 0.6rem; }
+@media (max-width: 719px) {
+  .rdb[data-trip] .rdb-place input { font-size: 0.9rem; }
+  .rdb[data-trip] .rdb-place__geo { display: none; }
+}
+
+/* Carnet en moments : heure de départ, une seule invitation à ajouter en fin de carnet. */
+.rdb-depart { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; font-size: 0.85rem; font-weight: 700; color: var(--foreground); }
+.rdb-depart select { min-height: 2.25rem; padding: 0 0.6rem; border-radius: 0.6rem; border: 1px solid var(--border); background: var(--card); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--foreground); }
+.rdb-pas__when { font-variant-numeric: tabular-nums; }
+.rdb-book__add { display: flex; align-items: center; gap: 0.6rem; width: 100%; margin-top: 1rem; padding: 0.75rem 0.9rem; border-radius: 0.9rem; border: 1px dashed var(--border); text-align: left; font-size: 0.85rem; color: var(--muted-foreground); }
+.rdb-book__add svg { flex: none; color: var(--primary); }
+.rdb-book__add b { color: var(--primary); }
+.rdb-book__add:hover { background: var(--secondary); }

@@ -1,4 +1,4 @@
-import { PAUSE_EVERY_MIN } from "@/lib/ferry/itinerary";
+import { PAUSE_EVERY_MIN, PAUSE_MIN } from "@/lib/ferry/itinerary";
 import type { Chemin, LonLat } from "./porteAPorte";
 import { PLACE_NAME, ROUTES_DZ, type Chain, type ChainStop, type Etape } from "./trajets";
 import { VILLES, nomVille } from "./villes";
@@ -164,6 +164,36 @@ export function viaVilles(c: Chemin, approche?: LonLat[]) {
 }
 
 const PAUSE_TOUTES = PAUSE_EVERY_MIN / 60;
+
+/**
+ * L'heure de chaque moment côté Europe, pour un départ à `depart` heures : la route, plus chaque pause
+ * déjà faite ; après une nuit, on repart le lendemain à la même heure. Côté Algérie, l'heure dépend du
+ * navire : on garde le temps depuis le port.
+ */
+export function horaires(pas: Pas[], depart: number, pauseMin = PAUSE_MIN) {
+  // Clé = le pas lui-même : deux villes peuvent porter le même nom (Valence en France et en Espagne).
+  const out = new Map<Pas, number>();
+  let h0 = 0;
+  let pauses = 0;
+  for (const p of pas) {
+    if (p.side !== "eu") break;
+    out.set(p, depart + (p.h - h0) + (pauses * pauseMin) / 60);
+    if (p.k === "pause" || p.k === "priere" || p.k === "vide") pauses++;
+    if (p.k === "nuit" || p.k === "nuitvide") {
+      h0 = p.h;
+      pauses = 0;
+    }
+  }
+  return out;
+}
+
+/** « 8 h 15 », arrondi au quart d'heure (« 6 h » pour une heure pile). */
+export function heure(t: number) {
+  const m = (((Math.round((t * 60) / 15) * 15) % 1440) + 1440) % 1440;
+  const mm = m % 60;
+  const nb = String.fromCharCode(160);
+  return `${Math.floor(m / 60)}${nb}h${mm ? `${nb}${String(mm).padStart(2, "0")}` : ""}`;
+}
 
 export function carnet(
   c: Chemin,

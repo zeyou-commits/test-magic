@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   ChevronDown,
@@ -21,7 +21,7 @@ import {
   type ChainStop,
 } from "@/lib/routesDuBled/trajets";
 import { heuresEnTout, type Bout, type Chemin, type LonLat } from "@/lib/routesDuBled/porteAPorte";
-import type { Carnet, Pas } from "@/lib/routesDuBled/carnet";
+import { heure, horaires, type Carnet, type Pas } from "@/lib/routesDuBled/carnet";
 import { VILLES, nomVille } from "@/lib/routesDuBled/villes";
 import { FeatureIcon, KindIcon, Mosque, featureLabel, kindLabel, sourceLabel } from "./StopVisuals";
 
@@ -118,6 +118,8 @@ export function RouteCard({
   const total: Bout = { km: c.km, h: c.h, mesure };
   const pe = PLACE_NAME[c.eu.port];
   const pd = PLACE_NAME[c.dz.port];
+  // Avec une nuit sur la route ou en mer, des heures « porte à porte » sans le sommeil trompent : on compte en jours.
+  const jours = k.pas.at(-1)?.jour ?? 1;
   return (
     <article className="rdb-rc" data-open={open || undefined}>
       <button type="button" className="rdb-rc__head" aria-expanded={open} onClick={onToggle}>
@@ -141,14 +143,16 @@ export function RouteCard({
           ) : null}
         </span>
         <span className="rdb-rc__facts">
-          {enTout != null ? (
+          {jours > 1 ? (
+            <strong>{tr("ui.pageRoutesDuBled.enJours", { n: jours })}</strong>
+          ) : enTout != null ? (
             <strong>
               {tr("ui.pageRoutesDuBled.enTout", {
                 duree: duree({ ...total, h: enTout + (pauses * PAUSE_MIN) / 60 }),
               })}
             </strong>
           ) : null}
-          {enTout != null ? " · " : ""}
+          {jours > 1 || enTout != null ? " · " : ""}
           {tr("ui.pageRoutesDuBled.deRoute", { duree: duree(total) })}
           {c.mer != null
             ? ` + ${tr("ui.pageRoutesDuBled.deMer", { duree: dureeRonde(c.mer / 60) })}`
@@ -212,6 +216,25 @@ function CarnetView({
     (a.point[1] + b.point[1]) / 2,
   ];
   const routeOf = (id?: string) => routes.find((r) => r.id === id);
+  const [depart, setDepart] = useState(DEPART_DEFAUT);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DEPART_KEY);
+      const v = Number(raw);
+      if (raw != null && v >= 0 && v < 24) setDepart(v);
+    } catch {
+      /* stockage indisponible : départ à 6 h */
+    }
+  }, []);
+  const choisirDepart = (v: number) => {
+    setDepart(v);
+    try {
+      localStorage.setItem(DEPART_KEY, String(v));
+    } catch {
+      /* rien à faire */
+    }
+  };
+  const clocks = useMemo(() => horaires(k.pas, depart), [k.pas, depart]);
   let jour = 1;
   return (
     <div className="rdb-book">
@@ -254,14 +277,6 @@ function CarnetView({
                       {fmt(dk)}&nbsp;km · {dureeRonde(dh)}
                     </span>
                   ) : null}
-                  <button
-                    type="button"
-                    className="rdb-leg__add"
-                    onClick={() => onAdd(p.route ?? prev.route, mid(prev, p))}
-                  >
-                    <Plus className="size-3" aria-hidden />
-                    {tr("ui.pageRoutesDuBled.ajouterUnEndroit")}
-                  </button>
                 </div>
               </div>,
             );
@@ -295,21 +310,41 @@ function CarnetView({
             onAdd={() => onAdd(p.route, p.point)}
             portStop={portStop}
             route={routeOf(p.route)}
+            clock={clocks.get(p)}
+            depart={depart}
+            onDepart={choisirDepart}
           />,
         );
         if ((p.k === "nuit" || p.k === "nuitvide") && i < k.pas.length - 1) {
           jour = p.jour + 1;
           out.push(
             <p key={`n-${p.id}`} className="rdb-book__day">
-              {tr("ui.pageRoutesDuBled.jourN", { n: jour })}
+              {p.side === "eu"
+                ? tr("ui.pageRoutesDuBled.jourDepartA", { n: jour, heure: heure(depart) })
+                : tr("ui.pageRoutesDuBled.jourN", { n: jour })}
             </p>,
           );
         }
         return <Fragment key={`f-${p.id}`}>{out}</Fragment>;
       })}
+      {/* Une seule invitation, à la fin : le carnet se lit d'abord comme un voyage. */}
+      <button
+        type="button"
+        className="rdb-book__add"
+        onClick={() => onAdd(c.eu.chain?.segs[0]?.route.id, null)}
+      >
+        <Plus className="size-4" aria-hidden />
+        <span>
+          {tr("ui.pageRoutesDuBled.unEndroitSurRoute")}{" "}
+          <b>{tr("ui.pageRoutesDuBled.ajouterUnEndroit")}</b>
+        </span>
+      </button>
     </div>
   );
 }
+
+const DEPART_KEY = "bw-routes-depart-h";
+const DEPART_DEFAUT = 6;
 
 function PasView({
   p,
@@ -319,6 +354,9 @@ function PasView({
   onAdd,
   portStop,
   route,
+  clock,
+  depart,
+  onDepart,
 }: {
   p: Pas;
   c: Chemin;
@@ -327,6 +365,10 @@ function PasView({
   onAdd: () => void;
   portStop: ChainStop | null;
   route: BledRoute | undefined;
+  /** Heure du moment côté Europe (heures depuis minuit le jour même). */
+  clock: number | undefined;
+  depart: number;
+  onDepart: (h: number) => void;
 }) {
   const [more, setMore] = useState(false);
   const pd = PLACE_NAME[c.dz.port];
@@ -340,9 +382,11 @@ function PasView({
         : p.h > 0.05
           ? tr("ui.pageRoutesDuBled.apresDepuisPort", { duree: dureeRonde(p.h) })
           : ""
-      : p.h > 0.05
-        ? tr("ui.pageRoutesDuBled.apresDeRoute", { duree: dureeRonde(p.h) })
-        : "";
+      : clock != null && p.k !== "depart"
+        ? tr("ui.pageRoutesDuBled.versHeure", { heure: heure(clock) })
+        : p.h > 0.05
+          ? tr("ui.pageRoutesDuBled.apresDeRoute", { duree: dureeRonde(p.h) })
+          : "";
   const e = p.etape;
   const best = e?.best ?? p.lieu ?? null;
   const pray = p.priere ?? null;
@@ -361,6 +405,16 @@ function PasView({
     icon = <img src="/cabas/persos/voiture_504.webp" alt="" width={30} height={30} />;
     body = (
       <p className="rdb-pas__text">
+        <label className="rdb-depart" onClick={(ev) => ev.stopPropagation()}>
+          {tr("ui.pageRoutesDuBled.departA")}
+          <select value={depart} onChange={(ev) => onDepart(Number(ev.target.value))}>
+            {Array.from({ length: 24 }, (_, h) => (
+              <option key={h} value={h}>
+                {heure(h)}
+              </option>
+            ))}
+          </select>
+        </label>
         {tr("ui.pageRoutesDuBled.departConseil")}{" "}
         <Link to="/preparer-mon-voyage" className="underline underline-offset-2">
           {tr("ui.pageRoutesDuBled.preparerLien")}
@@ -424,7 +478,13 @@ function PasView({
       <div className="rdb-pas" data-k="ville" data-side={p.side} id={`pas-${p.id}`} data-pas={p.id}>
         <span className="rdb-pas__dot" aria-hidden />
         <p className="rdb-pas__ville">
-          {p.name} <span>· {dureeRonde(p.h)}</span>
+          {p.name}{" "}
+          <span>
+            ·{" "}
+            {clock != null
+              ? tr("ui.pageRoutesDuBled.versHeure", { heure: heure(clock) })
+              : dureeRonde(p.h)}
+          </span>
         </p>
       </div>
     );
@@ -700,7 +760,7 @@ function PasView({
         ) : null}
         <h3 className="rdb-pas__title">{title}</h3>
         {body}
-        {pauseLike ? (
+        {pauseLike && !best ? (
           <button
             type="button"
             className="rdb-add"

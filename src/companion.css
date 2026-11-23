@@ -2111,3 +2111,43 @@ img.bw-rload__car { width: 30px; height: 30px; object-fit: contain; scale: -1 1;
 /* Passer une étape : un lien, jamais le bouton principal. */
 .bw-wiz-skip { min-height: 32px; padding: 0 4px; font-size: 0.8rem; font-weight: 600; color: var(--muted-foreground); text-decoration: underline; text-underline-offset: 3px; }
 .bw-wiz-skip:hover { color: var(--foreground); }
+
+/* Guide : une seule grille pour l'en-tête, les questions et les boutons. Sur grand écran, le récap
+   qui se remplit prend la colonne de droite (sticky) ; sur téléphone et tablette, une colonne. */
+.bw-wiz-wrap { width: 100%; max-width: 42rem; margin-inline: auto; }
+.bw-wiz-aside { display: none; }
+@media (min-width: 1024px) {
+  .bw-wiz-wrap--aside {
+    display: grid;
+    grid-template-columns: minmax(0, 42rem) 20rem;
+    column-gap: 3rem;
+    max-width: calc(42rem + 20rem + 3rem);
+  }
+  .bw-wiz-aside { display: block; position: sticky; top: 1rem; align-self: start; padding-top: 0.75rem; }
+}
+.bw-wiz-aside__title {
+  margin-bottom: 8px;
+  color: #6b7c8a;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+/* Le menu de choix commun (ChoiceMenu) en champ de formulaire : même hauteur que les champs. */
+.bw-choice-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--background);
+  font-size: 16px;
+  font-weight: 600;
+  color: inherit;
+}
+.bw-choice-field:hover { border-color: color-mix(in oklab, currentColor 35%, transparent); }
+.bw-choice-field:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.bw-choice-field .bw-wide-chip__lead { display: grid; place-items: center; opacity: 0.6; }

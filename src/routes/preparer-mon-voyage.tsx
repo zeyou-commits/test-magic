@@ -19,6 +19,7 @@ import {
   ListChecks,
   Lock,
   Map as MapIcon,
+  Globe2,
   MapPin,
   PartyPopper,
   Pencil,
@@ -36,6 +37,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { AlgeriaCarousel } from "@/components/prepare/AlgeriaCarousel";
+import { ChoiceMenu } from "@/components/ChoiceMenu";
 import { RouteTop3 } from "@/components/prepare/RouteTop3";
 import { TripCalendar, type CalendarField } from "@/components/panel/TripCalendar";
 import { buildSailings, daysWithSailings, legSailings } from "@/lib/ferry/trips";
@@ -912,6 +914,22 @@ function CompanionPage() {
                     setOpen(null);
                     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "instant" }));
                   }}
+                  aside={
+                    <>
+                      <p className="bw-wiz-aside__title">Votre récap se remplit</p>
+                      <RecapPreview
+                        title="Votre voyage"
+                        subtitle="Il se complète à chaque étape"
+                        // Une ligne remplie dès que son étape est faite ; les autres restent grises.
+                        rows={previewRows.map((row) => ({
+                          ...row,
+                          chapter: isDone(rowStep[row.label] ?? "profile") ? -1 : 3,
+                        }))}
+                        filled={0}
+                        fresh={null}
+                      />
+                    </>
+                  }
                 >
                   {stepBody(open)}
                 </WizardFrame>
@@ -924,9 +942,6 @@ function CompanionPage() {
                 />
               ) : null}
 
-              <div className="mt-8">
-                <AlgeriaCarousel />
-              </div>
             </>
           )}
         </div>
@@ -2444,25 +2459,18 @@ function HolidaysQuestion({
               </button>
             </div>
           ) : (
-            <select
-              value={area ?? ""}
-              onChange={(event) =>
-                patch({
-                  holidays: event.target.value
-                    ? `${calendar.id}:${event.target.value}`
-                    : calendar.id,
-                })
+            <ChoiceMenu
+              variant="field"
+              className="mt-2 sm:max-w-xs"
+              label={calendar.areaLabel ?? "Zone"}
+              icon={<MapPin size={16} aria-hidden />}
+              value={area ?? null}
+              all="Je ne sais pas"
+              onChange={(zone) =>
+                patch({ holidays: zone ? `${calendar.id}:${zone}` : calendar.id })
               }
-              aria-label={calendar.areaLabel ?? "Zone"}
-              className="mt-2 block min-h-12 w-full rounded-xl border bg-background px-3 text-base sm:max-w-xs"
-            >
-              <option value="">Je ne sais pas</option>
-              {calendar.areas.map((zone) => (
-                <option key={zone.id} value={zone.id}>
-                  {zone.name}
-                </option>
-              ))}
-            </select>
+              options={calendar.areas.map((zone) => ({ value: zone.id, label: zone.name }))}
+            />
           )}
         </div>
       ) : null}
@@ -2565,20 +2573,19 @@ function ResidenceQuestion({
   };
   return (
     <Question title={title} hint={hint}>
-      <label className="block">
-        <span className="text-sm font-semibold">Pays</span>
-        <select
-          value={plan.country}
-          onChange={(event) => setCountry(event.target.value)}
-          className="mt-1 block min-h-12 w-full rounded-xl border bg-background px-3 text-base sm:max-w-xs"
-        >
-          {RESIDENCE_COUNTRIES.map((country) => (
-            <option key={country.code} value={country.code}>
-              {country.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      <p className="text-sm font-semibold">Pays</p>
+      <ChoiceMenu
+        variant="field"
+        className="mt-1 sm:max-w-xs"
+        label="Pays"
+        icon={<Globe2 size={16} aria-hidden />}
+        value={plan.country}
+        onChange={(code) => (code ? setCountry(code) : undefined)}
+        options={RESIDENCE_COUNTRIES.map((country) => ({
+          value: country.code,
+          label: country.name,
+        }))}
+      />
       <div className="mt-4">
         {plan.country === "FR" ? (
           <HomeFields

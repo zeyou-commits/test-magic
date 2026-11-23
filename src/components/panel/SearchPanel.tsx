@@ -11,7 +11,6 @@ import {
   ArrowRight,
   Backpack,
   Building2,
-  Check,
   CalendarDays,
   ChevronDown,
   ChevronRight,
@@ -25,6 +24,7 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ChoiceMenu } from "@/components/ChoiceMenu";
 import {
   Select,
   SelectContent,
@@ -1041,9 +1041,9 @@ export function SearchPanel({
                   </button>
                 ))}
               </div>
-              <WideFilterMenu
+              <ChoiceMenu
                 label={tr("ui.searchPanel.compagnie")}
-                allLabel="Toutes les compagnies"
+                all="Toutes les compagnies"
                 icon={<Building2 className="size-4" aria-hidden />}
                 value={filters.companyId}
                 onChange={(value) => set({ companyId: value, vesselId: null })}
@@ -1053,9 +1053,9 @@ export function SearchPanel({
                   leading: <CompanyBadge name={company.name} logoUrl={company.logo_url} size={22} />,
                 }))}
               />
-              <WideFilterMenu
+              <ChoiceMenu
                 label={tr("ui.searchPanel.navire")}
-                allLabel={
+                all={
                   filters.companyId
                     ? (() => { const n = companies.find((company) => company.id === filters.companyId)?.name; return n ? `Tous les navires ${/^[aeiouyhàâéèêîôûAEIOUYHÀÂÉÈÊÎÔÛ]/.test(n) ? "d'" : "de "}${n}` : "Tous les navires de la compagnie"; })()
                     : "Tous les navires"
@@ -2216,74 +2216,3 @@ function reasonBody(reason: NoSailingReason, fallback: string) {
   }
 }
 
-/** Barre PC : un menu de filtre (compagnie ou navire), avec logo ou silhouette devant chaque choix. */
-function WideFilterMenu({
-  label,
-  allLabel,
-  icon,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  allLabel: string;
-  icon: ReactNode;
-  value: string | null;
-  options: { value: string; label: string; leading: ReactNode }[];
-  onChange: (value: string | null) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const current = options.find((option) => option.value === value);
-  const choose = (next: string | null) => {
-    onChange(next);
-    setOpen(false);
-  };
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="bw-wide-chip"
-          data-on={Boolean(current) || undefined}
-          aria-label={current ? `${label} : ${current.label}` : label}
-        >
-          <span className="bw-wide-chip__lead">{current ? current.leading : icon}</span>
-          <span className="truncate">{current ? current.label : label}</span>
-          <ChevronDown className="size-3.5 opacity-60" aria-hidden />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="start" sideOffset={8} className="bw-wide-menu w-[340px] p-1.5">
-        <p className="bw-wide-menu__title">{label}</p>
-        <div className="bw-wide-menu__list" role="listbox" aria-label={label}>
-          <button
-            type="button"
-            role="option"
-            aria-selected={!value}
-            className="bw-wide-menu__item"
-            data-on={!value || undefined}
-            onClick={() => choose(null)}
-          >
-            <span className="bw-wide-menu__lead">{icon}</span>
-            <span className="truncate">{allLabel}</span>
-            {!value ? <Check className="ml-auto size-4" aria-hidden /> : null}
-          </button>
-          {options.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              role="option"
-              aria-selected={option.value === value}
-              className="bw-wide-menu__item"
-              data-on={option.value === value || undefined}
-              onClick={() => choose(option.value)}
-            >
-              <span className="bw-wide-menu__lead">{option.leading}</span>
-              <span className="truncate">{option.label}</span>
-              {option.value === value ? <Check className="ml-auto size-4" aria-hidden /> : null}
-            </button>
-          ))}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}

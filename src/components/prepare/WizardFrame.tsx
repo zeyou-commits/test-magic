@@ -129,6 +129,7 @@ export function WizardFrame({
   onOpen,
   onClose,
   onSkip,
+  aside,
   children,
 }: {
   steps: WizardStepInfo[];
@@ -138,8 +139,12 @@ export function WizardFrame({
   onClose: () => void;
   /** Ignorer l'étape : on passe à la suivante sans la marquer faite. */
   onSkip?: () => void;
+  /** Sur grand écran (≥ 1024 px) : une colonne à droite des questions (le récap qui se remplit). */
+  aside?: ReactNode;
   children: ReactNode;
 }) {
+  // Avec une colonne de côté, en-tête, questions et boutons s'alignent sur la même grille.
+  const wrap = aside ? "bw-wiz-wrap bw-wiz-wrap--aside" : "bw-wiz-wrap";
   const [dock, setDock] = useState<HTMLElement | null>(null);
   const [screen, setScreen] = useState<(WizardScreen & { step: string }) | null>(null);
   const step = steps[current]!;
@@ -240,7 +245,8 @@ export function WizardFrame({
         {/* En-tête compact : une ligne (sortir · fil des étapes · passer), le titre, puis un filet
             de progression. Le chapitre reste dit aux lecteurs d'écran. */}
         <header className="shrink-0 border-b bg-card/95 shadow-sm backdrop-blur">
-          <div className="mx-auto w-full max-w-2xl px-3 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] md:px-4">
+          <div className={`${wrap} px-3 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] md:px-4`}>
+            <div className="min-w-0">
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -312,6 +318,7 @@ export function WizardFrame({
                 </span>
               ) : null}
             </div>
+            </div>
           </div>
           {shown && shown.total > 1 ? (
             <div className="h-[3px] bg-border" aria-hidden>
@@ -328,15 +335,17 @@ export function WizardFrame({
           onTouchEnd={onTouchEnd}
           className="min-h-0 flex-1 touch-pan-y overflow-y-auto overflow-x-hidden overscroll-contain"
         >
-          <div ref={content} className="mx-auto w-full max-w-2xl px-4 pb-8 pt-1">
-            {children}
+          <div className={`${wrap} px-4 pb-8 pt-1`}>
+            <div ref={content} className="min-w-0">
+              {children}
+            </div>
+            {aside ? <aside className="bw-wiz-aside">{aside}</aside> : null}
           </div>
         </div>
         <footer className="shrink-0 border-t bg-card/95 backdrop-blur">
-          <div
-            ref={setDock}
-            className="mx-auto w-full max-w-2xl px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
-          />
+          <div className={`${wrap} px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]`}>
+            <div ref={setDock} className="min-w-0" />
+          </div>
         </footer>
       </div>
     </WizardCtx.Provider>

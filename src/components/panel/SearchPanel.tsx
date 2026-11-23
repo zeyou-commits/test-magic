@@ -4,7 +4,6 @@ import { vesselCompanyIds } from "@/lib/ferry/filterSync";
 import { track } from "@/lib/usage";
 import { HomeTraffic } from "./HomeTraffic";
 import { useMyTrip } from "@/lib/ferry/myTrip";
-import { ROUTE_PREVIEW_EVENT } from "@/components/itinerary/RoutePreview";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -1202,11 +1201,6 @@ export function SearchPanel({
                 type="button"
                 onClick={() => {
                   onOpenItinerary();
-                  // Le volet Route s'ouvre, puis on descend jusqu'à l'aperçu des étapes.
-                  window.setTimeout(
-                    () => window.dispatchEvent(new Event(ROUTE_PREVIEW_EVENT)),
-                    450,
-                  );
                 }}
                 className="bw-route-teaser"
               >

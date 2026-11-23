@@ -1,3 +1,4 @@
+import { PAUSE_EVERY_MIN } from "@/lib/ferry/itinerary";
 import type { Chemin, LonLat } from "./porteAPorte";
 import { PLACE_NAME, ROUTES_DZ, type Chain, type ChainStop, type Etape } from "./trajets";
 import { VILLES, nomVille } from "./villes";
@@ -162,7 +163,7 @@ export function viaVilles(c: Chemin, approche?: LonLat[]) {
       );
 }
 
-const PAUSE_TOUTES = 2.25;
+const PAUSE_TOUTES = PAUSE_EVERY_MIN / 60;
 
 export function carnet(
   c: Chemin,
@@ -466,8 +467,9 @@ export function carnet(
   );
 
   pas.sort((a, b) => ord.get(a)! - ord.get(b)! || a.h - b.h);
-  // Numéros des pauses et des nuits, et jours.
-  let n = 0;
+  // Numéros des pauses et des nuits (deux comptes séparés : Pause 3, Nuit 1, Pause 4), et jours.
+  let nPause = 0;
+  let nNuit = 0;
   let jour = 1;
   let jourBled = 1;
   const out: Pas[] = [];
@@ -477,7 +479,8 @@ export function carnet(
       jourBled = jour;
     }
     const x: Pas = { ...p, jour };
-    if (["pause", "priere", "nuit", "vide", "nuitvide"].includes(p.k)) x.n = ++n;
+    if (p.k === "nuit" || p.k === "nuitvide") x.n = ++nNuit;
+    else if (["pause", "priere", "vide"].includes(p.k)) x.n = ++nPause;
     out.push(x);
     if (p.k === "nuit" || p.k === "nuitvide") jour++;
   }

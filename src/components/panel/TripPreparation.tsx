@@ -22,13 +22,12 @@ import {
   type Preparation,
 } from "@/lib/ferry/preparation";
 import { tr } from "@/lib/i18n";
+import { openRoutesDuBled } from "@/lib/routesDuBled/lien";
 import { papersProgress } from "@/content/formalites";
 import { PAPERS_ITEM_IDS, preTripDone, setPreTripItem } from "@/lib/ferry/dossier";
 
 function openRoute() {
-  window.sessionStorage.setItem("bledway:open-home-action", "itinerary");
-  if (window.location.pathname === "/") window.dispatchEvent(new Event("bledway:open-itinerary"));
-  else window.location.assign("/");
+  openRoutesDuBled();
 }
 
 /** « Mes papiers » : la liste faite sur la page des papiers, avec où on en est. */

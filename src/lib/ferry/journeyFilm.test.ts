@@ -29,7 +29,7 @@ describe("durées et pauses du film", () => {
     const chips = filmChips(film);
     expect(chips.map((chip) => chip.label)).toEqual([
       "3 h 30 · 312 km",
-      "Pause 15 min",
+      "Pause 20 min",
       "4 h au port",
       "24 h de mer",
       "4 h de sortie",
@@ -44,8 +44,8 @@ describe("le film respecte les pauses et l'embarquement", () => {
   it("arrête le véhicule pendant la pause, puis repart", () => {
     expect(pausingAt(film, 119)).toBe(false);
     expect(pausingAt(film, 125)).toBe(true);
-    expect(filmFrame(film, 121).point).toEqual(filmFrame(film, 134).point);
-    expect(filmFrame(film, 136).point).not.toEqual(filmFrame(film, 134).point);
+    expect(filmFrame(film, 121).point).toEqual(filmFrame(film, 139).point);
+    expect(filmFrame(film, 141).point).not.toEqual(filmFrame(film, 139).point);
     expect(pausingAt(film, 200)).toBe(false);
   });
   it("arrive au port à la fin de la route, pauses comprises", () => {

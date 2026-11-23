@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { useT, type MessageKey } from "@/lib/i18n";
 import { usePrepareStatus } from "@/lib/ferry/usePrepareUnfinished";
+import { openRoutesDuBled } from "@/lib/routesDuBled/lien";
 
 /**
  * Le menu du site, partagé par l'en-tête de l'ordinateur, le volet ☰ et la barre du bas du
@@ -129,7 +130,7 @@ export const menuFamilies: MenuFamily[] = [
       {
         titleKey: "menu.colRoute",
         items: [
-          { to: "/", labelKey: "menu.stepByStep", icon: RouteIcon, action: "itinerary" },
+          { to: "/routes-du-bled", labelKey: "menu.stepByStep", icon: RouteIcon },
           { to: "/covoiturage", labelKey: "menu.carpoolBeforePort", icon: Users },
           { to: "/voyage-algerie", labelKey: "menu.crossingGuide", icon: Ship },
         ],
@@ -253,9 +254,9 @@ export function openSearchFromHeader() {
   if (window.location.pathname === "/") window.dispatchEvent(new Event("bledway:open-search"));
 }
 
+/** L'ancien simulateur de l'accueil est retiré : la route se fait sur Routes du bled. */
 export function openItineraryFromHeader() {
-  window.sessionStorage.setItem("bledway:open-home-action", "itinerary");
-  if (window.location.pathname === "/") window.dispatchEvent(new Event("bledway:open-itinerary"));
+  openRoutesDuBled();
 }
 
 /** Un lien du menu : une page, ou un volet de la carte d'accueil (« étape par étape »).

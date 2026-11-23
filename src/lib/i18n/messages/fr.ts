@@ -73,7 +73,7 @@ export const fr = {
     groupLines: "Lignes & ports",
     book: "Réserver",
     bookLabel: "Réserver une traversée : départs, dates et liens de réservation",
-    stepByStep: "Ma route du bled, étape par étape",
+    stepByStep: "Routes du bled, porte à porte",
     liveMap: "Carte en direct",
     sheetTitle: "Explorer BledWay",
     sheetDescription: "Toutes les rubriques, rangées par famille.",

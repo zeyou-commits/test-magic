@@ -96,6 +96,7 @@ import { useVoyage } from "@/components/journey/useVoyage";
 import { GO_HOME_EVENT, OPEN_VOYAGE_EVENT, useVoyageTrip } from "@/lib/ferry/voyageTrip";
 import { readItineraryChoice } from "@/lib/ferry/travelProfile";
 import { tr } from "@/lib/i18n";
+import { openRoutesDuBled } from "@/lib/routesDuBled/lien";
 
 const FerryMap = lazy(() => import("@/components/map/FerryMap"));
 
@@ -1536,24 +1537,8 @@ function Index() {
     setPanelLevel(2);
   };
 
-  const openItinerary = () => {
-    if (window.innerWidth >= 768)
-      document.getElementById("carte")?.scrollIntoView({ behavior: "instant" });
-    if (panelMode === "itinerary" && !selection) {
-      // Téléphone : déjà sur Route, le bouton plie ou déplie le volet de Route (comme « Carte »
-      // pour le sien) au lieu de ramener à la carte.
-      if (window.innerWidth < 768) {
-        setPanelLevel((level) => (level === 0 ? 1 : 0));
-        return;
-      }
-      resetToMap();
-      return;
-    }
-    resetToMap();
-    setPanelMode("itinerary");
-    setPanelLevel(1);
-    setDesktopPanelOpen(true);
-  };
+  // L'ancien simulateur « étape par étape » est retiré : tous ses boutons mènent à Routes du bled.
+  const openItinerary = () => openRoutesDuBled();
 
   const showMobilePorts = () => {
     if (activeShortcut === "ports") {

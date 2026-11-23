@@ -49,6 +49,7 @@ import {
   type LonLat,
   type Mesures,
 } from "@/lib/routesDuBled/porteAPorte";
+import { takeRoutesSeed } from "@/lib/routesDuBled/lien";
 import "@/routes-du-bled.css";
 
 const RoutesMap = lazy(() => import("@/components/routesDuBled/RoutesMap"));
@@ -180,6 +181,25 @@ function RoutesDuBledPage() {
   // Un ancien lien ?depart=lyon part de cette ville ; sinon le dernier trajet revient
   // à la visite suivante (sur cet appareil seulement).
   useEffect(() => {
+    // Venu de Préparer ou du menu avec un départ et une arrivée déjà connus.
+    const seed = takeRoutesSeed();
+    if (seed && (isLieu(seed.from) || isLieu(seed.to))) {
+      if (isLieu(seed.from)) setFrom(seed.from);
+      if (isLieu(seed.to)) setTo(seed.to);
+      // Gardé aussi comme dernier trajet : un second passage de cet effet le relit.
+      try {
+        localStorage.setItem(
+          STORE,
+          JSON.stringify({
+            from: isLieu(seed.from) ? seed.from : null,
+            to: isLieu(seed.to) ? seed.to : null,
+          }),
+        );
+      } catch {
+        /* rien à faire */
+      }
+      return;
+    }
     const q = new URLSearchParams(window.location.search);
     const ville = q.get("depart");
     if (ville && VILLES[ville]) {

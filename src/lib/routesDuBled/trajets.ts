@@ -1,9 +1,10 @@
+import { PAUSE_EVERY_MIN, PAUSE_MIN } from "@/lib/ferry/itinerary";
 import { locateOnRoute, type BledRoute, type Stop } from "./data";
 
 /**
  * Un trajet, c'est ce que le voyageur a en tête : « je pars de Lyon, j'embarque à Alicante ».
  * On l'assemble à partir des routes tracées (coupées au bon endroit), puis on le découpe en pauses
- * environ toutes les 2 h, avec une nuit au-delà de 10 h de route.
+ * toutes les 2 h (règle commune du site), avec une nuit au-delà de 10 h de route.
  */
 export type Depart = "paris" | "lyon" | "montpellier" | "barcelone" | "madrid";
 export type Port = "marseille" | "sete" | "barcelone" | "valence" | "alicante" | "almeria";
@@ -183,9 +184,10 @@ export type Etape = {
   horsAxe?: boolean;
 };
 
-const PAUSE_TOUTES_LES = 2.25;
+// Même règle que le reste du site (ferry/itinerary.ts).
+const PAUSE_TOUTES_LES = PAUSE_EVERY_MIN / 60;
 const NUIT_AU_DELA = 10;
-export const PAUSE_MIN = 20;
+export { PAUSE_MIN };
 
 /** Halte sans vrai nom dans OpenStreetMap (« (sans nom) », « Lieu de prière »…). */
 export const anonyme = (s: Stop) =>

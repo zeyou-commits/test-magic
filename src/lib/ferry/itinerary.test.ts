@@ -69,14 +69,14 @@ test("n'annonce pas d'écart plus précis que nos marges", () => {
 test("compte les pauses dans l'heure de départ et l'arrivée", () => {
   const longIn = [{ portId: "europe", distanceKm: 900, durationMin: 500 }];
   const longOut = [{ portId: "algerie", distanceKm: 300, durationMin: 210 }];
-  assert.equal(legWithPauses(500), 545);
-  assert.equal(legWithPauses(210), 225);
+  assert.equal(legWithPauses(500), 560);
+  assert.equal(legWithPauses(210), 230);
   const option = buildItineraryOptions(
     [sailing("a", "2026-10-25T13:00:00Z", "2026-10-26T01:00:00Z")],
     longIn, longOut, startedAt, () => 200, 7, 2, 0.05,
   )[0]!;
-  assert.equal(option.leaveHomeAt, Date.parse("2026-10-25T13:00:00Z") - (545 + 240) * 60_000);
-  assert.equal(option.arrivalAt, Date.parse("2026-10-26T01:00:00Z") + (240 + 225) * 60_000);
+  assert.equal(option.leaveHomeAt, Date.parse("2026-10-25T13:00:00Z") - (560 + 240) * 60_000);
+  assert.equal(option.arrivalAt, Date.parse("2026-10-26T01:00:00Z") + (240 + 230) * 60_000);
 });
 
 test("n'ajoute pas les jours d'attente à la durée porte à porte", () => {

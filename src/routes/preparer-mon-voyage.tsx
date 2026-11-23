@@ -107,7 +107,6 @@ import {
   planHasWhen,
   planWhenLabel,
   RESIDENCE_COUNTRIES,
-  saveItinerarySeed,
   savePlan,
   seasonLabels,
   type CompanionPlan,
@@ -158,6 +157,7 @@ import { PaperKpis } from "@/components/papers/RecapSheet";
 import { TripLink, useLinkedTrip, openMyVoyage } from "@/components/prepare/TripLink";
 import { TripGlance, type GlanceTile } from "@/components/prepare/TripGlance";
 import type { PapersFees } from "@/components/prepare/TripOutlook";
+import { openRoutesDuBled } from "@/lib/routesDuBled/lien";
 
 const PATH = "/preparer-mon-voyage";
 
@@ -651,21 +651,20 @@ function CompanionPage() {
           toPortId={toPort?.id ?? null}
           onItinerary={() => {
             syncTravelProfile();
-            saveItinerarySeed({
-              origin: plan.home
-                ? plan.home.postcode
-                  ? `${plan.home.name} (${plan.home.postcode})`
-                  : plan.home.name
-                : "",
-              originPoint: plan.home?.point ?? null,
-              destination: plan.destination?.label ?? "",
-              destinationPoint: plan.destination?.point ?? null,
-              period: plan.month,
+            // La route se suit sur Routes du bled, départ et arrivée déjà remplis.
+            openRoutesDuBled({
+              from: plan.home
+                ? {
+                    label: plan.home.postcode
+                      ? `${plan.home.name} (${plan.home.postcode})`
+                      : plan.home.name,
+                    point: plan.home.point,
+                  }
+                : null,
+              to: plan.destination
+                ? { label: plan.destination.label, point: plan.destination.point }
+                : null,
             });
-            window.sessionStorage.setItem("bledway:open-home-action", "itinerary");
-            // La carte d'accueil s'ouvre en haut, pas à la hauteur où l'on était ici.
-            window.scrollTo({ top: 0, behavior: "instant" });
-            void navigate({ to: "/" });
           }}
           onDone={() => complete("route")}
         />

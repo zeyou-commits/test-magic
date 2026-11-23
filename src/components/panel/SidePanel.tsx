@@ -7,7 +7,6 @@ import { ArrowLeft } from "lucide-react";
 
 import { ShareButtons } from "./ShareButtons";
 import { SearchPanel } from "./SearchPanel";
-import { ItineraryPlanner } from "@/components/itinerary/ItineraryPlanner";
 import type { MapPreview } from "@/lib/ferry/mapPresentation";
 import type { ItineraryMapPreview } from "@/lib/ferry/itinerary";
 import { PortView } from "./PortView";
@@ -120,18 +119,7 @@ export function SidePanel({
           inert={selection ? true : undefined}
           className="batogo-panel-scroll relative flex-1 overflow-y-auto"
         >
-          <div hidden={!itineraryOpen} inert={!itineraryOpen ? true : undefined}>
-            {onCloseItinerary && onItineraryPreview ? (
-              <ItineraryPlanner
-                active={itineraryOpen && !selection}
-                onClose={onCloseItinerary}
-                onPreview={onItineraryPreview}
-                {...(onItineraryResultsReady ? { onResultsReady: onItineraryResultsReady } : {})}
-                {...(onBookPeriod ? { onBookPeriod } : {})}
-              />
-            ) : null}
-          </div>
-          <div hidden={itineraryOpen} inert={itineraryOpen ? true : undefined}>
+          <div>
             <SearchPanel
               homeMode={homeMode}
               wide={wideSearch}

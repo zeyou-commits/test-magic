@@ -11,7 +11,7 @@ import {
   Waypoints,
 } from "lucide-react";
 import { tr } from "@/lib/i18n";
-import { KIND_COLOR, mapsLink, type BledRoute } from "@/lib/routesDuBled/data";
+import { KIND_COLOR, mapsLink, type BledRoute, type StopFeature } from "@/lib/routesDuBled/data";
 import {
   anonyme,
   dureeRonde,
@@ -22,6 +22,7 @@ import {
 } from "@/lib/routesDuBled/trajets";
 import { heuresEnTout, type Bout, type Chemin, type LonLat } from "@/lib/routesDuBled/porteAPorte";
 import type { Carnet, Pas } from "@/lib/routesDuBled/carnet";
+import { VILLES, nomVille } from "@/lib/routesDuBled/villes";
 import { FeatureIcon, KindIcon, Mosque, featureLabel, kindLabel, sourceLabel } from "./StopVisuals";
 
 export const fmt = (n: number) => Math.round(n).toLocaleString("fr-FR");
@@ -44,13 +45,39 @@ const NOM_ROUTE: Record<string, string> = {
   E7: "la route d'Almería par Grenade",
   E8: "la route du port de Sète",
 };
+/** La ville la plus proche (moins de 40 km), pour nommer une halte que la carte ne nomme pas. */
+const villeProche = (s: { lat: number; lon: number }) => {
+  let best: string | null = null;
+  let d2 = Infinity;
+  for (const [n, [lo, la]] of Object.entries(VILLES)) {
+    const dx = (lo - s.lon) * Math.cos((la * Math.PI) / 180);
+    const dy = la - s.lat;
+    const d = dx * dx + dy * dy;
+    if (d < d2) {
+      d2 = d;
+      best = n;
+    }
+  }
+  return best && Math.sqrt(d2) * 111 < 40 ? nomVille(best) : null;
+};
+
 export const stopName = (s: ChainStop) => {
-  if (!anonyme(s)) return s.n;
+  if (!anonyme(s) && !/^hotel [a-z]$/i.test(s.n.trim())) return s.n;
+  const ville = villeProche(s);
+  if (ville && s.k === "priere") return tr("ui.pageRoutesDuBled.sansNomPrierePres", { ville });
+  if (ville && s.k === "dormir") return tr("ui.pageRoutesDuBled.sansNomHotelPres", { ville });
+  if (ville && s.k === "aire") return tr("ui.pageRoutesDuBled.sansNomAirePres", { ville });
   if (s.k === "priere") return tr("ui.pageRoutesDuBled.sansNomPriere");
   if (s.k === "dormir") return tr("ui.pageRoutesDuBled.sansNomHotel");
   if (s.k === "aire") return tr("ui.pageRoutesDuBled.sansNomAire");
   return kindLabel(s.k);
 };
+
+/** Deux ou trois services qui comptent pour une pause en famille (ou pour dormir), dans cet ordre. */
+const PAUSE_UTILE: StopFeature[] = ["priere", "halal", "manger", "toilettes", "h24", "parking_sur", "douches", "cafe"];
+const NUIT_UTILE: StopFeature[] = ["parking_sur", "parking", "halal", "priere", "h24"];
+const usefulFeatures = (s: ChainStop, nuit: boolean) =>
+  (nuit ? NUIT_UTILE : PAUSE_UTILE).filter((f) => s.f.includes(f)).slice(0, 3);
 
 /** Une route du bled proposée : le résumé, et le carnet d'étapes quand elle est dépliée. */
 export function RouteCard({
@@ -94,23 +121,24 @@ export function RouteCard({
   return (
     <article className="rdb-rc" data-open={open || undefined}>
       <button type="button" className="rdb-rc__head" aria-expanded={open} onClick={onToggle}>
+        {/* Le départ et l'arrivée sont déjà dans les champs : le titre dit ce qui distingue ce chemin, sa traversée. */}
         <span className="rdb-rc__title">
-          <b>
-            {from} → {to}
+          <b className="rdb-rc__port">
+            <Ship className="size-4" aria-hidden />
+            {pe} → {pd}
           </b>
           {first ? (
             <span className="rdb-chemin__tag">{tr("ui.pageRoutesDuBled.lePlusCourt")}</span>
           ) : null}
         </span>
         <span className="rdb-rc__via">
-          {via.length
-            ? `${tr("ui.pageRoutesDuBled.parVilles", { villes: via.join(" · ") })} · `
-            : ""}
-          <span className="rdb-rc__port">
-            <Ship className="size-3.5" aria-hidden />
-            {pe} → {pd}
-          </span>
-          {variante ? <span className="rdb-rc__variante"> · {variante}</span> : null}
+          {via.length ? tr("ui.pageRoutesDuBled.parVilles", { villes: via.join(" · ") }) : ""}
+          {variante ? (
+            <span className="rdb-rc__variante">
+              {via.length ? " · " : ""}
+              {variante}
+            </span>
+          ) : null}
         </span>
         <span className="rdb-rc__facts">
           {enTout != null ? (
@@ -509,12 +537,17 @@ function PasView({
       );
     } else {
       const lead = p.k === "priere" && pray ? pray : best;
+      // La nuit : « Nuit vers Tarragone » quand on connaît la ville, sinon le nom de l'hôtel seul.
       title =
-        nuit && best
-          ? tr("ui.pageRoutesDuBled.nuitVers", { lieu: best.place || stopName(best) })
+        nuit && best?.place
+          ? tr("ui.pageRoutesDuBled.nuitVers", { lieu: best.place })
           : lead
             ? stopName(lead)
             : "";
+      // Les services affichés sont ceux du lieu en titre, pas ceux d'un voisin (« Aussi ici »).
+      const tags = lead
+        ? usefulFeatures(lead, nuit).filter((f) => !(p.k === "priere" && f === "priere"))
+        : [];
       body = (
         <>
           {p.k === "priere" ? (
@@ -525,7 +558,7 @@ function PasView({
               </span>
             </p>
           ) : null}
-          {best && (nuit || (p.k === "priere" && pray && pray.id !== best.id)) ? (
+          {best && ((nuit && best.place) || (p.k === "priere" && pray && pray.id !== best.id)) ? (
             <p className="rdb-pas__text">
               {nuit
                 ? `${stopName(best)}${best.src !== "osm" ? ` · ${sourceLabel(best.src)}` : ""}`
@@ -535,9 +568,9 @@ function PasView({
                   })}
             </p>
           ) : null}
-          {best?.f.length ? (
+          {tags.length ? (
             <ul className="rdb-tags">
-              {best.f.slice(0, 4).map((f) => (
+              {tags.map((f) => (
                 <li key={f}>
                   <FeatureIcon feature={f} />
                   {featureLabel(f)}

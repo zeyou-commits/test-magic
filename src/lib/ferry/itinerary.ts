@@ -67,9 +67,12 @@ export interface ItineraryOption {
 export const BOARDING_BUFFER_MIN = 240;
 export const DISEMBARK_BUFFER_MIN = 240;
 
-/** Repère de sécurité routière : une pause toutes les deux heures de conduite. */
+/**
+ * La règle de pause de tout le site (Préparer, film du trajet, Routes du bled) : 20 minutes toutes
+ * les deux heures de conduite, le repère de la Sécurité routière avec une marge pour la famille.
+ */
 export const PAUSE_EVERY_MIN = 120;
-export const PAUSE_MIN = 15;
+export const PAUSE_MIN = 20;
 /** Pas de pause conseillée à moins d'une demi-heure de l'arrivée. */
 export function drivingPauses(driveMin: number) {
   return Math.max(0, Math.floor((driveMin - 30) / PAUSE_EVERY_MIN));

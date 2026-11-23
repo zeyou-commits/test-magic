@@ -297,6 +297,19 @@ export default function RoutesMap({
     map.addControl(new NavigationControl({ showCompass: false }), "bottom-right");
     mapRef.current = map;
     map.on("load", async () => {
+      // Les noms du fond de carte en français quand la traduction existe (Espagne, Séville, Alger),
+      // comme sur la carte d'accueil ; sinon le nom international, puis le nom local.
+      for (const layer of map.getStyle().layers) {
+        if (layer.type !== "symbol") continue;
+        const field = map.getLayoutProperty(layer.id, "text-field");
+        if (!field || !/name/.test(JSON.stringify(field))) continue;
+        map.setLayoutProperty(layer.id, "text-field", [
+          "coalesce",
+          ["get", "name:fr"],
+          ["get", "name_int"],
+          ["get", "name"],
+        ]);
+      }
       await addIcons(map);
       map.addSource("rdb-lines", {
         type: "geojson",

@@ -519,3 +519,6 @@
 .rdb-chip-ajout[data-etat="attente"] { background: color-mix(in srgb, #b4560f 12%, var(--card)); color: #b4560f; }
 .rdb-chip-ajout[data-etat="refuse"] { background: var(--secondary); color: var(--muted-foreground); }
 .rdb-pas__type { font-size: 0.75rem; font-weight: 600; color: var(--muted-foreground); align-self: center; }
+.rdb-rc__title { align-items: center; }
+.rdb-rc__title .rdb-rc__port { color: var(--foreground); gap: 0.4rem; white-space: normal; }
+.rdb-rc__title .rdb-rc__port svg { color: var(--mer); flex: none; }

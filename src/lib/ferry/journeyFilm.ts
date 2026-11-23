@@ -215,7 +215,7 @@ export const DEMO_FILM: JourneyFilm = {
     [-1.2, 35.15],
     [-1.32, 34.88],
   ],
-  roadMin: 225,
+  roadMin: 230,
   roadPauses: 1,
   boardMin: 240,
   ferryMin: 1440,

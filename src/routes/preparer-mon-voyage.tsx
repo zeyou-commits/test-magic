@@ -366,14 +366,14 @@ function Welcome({ onStart }: { onStart: () => void }) {
   if (intro) return <PrepareIntro onBack={() => setIntro(false)} onGo={onStart} />;
   return (
     <div>
-      <AlgeriaCarousel />
+      {/* L'action d'abord (la 504 et « Commencer »), les photos d'Algérie ensuite. */}
       <button
         type="button"
         onClick={() => {
           setIntro(true);
           requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "instant" }));
         }}
-        className="bw-prep-start mt-4"
+        className="bw-prep-start"
       >
         <Bw504Note title="Salut tonton ! On charge la 504 ?">
           Je t'aide à tout préparer, avec des rappels pour ne rien oublier.
@@ -387,6 +387,9 @@ function Welcome({ onStart }: { onStart: () => void }) {
         <span className="rounded-full border px-3 py-1 text-muted-foreground">Tunisie</span>
         <span className="rounded-full border px-3 py-1 text-muted-foreground">Maroc</span>
       </p>
+      <div className="mt-5">
+        <AlgeriaCarousel />
+      </div>
       <p className="mt-4 text-sm text-muted-foreground">
         {TICKETING.short}
       </p>

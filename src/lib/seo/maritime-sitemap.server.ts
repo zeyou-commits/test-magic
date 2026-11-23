@@ -1,41 +1,63 @@
 import { supabase } from "@/integrations/supabase/client";
 import { newsFeedItems, newsPath } from "@/lib/ferry/newsFeed";
+import {
+  maritimeLastmods,
+  type SitemapDeparture,
+  type SitemapPort,
+  type SitemapRoute,
+} from "./maritimeLastmod";
+
 export async function maritimeEntries() {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
-  async function read(table: "ports" | "routes") {
-    const all: { slug: string; updated_at: string }[] = [];
-    const size = 1000;
+  const size = 1000;
+  async function readAll<T>(
+    build: (from: number, to: number) => PromiseLike<{ data: unknown; error: unknown }>,
+  ) {
+    const all: T[] = [];
     for (let page = 0; page < 50; page++) {
-      let query = supabase
-        .from(table)
-        .select("slug, updated_at")
-        .order("slug")
-        .range(page * size, (page + 1) * size - 1)
-        .abortSignal(controller.signal);
-      query = table === "ports" ? query.neq("status", "draft") : query.eq("status", "active");
-      const { data, error } = await query;
+      const { data, error } = await build(page * size, (page + 1) * size - 1);
       if (error) throw new Error("Catalogue maritime temporairement indisponible");
-      all.push(...(data ?? []));
-      if (!data || data.length < size) return all;
+      const rows = (data ?? []) as T[];
+      all.push(...rows);
+      if (rows.length < size) return all;
     }
     throw new Error("Catalogue trop volumineux : partitionner le sitemap maritime");
   }
   try {
-    const [ports, lines, news] = await Promise.all([
-      read("ports"),
-      read("routes"),
+    const [ports, routes, departures, news] = await Promise.all([
+      readAll<SitemapPort>((from, to) =>
+        supabase
+          .from("ports")
+          .select("id, slug, updated_at")
+          .neq("status", "draft")
+          .order("slug")
+          .range(from, to)
+          .abortSignal(controller.signal),
+      ),
+      readAll<SitemapRoute>((from, to) =>
+        supabase
+          .from("routes")
+          .select("id, slug, updated_at, departure_port_id, arrival_port_id")
+          .eq("status", "active")
+          .order("slug")
+          .range(from, to)
+          .abortSignal(controller.signal),
+      ),
+      // Les horaires à venir rafraîchissent la date des pages Ligne et Port ; sans eux, la fiche suffit.
+      readAll<SitemapDeparture>((from, to) =>
+        supabase
+          .from("departures")
+          .select("route_id, updated_at")
+          .gte("departure_at", new Date().toISOString())
+          .order("departure_at")
+          .range(from, to)
+          .abortSignal(controller.signal),
+      ).catch(() => [] as SitemapDeparture[]),
       newsFeedItems().catch(() => []),
     ]);
     return [
-      ...ports.map((p) => ({
-        path: `/ports/${encodeURIComponent(p.slug)}`,
-        lastmod: p.updated_at,
-      })),
-      ...lines.map((l) => ({
-        path: `/lignes/${encodeURIComponent(l.slug)}`,
-        lastmod: l.updated_at,
-      })),
+      ...maritimeLastmods({ ports, routes, departures }),
       ...news.map((item) => ({ path: newsPath(item), lastmod: item.starts_at })),
     ];
   } finally {

@@ -3,7 +3,7 @@ import { toolsCatalog } from "@/content/tools";
 import { vesselDossiers } from "@/content/vessels";
 import { absoluteUrl } from "./site";
 import { PITCH, TICKETING } from "./pitch";
-import { durationEstimate, generalFaq } from "./answers";
+import { benchmarkFor, durationEstimate, generalFaq } from "./answers";
 
 export type LlmsData = {
   ports: { id: string; slug: string; name: string; country_name: string }[];
@@ -51,6 +51,7 @@ const mainPages: [string, string, string][] = [
 
 export function llmsText(data: LlmsData | null) {
   const portName = (id: string) => data?.ports.find((p) => p.id === id)?.name ?? "—";
+  const portSlug = (id: string) => data?.ports.find((p) => p.id === id)?.slug;
   const companyNames = (ids: string[]) =>
     ids
       .map((id) => data?.companies.find((c) => c.id === id)?.name)
@@ -83,17 +84,25 @@ export function llmsText(data: LlmsData | null) {
   ];
   if (data) {
     parts.push(
-      "## Lignes (durée typique estimée, compagnies renseignées)",
+      "## Lignes (durée typique estimée, compagnies renseignées, prix repère d'aller simple)",
+      "Chaque page ligne présente la carte du tracé, les prochains départs datés (heure locale du port), les compagnies avec leur lien de réservation, les navires programmés et une estimation du prix selon la saison.",
       data.routes
-        .map((r) =>
-          link(
+        .map((r) => {
+          const price = benchmarkFor(portSlug(r.departure_port_id), portSlug(r.arrival_port_id));
+          return link(
             `${portName(r.departure_port_id)} → ${portName(r.arrival_port_id)}`,
             `/lignes/${r.slug}`,
-            [durationEstimate(r.typical_duration_minutes), companyNames(r.company_ids)]
+            [
+              durationEstimate(r.typical_duration_minutes),
+              companyNames(r.company_ids),
+              price
+                ? `repère ${price.foot} € à pied, ${price.withCar} € avec voiture (Direct Ferries, sept.–oct. 2026)`
+                : null,
+            ]
               .filter(Boolean)
               .join(" ; "),
-          ),
-        )
+          );
+        })
         .sort()
         .join("\n"),
       "## Ports",

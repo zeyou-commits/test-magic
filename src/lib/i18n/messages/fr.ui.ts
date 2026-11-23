@@ -3066,7 +3066,7 @@ export const ui = {
     reglVehicule: "Véhicule",
     reglAdultes: "Adultes",
     reglEnfants: "Enfants",
-    unEndroitSurRoute: "Tu connais un endroit sur cette route ?",
+    unEndroitSurRoute: "Vous connaissez un endroit sur cette route ?",
     prierPres: "Prier : {nom}, à {km} km",
     mangerPres: "Manger : {nom}, à {km} km",
     autresOptions: "Autres options ({n})",

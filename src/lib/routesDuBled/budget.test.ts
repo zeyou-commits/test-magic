@@ -10,7 +10,9 @@ const chemin = {
   km: 1900,
 } as unknown as Chemin;
 const pas = (km: number, lat: number) => ({ side: "eu", km, point: [3, lat] });
-const k = { pas: [pas(0, 45.7), pas(500, 42.7), pas(560, 42.2), pas(1800, 36.8)] } as unknown as Carnet;
+const k = {
+  pas: [pas(0, 45.7), pas(500, 42.7), pas(560, 42.2), pas(1800, 36.8)],
+} as unknown as Carnet;
 
 describe("coût d'une route du bled", () => {
   it("prend le mois à venir, ou celui de l'an prochain s'il est passé", () => {

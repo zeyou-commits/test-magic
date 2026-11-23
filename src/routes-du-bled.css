@@ -604,3 +604,9 @@
 .rdb-cost__lines svg { color: var(--muted-foreground); }
 .rdb-cost__lines b { font-variant-numeric: tabular-nums; }
 .rdb-cost__note { font-size: 0.75rem; color: var(--muted-foreground); }
+
+/* Clic droit / appui long sur la carte : la bulle « Ajouter un endroit ici ». */
+.rdb-addhere .maplibregl-popup-content { padding: 0.35rem 1.9rem 0.35rem 0.35rem; border-radius: 999px; box-shadow: 0 8px 22px rgb(13 48 67 / 0.22); }
+.rdb-addhere .maplibregl-popup-close-button { top: 50%; right: 0.35rem; transform: translateY(-50%); width: 1.5rem; height: 1.5rem; border-radius: 50%; font-size: 1.1rem; }
+.rdb-addhere__btn { min-height: 2.25rem; padding: 0 0.9rem; border-radius: 999px; background: var(--primary); color: var(--primary-foreground); font-size: 0.85rem; font-weight: 700; white-space: nowrap; }
+.rdb-book__add small { display: block; margin-top: 0.2rem; font-size: 0.75rem; }

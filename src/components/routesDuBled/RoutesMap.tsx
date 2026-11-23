@@ -4,6 +4,7 @@ import {
   Map as MapLibreMap,
   Marker,
   NavigationControl,
+  Popup,
   setWorkerUrl,
   type GeoJSONSource,
   type MapLayerMouseEvent,
@@ -149,6 +150,7 @@ export default function RoutesMap({
   onSelectLine,
   picking = false,
   onPick,
+  onAddHere,
 }: {
   lines: MapLine[];
   pins: MapPin[];
@@ -167,13 +169,15 @@ export default function RoutesMap({
   onSelectLine?: (id: string) => void;
   picking?: boolean;
   onPick?: (lon: number, lat: number) => void;
+  /** Clic droit (ordinateur) ou appui long (téléphone) : proposer d'ajouter un endroit à ce point. */
+  onAddHere?: (lon: number, lat: number) => void;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const loaded = useRef(false);
   const draw = useRef<() => void>(() => {});
-  const handlers = useRef({ onSelectPin, onSelectLine, onPick, picking });
-  handlers.current = { onSelectPin, onSelectLine, onPick, picking };
+  const handlers = useRef({ onSelectPin, onSelectLine, onPick, picking, onAddHere });
+  handlers.current = { onSelectPin, onSelectLine, onPick, picking, onAddHere };
   const lastFit = useRef<string | null>(null);
   const lastFocus = useRef<string | null>(null);
   const lastBounds = useRef<LngLatBounds | null>(null);
@@ -463,13 +467,82 @@ export default function RoutesMap({
         },
         paint: { "text-color": INK },
       });
+      // Le relâché d'un appui long envoie parfois un clic : rien ne doit réagir juste après (bulle, étape, chemin).
+      let appuiLongA = 0;
+      const apresAppuiLong = () => Date.now() - appuiLongA < 800;
       map.on("click", (e) => {
+        if (apresAppuiLong()) return;
         if (handlers.current.picking)
           handlers.current.onPick?.(+e.lngLat.lng.toFixed(5), +e.lngLat.lat.toFixed(5));
       });
+      // N'importe où sur la carte : une bulle « Ajouter un endroit ici », en plus des haltes du carnet.
+      const bulle = new Popup({
+        closeButton: true,
+        closeOnClick: false,
+        className: "rdb-addhere",
+        offset: 8,
+      });
+      map.on("click", () => {
+        if (!apresAppuiLong()) bulle.remove();
+      });
+      const proposer = (lon: number, lat: number) => {
+        if (!handlers.current.onAddHere || handlers.current.picking) return;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "rdb-addhere__btn";
+        btn.textContent = `+ ${tr("ui.pageRoutesDuBled.ajouterIciCarte")}`;
+        btn.onclick = () => {
+          bulle.remove();
+          handlers.current.onAddHere?.(+lon.toFixed(5), +lat.toFixed(5));
+        };
+        bulle.setLngLat([lon, lat]).setDOMContent(btn).addTo(map);
+      };
+      map.on("contextmenu", (e) => {
+        e.preventDefault();
+        proposer(e.lngLat.lng, e.lngLat.lat);
+      });
+      // Appui long d'un doigt (iPhone n'envoie pas de clic droit) ; un glissé ou un second doigt l'annule.
+      let appui: { t: ReturnType<typeof setTimeout>; x: number; y: number } | null = null;
+      const stop = () => {
+        if (appui) clearTimeout(appui.t);
+        appui = null;
+      };
+      const canvas = map.getCanvasContainer();
+      canvas.addEventListener(
+        "touchstart",
+        (ev) => {
+          stop();
+          if (ev.touches.length !== 1) return;
+          const t0 = ev.touches[0]!;
+          const r = canvas.getBoundingClientRect();
+          const x = t0.clientX - r.left;
+          const y = t0.clientY - r.top;
+          appui = {
+            x: t0.clientX,
+            y: t0.clientY,
+            t: setTimeout(() => {
+              appui = null;
+              appuiLongA = Date.now();
+              const p = map.unproject([x, y]);
+              proposer(p.lng, p.lat);
+            }, 550),
+          };
+        },
+        { passive: true },
+      );
+      canvas.addEventListener(
+        "touchmove",
+        (ev) => {
+          const t = ev.touches[0];
+          if (appui && (!t || Math.hypot(t.clientX - appui.x, t.clientY - appui.y) > 10)) stop();
+        },
+        { passive: true },
+      );
+      canvas.addEventListener("touchend", stop, { passive: true });
+      canvas.addEventListener("touchcancel", stop, { passive: true });
       for (const layer of ["rdb-etapes", "rdb-haltes"]) {
         map.on("click", layer, (e: MapLayerMouseEvent) => {
-          if (handlers.current.picking) return;
+          if (handlers.current.picking || apresAppuiLong()) return;
           const id = e.features?.[0]?.properties?.["id"];
           if (typeof id === "string" && !id.startsWith("port-")) handlers.current.onSelectPin(id);
         });
@@ -477,7 +550,7 @@ export default function RoutesMap({
         map.on("mouseleave", layer, () => (map.getCanvas().style.cursor = ""));
       }
       map.on("click", "rdb-autre-hit", (e: MapLayerMouseEvent) => {
-        if (handlers.current.picking) return;
+        if (handlers.current.picking || apresAppuiLong()) return;
         // Une pastille posée sur le trait passe avant le trait.
         if (map.queryRenderedFeatures(e.point, { layers: ["rdb-etapes", "rdb-haltes"] }).length)
           return;

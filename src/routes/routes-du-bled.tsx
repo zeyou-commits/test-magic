@@ -33,7 +33,14 @@ import {
   type StopKind,
 } from "@/lib/routesDuBled/data";
 import { PLACE_NAME, type Chain, type ChainStop } from "@/lib/routesDuBled/trajets";
-import { carnet, viaVilles, type Ajout, type Carnet, type Pas } from "@/lib/routesDuBled/carnet";
+import {
+  carnet,
+  surLigne,
+  viaVilles,
+  type Ajout,
+  type Carnet,
+  type Pas,
+} from "@/lib/routesDuBled/carnet";
 import { REGLAGES_DEFAUT, type Reglages } from "@/lib/routesDuBled/budget";
 import {
   chemins,
@@ -745,6 +752,18 @@ function RoutesDuBledPage() {
                     selectRoute(id);
                   }}
                   picking={Boolean(picking)}
+                  onAddHere={(lon, lat) => {
+                    // La route du bled la plus proche est proposée ; le voyageur peut la changer.
+                    let best: { id: string; d: number } | null = null;
+                    for (const r of routes) {
+                      const d = surLigne(
+                        r.line.map(([lo, la]) => [lo, la] as LonLat),
+                        [lon, lat],
+                      ).d;
+                      if (!best || d < best.d) best = { id: r.id, d };
+                    }
+                    startAdd(best?.id, [lon, lat]);
+                  }}
                   onPick={(lon, lat) => {
                     const point: LonLat = [lon, lat];
                     if (picking === "halte") {

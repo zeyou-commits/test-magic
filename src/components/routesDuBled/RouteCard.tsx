@@ -77,7 +77,16 @@ export const stopName = (s: ChainStop) => {
 };
 
 /** Deux ou trois services qui comptent pour une pause en famille (ou pour dormir), dans cet ordre. */
-const PAUSE_UTILE: StopFeature[] = ["priere", "halal", "manger", "toilettes", "h24", "parking_sur", "douches", "cafe"];
+const PAUSE_UTILE: StopFeature[] = [
+  "priere",
+  "halal",
+  "manger",
+  "toilettes",
+  "h24",
+  "parking_sur",
+  "douches",
+  "cafe",
+];
 const NUIT_UTILE: StopFeature[] = ["parking_sur", "parking", "halal", "priere", "h24"];
 const usefulFeatures = (s: ChainStop, nuit: boolean) =>
   (nuit ? NUIT_UTILE : PAUSE_UTILE).filter((f) => s.f.includes(f)).slice(0, 3);
@@ -373,6 +382,7 @@ function CarnetView({
         <span>
           {tr("ui.pageRoutesDuBled.unEndroitSurRoute")}{" "}
           <b>{tr("ui.pageRoutesDuBled.ajouterUnEndroit")}</b>
+          <small>{tr("ui.pageRoutesDuBled.astuceClicDroit")}</small>
         </span>
       </button>
     </div>

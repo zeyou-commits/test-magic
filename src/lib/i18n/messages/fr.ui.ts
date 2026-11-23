@@ -3048,6 +3048,8 @@ export const ui = {
     jourDepartA: "Jour {n} · départ à {heure}",
     enJours: "{n} jours porte à porte",
     combienCaCoute: "Combien ça coûte ?",
+    ajouterIciCarte: "Ajouter un endroit ici",
+    astuceClicDroit: "Ou directement sur la carte : clic droit (appui long sur téléphone) à l'endroit exact.",
     comparerPrix: "Comparer le prix des routes",
     masquerPrix: "Masquer les prix",
     coutEntre: "entre {low} et {high}",

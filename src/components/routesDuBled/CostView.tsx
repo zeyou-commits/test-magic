@@ -134,7 +134,11 @@ export function CostView({
       <p className="rdb-cost__note">
         {tr("ui.pageRoutesDuBled.coutNote")}{" "}
         {ligne ? (
-          <Link to="/lignes/$slug" params={{ slug: ligne }} className="underline underline-offset-2">
+          <Link
+            to="/lignes/$slug"
+            params={{ slug: ligne }}
+            className="underline underline-offset-2"
+          >
             {tr("ui.pageRoutesDuBled.voirDeparts")}
           </Link>
         ) : null}

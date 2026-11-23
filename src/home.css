@@ -5409,7 +5409,8 @@ body:has(.bw-home--app) {
 /* ─── Finitions du 23/11/2026 : barre de recherche en surfaces, contrôles de carte en verre,
    en-tête apaisé. ─── */
 @media (min-width: 1180px) {
-  /* Chaque champ est une surface sable ; actif, il passe en blanc avec un anneau vert. */
+  /* Barre inspirée du logo : champs blancs cernés d'un fil sable, marine de « Bled » pour le
+     texte et les choix, orange de « Way » pour le champ ouvert et l'élan du bouton. */
   .bw-wide-bar {
     gap: 8px !important;
     overflow: visible !important;
@@ -5417,27 +5418,29 @@ body:has(.bw-home--app) {
     border-radius: 0 !important;
     background: transparent !important;
   }
-  .bw-wide-bar > div {
+  .bw-wide-bar > div,
+  .bw-wide-legs > button {
     border-radius: 16px;
-    background: #f4efe6 !important;
+    background: #fff !important;
+    box-shadow: inset 0 0 0 1px #e4ddd0 !important;
     transition:
-      background 0.18s var(--bw-ease),
-      box-shadow 0.18s var(--bw-ease);
+      box-shadow 0.18s var(--bw-ease),
+      background 0.18s var(--bw-ease);
+  }
+  .bw-wide-bar > .bw-wide-dates {
+    background: transparent !important;
+    box-shadow: none !important;
   }
   .bw-wide-bar > div:not(.bw-wide-dates):hover,
   .bw-wide-legs > button:not(:disabled):hover {
-    background: #fff !important;
-    box-shadow:
-      0 0 0 1px #e6e1d6,
-      0 8px 20px -14px #16324a59;
+    box-shadow: inset 0 0 0 1px #16324a66 !important;
   }
   .bw-wide-bar > div:not(.bw-wide-dates):has([data-state="open"]),
   .bw-wide-bar > div:not(.bw-wide-dates):focus-within,
-  .bw-wide-legs > button[data-on] {
-    background: #fff !important;
+  .bw-wide-legs > button[data-on]:not(:disabled) {
     box-shadow:
-      0 0 0 2px #0e7a43,
-      0 10px 26px -16px #0e7a4380 !important;
+      inset 0 0 0 2px #e8590c,
+      0 0 0 4px #e8590c1f !important;
   }
   .bw-wide-bar .batogo-control,
   .bw-wide-bar button[data-state="open"] {
@@ -5448,23 +5451,16 @@ body:has(.bw-home--app) {
   .bw-wide-bar .batogo-control {
     border-radius: 16px !important;
   }
-  /* Aller et retour : deux surfaces côte à côte. */
-  .bw-wide-bar > .bw-wide-dates {
-    background: transparent !important;
-  }
   .bw-wide-legs {
     gap: 8px;
   }
   .bw-wide-legs > button {
     border: 0 !important;
-    border-radius: 16px;
-    background: #f4efe6;
-    box-shadow: none;
-    transition:
-      background 0.18s var(--bw-ease),
-      box-shadow 0.18s var(--bw-ease);
   }
-  /* ⇄ : vrai bouton rond, blanc et surélevé, à cheval sur Départ et Arrivée. */
+  .bw-wide-bar :is(.text-muted-foreground) {
+    color: #6b7c8a;
+  }
+  /* ⇄ : rond marine, comme le « Bled » du logo ; demi-tour à chaque inversion. */
   .bw-wide-swap {
     position: absolute;
     top: 50%;
@@ -5474,55 +5470,96 @@ body:has(.bw-home--app) {
     place-items: center;
     width: 36px;
     height: 36px;
-    border: 1px solid #e6e1d6;
+    border: 3px solid #fff;
     border-radius: 999px;
-    background: #fff;
-    color: #0e7a43;
-    box-shadow: 0 6px 14px -6px #16324a59;
+    background: #16324a;
+    color: #fff;
+    box-shadow: 0 6px 14px -6px #16324a99;
     transform: translateY(-50%);
     transition:
-      box-shadow 0.18s var(--bw-ease),
+      background 0.18s var(--bw-ease),
       transform 0.18s var(--bw-ease);
   }
   .bw-wide-swap:hover {
-    box-shadow: 0 10px 20px -8px #16324a73;
+    background: #e8590c;
     transform: translateY(-50%) scale(1.06);
   }
   .bw-wide-swap svg {
     transition: transform 0.35s var(--bw-ease);
   }
-  /* Bouton principal : léger dégradé vers le vert sapin, ombre verte diffuse, flèche. */
+  /* Bouton principal : marine, la flèche dans une pastille orange. */
   .bw-wide-cta {
     display: inline-flex;
     flex-shrink: 0;
     align-items: center;
-    gap: 8px;
-    padding: 0 26px;
+    gap: 12px;
+    padding: 0 10px 0 24px;
     border-radius: 18px;
-    background: linear-gradient(180deg, #13894c 0%, #0e7a43 45%, #0a5c37 100%);
+    background: #16324a;
     color: #fff;
-    font-size: 14px;
-    font-weight: 700;
-    box-shadow:
-      0 14px 30px -14px #0e7a43b3,
-      inset 0 1px 0 #ffffff2e;
+    font-size: 14.5px;
+    font-weight: 750;
+    letter-spacing: -0.01em;
+    box-shadow: 0 14px 30px -14px #16324acc;
     transition:
-      transform 0.18s var(--bw-ease),
-      box-shadow 0.18s var(--bw-ease);
+      background 0.18s var(--bw-ease),
+      transform 0.18s var(--bw-ease);
   }
   .bw-wide-cta:hover {
-    box-shadow:
-      0 18px 34px -14px #0e7a43cc,
-      inset 0 1px 0 #ffffff2e;
+    background: #0f2638;
     transform: translateY(-1px);
   }
-  .bw-wide-cta svg {
+  .bw-wide-cta__go {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 13px;
+    background: #e8590c;
+    color: #fff;
     transition: transform 0.18s var(--bw-ease);
   }
-  .bw-wide-cta:hover svg {
+  .bw-wide-cta:hover .bw-wide-cta__go {
     transform: translateX(3px);
   }
-  /* Réinitialiser : lien texte à côté des filtres. */
+  /* Options : choix actif en marine plein. */
+  .bw-wide-trip button[data-active="true"] {
+    background: #16324a !important;
+    color: #fff !important;
+    box-shadow: none !important;
+  }
+  /* Filtres Compagnie et Navire : deux puces distinctes ; choisie, la puce montre le logo
+     ou la silhouette du navire, sur fond marine. */
+  .bw-wide-chip {
+    gap: 8px;
+    max-width: 230px;
+    padding: 0 12px 0 8px;
+  }
+  .bw-wide-chip__lead {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    background: #f1ece2;
+    color: #16324a;
+    overflow: hidden;
+  }
+  .bw-wide-chip[data-on] {
+    border-color: #16324a;
+    background: #16324a;
+    color: #fff;
+  }
+  .bw-wide-chip[data-on] .bw-wide-chip__lead {
+    background: #fff;
+  }
+  .bw-wide-chip__lead img,
+  .bw-wide-menu__lead img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
   .bw-wide-reset {
     display: inline-flex;
     flex-shrink: 0;
@@ -5530,7 +5567,7 @@ body:has(.bw-home--app) {
     gap: 5px;
     height: 36px;
     padding: 0 6px;
-    color: #1e5b7a;
+    color: #c2410c;
     font-size: 12.5px;
     font-weight: 650;
   }
@@ -5538,10 +5575,67 @@ body:has(.bw-home--app) {
     text-decoration: underline;
     text-underline-offset: 3px;
   }
-  /* Sans liste ouverte, la croix n'a rien à fermer. */
   .bw-map-stage[data-wide-idle="true"] .bw-wide-close {
     display: none;
   }
+}
+/* Menus Compagnie / Navire. */
+.bw-wide-menu {
+  border-color: #e6e1d6 !important;
+  border-radius: 18px !important;
+  box-shadow: 0 24px 48px -24px #16324a66 !important;
+}
+.bw-wide-menu__title {
+  padding: 6px 10px 4px;
+  color: #6b7c8a;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.bw-wide-menu__list {
+  display: grid;
+  gap: 2px;
+  max-height: min(340px, 50vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.bw-wide-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  color: #16324a;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: left;
+}
+.bw-wide-menu__item:hover {
+  background: #f6f2ea;
+}
+.bw-wide-menu__item[data-on] {
+  background: #16324a0f;
+  color: #16324a;
+}
+.bw-wide-menu__item[data-on] svg:last-child {
+  color: #e8590c;
+}
+.bw-wide-menu__lead {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 34px;
+  height: 28px;
+  border-radius: 9px;
+  background: #f6f2ea;
+  color: #16324a;
+}
+.bw-wide-menu__ship {
+  width: 34px;
+  height: 22px;
+  object-fit: contain;
 }
 @media (prefers-reduced-motion: reduce) {
   .bw-wide-swap svg,
@@ -5617,4 +5711,23 @@ body:has(.bw-home--app) {
 .batogo-cal-pop {
   border-color: #e6e1d6 !important;
   box-shadow: 0 28px 60px -28px #16324a73 !important;
+}
+
+/* Logos de compagnie larges : la pastille s'adapte sans déborder sur le nom. */
+.bw-wide-menu__lead,
+.bw-wide-chip__lead {
+  overflow: hidden;
+}
+.bw-wide-menu__lead {
+  width: 56px;
+  padding: 3px 5px;
+}
+.bw-wide-chip__lead:has(> span > img) {
+  width: 44px;
+  padding: 2px 4px;
+}
+.bw-wide-menu__lead > span,
+.bw-wide-chip__lead > span {
+  width: 100% !important;
+  height: 100% !important;
 }

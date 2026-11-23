@@ -11,6 +11,8 @@ import {
   ArrowLeftRight,
   ArrowRight,
   Backpack,
+  Building2,
+  Check,
   CalendarDays,
   ChevronDown,
   ChevronRight,
@@ -66,6 +68,7 @@ import { SalesCalendarNote } from "@/components/companion/SalesCalendarNote";
 import { companyCalendars, isEstimatedDeparture } from "@/lib/companion/salesCalendar";
 import { isNorthShore, isSouthShore } from "@/lib/ferry/markets";
 import { CompanyBadge } from "./CompanyBadge";
+import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
 import { RoundTripCard, RoundTripRow } from "./RoundTripCard";
 import { estimateFare, FareProfileContext, formatEuro, useFareProfile } from "@/lib/ferry/pricing";
 import { buildRoundTrips, type RoundTrip } from "@/lib/ferry/roundTrips";
@@ -317,7 +320,6 @@ export function SearchPanel({
   const formOpen = editing && !wide;
   const [wideCalOpen, setWideCalOpen] = useState(false);
   // Barre PC : Compagnie et Navire restent derrière « Filtres » tant qu'aucun n'est choisi.
-  const [wideFiltersOpen, setWideFiltersOpen] = useState(false);
   // Le bouton ⇄ fait un demi-tour à chaque inversion.
   const [swapTurns, setSwapTurns] = useState(0);
   const [travellersOpen, setTravellersOpen] = useState(false);
@@ -1018,7 +1020,9 @@ export function SearchPanel({
                 className="bw-wide-cta"
               >
                 {wideCount ? `Afficher ${wideCount}` : "Afficher les départs"}
-                <ArrowRight className="size-4" aria-hidden />
+                <span className="bw-wide-cta__go" aria-hidden>
+                  <ArrowRight className="size-4" />
+                </span>
               </button>
             </div>
             {/* Options du voyage : type de trajet, filtres dans une fenêtre, trajets populaires.
@@ -1038,68 +1042,49 @@ export function SearchPanel({
                   </button>
                 ))}
               </div>
-              <Popover open={wideFiltersOpen || companyMenuOpen} onOpenChange={setWideFiltersOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className="bw-wide-chip"
-                    data-on={Boolean(filters.companyId || filters.vesselId)}
-                  >
-                    <SlidersHorizontal className="size-3.5" aria-hidden />
-                    <span className="truncate">
-                      {filters.companyId || filters.vesselId
-                        ? [
-                            companies.find((company) => company.id === filters.companyId)?.name,
-                            vessels.find((vessel) => vessel.id === filters.vesselId)?.name,
-                          ]
-                            .filter(Boolean)
-                            .join(" · ")
-                        : "Compagnie, navire"}
-                    </span>
-                    <ChevronDown className="size-3.5 opacity-60" aria-hidden />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent align="start" sideOffset={8} className="bw-wide-filters w-[320px] p-3">
-                  <p className="bw-wide-filters__title">Affiner les départs</p>
-                  <div className="grid gap-2">
-                    <FilterSelect
-                      label={tr("ui.searchPanel.compagnie")}
-                      open={companyMenuOpen}
-                      onOpenChange={setCompanyMenuOpen}
-                      value={filters.companyId}
-                      onChange={(value) => set({ companyId: value })}
-                      options={companies.map((company) => ({
-                        value: company.id,
-                        label: company.name,
-                        leading: <CompanyBadge name={company.name} logoUrl={company.logo_url} size={20} />,
-                      }))}
-                    />
-                    <FilterSelect
-                      label={tr("ui.searchPanel.navire")}
-                      value={filters.vesselId}
-                      onChange={(value) => set({ vesselId: value })}
-                      options={vessels
-                        .filter(
-                          (vessel) =>
-                            !filters.companyId ||
-                            vesselCompanyIds(vessel.id, vessels, [...recentDepartures, ...departures]).includes(
-                              filters.companyId,
-                            ),
-                        )
-                        .map((vessel) => ({ value: vessel.id, label: vessel.name }))}
-                    />
-                  </div>
-                  {filters.companyId || filters.vesselId ? (
-                    <button
-                      type="button"
-                      className="bw-wide-filters__clear"
-                      onClick={() => set({ companyId: null, vesselId: null })}
-                    >
-                      Toutes les compagnies et tous les navires
-                    </button>
-                  ) : null}
-                </PopoverContent>
-              </Popover>
+              <WideFilterMenu
+                label={tr("ui.searchPanel.compagnie")}
+                allLabel="Toutes les compagnies"
+                icon={<Building2 className="size-4" aria-hidden />}
+                value={filters.companyId}
+                onChange={(value) => set({ companyId: value, vesselId: null })}
+                options={companies.map((company) => ({
+                  value: company.id,
+                  label: company.name,
+                  leading: <CompanyBadge name={company.name} logoUrl={company.logo_url} size={22} />,
+                }))}
+              />
+              <WideFilterMenu
+                label={tr("ui.searchPanel.navire")}
+                allLabel={
+                  filters.companyId
+                    ? (() => { const n = companies.find((company) => company.id === filters.companyId)?.name; return n ? `Tous les navires ${/^[aeiouyhàâéèêîôûAEIOUYHÀÂÉÈÊÎÔÛ]/.test(n) ? "d'" : "de "}${n}` : "Tous les navires de la compagnie"; })()
+                    : "Tous les navires"
+                }
+                icon={<Ship className="size-4" aria-hidden />}
+                value={filters.vesselId}
+                onChange={(value) => set({ vesselId: value })}
+                options={vessels
+                  .filter(
+                    (vessel) =>
+                      !filters.companyId ||
+                      vesselCompanyIds(vessel.id, vessels, [...recentDepartures, ...departures]).includes(
+                        filters.companyId,
+                      ),
+                  )
+                  .map((vessel) => {
+                    const cutout = vesselMapIcon(vessel.name);
+                    return {
+                      value: vessel.id,
+                      label: vessel.name,
+                      leading: cutout ? (
+                        <img src={`/vessel-visuals/map/${cutout}.webp`} alt="" className="bw-wide-menu__ship" />
+                      ) : (
+                        <Ship className="size-4" aria-hidden />
+                      ),
+                    };
+                  })}
+              />
               {active ? (
                 <button
                   type="button"
@@ -2235,4 +2220,76 @@ function reasonBody(reason: NoSailingReason, fallback: string) {
     default:
       return `${fallback} Vérifie chez la compagnie, et dis-le-moi si tu trouves.`;
   }
+}
+
+/** Barre PC : un menu de filtre (compagnie ou navire), avec logo ou silhouette devant chaque choix. */
+function WideFilterMenu({
+  label,
+  allLabel,
+  icon,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  allLabel: string;
+  icon: ReactNode;
+  value: string | null;
+  options: { value: string; label: string; leading: ReactNode }[];
+  onChange: (value: string | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const current = options.find((option) => option.value === value);
+  const choose = (next: string | null) => {
+    onChange(next);
+    setOpen(false);
+  };
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="bw-wide-chip"
+          data-on={Boolean(current) || undefined}
+          aria-label={current ? `${label} : ${current.label}` : label}
+        >
+          <span className="bw-wide-chip__lead">{current ? current.leading : icon}</span>
+          <span className="truncate">{current ? current.label : label}</span>
+          <ChevronDown className="size-3.5 opacity-60" aria-hidden />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" sideOffset={8} className="bw-wide-menu w-[340px] p-1.5">
+        <p className="bw-wide-menu__title">{label}</p>
+        <div className="bw-wide-menu__list" role="listbox" aria-label={label}>
+          <button
+            type="button"
+            role="option"
+            aria-selected={!value}
+            className="bw-wide-menu__item"
+            data-on={!value || undefined}
+            onClick={() => choose(null)}
+          >
+            <span className="bw-wide-menu__lead">{icon}</span>
+            <span className="truncate">{allLabel}</span>
+            {!value ? <Check className="ml-auto size-4" aria-hidden /> : null}
+          </button>
+          {options.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              role="option"
+              aria-selected={option.value === value}
+              className="bw-wide-menu__item"
+              data-on={option.value === value || undefined}
+              onClick={() => choose(option.value)}
+            >
+              <span className="bw-wide-menu__lead">{option.leading}</span>
+              <span className="truncate">{option.label}</span>
+              {option.value === value ? <Check className="ml-auto size-4" aria-hidden /> : null}
+            </button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
 }

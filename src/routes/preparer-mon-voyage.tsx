@@ -124,7 +124,7 @@ import {
   type Milestone,
 } from "@/lib/ferry/retroPlan";
 import { useReferenceData } from "@/lib/reference/useReferenceData";
-import { formatFareRange, priceSeason } from "@/lib/ferry/pricing";
+import { priceSeason } from "@/lib/ferry/pricing";
 import {
   companiesQuery,
   portsQuery,
@@ -141,7 +141,12 @@ import type { Port } from "@/lib/ferry/types";
 import { seoHead } from "@/lib/seo/site";
 import { TICKETING } from "@/lib/seo/pitch";
 import { SearchBox, splitPlace } from "@/components/SearchBox";
-import { SailingsOutlook, TripBudget } from "@/components/prepare/TripOutlook";
+import {
+  SailingsOutlook,
+  TripBudget,
+  budgetSummary,
+  tripBudget,
+} from "@/components/prepare/TripOutlook";
 import { SharePreparation } from "@/components/prepare/SharePreparation";
 import { PrepareIntro } from "@/components/prepare/PrepareIntro";
 import { ConfirmChange } from "@/components/prepare/ConfirmChange";
@@ -924,15 +929,6 @@ function useSummaries(
   const line = fromChoice && toPort ? `${fromChoice.port.name} → ${toPort.name}` : null;
   const duration =
     fromChoice?.lines.find((l) => l.to.id === toPort?.id)?.route.typical_duration_minutes ?? null;
-  const fare =
-    fromChoice && toPort ? planFare(plan, fromChoice.port, toPort, { adults, children }) : null;
-  const back =
-    fromChoice && toPort && plan.returnDate
-      ? planFare({ ...plan, date: plan.returnDate, window: null }, fromChoice.port, toPort, {
-          adults,
-          children,
-        })
-      : null;
   return {
     profile: [
       capitalize(planWhenLabel(plan)),
@@ -951,11 +947,11 @@ function useSummaries(
       : "Votre liste, voyageur par voyageur",
     car: `${carReady} sur ${carItems.length} faits${plan.importCar ? " · import" : ""}`,
     route: line ? `${line}${duration ? ` · ${formatDuration(duration)} de traversée` : ""}` : null,
-    budget: fare
-      ? back
-        ? `${formatFareRange({ ...fare, low: fare.low + back.low, high: fare.high + back.high })} les traversées aller et retour`
-        : `${formatFareRange(fare)} l'aller · ${seasonLabels[fare.season].toLowerCase()}`
-      : null,
+    // Le même chiffre que le bloc « Votre budget » : bateau et route, arrondi.
+    budget:
+      fromChoice && toPort
+        ? budgetSummary(tripBudget(plan, fromChoice, toPort, { adults, children }))
+        : null,
     book: line
       ? `${line} · ${planWhenLabel(plan)} · ${plan.ticket ? "billet pris" : "billet à prendre"}`
       : null,
@@ -1881,49 +1877,50 @@ function BudgetStep({
           document.getElementById("budget-aller")?.scrollIntoView({ block: "start", behavior: "smooth" })
         }
       />
-      <div id="budget-aller" className="mt-3 scroll-mt-4 rounded-2xl border p-4 md:p-5">
-        <p className="text-sm text-muted-foreground">
-          Le détail de l'aller · {fromChoice.port.name} → {toPort.name} ·{" "}
-          {capitalize(planWhenLabel(plan))}
-        </p>
-        <p className="mt-1 font-display text-3xl font-bold md:text-4xl">{formatFareRange(fare)}</p>
-        <p className="mt-1 text-sm">
-          {[
-            plural(group.adults, "adulte"),
-            group.children ? plural(group.children, "enfant") : null,
-          ]
-            .filter(Boolean)
-            .join(", ")}
-          {plan.vehicle === "none" ? ", sans voiture" : `, ${vehicle?.label.toLowerCase()}`}
-        </p>
-        <span
-          className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-bold ${hot ? "bg-[#c95038]/10 text-[#c95038]" : "bg-secondary"}`}
-        >
-          {seasonLabels[fare.season]}
-        </span>
-        <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-          {fare.benchmarked ? (
-            <>
-              Estimation à partir des prix moyens publiés par{" "}
-              {fare.source ? (
-                <a
-                  href={fare.source}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline underline-offset-2"
-                >
-                  Direct Ferries
-                </a>
-              ) : (
-                "Direct Ferries"
-              )}{" "}
-              (septembre–octobre 2026), ajustée à la saison, aux voyageurs et au véhicule. Ce n'est
-              pas un devis.
-            </>
-          ) : (
-            "Ordre de grandeur : aucun prix moyen publié pour cette ligne. Ce n'est pas un devis."
-          )}
-        </p>
+      {/* D'où viennent les chiffres : en mots simples, avec la source quand elle existe. */}
+      <div id="budget-aller" className="mt-3 scroll-mt-4 rounded-2xl border p-4 text-sm md:p-5">
+        <p className="font-display text-base font-bold">D'où viennent ces chiffres ?</p>
+        <ul className="mt-2 grid gap-2 leading-relaxed text-muted-foreground">
+          <li>
+            <b className="text-foreground">Le bateau :</b>{" "}
+            {fare.benchmarked ? (
+              <>
+                les prix moyens publiés par{" "}
+                {fare.source ? (
+                  <a
+                    href={fare.source}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline underline-offset-2"
+                  >
+                    Direct Ferries
+                  </a>
+                ) : (
+                  "Direct Ferries"
+                )}{" "}
+                pour {fromChoice.port.name} → {toPort.name} (relevés en septembre et octobre 2026),
+              </>
+            ) : (
+              <>
+                aucun prix moyen n'est publié pour {fromChoice.port.name} → {toPort.name} : on part
+                d'un prix type de traversée,
+              </>
+            )}{" "}
+            puis on ajuste selon la saison ({seasonLabels[fare.season].toLowerCase()}{" "}
+            {planWhenLabel(plan)}), le nombre de voyageurs et{" "}
+            {plan.vehicle === "none" ? "l'absence de voiture" : `la ${vehicle?.label.toLowerCase()}`}.
+          </li>
+          {plan.vehicle !== "none" ? (
+            <li>
+              <b className="text-foreground">La route :</b> la distance jusqu'au port, la
+              consommation d'une voiture moyenne et, en France, les péages.
+            </li>
+          ) : null}
+          <li>
+            <b className="text-foreground">Ce n'est pas un devis :</b> le vrai prix s'affiche
+            quand vous réservez chez la compagnie.
+          </li>
+        </ul>
       </div>
       {hot ? (
         <p className="mt-3 flex items-start gap-2 rounded-xl bg-primary/5 p-3 text-sm">

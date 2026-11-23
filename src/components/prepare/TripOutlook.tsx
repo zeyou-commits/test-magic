@@ -9,15 +9,17 @@ import {
   upcomingDeparturesQuery,
 } from "@/lib/ferry/queries";
 import { buildSailings, daysWithSailings, legSailings } from "@/lib/ferry/trips";
-import { formatFareRange } from "@/lib/ferry/pricing";
 import {
+  planDay,
   planFare,
   planHasWhen,
   planWhenLabel,
+  seasonLabels,
   type CompanionPlan,
   type PortChoice,
 } from "@/lib/ferry/companion";
 import type { Port } from "@/lib/ferry/types";
+import { VEHICLES } from "@/components/panel/TripProfile";
 import {
   FUEL_EURO_PER_L,
   FUEL_L_PER_100,
@@ -25,8 +27,6 @@ import {
   travelDays,
 } from "@/components/prepare/RouteTop3";
 
-const euros = (n: number) =>
-  `${Math.round(n / 10) * 10 > 0 ? (Math.round(n / 10) * 10).toLocaleString("fr-FR") : "0"} €`;
 const dayLabel = (key: string) =>
   new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short" })
     .format(new Date(`${key}T12:00:00`))
@@ -37,9 +37,53 @@ const longDay = (key: string) =>
     .format(new Date(`${key}T12:00:00`))
     .replace(/^1 /, "1er ");
 
+/** Arrondi lisible : à la centaine (à la dizaine sous 200 €). */
+const roundNice = (n: number) => (n < 200 ? Math.round(n / 10) * 10 : Math.round(n / 100) * 100);
+const nice = (n: number) => `${roundNice(n).toLocaleString("fr-FR")} €`;
+const dayMonth = (key: string) =>
+  new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" })
+    .format(new Date(`${key}T12:00:00`))
+    .replace(/^1 /, "1er ");
+const countOf = (n: number, word: string) => `${n} ${word}${n > 1 ? "s" : ""}`;
+
 /**
- * Le budget du voyage, estimé : la traversée aller et retour (prix moyens de la ligne, ajustés à
- * la saison, aux voyageurs, au véhicule), puis l'essence et les péages jusqu'au port.
+ * Le budget du voyage, en chiffres : bateau aller, bateau retour (prix moyens de la ligne, ajustés
+ * à la saison, aux voyageurs, au véhicule), essence et péages jusqu'au port. Le même calcul sert
+ * au bloc « Votre budget » et à la ligne Budget du récap.
+ */
+export function tripBudget(
+  plan: CompanionPlan,
+  fromChoice: PortChoice,
+  toPort: Port,
+  people: { adults: number; children: number },
+) {
+  const out = planFare(plan, fromChoice.port, toPort, people);
+  const back = plan.returnDate
+    ? planFare({ ...plan, date: plan.returnDate, window: null }, fromChoice.port, toPort, people)
+    : null;
+  // La route jusqu'au port : la distance à vol d'oiseau, allongée d'un quart pour la route.
+  const roadKm = plan.vehicle !== "none" && fromChoice.km !== null ? fromChoice.km * 1.25 : 0;
+  const tolls = plan.country === "FR" ? TOLL_EURO_PER_KM : 0;
+  const roadCost = roadKm * ((FUEL_L_PER_100 / 100) * FUEL_EURO_PER_L + tolls) * (back ? 2 : 1);
+  // Le port à côté de chez soi : pas de ligne « ≈ 0 € ».
+  const road = roadCost >= 15 ? roadCost : 0;
+  return {
+    out,
+    back,
+    road,
+    total: out.amount + (back?.amount ?? 0) + road,
+    low: out.low + (back?.low ?? 0) + road * 0.85,
+    high: out.high + (back?.high ?? 0) + road * 1.15,
+  };
+}
+
+/** « Environ 3 000 € », pour la ligne Budget du récap. */
+export const budgetSummary = (b: ReturnType<typeof tripBudget>) =>
+  `Environ ${nice(b.total)}, bateau${b.road ? " et route" : ""}${b.back ? ", aller et retour" : ", aller"}`;
+
+/**
+ * « Votre budget » : un chiffre arrondi d'abord, puis ce qu'il comprend, poste par poste, en mots
+ * simples. La fourchette dit seulement pourquoi le prix peut bouger.
  */
 export function TripBudget({
   plan,
@@ -55,27 +99,45 @@ export function TripBudget({
   onDetail: () => void;
 }) {
   if (!fromChoice || !toPort) return null;
-  const out = planFare(plan, fromChoice.port, toPort, people);
-  const back = plan.returnDate
-    ? planFare({ ...plan, date: plan.returnDate, window: null }, fromChoice.port, toPort, people)
-    : null;
-  // La route jusqu'au port : la distance à vol d'oiseau, allongée d'un quart pour la route.
-  const roadKm = plan.vehicle !== "none" && fromChoice.km !== null ? fromChoice.km * 1.25 : 0;
-  const tolls = plan.country === "FR" ? TOLL_EURO_PER_KM : 0;
-  const roadCost = roadKm * ((FUEL_L_PER_100 / 100) * FUEL_EURO_PER_L + tolls) * (back ? 2 : 1);
-  // Le port à côté de chez soi : pas de ligne « ≈ 0 € ».
-  const road = roadCost >= 15 ? roadCost : 0;
-  const low = out.low + (back?.low ?? 0) + road * 0.85;
-  const high = out.high + (back?.high ?? 0) + road * 1.15;
-  const rows: [string, string][] = [
-    ["Traversée aller", formatFareRange(out)],
-    ...(back ? [["Traversée retour", formatFareRange(back)] as [string, string]] : []),
-    ...(road
+  const b = tripBudget(plan, fromChoice, toPort, people);
+  const line = `${fromChoice.port.name} → ${toPort.name}`;
+  const lineBack = `${toPort.name} → ${fromChoice.port.name}`;
+  const vehicle = VEHICLES.find((v) => v.id === plan.vehicle);
+  const who = [
+    countOf(Math.max(1, people.adults), "adulte"),
+    people.children ? countOf(people.children, "enfant") : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const withWhat = plan.vehicle === "none" ? "sans voiture" : `et la ${vehicle?.label.toLowerCase() ?? "voiture"}`;
+  const outDay = planHasWhen(plan) ? dayMonth(planDay(plan)) : null;
+  const items: { key: string; label: string; detail: string; amount: number }[] = [
+    {
+      key: "out",
+      label: "Le bateau à l'aller",
+      detail: [line, outDay, seasonLabels[b.out.season].toLowerCase()].filter(Boolean).join(" · "),
+      amount: b.out.amount,
+    },
+    ...(b.back
       ? [
-          [
-            plan.country === "FR" ? "Essence et péages jusqu'au port" : "Essence jusqu'au port",
-            `≈ ${euros(road)}`,
-          ] as [string, string],
+          {
+            key: "back",
+            label: "Le bateau au retour",
+            detail: [lineBack, plan.returnDate ? dayMonth(plan.returnDate) : null, seasonLabels[b.back.season].toLowerCase()]
+              .filter(Boolean)
+              .join(" · "),
+            amount: b.back.amount,
+          },
+        ]
+      : []),
+    ...(b.road
+      ? [
+          {
+            key: "road",
+            label: plan.country === "FR" ? "L'essence et les péages" : "L'essence",
+            detail: `${plan.home?.name ?? "Chez vous"} ↔ ${fromChoice.port.name}${b.back ? ", aller et retour" : ""}`,
+            amount: b.road,
+          },
         ]
       : []),
   ];
@@ -83,23 +145,34 @@ export function TripBudget({
     <section className="bw-tbudget" aria-labelledby="budget-estime">
       <p className="bw-tbudget__head">
         <Wallet size={16} aria-hidden />
-        <span id="budget-estime">Budget estimé{back ? ", aller et retour" : ", aller"}</span>
+        <span id="budget-estime">Votre budget</span>
       </p>
-      <p className="bw-tbudget__total">
-        {euros(low)} – {euros(high)}
+      <p className="bw-tbudget__total">Environ {nice(b.total)}</p>
+      <p className="bw-tbudget__who">
+        Pour {who} {withWhat}, {b.back ? "aller et retour" : "l'aller seulement"}.
       </p>
-      <dl>
-        {rows.map(([label, value]) => (
-          <div key={label}>
-            <dt>{label}</dt>
-            <dd>{value}</dd>
-          </div>
+      <div className="bw-tbudget__bar" aria-hidden>
+        {items.map((item) => (
+          <span key={item.key} data-k={item.key} style={{ flexGrow: item.amount }} />
         ))}
-      </dl>
+      </div>
+      <ul className="bw-tbudget__items">
+        {items.map((item) => (
+          <li key={item.key} data-k={item.key}>
+            <span className="bw-tbudget__dot" aria-hidden />
+            <span className="min-w-0">
+              <b>{item.label}</b>
+              <small>{item.detail}</small>
+            </span>
+            <span className="bw-tbudget__amount">≈ {nice(item.amount)}</span>
+          </li>
+        ))}
+      </ul>
       <p className="bw-tbudget__note">
-        Une estimation, pas un devis. Le prix réel se voit à la réservation.{" "}
+        Le prix réel peut aller de {nice(b.low)} à {nice(b.high)} selon la compagnie, la date et
+        votre place à bord. Les repas à bord et la route en Algérie ne sont pas comptés.{" "}
         <button type="button" onClick={onDetail}>
-          Le détail
+          D'où viennent ces chiffres ?
         </button>
       </p>
     </section>

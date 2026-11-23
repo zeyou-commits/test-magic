@@ -1853,6 +1853,24 @@ img.bw-rload__car { width: 30px; height: 30px; object-fit: contain; scale: -1 1;
 .bw-tbudget__note { margin-top: 8px; font-size: 0.75rem; color: var(--muted-foreground); }
 .bw-tbudget__note button { font-weight: 700; color: var(--primary); text-decoration: underline; text-underline-offset: 3px; }
 .dark .bw-tbudget__head { color: #e5ad55; }
+.bw-tbudget__total { font-size: 2rem; }
+.bw-tbudget__who { margin-top: 2px; font-size: 0.9rem; color: var(--muted-foreground); }
+.bw-tbudget { --k-out: #1f6fb2; --k-back: #6aa7dc; --k-road: #c99a55; }
+.bw-tbudget__bar { display: flex; gap: 3px; height: 10px; margin-top: 12px; }
+.bw-tbudget__bar > span { flex-basis: 0; min-width: 6px; border-radius: 99px; background: var(--k-out); }
+.bw-tbudget__bar > [data-k="back"], .bw-tbudget__items > [data-k="back"] { --k: var(--k-back); }
+.bw-tbudget__bar > [data-k="back"] { background: var(--k-back); }
+.bw-tbudget__bar > [data-k="road"] { background: var(--k-road); }
+.bw-tbudget__items { display: grid; gap: 2px; margin: 10px 0 0; padding: 0; list-style: none; }
+.bw-tbudget__items > li { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 7px 0; border-top: 1px dashed color-mix(in oklab, #b7791f 25%, var(--border)); }
+.bw-tbudget__items > li:first-child { border-top: 0; }
+.bw-tbudget__items b { display: block; font-size: 0.92rem; }
+.bw-tbudget__items small { display: block; font-size: 0.78rem; line-height: 1.3; color: var(--muted-foreground); }
+.bw-tbudget__dot { width: 10px; height: 10px; border-radius: 99px; background: var(--k-out); }
+.bw-tbudget__items > [data-k="back"] .bw-tbudget__dot { background: var(--k-back); }
+.bw-tbudget__items > [data-k="road"] .bw-tbudget__dot { background: var(--k-road); }
+.bw-tbudget__amount { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bw-tbudget__note { margin-top: 10px; font-size: 0.8rem; line-height: 1.45; }
 
 .bw-outlook { padding: 14px 16px; border: 1px solid var(--border); border-radius: 18px; background: var(--card); }
 .bw-outlook > h3 { margin-bottom: 8px; font-family: var(--font-display, inherit); font-size: 1rem; font-weight: 800; }

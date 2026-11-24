@@ -17643,6 +17643,19 @@ button.bw-delay-badge:focus-visible {
   padding-inline-start: 6px;
   font-weight: 600;
 }
+/* Un seul bouton : fil coupé = point gris, flèche de côté ; fil actif = point vert, flèche vers le bas. */
+.bw-ticker[data-off] .bw-ticker__general {
+  background: #0b1a13a6;
+}
+.bw-ticker[data-off] .bw-ticker__general > i {
+  background: #9aa8a1;
+}
+.bw-ticker__chevron {
+  transition: transform 0.2s ease;
+}
+.bw-ticker__general[aria-checked="true"] .bw-ticker__chevron {
+  transform: rotate(90deg);
+}
 .bw-ticker[data-off] .bw-ticker__switch {
   background: #0b1a13a6;
 }

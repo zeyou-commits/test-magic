@@ -64,20 +64,26 @@ function useReducedMotion() {
   return reduce;
 }
 
+/**
+ * Le seul bouton du fil : « Salon général › » allume ou coupe les messages sur la carte. Point vert
+ * et flèche vers le bas quand le fil défile ; point gris et flèche de côté quand il est coupé.
+ * Le salon général s'ouvre depuis ses messages et depuis Discussions.
+ */
 function OverlaySwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+  const state = on ? tr("ui.chatTicker.active") : tr("ui.chatTicker.chatDesactive");
   return (
     <button
       type="button"
       role="switch"
       aria-checked={on}
-      aria-label={tr("ui.chatTicker.chatSurLaCarte")}
-      className="bw-ticker__switch"
+      aria-label={`${tr("ui.chatTicker.chatSurLaCarte")} : ${state}`}
+      title={state}
+      className="bw-ticker__general"
       onClick={onToggle}
     >
-      <span className="bw-ticker__track" aria-hidden>
-        <span />
-      </span>
-      {on ? tr("ui.chatTicker.active") : tr("ui.chatTicker.chatDesactive")}
+      <i aria-hidden />
+      {generalTitle()}
+      <ChevronRight size={13} aria-hidden className="bw-ticker__chevron" />
     </button>
   );
 }
@@ -199,11 +205,6 @@ export function ChatTicker({
       </ol>
       {/* En bas et fixes : les pastilles ne bougent pas quand les messages s'effacent. */}
       <div className="bw-ticker__head">
-        <button type="button" className="bw-ticker__general" onClick={openGeneralRoom}>
-          <i aria-hidden />
-          {generalTitle()}
-          <ChevronRight size={13} aria-hidden />
-        </button>
         <OverlaySwitch on onToggle={toggle} />
       </div>
     </section>

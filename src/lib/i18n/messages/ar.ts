@@ -167,7 +167,7 @@ export const ar: PartialMessages = {
       "napoli": "نابولي",
       "bern": "برن",
       "lisboa": "لشبونة",
-      "periodeAjouteeRetiree": "{added} فترة مضافة{v}{v2}، {removed} محذوفة{v3}",
+      "periodeAjouteeRetiree": "فترات مضافة: {added}، فترات محذوفة: {removed}",
       "aucunChangement": "لا يوجد أي تغيير",
       "jusquEn": " · حتى {v}",
       "telephone": "الهاتف",
@@ -609,8 +609,8 @@ export const ar: PartialMessages = {
       "aucunDepartPubliePourLe": "لا توجد مغادرة منشورة حاليًا",
       "enRetardDepartNonConstate": "متأخرة · لم تُرصد المغادرة",
       "departPrevuDansMin": "المغادرة متوقعة بعد {minutes} دقيقة",
-      "departPrevuDansJ": "المغادرة متوقعة بعد {v} يوم{v2}",
-      "departPrevuDansH": "المغادرة متوقعة بعد {v} ساعة{v2}",
+      "departPrevuDansJ": "المغادرة متوقعة بعد: {v} (أيام)",
+      "departPrevuDansH": "المغادرة متوقعة بعد: {v} (ساعات)",
       "portAConfirmer": "الميناء في انتظار التأكيد",
       "destinationAConfirmer": "الوجهة في انتظار التأكيد"
     },
@@ -690,7 +690,7 @@ export const ar: PartialMessages = {
       "deSortie": "{formatMinutes} للخروج"
     },
     "libFerryItinerary": {
-      "pauseDeMinComprise": " · بما في ذلك {pauses} استراحة{v} من {PAUSEMIN} دقيقة{v2}",
+      "pauseDeMinComprise": " · بما في ذلك استراحات: {pauses} (مدة الاستراحة بالدقائق: {PAUSEMIN})",
       "aEgalite": "بالتساوي"
     },
     "libFerryIncidents": {
@@ -806,6 +806,7 @@ export const ar: PartialMessages = {
       "escaleIncoherenteArriveAPuis": "توقف غير منطقي: تصل إلى {toName} ثم تنطلق من {fromName} دون رحلة بحرية بينهما."
     },
     "libFerryCompanion": {
+      "maRouteJusquADestination": "طريقي حتى الوجهة",
       "entreLeEtLe": "بين {shortDay} و{shortDay2}",
       "dateAChoisir": "تاريخ يُحدَّد لاحقًا",
       "basseSaison": "موسم منخفض",
@@ -1237,7 +1238,7 @@ export const ar: PartialMessages = {
       "portInfosVoyageurs": "ميناء · معلومات المسافرين",
       "navireInfosVoyageurs": "سفينة · معلومات المسافرين",
       "surPlace": " · {onSiteCount} في المكان",
-      "autreDansLaFiche": "+ {v} آخر{v2} في البطاقة",
+      "autreDansLaFiche": "آخرون في البطاقة: + {v}",
       "illustrationLesVraisSignalementsDes": "توضيح: البلاغات الحقيقية للمسافرين تظهر هنا مباشرة.",
       "signalerUneSituationIci": "أبلغ عن وضع هنا ›",
       "ouvrirLaFiche": "افتح البطاقة ›",
@@ -1372,7 +1373,7 @@ export const ar: PartialMessages = {
       "prochainesArrivees": "الوصول القادم"
     },
     "mobileTabBar": {
-      "navireEnMerEnCe": "{count} سفينة{v} في البحر الآن"
+      "navireEnMerEnCe": "سفن في البحر الآن: {count}"
     },
     "travellerAvatar": {
       "profilDe": "الملف الشخصي لـ {pseudo}{v}"
@@ -1588,7 +1589,7 @@ export const ar: PartialMessages = {
       "surPapiersPrets": "{ready} من {length} وثائق جاهزة",
       "surPapiersPretsVoitureComprise": "{v} من {v2} وثائق جاهزة، مع السيارة",
       "votreListeVoyageurParVoyageur": "قائمتك، مسافرًا مسافرًا",
-      "surFaits": "{carReady} من {length} منجزة{v}",
+      "surFaits": "المنجز: {carReady} من {length}",
       "deTraversee": " · {formatDuration} من الإبحار",
       "billetPrisSuiviDansMon": "{label} · التذكرة محجوزة، تُتابَع في رحلتي",
       "billetPris": "التذكرة محجوزة",
@@ -1623,7 +1624,7 @@ export const ar: PartialMessages = {
       "voirMonRecap": "عرض ملخصي",
       "dansSemainesLeTempsDe": "، بعد {v} أسابيع: وقت كافٍ لتحضير كل شيء بلا ضغط.",
       "dansSemainesLesPapiersLongs": "، بعد {v} أسابيع: الوثائق الطويلة يجب أن تبدأ الآن.",
-      "dansJourLEssentielEst": "، بعد {countdown} يوم{v}: الأهم يجب إنجازه فورًا.",
+      "dansJourLEssentielEst": "، بقي {countdown} (أيام): الأهم يجب إنجازه فورًا.",
       "ouHabitezVous": "أين تسكن؟",
       "pourTrouverVotreConsulatD": "لإيجاد قنصلية الجزائر التي تتبعها، حيث تقوم بإجراءاتك، وأقرب الموانئ. المدينة تكفي.",
       "votreVille": "مدينتك",
@@ -1637,7 +1638,7 @@ export const ar: PartialMessages = {
       "avantLe": "قبل {longDate}",
       "aPartirDu": "ابتداءً من {longDate}",
       "rienAFairePourL": "لا شيء للقيام به حاليًا: كل شيء مُنجز.",
-      "actionAFaireLaProchaine": "{length} إجراء{v} للقيام به · التالي {lowerFirst}",
+      "actionAFaireLaProchaine": "إجراءات للقيام بها: {length} · التالي {lowerFirst}",
       "avantDePartir": "قبل السفر",
       "leVoyage": "الرحلة",
       "voirCeQuiEstFait": "عرض ما تم إنجازه ({length})",
@@ -1879,7 +1880,7 @@ export const ar: PartialMessages = {
       "leJourDuDepart": "يوم المغادرة",
       "surPlace": "في عين المكان",
       "pourRentrer": "للعودة",
-      "departPapierDansLaPochette": "المغادرة · {packCount} وثيقة{v} في الحافظة",
+      "departPapierDansLaPochette": "المغادرة · الوثائق في الحافظة: {packCount}",
       "depart": "المغادرة",
       "retour2": "العودة"
     },
@@ -2029,8 +2030,8 @@ export const ar: PartialMessages = {
       "prochainDepart": "المغادرة التالية {v}",
       "prochainDepartA": "المغادرة التالية {v} على {v2}",
       "traversee2": "رحلة بحرية",
-      "vosTraverseesAVenirDont": "رحلاتك البحرية القادمة، منها {travellers} يسافر{v}",
-      "avisPublie": "{count} رأي منشور{v}"
+      "vosTraverseesAVenirDont": "رحلاتك البحرية القادمة، وعدد المسافرين منها: {travellers}",
+      "avisPublie": "آراء منشورة: {count}"
     },
     "pageDecouvrir": {
       "decouvrirBledway": "اكتشف BledWay",
@@ -2306,7 +2307,7 @@ export const ar: PartialMessages = {
       "leCouple": "الزوجان",
       "lesEnfants": "الأطفال",
       "surFaites": "{doneCount} من {total} منجزة",
-      "enfant": " · {kids} طفل{v}",
+      "enfant": " · الأطفال: {kids}",
       "aFaire": "مهام"
     },
     "papersQuestions": {
@@ -2724,11 +2725,11 @@ export const ar: PartialMessages = {
       "publierLaPhoto": "انشر الصورة",
       "annuler": "إلغاء",
       "choisissezDAbordUneCategorie": "اختر فئة أولًا.",
-      "photoGardeeSurAuPlus": "تم الاحتفاظ بـ {length} صورة{v}{v2} من {length2}: {max} كحد أقصى في كل إرسال.",
+      "photoGardeeSurAuPlus": "الصور المحفوظة: {length} من {length2}، والحد الأقصى في كل إرسال: {max}.",
       "plusDePlacePourCet": "لا يوجد مكان إضافي في هذا الإرسال.",
       "photosPubliees": "تم نشر {done} صور.",
       "photoPubliee": "تم نشر الصورة.",
-      "photoPubliee2": "تم نشر {done} صورة{v}{v2}.",
+      "photoPubliee2": "الصور المنشورة: {done}.",
       "parExemple": "مثلًا: {v}.",
       "photoPreteAPartir": "الصورة {v}، جاهزة للإرسال",
       "legendeDeLaPhoto": "تعليق الصورة {v}",
@@ -2880,8 +2881,8 @@ export const ar: PartialMessages = {
       "annonceRetiree": "تم سحب الإعلان.",
       "auTotal": "{length} في المجموع",
       "envoi": "إرسال",
-      "personnePrevenue": " · تم تنبيه {recipients} شخص{v}{v2}",
-      "personneAPrevenir": "{previewCount} شخص{v} سيتم تنبيههم",
+      "personnePrevenue": " · الأشخاص الذين تم تنبيههم: {recipients}",
+      "personneAPrevenir": "الأشخاص الذين سيتم تنبيههم: {previewCount}",
       "retirerCetteAnnonceElleNe": "سحب هذا الإعلان؟ لن يُرسل.",
       "annonceEnvoyeeAuxVoyageursQui": "تم إرسال الإعلان إلى المسافرين الذين يتابعون هذه الرحلة البحرية."
     },
@@ -3181,7 +3182,7 @@ export const ar: PartialMessages = {
       "apercuIndisponibleUtilisezTelecharger": "المعاينة غير متاحة: استعمل « تنزيل ».",
       "billetSupprimeDocumentCompris": "تم حذف التذكرة مع الوثيقة.",
       "billetPage": "التذكرة، الصفحة {v}",
-      "billets": " · {length} تذاكر{v}"
+      "billets": " · التذاكر: {length}"
     },
     "questionHelp": {
       "ecrireABledway": "راسل BledWay",
@@ -3229,7 +3230,7 @@ export const ar: PartialMessages = {
       "reponseNonVerifieeParBledway": "جواب غير متحقق منه من طرف BledWay. بخصوص الجمارك أو الوثائق أو التذكرة، تأكد لدى المصدر الرسمي أو الشركة. يُرسل سؤالك إلى المساعد الذي اخترته.",
       "ceuxQuiFontLaTraversee": "من يقومون بالرحلة البحرية يجيبون في الصالون.",
       "lesReponsesDeBledwayPour": "أجوبة BledWay حول {lineLabel}، ثم جهات الاتصال المناسبة.",
-      "reponse2": "{length} جواب{v}",
+      "reponse2": "الأجوبة: {length}",
       "papiersEtTpd": "الوثائق وTPD",
       "heureDArriveeAuPort": "ساعة الوصول إلى الميناء",
       "prixAvecVoiture": "السعر مع سيارة",
@@ -3255,7 +3256,7 @@ export const ar: PartialMessages = {
       "retirerLaPhoto": "احذف الصورة {v}",
       "preparationDeLaPhoto": "جارٍ تجهيز الصورة…",
       "ajouterUnePhoto2": "أضف صورة ({length}/{max})",
-      "flouteAutomatiquement": "{v} مموّه{v2} تلقائيًا. ",
+      "flouteAutomatiquement": "المموّه تلقائيًا: {v}. ",
       "visagesEtPlaquesFloutesAutomatiquement": "تُموَّه الوجوه ولوحات الترقيم تلقائيًا إن وُجدت. ",
       "agrandirLaPhoto": "كبّر الصورة {v}",
       "merciLEquipeVaRegarder": "شكرًا، سيطّلع الفريق على هذه الصورة.",
@@ -3409,7 +3410,7 @@ export const ar: PartialMessages = {
       "cliquezSurLEtapePuis": "المس المرحلة، ثم « أنا هنا » لتقول أين وصلت (ابتداءً من اليوم السابق للمغادرة).",
       "vousEtesIci": "أنت هنا",
       "affichee": " · معروضة",
-      "voyageurBledwayACetteEtape": "{count} مسافر{v} من BledWay في هذه المرحلة"
+      "voyageurBledwayACetteEtape": "مسافرون من BledWay في هذه المرحلة: {count}"
     },
     "routePreview": {
       "ceQueVousObtenez": "ما تحصل عليه",
@@ -3775,7 +3776,7 @@ export const ar: PartialMessages = {
       "entreeDuPort": "مدخل الميناء",
       "fileDesVehicules": "طابور المركبات",
       "receptionDuNavire": "استقبال السفينة",
-      "demande": " · {open} طلب{v}",
+      "demande": " · الطلبات: {open}",
       "proposerVotreAide": "اعرض مساعدتك",
       "demanderDeLAide2": "اطلب المساعدة",
       "personneSEnRoute": "{responders} شخص(أشخاص) في الطريق"
@@ -3989,7 +3990,7 @@ export const ar: PartialMessages = {
       "lesCompagnies": "الشركات",
       "lignesFlotteEtContacts": "الخطوط، الأسطول وجهات الاتصال",
       "tousOuverts": "كلها مفتوحة",
-      "temporairementFerme2": "{closed} مغلق{v} مؤقتًا",
+      "temporairementFerme2": "مغلقة مؤقتًا: {closed}",
       "port": "ميناء {deName}",
       "voirLesPortsSurLa": " عرض الموانئ على الخريطة",
       "lesPortsEnChiffres": "الموانئ بالأرقام",
@@ -4022,7 +4023,7 @@ export const ar: PartialMessages = {
       "dureeAConfirmer": "المدة في انتظار التأكيد",
       "prochainDepartLe": " · المغادرة القادمة يوم {formatDate}",
       "aucunDepartPublie": " · لا توجد مغادرة منشورة",
-      "gareMaritimeLigneDeFerry": "المحطة البحرية {deName} ({countryname}): {length} خط{v} عبّارات نحو {v2}.",
+      "gareMaritimeLigneDeFerry": "المحطة البحرية {deName} ({countryname}): خطوط العبّارات نحو {v2}، عددها {length}.",
       "port": "ميناء · {countryname}{v}",
       "ferryAuPort": "العبّارة في ميناء {deName}",
       "lignesMaritimesProchainsDepartsCompagnies": "الخطوط البحرية، المغادرات القادمة، الشركات وخدمات ميناء {deName}.",
@@ -4887,7 +4888,7 @@ export const ar: PartialMessages = {
       "actualitesBledway": "أخبار BledWay",
       "tout": "الكل",
       "navire": "سفينة",
-      "traverseeConcernee": " · {count} رحلة بحرية معنية{v}{v2}",
+      "traverseeConcernee": " · الرحلات البحرية المعنية: {count}",
       "rienDeNouveauCesTrois": "لا جديد في الأسابيع الثلاثة الأخيرة",
       "termine": "منتهٍ",
       "plusAnciennes": "الأقدم",
@@ -5211,7 +5212,7 @@ export const ar: PartialMessages = {
       "sansReponse": "بلا رد",
       "ficheMiseAJourLes": "تم تحديث البطاقة: المسافرون يرون النسخة الجديدة الآن.",
       "propositionRetiree": "تم سحب الاقتراح.",
-      "enregistrerModification": "حفظ {length} تعديل{v}",
+      "enregistrerModification": "حفظ التعديلات ({length})",
       "reserverSurLeSite": "احجز على الموقع",
       "contacterLeServiceClient": "اتصل بخدمة الزبائن",
       "reclamationEtDroitsDesPassagers": "الشكاوى وحقوق المسافرين",
@@ -5488,8 +5489,8 @@ export const ar: PartialMessages = {
       "rienASignalerPourLe": "لا شيء يُذكر حاليًا",
       "infosBledwayEtVoyageursSur": "معلومات BledWay والمسافرين في عين المكان",
       "signaler": " أبلغ",
-      "infoBledway": "{official} معلومة{v} من BledWay",
-      "signalementVoyageur": "{travellers} بلاغ{v} من المسافرين{v2}",
+      "infoBledway": "معلومات من BledWay: {official}",
+      "signalementVoyageur": "بلاغات المسافرين: {travellers}",
       "voir": "عرض {v}"
     },
     "liveRoom": {
@@ -5554,7 +5555,7 @@ export const ar: PartialMessages = {
       "equipeBledway": "فريق BledWay",
       "invite": "ضيف",
       "inviteAutreTraversee": "ضيف · رحلة بحرية أخرى",
-      "message2": " · {v} رسالة{v2}",
+      "message2": " · الرسائل: {v}",
       "messagesPrivesNonLus": "رسائل خاصة، {dmUnread} غير مقروءة",
       "enLigne": "{online} متصل",
       "messagePriveA": "رسالة خاصة إلى {pseudo}",
@@ -5713,7 +5714,7 @@ export const ar: PartialMessages = {
       "triste": "حزين",
       "grrr": "غاضب",
       "votreReaction": "تفاعلك: {label}",
-      "reaction": "{total} تفاعل{v}"
+      "reaction": "التفاعلات: {total}"
     },
     "portFilters": {
       "rechercherUnPort": "ابحث عن ميناء…",
@@ -5757,17 +5758,17 @@ export const ar: PartialMessages = {
       "bateauxAuPort": "السفن في الميناء",
       "prochainsBateaux": "السفن القادمة",
       "aucunBateauAQuaiNi": "لا توجد سفينة على الرصيف ولا منتظرة خلال 48 ساعة.",
-      "vuAQuai": "{seen} شوهدت{v} على الرصيف",
-      "attenduDApresLHoraire": "{expected} منتظرة{v} حسب الموعد",
+      "vuAQuai": "شوهدت على الرصيف: {seen}",
+      "attenduDApresLHoraire": "منتظرة حسب الموعد: {expected}",
       "enEmbarquement": "{boarding} في الصعود",
-      "voyageurBledway": "{travellers} مسافر{v} على BledWay",
+      "voyageurBledway": "مسافرون على BledWay: {travellers}",
       "vers2": "نحو",
       "depuis": "من"
     },
     "portPassage": {
       "ouEnEtesVous": "أين وصلت؟",
       "merciCEstPartageDans": " شكرًا، تمت المشاركة في الصالون.",
-      "voyageurBledway": "{n} مسافر{v} على BledWay",
+      "voyageurBledway": "مسافرون على BledWay: {n}",
       "auPortDe": "في ميناء {portName}",
       "aQuaiDepuis": "على الرصيف منذ {formatDocked}",
       "encoreDansLePort": "{voyageurs} ما زالوا في الميناء",
@@ -5836,7 +5837,7 @@ export const ar: PartialMessages = {
       "signalerCetAvis": "الإبلاغ عن هذا التقييم",
       "sur5": "{scoreLabel} من 5",
       "ficheDuPortDe": "بطاقة ميناء {name}",
-      "ligneDepartAVenir": "{size} خط{v} · {length} مغادرة{v2} قادمة",
+      "ligneDepartAVenir": "الخطوط: {size} · المغادرات القادمة: {length}",
       "salon": "الصالون",
       "questions": "الأسئلة",
       "signaler": "أبلغ",
@@ -5902,7 +5903,7 @@ export const ar: PartialMessages = {
       "avis": " تقييم",
       "soyezLePremierANoter": "كن أول من يقيّم",
       "noter": "قيّم {subject}",
-      "donnerEtoileA": "أعطِ {n} نجمة{v} لـ {subject}",
+      "donnerEtoileA": "أعطِ {subject} التقييم: {n} من 5 نجوم",
       "decevant": "مخيّب",
       "bof": "عادي",
       "correct": "مقبول",
@@ -6099,8 +6100,8 @@ export const ar: PartialMessages = {
       "voirLOffreSurBudget": "عرض العرض على {bookingSite} · الميزانية المقدَّرة {formatEuro} ({formatFareRange})",
       "departHeuresLocalesVerifiezAupres": "⛴️ {name} → {name2} · {formatShortDay} · المغادرة {depTime}{v} (بالتوقيت المحلي){v2}\nتحقّق لدى الشركة. عبر BledWay",
       "tous": "الكل",
-      "depart": "{v}، {count} مغادرة{v2}",
-      "depart2": "{count} مغادرة{v}",
+      "depart": "{v}، المغادرات: {count}",
+      "depart2": "المغادرات: {count}",
       "nUds": " · {v} عقدة",
       "calendrierTheoriqueLaRotationHabituelle": "تقويم نظري: الدورة المعتادة للسفينة، لم تطرحها الشركة للبيع بعد.",
       "estime": "تقديري",
@@ -6210,7 +6211,7 @@ export const ar: PartialMessages = {
       "tousPorts": "كل الموانئ",
       "retourADefinir": "العودة لم تُحدَّد",
       "datesFlexibles": "تواريخ مرنة",
-      "depart2": "{length} مغادرة{v}",
+      "depart2": "المغادرات: {length}",
       "inverserLeSensActuellement": "عكس الاتجاه: حاليًا {v}",
       "ajouter": "+ إضافة",
       "sansVehicule": " · بلا مركبة",
@@ -6481,7 +6482,7 @@ export const ar: PartialMessages = {
       "estPartageAvecLesVoyageurs": " » تمّت مشاركته مع المسافرين.",
       "votreHumeur": "مزاجك",
       "etVotreHumeur": "وكيف مزاجك؟",
-      "voyageurBledway": "{n} مسافر{v} على BledWay"
+      "voyageurBledway": "مسافرون على BledWay: {n}"
     },
     "tripProfile": {
       "votreVehicule": "مركبتك",
@@ -6511,7 +6512,7 @@ export const ar: PartialMessages = {
       "t03AnsIndicatif": "0–3 سنوات (تقريبي)",
       "animaux": "الحيوانات",
       "chienChat": "كلب، قط",
-      "bebe": "{babies} رضيع{v}",
+      "bebe": "الرضّع: {babies}",
       "aucunVoyageur": "لا مسافر",
       "retirer": "إزالة: {label}",
       "ajouter": "إضافة: {label}"
@@ -6583,7 +6584,7 @@ export const ar: PartialMessages = {
       "verifiezVotreTraverseeAupresDe": "تحقّق من رحلتك البحرية لدى الشركة",
       "voirLaSource": "عرض المصدر ",
       "unNavire": "سفينة",
-      "voirInfoSurCeNavire": "عرض {count} معلومة{v} عن هذه السفينة",
+      "voirInfoSurCeNavire": "عرض معلومات هذه السفينة ({count})",
       "source": " · المصدر: {source}"
     },
     "vesselAlertDepartures": {

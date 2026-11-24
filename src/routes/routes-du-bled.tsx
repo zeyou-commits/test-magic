@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
   BedDouble,
@@ -382,6 +382,40 @@ function RoutesDuBledPage() {
     retry: false,
   });
 
+  // Les autres chemins aussi partent de la maison et finissent au village : leurs deux bouts hors
+  // grands axes sont tracés (même clé que le chemin choisi, donc déjà prêts si on le choisit ensuite).
+  const autres = useMemo(() => {
+    const vus = new Set<string>();
+    const out: { cle: string; joint: LonLat; sortie: LonLat }[] = [];
+    for (const c of list) {
+      if (c === sel) continue;
+      const cle = `${c.eu.joint.join()}|${c.dz.sortie.join()}`;
+      if (vus.has(cle)) continue;
+      vus.add(cle);
+      out.push({ cle, joint: c.eu.joint, sortie: c.dz.sortie });
+    }
+    return out.slice(0, 8);
+  }, [list, sel]);
+  const geoAutres = useQueries({
+    queries: autres.map((a) => ({
+      queryKey: ["routes-du-bled", "geo", from?.point, to?.point, a.joint, a.sortie],
+      queryFn: () =>
+        calculateRoadGeometry({
+          data: {
+            origin: from!.point,
+            destination: to!.point,
+            departurePort: a.joint,
+            arrivalPort: a.sortie,
+          },
+        }),
+      enabled: Boolean(from && to),
+      staleTime: Infinity,
+      retry: false,
+    })),
+  });
+  const geoDe = new Map(autres.map((a, i) => [a.cle, geoAutres[i]?.data]));
+  const geoCle = geoAutres.map((q) => (q.data ? 1 : 0)).join("");
+
   // Le carnet de chaque route affichée ; celui de la route choisie suit le vrai tracé.
   // Les lieux à poser dans le carnet : les miens (en attente, refusés, publiés), et ceux des voyageurs
   // publiés loin des routes relevées (la fin de route vers Tindouf, par exemple), que la route ne montre pas.
@@ -549,8 +583,13 @@ function RoutesDuBledPage() {
         if (d.chain) out.push({ id: d.port, coords: d.chain.line, kind: "autre" });
     for (const c of list) {
       if (c === sel) continue;
+      // De la maison à l'autoroute et de la sortie au village : le vrai tracé dès qu'il est calculé,
+      // un trait direct en attendant, pour que le chemin ne commence jamais dans le vide.
+      const g = from && to ? geoDe.get(`${c.eu.joint.join()}|${c.dz.sortie.join()}`) : undefined;
+      if (from) out.push({ id: c.id, coords: g?.toPort ?? [from.point, c.eu.joint], kind: "autre" });
       if (c.eu.chain) out.push({ id: c.id, coords: c.eu.chain.line, kind: "autre" });
       if (c.dz.chain) out.push({ id: c.id, coords: c.dz.chain.line, kind: "autre" });
+      if (to) out.push({ id: c.id, coords: g?.fromPort ?? [c.dz.sortie, to.point], kind: "autre" });
     }
     if (sel && from && to) {
       const pe = portPoint(routes, sel.eu.port);
@@ -566,7 +605,8 @@ function RoutesDuBledPage() {
       }
     }
     return out;
-  }, [routes, from, to, ports, dz, list, sel, geo.data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- geoDe suit geoCle
+  }, [routes, from, to, ports, dz, list, sel, geo.data, geoCle]);
 
   const mapPins = useMemo<MapPin[]>(() => {
     const pins: MapPin[] = [];

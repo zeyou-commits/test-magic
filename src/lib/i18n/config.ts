@@ -11,10 +11,10 @@ export const DEFAULT_LOCALE: Locale = "fr";
 export const ENABLED_LOCALES: readonly Locale[] = ["fr", "ar"];
 
 /**
- * Suivre la langue du téléphone. Désactivé tant que l'arabe a encore des textes en français
- * (libellés construits dans src/lib, noms de ports) : la langue ne change que sur choix du visiteur.
+ * Suivre la langue du téléphone : un téléphone réglé en arabe ouvre BledWay en arabe. Le choix fait
+ * dans le menu « Langue » (menu ☰, pied de page) passe toujours avant et reste enregistré.
  */
-export const FOLLOW_DEVICE_LANGUAGE = false;
+export const FOLLOW_DEVICE_LANGUAGE = true;
 
 /** Langues qui s'écrivent de droite à gauche. */
 const RTL_LOCALES: readonly Locale[] = ["ar"];

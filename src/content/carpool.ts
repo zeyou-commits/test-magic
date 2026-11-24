@@ -1,5 +1,6 @@
+import { lazyContent } from "@/lib/i18n/content";
 import type { CarpoolPlace } from "./types";
-export const carpoolPlaces: CarpoolPlace[] = [
+export const carpoolPlaces: CarpoolPlace[] = lazyContent([
   {
     slug: "grans-salon-a54",
     name: "Grans–Salon-de-Provence",
@@ -52,4 +53,4 @@ export const carpoolPlaces: CarpoolPlace[] = [
       "Confirmez ensemble l'adresse et les conditions d'accès. Le nom d'une ville seul est insuffisant pour un rendez-vous avec plusieurs voitures et des bagages.",
     source: "narbonne",
   },
-];
+]);

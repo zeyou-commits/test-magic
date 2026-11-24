@@ -1,3 +1,4 @@
+import { localizeContent } from "@/lib/i18n/content";
 import {
   VesselDossierCommunity,
   VesselDossierFollow,
@@ -63,7 +64,7 @@ export const Route = createFileRoute("/bateaux/$slug")({
 });
 
 function Boat() {
-  const v = Route.useLoaderData();
+  const v = localizeContent(Route.useLoaderData());
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: routes = [] } = useQuery(routesQuery);

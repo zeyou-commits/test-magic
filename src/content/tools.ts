@@ -1,4 +1,5 @@
-export const toolsCatalog = [
+import { lazyContent } from "@/lib/i18n/content";
+export const toolsCatalog = lazyContent([
   {
     slug: "age-vehicule",
     title: "Âge du véhicule à la déclaration",
@@ -27,5 +28,5 @@ export const toolsCatalog = [
       "Répartir carburant, péages et parking entre les occupants, conducteur compris, avant de rejoindre le port.",
     guide: "covoiturage-avant-ferry",
   },
-] as const;
+] as const);
 export type ToolSlug = (typeof toolsCatalog)[number]["slug"];

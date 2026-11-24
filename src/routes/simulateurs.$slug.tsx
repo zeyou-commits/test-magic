@@ -1,3 +1,4 @@
+import { localizeContent } from "@/lib/i18n/content";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import {
@@ -26,7 +27,7 @@ export const Route = createFileRoute("/simulateurs/$slug")({
   component: Tool,
 });
 function Tool() {
-  const t = Route.useLoaderData();
+  const t = localizeContent(Route.useLoaderData());
   return (
     <SiteLayout>
       <StructuredData

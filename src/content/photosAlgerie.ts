@@ -3,6 +3,7 @@
  * Photos libres de Wikimedia Commons, réduites en WebP (640 et 1280 px) dans
  * public/illustrations/algerie ; l'auteur et la licence s'affichent sous chaque photo.
  */
+import { lazyContent } from "@/lib/i18n/content";
 export type AlgeriaPhoto = {
   slug: string;
   title: string;
@@ -22,7 +23,7 @@ export const LICENSE_URLS: Record<string, string> = {
 export const photoSrc = (photo: AlgeriaPhoto, width: 640 | 1280) =>
   `/illustrations/algerie/${photo.slug}-${width}.webp`;
 
-export const ALGERIA_PHOTOS: AlgeriaPhoto[] = [
+export const ALGERIA_PHOTOS: AlgeriaPhoto[] = lazyContent([
   {
     slug: "cap-carbon-bejaia",
     title: "Le cap Carbon",
@@ -123,4 +124,4 @@ export const ALGERIA_PHOTOS: AlgeriaPhoto[] = [
     source:
       "https://commons.wikimedia.org/wiki/File:Cascade_de_A%C3%AFn_Legradj_%C3%A0_Bordj_Bou_Arreredj.jpg",
   },
-];
+]);

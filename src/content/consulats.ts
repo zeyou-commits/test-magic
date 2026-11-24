@@ -1,4 +1,5 @@
 /** Les 18 postes consulaires d'Algérie en France et les départements qu'ils couvrent. */
+import { lazyContent } from "@/lib/i18n/content";
 export interface Consulat {
   id: string;
   name: string;
@@ -10,7 +11,7 @@ export interface Consulat {
   departments: string[];
 }
 
-export const consulats: Consulat[] = [
+export const consulats: Consulat[] = lazyContent([
   { id: "paris", name: "Consulat général d'Algérie à Paris", address: "1 passage du Trône, 75011 Paris", phone: "01 53 72 07 00", site: "https://consulat-paris-algerie.fr/", rdv: "https://www.consulat-algerie-rdv.fr/Paris/", departments: ["75", "18", "36", "37", "41", "45", "971", "972", "973", "974", "975", "976", "977", "978", "986", "987", "988"] },
   { id: "bobigny", name: "Consulat d'Algérie à Bobigny", address: "17 rue Hector-Berlioz, 93000 Bobigny", phone: "01 41 50 58 58", site: "https://consulat-bobigny-algerie.fr/", rdv: "https://www.consulat-algerie-rdv.fr/Bobigny/", departments: ["93"] },
   { id: "creteil", name: "Consulat d'Algérie à Créteil", address: "9 rue Olof-Palme, parc de la Brèche, 94000 Créteil", phone: "01 46 80 78 00", site: "https://consulat-creteil-algerie.fr/", rdv: "https://consulat-creteil-algerie.fr/plateforme-des-rendez-vous/", departments: ["58", "77", "89", "91", "94"] },
@@ -29,7 +30,7 @@ export const consulats: Consulat[] = [
   { id: "nantes", name: "Consulat d'Algérie à Nantes", address: "57 rue Général-Buat, 44000 Nantes", phone: "02 40 74 38 19", site: "https://consulat-nantes-algerie.fr/", rdv: "https://consulat-nantes-algerie.fr/3228/rdv/", departments: ["22", "29", "35", "44", "49", "53", "56", "72", "79", "85", "86"] },
   { id: "toulouse", name: "Consulat d'Algérie à Toulouse", address: "67 boulevard de Strasbourg, 31000 Toulouse", phone: "05 61 62 97 07", site: "https://consulat-toulouse-algerie.fr/", rdv: "https://www.consulat-algerie-rdv.fr/Toulouse/", departments: ["09", "31", "32", "46", "65", "81", "82"] },
   { id: "montpellier", name: "Consulat d'Algérie à Montpellier", address: "198 rue Yves-Montand, parc 2000, 34080 Montpellier", phone: "04 67 54 54 15", site: "https://consulat-montpellier-algerie.fr/", departments: ["11", "12", "30", "34", "48", "66"] },
-];
+]);
 
 /** Département d'un code postal français (Corse et outre-mer compris). */
 export function departmentFromPostcode(raw: string): string | null {

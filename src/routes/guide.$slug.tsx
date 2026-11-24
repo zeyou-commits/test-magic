@@ -1,3 +1,4 @@
+import { localizeContent } from "@/lib/i18n/content";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { articles } from "@/content/articles";
 import { ArticlePage } from "@/components/editorial/ArticlePage";
@@ -32,6 +33,6 @@ export const Route = createFileRoute("/guide/$slug")({
 });
 
 function ArticleRoute() {
-  const article = Route.useLoaderData();
+  const article = localizeContent(Route.useLoaderData());
   return <ArticlePage article={article} />;
 }

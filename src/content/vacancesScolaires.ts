@@ -1,3 +1,4 @@
+import { lazyContent } from "@/lib/i18n/content";
 import { holidayCalendars as bundled, VACANCES_CHECKED } from "./vacancesScolaires.data";
 
 /**
@@ -40,7 +41,7 @@ export interface HolidayCalendar {
   periods: [HolidayKind, string, string | null, string][];
 }
 
-export const holidayKindLabels: Record<HolidayKind, string> = {
+export const holidayKindLabels: Record<HolidayKind, string> = lazyContent({
   toussaint: "Toussaint",
   noel: "Noël",
   hiver: "Hiver",
@@ -50,9 +51,9 @@ export const holidayKindLabels: Record<HolidayKind, string> = {
   ascension: "Ascension",
   pentecote: "Pentecôte",
   ete: "Été",
-};
+});
 
-export const holidaySources = {
+export const holidaySources = lazyContent({
   fr: {
     name: "Ministère de l'Éducation nationale : calendrier scolaire",
     url: "https://www.education.gouv.fr/calendrier-scolaire-100148",
@@ -61,7 +62,7 @@ export const holidaySources = {
     name: "OpenHolidays : vacances scolaires en Europe (données ouvertes)",
     url: "https://www.openholidaysapi.org",
   },
-} as const;
+} as const);
 
 /** « FR » (toutes zones), « FR:C », « BE:FR »… */
 export type HolidayChoice = string;

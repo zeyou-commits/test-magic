@@ -1,5 +1,6 @@
+import { lazyContent } from "@/lib/i18n/content";
 import type { VesselDossier } from "./types";
-export const vesselDossiers: VesselDossier[] = [
+export const vesselDossiers: VesselDossier[] = lazyContent([
   {
     slug: "jean-nicoli",
     name: "Jean Nicoli",
@@ -139,4 +140,4 @@ export const vesselDossiers: VesselDossier[] = [
     ],
     sources: ["badji"],
   },
-];
+]);

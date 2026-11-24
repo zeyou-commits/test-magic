@@ -11,7 +11,15 @@ export const CATALOGS: Partial<Record<Locale, PartialMessages>> = { fr };
  */
 export async function loadCatalog(locale: Locale): Promise<void> {
   if (CATALOGS[locale]) return;
-  if (locale === "ar") CATALOGS.ar = (await import("./messages/ar")).ar;
+  if (locale === "ar") {
+    const [{ ar }, { arContent }, { setContentDict }] = await Promise.all([
+      import("./messages/ar"),
+      import("./messages/ar.content"),
+      import("./content"),
+    ]);
+    setContentDict("ar", arContent);
+    CATALOGS.ar = ar;
+  }
 }
 
 export type TranslateVars = Record<string, string | number | boolean | null | undefined>;

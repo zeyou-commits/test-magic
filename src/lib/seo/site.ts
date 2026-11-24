@@ -1,4 +1,5 @@
 import config from "../../../seo.config.json";
+import { intlLocale } from "@/lib/i18n/translate";
 
 const origin = new URL(config.siteUrl);
 if (origin.protocol !== "https:" || origin.pathname !== "/" || origin.search || origin.hash) {
@@ -80,6 +81,6 @@ export function breadcrumbSchema(items: { name: string; path: string }[]) {
 }
 
 export const displayDate = (value: string) =>
-  new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeZone: "UTC" }).format(
+  new Intl.DateTimeFormat(intlLocale(), { dateStyle: "long", timeZone: "UTC" }).format(
     new Date(`${value}T00:00:00Z`),
   );

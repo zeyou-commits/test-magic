@@ -1,5 +1,6 @@
+import { lazyContent } from "@/lib/i18n/content";
 import type { Source } from "./types";
-export const sources: Record<string, Source> = {
+export const sources: Record<string, Source> = lazyContent({
   decree: {
     name: "Journal officiel algérien n° 11 du 22 février 2023, décret 23-74, pages 6–7",
     url: "https://www.joradp.dz/FTP/jo-francais/2023/F2023011.pdf",
@@ -85,4 +86,4 @@ export const sources: Record<string, Source> = {
     url: "https://www.data.gouv.fr/datasets/base-nationale-des-lieux-de-covoiturage",
     note: "Référence pour enrichir et actualiser un annuaire ; les informations proviennent de contributeurs et gestionnaires multiples.",
   },
-};
+});

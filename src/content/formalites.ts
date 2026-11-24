@@ -3,6 +3,7 @@
  * Chaque règle cite la page officielle d'où elle vient (lue le 13 novembre 2026).
  * Ce qu'aucune source officielle ne tranche est marqué « à faire confirmer », jamais affirmé.
  */
+import { lazyContent, localizeContent, originalOf, tc } from "@/lib/i18n/content";
 export {
   consulats,
   consulatForDepartment,
@@ -14,7 +15,7 @@ export const FORMALITES_CHECKED = "2026-11-13";
 /** Fin de la mesure qui dispense de visa les binationaux munis d'un document algérien. */
 export const BINATIONAL_MEASURE_END = "31 décembre 2026";
 
-export const formaliteSources = {
+export const formaliteSources = lazyContent({
   "fd-entree": {
     name: "France Diplomatie, Algérie : entrée et séjour",
     short: "France Diplomatie",
@@ -138,7 +139,7 @@ export const formaliteSources = {
     url: "https://helpcenter.balearia.com/hc/fr/articles/24337130398493",
     updated: "lue le 23 novembre 2026",
   },
-} as const satisfies Record<string, { name: string; short: string; url: string; updated?: string }>;
+} as const satisfies Record<string, { name: string; short: string; url: string; updated?: string }>);
 
 export type FormaliteSourceId = keyof typeof formaliteSources;
 
@@ -204,13 +205,13 @@ export type SnStatus = "ok" | "exempt" | "option" | "jdc" | "todo" | "unknown";
  * 12 ans, mesure des binationaux jusqu'à 15 ans, majorité à 18 ans en France et 19 en Algérie).
  * L'âge retenu dans chaque tranche sert aux calculs.
  */
-export const ageBands = [
+export const ageBands = lazyContent([
   { age: 3, label: "Moins de 6 ans", max: 5 },
   { age: 8, label: "6 à 11 ans", max: 11 },
   { age: 13, label: "12 à 15 ans", max: 15 },
   { age: 16, label: "16 ou 17 ans", max: 17 },
   { age: 18, label: "18 ans", max: 18, hint: "Majeur en France, encore mineur en Algérie" },
-] as const;
+] as const);
 export const ageBandOf = (age: number) => ageBands.find((band) => age <= band.max) ?? ageBands[4];
 
 /** Document algérien et passeport du voyage, en une seule réponse. */
@@ -223,7 +224,7 @@ export const fromDzChoice = (choice: DzChoice): Pick<Traveller, "dzDoc" | "dzTra
     : choice === "foreignPass"
       ? { dzDoc: "passeport", dzTravel: "foreign" }
       : { dzDoc: choice, dzTravel: "dz" };
-export const dzChoices: { value: DzChoice; label: string; hint?: string }[] = [
+export const dzChoices: { value: DzChoice; label: string; hint?: string }[] = lazyContent([
   { value: "dzPass", label: "Passeport algérien valide", hint: "Emporté pour le voyage, avec l'autre passeport" },
   {
     value: "foreignPass",
@@ -233,15 +234,15 @@ export const dzChoices: { value: DzChoice; label: string; hint?: string }[] = [
   { value: "cnibe", label: "Carte d'identité algérienne seulement", hint: "Même expirée" },
   { value: "passeportExpire", label: "Passeport algérien expiré" },
   { value: "aucun", label: "Aucun document algérien" },
-];
+]);
 
 /** Les papiers algériens qu'un binational peut avoir, plusieurs à la fois. */
 export type DzHas = "passeport" | "cnibe" | "passeportExpire";
-export const dzHasOptions: { value: DzHas; label: string; hint?: string }[] = [
+export const dzHasOptions: { value: DzHas; label: string; hint?: string }[] = lazyContent([
   { value: "passeport", label: "Un passeport algérien valide" },
   { value: "cnibe", label: "Une carte d'identité algérienne", hint: "Biométrique, même expirée" },
   { value: "passeportExpire", label: "Un passeport algérien expiré", hint: "Biométrique" },
-];
+]);
 /** Les papiers cochés ; pour d'anciennes réponses, on part du document retenu. */
 export const dzHasOf = (t: Traveller): DzHas[] =>
   t.dzHas ?? (t.dzDoc === "aucun" ? [] : [t.dzDoc]);
@@ -349,8 +350,8 @@ export function travellerLabel(t: Traveller, all: Traveller[]): string {
   if (name) return name;
   const same = all.filter((x) => x.kind === t.kind);
   const n = same.findIndex((x) => x.id === t.id) + 1;
-  if (t.kind === "adult") return n === 1 ? "Vous" : `Adulte ${n}`;
-  return `Mineur ${n}`;
+  if (t.kind === "adult") return tc(n === 1 ? "Vous" : `Adulte ${n}`);
+  return tc(`Mineur ${n}`);
 }
 
 /* ------------------------------------------------------------------ Ce qu'il faut faire */
@@ -360,7 +361,7 @@ export type When = "first" | "weeks" | "months3" | "lastweek" | "pack" | "there"
 
 export const whenOrder: When[] = ["first", "weeks", "months3", "lastweek", "pack", "there", "back"];
 
-export const whenLabels: Record<When, { title: string; hint: string }> = {
+export const whenLabels: Record<When, { title: string; hint: string }> = lazyContent({
   first: {
     title: "À lancer tout de suite",
     hint: "Aucun délai n'est publié : plus tôt c'est lancé, mieux c'est.",
@@ -380,7 +381,7 @@ export const whenLabels: Record<When, { title: string; hint: string }> = {
   },
   there: { title: "Sur place", hint: "Pendant le séjour en Algérie." },
   back: { title: "Pour rentrer", hint: "Le retour se prépare dès le départ." },
-};
+});
 
 export interface Task {
   id: string;
@@ -411,19 +412,19 @@ export interface Task {
  * Le site proposé pour réserver un hôtel en Algérie. Modifiable dans l'admin (Données de
  * référence) ; cette valeur sert tant que le réglage n'est pas lu, ou s'il est invalide.
  */
-export const HOTEL_BOOKING_LINK = {
+export const HOTEL_BOOKING_LINK = lazyContent({
   label: "Chercher un hôtel sur Booking.com",
   href: "https://www.booking.com/country/dz.fr.html",
-};
+});
 
 /** Le total des frais connus (visas…), pour l'annoncer en tête du bilan. */
 export const totalCost = (tasks: Task[]) => tasks.reduce((sum, t) => sum + (t.cost?.eur ?? 0), 0);
 
 /** Tarif de l'ambassade pour un visa de 90 jours ou moins, selon l'âge, plus 30 € de frais de dossier. */
 export function visaCost(age: number): { label: string; eur: number } {
-  if (age < 6) return { label: "Visa gratuit · 30 € de dossier", eur: 30 };
-  if (age < 12) return { label: "40 € + 30 € de dossier", eur: 70 };
-  return { label: "80 € + 30 € de dossier", eur: 110 };
+  if (age < 6) return { label: tc("Visa gratuit · 30 € de dossier"), eur: 30 };
+  if (age < 12) return { label: tc("40 € + 30 € de dossier"), eur: 70 };
+  return { label: tc("80 € + 30 € de dossier"), eur: 110 };
 }
 
 /**
@@ -433,7 +434,8 @@ export function visaCost(age: number): { label: string; eur: number } {
 export function paperKind(task: Task): "step" | "document" | "tip" {
   if (task.advice || task.id === "chambres-separees" || task.id === "majorite-19") return "tip";
   if (task.id.startsWith("visa-")) return "step";
-  return /^(Le|La|Les|L'|Un|Une|Ses|Son|Sa) /.test(task.title) ? "document" : "step";
+  // Le titre français décide, même quand la liste est affichée dans une autre langue.
+  return /^(Le|La|Les|L'|Un|Une|Ses|Son|Sa) /.test(originalOf(task).title) ? "document" : "step";
 }
 
 /** À faire (rendez-vous, dossier) ou seulement à emporter ? */
@@ -907,7 +909,7 @@ export function tasksFor(a: Answers): Task[] {
       consulate: "la carte consulaire",
     });
 
-  return tasks.sort((x, y) => whenOrder.indexOf(x.when) - whenOrder.indexOf(y.when));
+  return localizeContent(tasks.sort((x, y) => whenOrder.indexOf(x.when) - whenOrder.indexOf(y.when)));
 }
 
 /** Pour un résumé : les visas sur une ligne (« demander les visas (Vous, Enfant 1) »). */
@@ -921,7 +923,7 @@ export function taskSummaries(list: Task[]): string[] {
       if (t !== visas[0]) continue;
       const who = [...new Set(visas.flatMap((v) => v.who))];
       out.push(
-        `${visas.length > 1 ? "demander les visas" : "demander le visa"}${who.length ? ` (${who.join(", ")})` : ""}`,
+        `${tc(visas.length > 1 ? "demander les visas" : "demander le visa")}${who.length ? ` (${who.join(", ")})` : ""}`,
       );
     } else out.push(lower(t.title));
   }
@@ -938,7 +940,7 @@ export function consulateReasons(a: Answers): string {
     .map((t) => (t.who.length ? `${t.consulate} (${t.who.join(", ")})` : t.consulate!));
   const unique = [...new Set(reasons)];
   if (unique.length <= 1) return unique[0] ?? "";
-  return `${unique.slice(0, -1).join(", ")} et ${unique.at(-1)}`;
+  return tc(`${unique.slice(0, -1).join(", ")} et ${unique.at(-1)}`);
 }
 
 /** Situations sans papier particulier : on le dit, pour rassurer. */
@@ -956,7 +958,7 @@ export function reassurances(a: Answers): string[] {
     );
   if (!a.travellers.some((t) => t.nat === "etr"))
     notes.push("Personne n'a besoin de visa dans votre groupe.");
-  return notes;
+  return localizeContent(notes);
 }
 
 /** Quand s'y prendre : uniquement les délais publiés ; sinon, on le dit. */
@@ -966,7 +968,7 @@ export const delais: {
   delai: string;
   conseil: string;
   sources: FormaliteSourceId[];
-}[] = [
+}[] = lazyContent([
   {
     demarche: "Visa (passeport étranger)",
     ou: "Consulat d'Algérie du lieu de résidence, sur rendez-vous",
@@ -1012,7 +1014,7 @@ export const delais: {
     conseil: "Seulement si l'enfant part sans aucun de ses parents.",
     sources: ["sp-mineur"],
   },
-];
+]);
 
 /* ------------------------------------------------------------------ Progression enregistrée */
 

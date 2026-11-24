@@ -1,3 +1,4 @@
+import { localizeContent } from "@/lib/i18n/content";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import {
@@ -28,7 +29,7 @@ export const Route = createFileRoute("/covoiturage/$slug")({
   component: Place,
 });
 function Place() {
-  const p = Route.useLoaderData();
+  const p = localizeContent(Route.useLoaderData());
   return (
     <SiteLayout>
       <Breadcrumbs

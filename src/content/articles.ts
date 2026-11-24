@@ -1,5 +1,6 @@
+import { lazyContent } from "@/lib/i18n/content";
 import type { Article } from "./types";
-export const articles: Article[] = [
+export const articles: Article[] = lazyContent([
   {
     slug: "importer-voiture-moins-3-ans-algerie",
     topic: "vehicules",
@@ -853,4 +854,4 @@ export const articles: Article[] = [
       },
     ],
   },
-];
+]);

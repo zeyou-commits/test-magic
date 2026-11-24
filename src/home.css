@@ -204,6 +204,39 @@ html {
   gap: 8px;
   align-items: center;
 }
+/* Bouton de langue de la barre du haut : « عربي » sur le site en français, « FR » en arabe. */
+.bw-lang-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  padding-inline: 10px;
+  border: 1px solid #c5cec6;
+  border-radius: 999px;
+  background: #fff;
+  color: #0f3d2e;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+/* Tant que le menu ☰ existe (téléphone, tablette), le « ? » y est rangé sous le nom « FAQ ». */
+@media (max-width: 1023px) {
+  .bw-header .bw-question-button {
+    display: none;
+  }
+}
+.bw-lang-toggle:hover {
+  background: #eef5ef;
+}
+.bw-lang-toggle:focus-visible {
+  outline: 2px solid #1f7a4d;
+  outline-offset: 2px;
+}
+.bw-lang-toggle span[lang="ar"],
+.bw-lang-toggle[lang="ar"] span {
+  font-family: "Noto Sans Arabic", system-ui, sans-serif;
+}
 .bw-account-link {
   min-height: 44px;
   border: 1px solid #c5cec6;

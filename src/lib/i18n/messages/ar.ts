@@ -3280,6 +3280,7 @@ export const ar: PartialMessages = {
     },
     "questionButton": {
       "uneQuestion": "عندك سؤال؟",
+      "faq": "الأسئلة الشائعة",
       "lesReponsesDeBledwayD": "أجوبة BledWay أولًا، ثم جهات الاتصال المناسبة عند الحاجة."
     },
     "phoneInstallCard": {
@@ -7200,6 +7201,7 @@ export const ar: PartialMessages = {
   },
   "language": {
     "label": "اللغة",
-    "soon": "قريبًا"
+    "soon": "قريبًا",
+    "switchTo": "عرض BledWay بـ{lang}"
   }
 };

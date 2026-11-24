@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { CircleHelp } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -11,12 +11,21 @@ import { canAutoFocus, keepKeyboardClosedOnTouch } from "@/lib/utils";
 /** « Demander aux voyageurs » depuis une autre page : la carte ouvre la liste des salons en arrivant. */
 export const HOME_ACTION_KEY = "bledway:open-home-action";
 
+/** La ligne « FAQ » du menu ☰ ouvre cette même fenêtre. */
+export const OPEN_QUESTIONS_EVENT = "bledway:open-questions";
+
 /**
- * « Une question ? » à portée de main sur toutes les pages : les réponses de BledWay d'abord, puis
- * voyageurs, compagnie, BledWay et assistant IA. Un point d'interrogation, pas un mot de plus au menu.
+ * « Une question ? » sur toutes les pages : les réponses de BledWay d'abord, puis voyageurs,
+ * compagnie, BledWay et assistant IA. S'ouvre depuis la ligne « FAQ » du menu ☰ ; `showTrigger`
+ * garde le point d'interrogation visible là où on le place.
  */
-export function QuestionButton() {
+export function QuestionButton({ showTrigger = true }: { showTrigger?: boolean }) {
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const show = () => setOpen(true);
+    window.addEventListener(OPEN_QUESTIONS_EVENT, show);
+    return () => window.removeEventListener(OPEN_QUESTIONS_EVENT, show);
+  }, []);
   const navigate = useNavigate();
   const askTravellers = () => {
     setOpen(false);
@@ -33,15 +42,17 @@ export function QuestionButton() {
   };
   return (
     <>
-      <button
-        type="button"
-        className="bw-question-button"
-        aria-label={tr("ui.questionButton.uneQuestion")}
-        title={tr("ui.questionButton.uneQuestion")}
-        onClick={() => setOpen(true)}
-      >
-        <CircleHelp size={21} aria-hidden />
-      </button>
+      {showTrigger ? (
+        <button
+          type="button"
+          className="bw-question-button"
+          aria-label={tr("ui.questionButton.uneQuestion")}
+          title={tr("ui.questionButton.uneQuestion")}
+          onClick={() => setOpen(true)}
+        >
+          <CircleHelp size={21} aria-hidden />
+        </button>
+      ) : null}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent onOpenAutoFocus={keepKeyboardClosedOnTouch} className="bw-room-picker bw-room-picker--questions max-w-none">
           <DialogHeader>

@@ -21,7 +21,7 @@ import {
 } from "./menu";
 
 export { menuFamilies } from "./menu";
-import { LanguageSwitcher, useT, type MessageKey } from "@/lib/i18n";
+import { LanguageSwitcher, LanguageToggle, useT, type MessageKey } from "@/lib/i18n";
 import {
   Anchor,
   ArrowUpRight,
@@ -248,6 +248,8 @@ export function SiteHeader() {
               {t("nav.myTrip")}
             </Link>
           ) : null}
+          <LanguageToggle />
+          {/* « ? » sur grand écran seulement : ailleurs, c'est la ligne « FAQ » du menu ☰. */}
           <QuestionButton />
           <span className="hidden md:inline-flex" data-tour="profile">
             <UserMenu compact iconOnly />

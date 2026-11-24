@@ -201,6 +201,7 @@ export const fr = {
     ar: "العربية",
     en: "English",
     soon: "bientôt",
+    switchTo: "Afficher BledWay en {lang}",
   },
 } as const;
 

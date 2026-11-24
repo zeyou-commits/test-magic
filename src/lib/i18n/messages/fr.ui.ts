@@ -3474,6 +3474,7 @@ export const ui = {
   },
   questionButton: {
     uneQuestion: "Une question ?",
+    faq: "FAQ",
     lesReponsesDeBledwayD: "Les réponses de BledWay d'abord, puis les bons contacts si besoin.",
   },
   phoneInstallCard: {

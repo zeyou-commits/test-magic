@@ -6,6 +6,7 @@ import {
   CalendarCheck,
   ChevronLeft,
   ChevronRight,
+  CircleHelp,
   ClipboardList,
   House,
   Info,
@@ -24,6 +25,8 @@ import { useUnreadNoticeCount } from "@/components/panel/FlashCenter";
 import { OPEN_ROOM_PICKER_EVENT } from "@/lib/ferry/chatDemo";
 import { openVoyage, useVoyageTrip } from "@/lib/ferry/voyageTrip";
 import { LanguageSwitcher, tr, useT } from "@/lib/i18n";
+import { afterOverlayClose } from "@/lib/ferry/backStack";
+import { OPEN_QUESTIONS_EVENT } from "./QuestionButton";
 import {
   familyById,
   familyIsActive,
@@ -306,6 +309,17 @@ function RootLevel({
           <LogIn size={18} aria-hidden /> {tr("ui.userMenu.seConnecter")}
         </Link>
       )}
+
+      <button
+        type="button"
+        className="bw-menu-link"
+        onClick={() => {
+          onNavigate();
+          afterOverlayClose(() => window.dispatchEvent(new Event(OPEN_QUESTIONS_EVENT)));
+        }}
+      >
+        <CircleHelp size={18} aria-hidden /> {tr("ui.questionButton.faq")}
+      </button>
 
       {menuFamilies
         .filter((family) => !["prepare", "live", "lines"].includes(family.id))

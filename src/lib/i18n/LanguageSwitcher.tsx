@@ -66,7 +66,7 @@ export function LanguageToggle({ className = "" }: { className?: string }) {
         <button type="button" className={`bw-lang-toggle ${className}`} lang={locale} aria-label={label} title={label}>
           <Flag locale={locale} />
           <span>{SHORT[locale]}</span>
-          <ChevronDown size={14} className="bw-lang-toggle__chevron" aria-hidden="true" />
+          <ChevronDown size={12} className="bw-lang-toggle__chevron" aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={8} className="bw-lang-menu">

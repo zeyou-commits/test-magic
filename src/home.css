@@ -233,7 +233,15 @@ html {
   overflow: hidden;
 }
 .bw-lang-toggle {
-  padding-inline-end: 7px;
+  /* Moins haut : 26 px, drapeau 18 px. */
+  gap: 5px;
+  height: 26px;
+  padding-inline: 3px 6px;
+  font-size: 12px;
+}
+.bw-lang-toggle .bw-lang-flag {
+  width: 18px;
+  height: 18px;
 }
 .bw-lang-toggle__chevron {
   flex: none;
@@ -245,21 +253,26 @@ html {
 }
 /* Liste des langues : une ligne par langue ouverte, écrite dans sa langue, la langue affichée cochée. */
 .bw-lang-menu {
-  min-width: 176px;
-  padding: 6px;
+  min-width: 160px;
+  padding: 4px;
   border: 1px solid #dfe6e0;
   border-radius: 16px;
   box-shadow: 0 10px 30px #0f3d2e24;
 }
 .bw-lang-menu__item {
   gap: 10px;
-  min-height: 44px;
-  padding-inline: 10px;
-  border-radius: 10px;
+  min-height: 34px;
+  padding-block: 4px;
+  padding-inline: 8px;
+  border-radius: 9px;
   color: #0f3d2e;
-  font-size: 14.5px;
+  font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
+}
+.bw-lang-menu__item .bw-lang-flag {
+  width: 18px;
+  height: 18px;
 }
 .bw-lang-menu__item[lang="ar"] {
   font-family: "BW Arabic", system-ui, sans-serif;

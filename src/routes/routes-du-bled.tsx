@@ -185,6 +185,9 @@ function RoutesDuBledPage() {
   // Une seule route dépliée à la fois ; « null » : toutes repliées.
   const [openId, setOpenId] = useState<string | null>(null);
   const [services, setServices] = useState<Service[]>(["priere"]);
+  // Tant que le voyageur n'a pas touché aux filtres, les étapes gardent leurs couleurs ;
+  // ensuite la carte obéit aux filtres partout, étapes numérotées comprises.
+  const [filtre, setFiltre] = useState(false);
   const [carAt, setCarAt] = useState<string | null>(null);
   // « Agrandir » : la carte en plein écran ; Échap ou « Réduire » pour revenir.
   const [grand, setGrand] = useState(false);
@@ -490,6 +493,7 @@ function RoutesDuBledPage() {
   const focusPas = (id: string) => {
     if (sel) setOpenId(sel.id);
     setFocusId(id);
+    setCarAt(id);
     // Téléphone : la carte reste collée en haut, l'étape vient juste sous elle (scroll-margin-top).
     const pc = window.matchMedia("(min-width: 1024px)").matches;
     setTimeout(
@@ -510,28 +514,8 @@ function RoutesDuBledPage() {
       60,
     );
   };
-  // La 504 de la carte suit l'étape lue dans le carnet ouvert.
+  // La 504 et la carte ne bougent qu'au clic sur une étape : lire ou survoler le carnet ne déplace rien.
   const bookRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const root = bookRef.current;
-    if (!root || !openId || openId !== sel?.id) return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        const vis = entries.filter((e) => e.isIntersecting);
-        const top = vis.sort((x, y) => x.boundingClientRect.top - y.boundingClientRect.top)[0];
-        const id = (top?.target as HTMLElement | undefined)?.dataset["pas"];
-        if (id) setCarAt(id);
-      },
-      // Téléphone : on lit sous la carte collée en haut, la ligne de lecture descend.
-      {
-        rootMargin: window.matchMedia("(min-width: 1024px)").matches
-          ? "-35% 0px -45% 0px"
-          : "-66% 0px -18% 0px",
-      },
-    );
-    root.querySelectorAll("[data-pas]").forEach((el) => io.observe(el));
-    return () => io.disconnect();
-  }, [openId, sel, selCarnet]);
 
   // La carte : le chemin choisi en avant, les autres chemins en léger, les bons plans dessus.
   const mapLines = useMemo<MapLine[]>(() => {
@@ -588,14 +572,21 @@ function RoutesDuBledPage() {
       const lieu =
         p.k === "priere" ? (p.priere ?? p.etape?.best ?? p.lieu) : (p.etape?.best ?? p.lieu);
       if (lieu) main.add(lieu.id);
+      const k = PIN_KIND[p.k] ?? lieu?.k ?? "aire";
+      const vide = p.k === "vide" || p.k === "nuitvide";
+      // L'étape répond-elle à un des services cochés ? (sa nature, ou ce qu'offre son lieu)
+      const repond = services.some(
+        (v) => v === k || (lieu ? offre(lieu, v) : false) || (v === "priere" && p.k === "priere"),
+      );
       pins.push({
         id: p.id,
         lat: p.point[1],
         lon: p.point[0],
-        k: PIN_KIND[p.k] ?? lieu?.k ?? "aire",
+        k,
         label: String(p.n),
         main: true,
-        vide: p.k === "vide" || p.k === "nuitvide",
+        vide,
+        eteinte: filtre && services.length > 0 && !vide && !repond,
       });
     }
     // Les services cochés, le long de la route choisie.
@@ -616,7 +607,7 @@ function RoutesDuBledPage() {
               main: false,
             });
     return pins;
-  }, [sel, selCarnet, services]);
+  }, [sel, selCarnet, services, filtre]);
   const mapVilles = useMemo<MapPlace[]>(
     () =>
       (selCarnet?.pas ?? [])
@@ -778,11 +769,12 @@ function RoutesDuBledPage() {
                       className="rdb-filter"
                       data-k={id}
                       aria-pressed={services.includes(id)}
-                      onClick={() =>
+                      onClick={() => {
+                        setFiltre(true);
                         setServices((v) =>
                           v.includes(id) ? v.filter((x) => x !== id) : [...v, id],
-                        )
-                      }
+                        );
+                      }}
                     >
                       <Icon className="size-3.5" aria-hidden />
                       {tr(`ui.pageRoutesDuBled.${label}` as never)}
@@ -978,6 +970,7 @@ function RoutesDuBledPage() {
                               onFocus={(p) => {
                                 setSelId(c.id);
                                 setFocusId(p.id);
+                                setCarAt(p.id);
                               }}
                               onAdd={(r, pt) => startAdd(r, pt)}
                               portStop={

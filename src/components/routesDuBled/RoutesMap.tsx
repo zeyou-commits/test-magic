@@ -45,6 +45,8 @@ export type MapPin = {
   vide?: boolean;
   /** Lieu que tu as ajouté, pas encore relu : pastille claire à contour pointillé. */
   attente?: boolean;
+  /** Étape qui n'offre aucun des services cochés : grisée, mais toujours là (c'est le trajet). */
+  eteinte?: boolean;
 };
 export type MapPlace = { lon: number; lat: number; label: string };
 
@@ -55,9 +57,9 @@ const GLYPH: Record<StopKind, string> = {
   aire: '<path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/>',
   manger:
     '<path d="m16 2-2.3 2.3a3 3 0 0 0 0 4.2l1.8 1.8a3 3 0 0 0 4.2 0L22 8"/><path d="M15 15 3.3 3.3a4.2 4.2 0 0 0 0 6l7.3 7.3c.7.7 2 .7 2.8 0L15 15Zm0 0 7 7"/><path d="m2.1 21.8 6.4-6.3"/><path d="m19 5-7 7"/>',
-  // Une mosquée : coupole, minaret, porte.
+  // Une mosquée : coupole à bulbe et croissant, porte en arc, minaret.
   priere:
-    '<path d="M3 21h18"/><path d="M5 21v-6.5c0-2.6 3.1-4.9 7-7.5 3.9 2.6 7 4.9 7 7.5V21"/><path d="M12 7V3.5"/><path d="M10 21v-3a2 2 0 0 1 4 0v3"/>',
+    '<path d="M2 21h20"/><path d="M4 21v-5.5h12V21"/><path d="M5 15.5c0-2.8 2.2-4.4 5-6.3 2.8 1.9 5 3.5 5 6.3"/><path d="M10 9.2V7.4"/><path d="M10.9 3.4a1.7 1.7 0 1 0 0 2.9 1.45 1.45 0 0 1 0-2.9z"/><path d="M8.5 21v-2.3a1.5 1.5 0 0 1 3 0V21"/><path d="M18.5 21V10.5h3V21"/><path d="M18.5 10.5 20 7.5l1.5 3"/><path d="M20 7.5V6"/>',
   dormir:
     '<path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8"/><path d="M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"/><path d="M12 4v6"/><path d="M2 18h20"/>',
   garage:
@@ -119,6 +121,9 @@ async function addIcons(map: MapLibreMap) {
     );
     jobs.push(addSvg(map, `rdb-h-${k}`, pastille(48, "#ffffff", color, 3, GLYPH[k], color, 22)));
     jobs.push(addSvg(map, `rdb-a-${k}`, attenteIcon(color, GLYPH[k])));
+    jobs.push(
+      addSvg(map, `rdb-n-${k}`, pastille(68, "#f4f6f8", "#c3ccd3", 3, GLYPH[k], "#93a1ac", 28)),
+    );
   }
   await Promise.all(jobs);
 }
@@ -214,7 +219,9 @@ export default function RoutesMap({
               ? "rdb-e-vide"
               : p.attente
                 ? `rdb-a-${p.k}`
-                : `rdb-${p.main ? "e" : "h"}-${p.k}`,
+                : p.eteinte
+                  ? `rdb-n-${p.k}`
+                  : `rdb-${p.main ? "e" : "h"}-${p.k}`,
             main: p.main ? 1 : 0,
             label: p.label ?? "",
           },

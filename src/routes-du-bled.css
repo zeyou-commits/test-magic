@@ -654,3 +654,6 @@
   .rdb-dialog.rdb-dialog { inset: 0; left: 0; top: 0; transform: none; --tw-translate-x: 0; --tw-translate-y: 0; translate: 0 0; width: 100%; max-width: none; height: 100dvh; max-height: none; border-radius: 0; border: 0; align-content: start; padding: 1.25rem 1rem calc(1rem + env(safe-area-inset-bottom)); }
   .rdb-dialog .rdb-dialog__foot { bottom: calc(-1rem - env(safe-area-inset-bottom)); }
 }
+
+/* Plein écran : passe avant la hauteur de la carte collée (46/52/42svh), carnet ouvert ou non. */
+.rdb .rdb-map[data-grand] { position: fixed !important; inset: 0 !important; z-index: 1000 !important; height: 100dvh !important; max-height: none !important; min-height: 0 !important; margin: 0 !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; transition: none !important; }

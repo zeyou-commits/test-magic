@@ -23,11 +23,17 @@ import { tr } from "@/lib/i18n";
 import type { StopFeature, StopKind, StopSource } from "@/lib/routesDuBled/data";
 
 /** Une mosquée (coupole, minaret, porte) : plus parlant qu'une lune pour dire « on peut prier ici ». */
+// Coupole à bulbe et croissant, porte en arc, minaret : reconnaissable même en 14 px.
 export const Mosque = createLucideIcon("mosque", [
-  ["path", { d: "M3 21h18", key: "m1" }],
-  ["path", { d: "M5 21v-6.5c0-2.6 3.1-4.9 7-7.5 3.9 2.6 7 4.9 7 7.5V21", key: "m2" }],
-  ["path", { d: "M12 7V3.5", key: "m3" }],
-  ["path", { d: "M10 21v-3a2 2 0 0 1 4 0v3", key: "m4" }],
+  ["path", { d: "M2 21h20", key: "m1" }],
+  ["path", { d: "M4 21v-5.5h12V21", key: "m2" }],
+  ["path", { d: "M5 15.5c0-2.8 2.2-4.4 5-6.3 2.8 1.9 5 3.5 5 6.3", key: "m3" }],
+  ["path", { d: "M10 9.2V7.4", key: "m4" }],
+  ["path", { d: "M10.9 3.4a1.7 1.7 0 1 0 0 2.9 1.45 1.45 0 0 1 0-2.9z", key: "m5" }],
+  ["path", { d: "M8.5 21v-2.3a1.5 1.5 0 0 1 3 0V21", key: "m6" }],
+  ["path", { d: "M18.5 21V10.5h3V21", key: "m7" }],
+  ["path", { d: "M18.5 10.5 20 7.5l1.5 3", key: "m8" }],
+  ["path", { d: "M20 7.5V6", key: "m9" }],
 ]);
 
 const KIND_ICON: Record<StopKind, LucideIcon> = {

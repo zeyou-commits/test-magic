@@ -54,7 +54,7 @@ export function WizardNav({
   const ctx = useContext(WizardCtx);
   const onBack = back === undefined ? (ctx?.back ?? null) : back;
   // Dans l'étape : « Précédent » ; à son début : le nom de l'étape d'avant.
-  const backText = back === undefined && ctx?.backLabel ? ctx.backLabel : "Précédent";
+  const backText = back === undefined && ctx?.backLabel ? ctx.backLabel : tr("ui.wizardFrame.precedent");
   const Icon = next?.icon;
   const bar = (
     <div>
@@ -73,7 +73,7 @@ export function WizardNav({
           onClick={onBack}
           aria-label={
             back === undefined && ctx?.backLabel
-              ? `Revenir à l'étape ${ctx.backLabel}`
+              ? tr("ui.wizardFrame.revenirALEtape", { backLabel: ctx.backLabel })
               : tr("ui.wizardFrame.questionPrecedente")
           }
           className="inline-flex min-h-12 shrink-0 items-center gap-1.5 rounded-xl px-2 text-sm font-semibold hover:bg-secondary sm:px-3"
@@ -274,7 +274,7 @@ export function WizardFrame({
                             type="button"
                             onClick={() => onOpen(index)}
                             aria-current={here ? "step" : undefined}
-                            aria-label={`${item.title}${item.done ? " · fait" : ""}${item.recap && item.done ? " · récap disponible" : ""}`}
+                            aria-label={`${item.title}${item.done ? tr("ui.wizardFrame.fait") : ""}${item.recap && item.done ? tr("ui.wizardFrame.recapDisponible") : ""}`}
                             title={item.short}
                           >
                             <span className="bw-wizsteps__dot">

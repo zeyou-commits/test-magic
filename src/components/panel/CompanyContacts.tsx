@@ -7,9 +7,9 @@ import { tr } from "@/lib/i18n";
 /** Coordonnées utiles d'une compagnie, avec leur vérification et un signalement si elles ont changé. */
 export function CompanyContacts({ company }: { company: Company }) {
   const links = [
-    ["Réserver sur le site", safeExternalUrl(company.booking_url)],
-    ["Contacter le service client", safeExternalUrl(company.contact_url)],
-    ["Réclamation et droits des passagers", safeExternalUrl(company.claims_url)],
+    [tr("ui.companyContacts.reserverSurLeSite"), safeExternalUrl(company.booking_url)],
+    [tr("ui.companyContacts.contacterLeServiceClient"), safeExternalUrl(company.contact_url)],
+    [tr("ui.companyContacts.reclamationEtDroitsDesPassagers"), safeExternalUrl(company.claims_url)],
   ] as const;
   const site = safeExternalUrl(company.website_url);
   const hasAny = links.some(([, href]) => href) || company.phone || company.contact_email || site;

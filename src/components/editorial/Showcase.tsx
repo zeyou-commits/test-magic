@@ -10,7 +10,7 @@ import type { Company, Departure, Port, RouteLine, Vessel } from "@/lib/ferry/ty
 import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { VesselThumb } from "@/components/panel/LineOverview";
 import { VesselAlertTag } from "@/components/panel/VesselAlert";
-import { tr } from "@/lib/i18n";
+import { tr, placeName } from "@/lib/i18n";
 
 /*
  * Grammaire commune des pages publiques Ligne, Port et Navire :
@@ -236,7 +236,7 @@ export function DepartureRows({
               to="/"
               search={{ select: "departure", id: departure.id } as never}
               className={`group flex items-center gap-3 rounded-2xl border bg-card p-3 pe-4 transition hover:-translate-y-0.5 hover:border-[#0e7a43]/35 hover:shadow-md sm:gap-4 ${cancelled ? "border-destructive/30 opacity-75" : "border-border"}`}
-              aria-label={`Départ du ${parts.weekday} ${parts.shortDate} à ${parts.time}${company ? `, ${company.name}` : ""} : voir sur la carte`}
+              aria-label={tr("ui.showcase.departDuAVoirSur", { weekday: parts.weekday, shortDate: parts.shortDate, time: parts.time, v: company ? `, ${company.name}` : "" })}
             >
               <span className="flex w-14 shrink-0 flex-col items-center rounded-xl bg-[#0f2a3d] py-2 text-white">
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-white/70">
@@ -276,7 +276,7 @@ export function DepartureRows({
                 </span>
                 {showRoute && from && to ? (
                   <span className="block truncate text-sm font-semibold text-[#0f2a3d]">
-                    {from.name} → {to.name}
+                    {placeName(from.name)} → {placeName(to.name)}
                   </span>
                 ) : null}
                 <span className="mt-0.5 flex min-w-0 items-center gap-2 text-sm text-muted-foreground">

@@ -3,6 +3,8 @@ import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { looksInternal, newsKey, newsSchema, type NewsItem } from "./flash";
+import { tr } from "@/lib/i18n/translate";
+import { lazyDateFormat } from "@/lib/i18n";
 
 const db = supabase as unknown as import("@supabase/supabase-js").SupabaseClient;
 
@@ -81,7 +83,7 @@ export const newsFeedQuery = queryOptions({
 });
 
 export const newsDay = (iso: string) =>
-  new Intl.DateTimeFormat("fr-FR", {
+  lazyDateFormat({
     timeZone: "Europe/Paris",
     weekday: "long",
     day: "numeric",
@@ -143,10 +145,10 @@ export function newsAgo(iso: string, now = Date.now()) {
   const days = Math.round((Date.parse(paris(now)) - Date.parse(paris(Date.parse(iso)))) / DAY);
   if (days <= 0) return "aujourd'hui";
   if (days === 1) return "hier";
-  if (days < 7) return `il y a ${days} jours`;
-  if (days < 14) return "il y a 1 semaine";
-  if (days < 31) return `il y a ${Math.floor(days / 7)} semaines`;
-  return new Intl.DateTimeFormat("fr-FR", {
+  if (days < 7) return tr("ui.libFerryNewsFeed.ilYAJours", { days });
+  if (days < 14) return tr("ui.libFerryNewsFeed.ilYA1Semaine");
+  if (days < 31) return tr("ui.libFerryNewsFeed.ilYASemaines", { v: Math.floor(days / 7) });
+  return lazyDateFormat({
     timeZone: "Europe/Paris",
     day: "numeric",
     month: "short",

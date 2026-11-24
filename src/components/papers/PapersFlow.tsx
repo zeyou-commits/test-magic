@@ -294,7 +294,7 @@ export function DzDocsField({
     }`;
   return (
     <div className="grid gap-4">
-      <div role="group" aria-label={`Papiers algériens : ${name}`} className="grid gap-2">
+      <div role="group" aria-label={tr("ui.papersFlow.papiersAlgeriens", { name })} className="grid gap-2">
         {dzHasOptions.map((option) => {
           const on = has.includes(option.value);
           return (
@@ -338,16 +338,16 @@ export function DzDocsField({
           </p>
           <div className="mt-2">
             <Options
-              label={`Passeport du voyage : ${name}`}
+              label={tr("ui.papersFlow.passeportDuVoyage", { name })}
               value={travel}
               onChange={(dzTravel) => onChange(fromDzHas(has, dzTravel))}
               small={compact}
               options={[
-                { value: "dz", label: "Le passeport algérien", hint: "Et l'autre passeport aussi" },
+                { value: "dz", label: tr("ui.papersFlow.lePasseportAlgerien"), hint: tr("ui.papersFlow.etLAutrePasseportAussi") },
                 {
                   value: "foreign",
-                  label: "Le passeport français (ou autre) seulement",
-                  hint: "Le passeport algérien reste à la maison",
+                  label: tr("ui.papersFlow.lePasseportFrancaisOuAutre"),
+                  hint: tr("ui.papersFlow.lePasseportAlgerienResteA"),
                 },
               ]}
             />
@@ -409,8 +409,8 @@ export function NamesEditor({
 export function HomeStep({
   answers,
   patch,
-  title = "Où habitez-vous ?",
-  hint = "Toutes les démarches se font au consulat d'Algérie de votre lieu de résidence : ce n'est pas toujours le plus proche.",
+  title = tr("ui.papersFlow.ouHabitezVous"),
+  hint = tr("ui.papersFlow.toutesLesDemarchesSeFont"),
 }: StepProps & { title?: string; hint?: string }) {
   return (
     <Question title={title} hint={hint}>
@@ -432,7 +432,7 @@ export function HomeFields({
 
   function locate() {
     if (!navigator.geolocation)
-      return setError("Géolocalisation indisponible : saisissez votre code postal.");
+      return setError(tr("ui.papersFlow.geolocalisationIndisponibleSaisissezVotreCode"));
     setLocating(true);
     setError(null);
     navigator.geolocation.getCurrentPosition(
@@ -448,7 +448,7 @@ export function HomeFields({
           patch({ postcode: code, abroad: false });
         } catch {
           setError(
-            "Position hors de France ou introuvable. Saisissez votre code postal, ou choisissez « J'habite hors de France ».",
+            tr("ui.papersFlow.positionHorsDeFranceOu"),
           );
         } finally {
           setLocating(false);
@@ -456,7 +456,7 @@ export function HomeFields({
       },
       () => {
         setLocating(false);
-        setError("Position refusée ou indisponible : saisissez votre code postal.");
+        setError(tr("ui.papersFlow.positionRefuseeOuIndisponibleSaisissez"));
       },
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 },
     );
@@ -511,7 +511,7 @@ export function HomeFields({
 export function CityField({
   postcode,
   onPick,
-  label = "Votre ville ou code postal",
+  label = tr("ui.papersFlow.votreVilleOuCodePostal"),
 }: {
   postcode: string;
   onPick: (postcode: string, commune?: { name: string }) => void;
@@ -588,7 +588,7 @@ export function CityField({
       hits={results.map((c) => ({
         key: `${c.name}-${c.code}`,
         title: c.name,
-        sub: `${c.code}${c.dep ? ` · département ${c.dep}` : ""}`,
+        sub: `${c.code}${c.dep ? tr("ui.papersFlow.departement", { dep: c.dep }) : ""}`,
         onPick: () => {
           const text = `${c.name} (${c.code})`;
           setPicked(text);
@@ -623,7 +623,7 @@ export function Counter({
       <span className="flex items-center gap-3">
         <button
           type="button"
-          aria-label={`Retirer : ${label}`}
+          aria-label={tr("ui.papersFlow.retirer", { label })}
           disabled={value <= min}
           onClick={() => onChange(value - 1)}
           className="grid size-11 place-items-center rounded-full border disabled:opacity-30"
@@ -635,7 +635,7 @@ export function Counter({
         </span>
         <button
           type="button"
-          aria-label={`Ajouter : ${label}`}
+          aria-label={tr("ui.papersFlow.ajouter", { label })}
           disabled={value >= 9}
           onClick={() => onChange(value + 1)}
           className="grid size-11 place-items-center rounded-full border disabled:opacity-30"
@@ -699,12 +699,12 @@ export function StayStep({ answers, patch }: StepProps) {
         value={(hasAsked(answers, "stay") ? answers.stay : "") as Stay}
         onChange={(stay) => patch({ stay, asked: markAsked(answers, "stay") })}
         options={[
-          { value: "family", label: "En famille, chez des proches" },
-          { value: "hotel", label: "À l'hôtel" },
+          { value: "family", label: tr("ui.papersFlow.enFamilleChezDesProches") },
+          { value: "hotel", label: tr("ui.papersFlow.aLHotel") },
           {
             value: "both",
-            label: "Les deux",
-            hint: "Quelques nuits d'hôtel en plus de la famille",
+            label: tr("ui.papersFlow.lesDeux"),
+            hint: tr("ui.papersFlow.quelquesNuitsDHotelEn"),
           },
         ]}
       />
@@ -797,11 +797,11 @@ export function PapersResult({
   const namedKids = answers.travellers.filter((t) => t.kind === "child" && t.name?.trim());
   const people = [
     ...adultNames,
-    ...(kids === 1 && namedKids.length ? [namedKids[0]!.name!.trim()] : kids ? [`les ${kids} enfants`] : []),
+    ...(kids === 1 && namedKids.length ? [namedKids[0]!.name!.trim()] : kids ? [tr("ui.papersFlow.lesEnfants", { kids })] : []),
   ];
   const recapTitle = adultNames.length
-    ? `Pour ${people.length > 1 ? `${people.slice(0, -1).join(", ")} et ${people.at(-1)}` : people[0]}`
-    : "Votre liste, voyageur par voyageur";
+    ? tr("ui.papersFlow.pour", { v: people.length > 1 ? `${people.slice(0, -1).join(", ")} et ${people.at(-1)}` : people[0] })
+    : tr("ui.papersFlow.votreListeVoyageurParVoyageur");
   const toggle = (id: string) =>
     setDone((d) => (d.includes(id) ? d.filter((x) => x !== id) : [...d, id]));
   // Les prénoms se donnent ici, quand on veut : ils ne prennent plus un écran du parcours.
@@ -931,7 +931,7 @@ export function TaskRow({
           type="button"
           role="checkbox"
           aria-checked={done}
-          aria-label={`Fait : ${task.title}`}
+          aria-label={tr("ui.papersFlow.fait", { title: task.title })}
           onClick={onToggle}
           className={`mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg border-2 ${done ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40 hover:border-primary"}`}
         >
@@ -1062,13 +1062,13 @@ function EditMenu({
     };
   }, [open]);
   const items: { label: string; target: EditTarget }[] = [
-    { label: "Les prénoms", target: { kind: "names" } },
+    { label: tr("ui.papersFlow.lesPrenoms"), target: { kind: "names" } },
     ...answers.travellers.map((t) => ({
       label: travellerLabel(t, answers.travellers),
       target: { kind: "traveller", id: t.id } as EditTarget,
     })),
-    ...(answers.travellers.length > 1 ? [{ label: "Couple et enfants", target: { kind: "family" } as EditTarget }] : []),
-    { label: "Le séjour", target: { kind: "stay" } },
+    ...(answers.travellers.length > 1 ? [{ label: tr("ui.papersFlow.coupleEtEnfants"), target: { kind: "family" } as EditTarget }] : []),
+    { label: tr("ui.papersFlow.leSejour"), target: { kind: "stay" } },
   ];
   return (
     <div className="relative" ref={menuRef}>

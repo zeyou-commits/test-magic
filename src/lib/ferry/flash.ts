@@ -4,6 +4,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
+import { tr } from "@/lib/i18n/translate";
 
 // Tables Flash info / lieux pratiques pas encore présentes dans les types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -14,13 +15,13 @@ const missingModule = (code?: string) =>
 
 // ---------- Flash info ----------
 export const newsKinds = {
-  alerte: { label: "Alerte" },
-  perturbation: { label: "Perturbation" },
-  info: { label: "Info voyage" },
+  alerte: { get label() { return tr("ui.libFerryFlash.alerte"); } },
+  perturbation: { get label() { return tr("ui.libFerryFlash.perturbation"); } },
+  info: { get label() { return tr("ui.libFerryFlash.infoVoyage"); } },
 } as const;
 export const newsOrigins = {
-  official: { label: "Compagnie / port" },
-  media: { label: "Média" },
+  official: { get label() { return tr("ui.libFerryFlash.compagniePort"); } },
+  media: { get label() { return tr("ui.libFerryFlash.media"); } },
   bledway: { label: "BledWay" },
 } as const;
 export const newsSchema = z.object({
@@ -290,13 +291,13 @@ export async function shareAlert(text: string, vesselId: string | null) {
 // ---------- Lieux pratiques ----------
 export const placeKinds = {
   fuel: { label: "Station-service", group: "before" },
-  parking: { label: "Stationnement", group: "before" },
-  food: { label: "Restauration", group: "before" },
-  pharmacy: { label: "Pharmacie", group: "before" },
-  exchange: { label: "Bureau de change", group: "after" },
-  atm: { label: "Distributeur", group: "after" },
-  sim: { label: "Carte SIM", group: "after" },
-  other: { label: "Autre", group: "before" },
+  parking: { get label() { return tr("ui.libFerryFlash.stationnement"); }, group: "before" },
+  food: { get label() { return tr("ui.libFerryFlash.restauration"); }, group: "before" },
+  pharmacy: { get label() { return tr("ui.libFerryFlash.pharmacie"); }, group: "before" },
+  exchange: { get label() { return tr("ui.libFerryFlash.bureauDeChange"); }, group: "after" },
+  atm: { get label() { return tr("ui.libFerryFlash.distributeur"); }, group: "after" },
+  sim: { get label() { return tr("ui.libFerryFlash.carteSim"); }, group: "after" },
+  other: { get label() { return tr("ui.libFerryFlash.autre"); }, group: "before" },
 } as const;
 export type PlaceKind = keyof typeof placeKinds;
 const placeSchema = z.object({
@@ -397,8 +398,8 @@ export const flashClient = supabase;
 
 export function relativeAge(iso: string, now = Date.now()) {
   const minutes = Math.max(0, Math.round((now - Date.parse(iso)) / 60_000));
-  if (minutes < 1) return "à l’instant";
-  if (minutes < 60) return `il y a ${minutes} min`;
+  if (minutes < 1) return tr("ui.libFerryFlash.aLInstant");
+  if (minutes < 60) return tr("ui.libFerryFlash.ilYAMin", { minutes });
   const hours = Math.round(minutes / 60);
   if (hours < 24) return `il y a ${hours} h`;
   const days = Math.round(hours / 24);

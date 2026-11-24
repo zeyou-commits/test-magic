@@ -45,18 +45,18 @@ export const defaultTripProfile: TripProfileValue = {
 };
 
 export const VEHICLES: { id: VehicleKind; Icon: LucideIcon; label: string; hint: string }[] = [
-  { id: "none", Icon: PersonStanding, label: "Piéton", hint: "Sans véhicule" },
-  { id: "city", Icon: Car, label: "Citadine", hint: "Clio, 208, Sandero" },
-  { id: "sedan", Icon: CarFront, label: "Berline", hint: "308 SW, Passat" },
-  { id: "suv", Icon: Car, label: "4x4 / SUV", hint: "3008, Duster, Tiguan" },
-  { id: "van", Icon: Bus, label: "Ludospace", hint: "Kangoo, Berlingo" },
-  { id: "utility", Icon: Truck, label: "Utilitaire", hint: "Trafic, Master" },
+  { id: "none", Icon: PersonStanding, get label() { return tr("ui.tripProfile.pieton"); }, get hint() { return tr("ui.tripProfile.sansVehicule"); } },
+  { id: "city", Icon: Car, get label() { return tr("ui.tripProfile.citadine"); }, get hint() { return tr("ui.tripProfile.clio208Sandero"); } },
+  { id: "sedan", Icon: CarFront, get label() { return tr("ui.tripProfile.berline"); }, get hint() { return tr("ui.tripProfile.t308SwPassat"); } },
+  { id: "suv", Icon: Car, label: "4x4 / SUV", get hint() { return tr("ui.tripProfile.t3008DusterTiguan"); } },
+  { id: "van", Icon: Bus, get label() { return tr("ui.tripProfile.ludospace"); }, get hint() { return tr("ui.tripProfile.kangooBerlingo"); } },
+  { id: "utility", Icon: Truck, get label() { return tr("ui.tripProfile.utilitaire"); }, get hint() { return tr("ui.tripProfile.traficMaster"); } },
 ];
 
 export const ACCESSORIES: { id: Accessory; Icon: LucideIcon; label: string }[] = [
-  { id: "roofbox", Icon: Package, label: "Coffre de toit" },
-  { id: "trailer", Icon: Caravan, label: "Remorque" },
-  { id: "bikes", Icon: Bike, label: "Porte-vélos" },
+  { id: "roofbox", Icon: Package, get label() { return tr("ui.tripProfile.coffreDeToit"); } },
+  { id: "trailer", Icon: Caravan, get label() { return tr("ui.tripProfile.remorque"); } },
+  { id: "bikes", Icon: Bike, get label() { return tr("ui.tripProfile.porteVelos"); } },
 ];
 
 // Les tranches d'âge varient selon les compagnies : elles sont données à titre indicatif.
@@ -67,11 +67,11 @@ const PASSENGER_ROWS: {
   hint: string;
   min: number;
 }[] = [
-  { key: "adults", Icon: User, label: "Adultes", hint: "12–59 ans (indicatif)", min: 0 },
-  { key: "seniors", Icon: UserRound, label: "Seniors", hint: "60 ans et + (indicatif)", min: 0 },
-  { key: "children", Icon: User, label: "Enfants", hint: "4–11 ans (indicatif)", min: 0 },
-  { key: "babies", Icon: Baby, label: "Bébés", hint: "0–3 ans (indicatif)", min: 0 },
-  { key: "pets", Icon: PawPrint, label: "Animaux", hint: "Chien, chat", min: 0 },
+  { key: "adults", Icon: User, get label() { return tr("ui.tripProfile.adultes"); }, get hint() { return tr("ui.tripProfile.t1259AnsIndicatif"); }, min: 0 },
+  { key: "seniors", Icon: UserRound, get label() { return tr("ui.tripProfile.seniors"); }, get hint() { return tr("ui.tripProfile.t60AnsEtIndicatif"); }, min: 0 },
+  { key: "children", Icon: User, get label() { return tr("ui.tripProfile.enfants"); }, get hint() { return tr("ui.tripProfile.t411AnsIndicatif"); }, min: 0 },
+  { key: "babies", Icon: Baby, get label() { return tr("ui.tripProfile.bebes"); }, get hint() { return tr("ui.tripProfile.t03AnsIndicatif"); }, min: 0 },
+  { key: "pets", Icon: PawPrint, get label() { return tr("ui.tripProfile.animaux"); }, get hint() { return tr("ui.tripProfile.chienChat"); }, min: 0 },
 ];
 
 export function summarizePassengers(p: Passengers) {
@@ -79,10 +79,10 @@ export function summarizePassengers(p: Passengers) {
     p.adults && `${p.adults} adulte${p.adults > 1 ? "s" : ""}`,
     p.seniors && `${p.seniors} senior${p.seniors > 1 ? "s" : ""}`,
     p.children && `${p.children} enfant${p.children > 1 ? "s" : ""}`,
-    p.babies && `${p.babies} bébé${p.babies > 1 ? "s" : ""}`,
+    p.babies && tr("ui.tripProfile.bebe", { babies: p.babies, v: p.babies > 1 ? "s" : "" }),
     p.pets && `${p.pets} animal${p.pets > 1 ? "aux" : ""}`,
   ].filter(Boolean);
-  return parts.length ? parts.join(" · ") : "Aucun voyageur";
+  return parts.length ? parts.join(" · ") : tr("ui.tripProfile.aucunVoyageur");
 }
 
 export function summarizeVehicle(value: TripProfileValue) {
@@ -183,7 +183,7 @@ export function TripProfile({
               </span>
               <button
                 type="button"
-                aria-label={`Retirer : ${label}`}
+                aria-label={tr("ui.tripProfile.retirer", { label })}
                 onClick={() => setCount(key, -1)}
                 disabled={value.passengers[key] <= min}
                 className="grid size-9 place-items-center rounded-full border border-border disabled:opacity-30"
@@ -198,7 +198,7 @@ export function TripProfile({
               </span>
               <button
                 type="button"
-                aria-label={`Ajouter : ${label}`}
+                aria-label={tr("ui.tripProfile.ajouter", { label })}
                 onClick={() => setCount(key, 1)}
                 disabled={value.passengers[key] >= 9}
                 className="grid size-9 place-items-center rounded-full border border-border disabled:opacity-30"

@@ -52,7 +52,7 @@ export async function copyText(text: string, container: HTMLElement = document.b
 
 /** Partage de la page courante (l'adresse contient la recherche) : copier le lien + partage natif mobile. */
 export function ShareButtons({
-  label = "Partager",
+  label = tr("ui.shareButtons.partager"),
   compact = false,
   className = "",
   title = SHARE_TITLE,
@@ -78,7 +78,7 @@ export function ShareButtons({
     const ok = await copyText(stableShareUrl(getUrl?.() ?? window.location.href));
     if (ok) {
       setCopied(true);
-      toast.success("Lien copié");
+      toast.success(tr("ui.shareButtons.lienCopie"));
       window.setTimeout(() => setCopied(false), 2000);
     } else {
       toast.error("Copie impossible : copiez l'adresse depuis la barre du navigateur.");

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { QuestionHelp } from "@/components/questions/QuestionHelp";
 import { afterOverlayClose, useBackClose } from "@/lib/ferry/backStack";
 import { enterRoom } from "@/lib/ferry/chat";
-import { GENERAL_TITLE, openGeneralRoom } from "@/lib/ferry/generalRoom";
+import { generalTitle, openGeneralRoom } from "@/lib/ferry/generalRoom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, ChevronLeft, ChevronRight, CircleHelp, Globe2, MessagesSquare, Search } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -137,8 +137,8 @@ export function RoomPicker({
   const dayLabel = (key: string) => {
     const today = dateKeyInZone(new Date().toISOString(), "Europe/Paris");
     const tomorrow = dateKeyInZone(new Date(Date.now() + 86_400_000).toISOString(), "Europe/Paris");
-    if (key === today) return "Aujourd'hui";
-    if (key === tomorrow) return "Demain";
+    if (key === today) return tr("ui.roomPicker.aujourdHui");
+    if (key === tomorrow) return tr("ui.roomPicker.demain");
     const label = lazyDateFormat({
       weekday: "long",
       day: "numeric",
@@ -199,7 +199,7 @@ export function RoomPicker({
               <DialogHeader>
                 <DialogTitle>{tr("ui.roomPicker.bienvenueABord")}</DialogTitle>
                 <p className="bw-room-picker__intro">
-                  Échangez avec les voyageurs, ou trouvez votre réponse dans la FAQ.
+                  {tr("ui.roomPicker.echangezAvecLesVoyageursOu")}
                 </p>
               </DialogHeader>
               {/* Dans l'ordre : le salon de tous, celui de sa traversée, puis la FAQ. */}
@@ -216,13 +216,12 @@ export function RoomPicker({
                   <span className="bw-room-picker__choice-icon" aria-hidden>
                     <Globe2 size={22} />
                   </span>
-                  <strong>{GENERAL_TITLE}</strong>
+                  <strong>{generalTitle()}</strong>
                   <small>
-                    Tous les voyageurs, avec ou sans traversée prévue : la route, les papiers, les
-                    bons plans.
+                    {tr("ui.roomPicker.tousLesVoyageursAvecOu")}
                   </small>
                   <span className="bw-room-picker__choice-go">
-                    Entrer dans le salon<ArrowRight size={15} aria-hidden />
+                    {tr("ui.roomPicker.entrerDansLeSalon")}<ArrowRight size={15} aria-hidden />
                   </span>
                 </button>
                 <button
@@ -234,7 +233,7 @@ export function RoomPicker({
                   <span className="bw-room-picker__choice-icon" aria-hidden>
                     <MessagesSquare size={22} />
                   </span>
-                  <strong>Salon d'une traversée</strong>
+                  <strong>{tr("ui.roomPicker.salonDUneTraversee")}</strong>
                   <small>{tr("ui.roomPicker.lesVoyageursDUneTraversee")}</small>
                   <span className="bw-room-picker__choice-go">
                     {tr("ui.roomPicker.choisirMaTraversee")}<ArrowRight size={15} aria-hidden />
@@ -249,12 +248,12 @@ export function RoomPicker({
                   <span className="bw-room-picker__choice-icon" aria-hidden>
                     <CircleHelp size={22} />
                   </span>
-                  <strong>Questions fréquentes</strong>
+                  <strong>{tr("ui.roomPicker.questionsFrequentes")}</strong>
                   <small>
-                    Papiers, TPD, horaires, prix : les réponses de BledWay, sinon les bons contacts.
+                    {tr("ui.roomPicker.papiersTpdHorairesPrixLes")}
                   </small>
                   <span className="bw-room-picker__choice-go">
-                    Voir la FAQ<ArrowRight size={15} aria-hidden />
+                    {tr("ui.roomPicker.voirLaFaq")}<ArrowRight size={15} aria-hidden />
                   </span>
                 </button>
               </div>
@@ -263,7 +262,7 @@ export function RoomPicker({
             <>
               <DialogHeader>
                 {back}
-                <DialogTitle>Questions fréquentes</DialogTitle>
+                <DialogTitle>{tr("ui.roomPicker.questionsFrequentes")}</DialogTitle>
                 <p className="bw-room-picker__intro">
                   {tr("ui.roomPicker.lesReponsesDeBledwayD")}
                 </p>
@@ -308,10 +307,10 @@ export function RoomPicker({
             </span>
             <span>
               <strong>
-                {GENERAL_TITLE}
+                {generalTitle()}
                 <i className="bw-room-picker__live" aria-hidden />
               </strong>
-              <small>Tous les voyageurs, avec ou sans traversée prévue</small>
+              <small>{tr("ui.roomPicker.tousLesVoyageursAvecOu2")}</small>
             </span>
             <ChevronRight size={18} aria-hidden />
           </button>
@@ -445,7 +444,7 @@ export function RoomPicker({
           >
             <CircleHelp size={16} aria-hidden />
             <span>
-              <strong>Questions fréquentes</strong>
+              <strong>{tr("ui.roomPicker.questionsFrequentes")}</strong>
               <small>{tr("ui.roomPicker.papiersHorairesPrixTrouvezLa")}</small>
             </span>
           </button>

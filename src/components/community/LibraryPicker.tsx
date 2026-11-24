@@ -69,7 +69,7 @@ export function LibraryPicker({
           type="search"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder={`Chercher parmi ${total} images`}
+          placeholder={tr("ui.libraryPicker.chercherParmiImages", { total })}
           aria-label={tr("ui.libraryPicker.chercherUneImage")}
         />
         {search ? (
@@ -80,7 +80,7 @@ export function LibraryPicker({
       </div>
       {query ? null : (
         <div className="bw-library__tabs" role="tablist" aria-label={tr("ui.libraryPicker.categories")}>
-          {[{ id: ALL, label: "Tout", rows: library.rows }, ...library.groups].map((group) => (
+          {[{ id: ALL, label: tr("ui.libraryPicker.tout"), rows: library.rows }, ...library.groups].map((group) => (
             <button
               key={group.id}
               type="button"

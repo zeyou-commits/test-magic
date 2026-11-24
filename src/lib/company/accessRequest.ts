@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { tr } from "@/lib/i18n/translate";
 
 /** Demande d'accès à l'espace compagnie (page d'accueil professionnelle) et son suivi en admin. */
 export type AccessRequestForm = {
@@ -27,11 +28,11 @@ export const emptyAccessRequest: AccessRequestForm = {
 
 export type AccessRequestStatus = "new" | "contacted" | "invited" | "declined" | "spam";
 export const ACCESS_REQUEST_STATUS: Record<AccessRequestStatus, string> = {
-  new: "Nouvelle",
-  contacted: "Contactée",
-  invited: "Invitée",
-  declined: "Refusée",
-  spam: "Indésirable",
+  get new() { return tr("ui.libCompanyAccessRequest.nouvelle"); },
+  get contacted() { return tr("ui.libCompanyAccessRequest.contactee"); },
+  get invited() { return tr("ui.libCompanyAccessRequest.invitee"); },
+  get declined() { return tr("ui.libCompanyAccessRequest.refusee"); },
+  get spam() { return tr("ui.libCompanyAccessRequest.indesirable"); },
 };
 
 export type AccessRequestRow = {
@@ -87,13 +88,13 @@ export async function sendAccessRequest(form: AccessRequestForm, elapsed: number
 /** Contrôles simples avant l'envoi ; le serveur et la base revérifient tout. */
 export function accessRequestErrors(form: AccessRequestForm) {
   const errors: Partial<Record<keyof AccessRequestForm, string>> = {};
-  if (form.fullName.trim().length < 2) errors.fullName = "Indiquez votre nom.";
-  if (form.companyName.trim().length < 2) errors.companyName = "Indiquez votre compagnie.";
-  if (form.jobTitle.trim().length < 2) errors.jobTitle = "Indiquez votre fonction.";
+  if (form.fullName.trim().length < 2) errors.fullName = tr("ui.libCompanyAccessRequest.indiquezVotreNom");
+  if (form.companyName.trim().length < 2) errors.companyName = tr("ui.libCompanyAccessRequest.indiquezVotreCompagnie");
+  if (form.jobTitle.trim().length < 2) errors.jobTitle = tr("ui.libCompanyAccessRequest.indiquezVotreFonction");
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
-    errors.email = "Indiquez une adresse e-mail valide.";
-  if (form.phone.length > 40) errors.phone = "40 caractères au plus.";
-  if (form.message.length > 1000) errors.message = "1 000 caractères au plus.";
-  if (!form.consent) errors.consent = "Cochez cette case pour envoyer la demande.";
+    errors.email = tr("ui.libCompanyAccessRequest.indiquezUneAdresseEMail");
+  if (form.phone.length > 40) errors.phone = tr("ui.libCompanyAccessRequest.t40CaracteresAuPlus");
+  if (form.message.length > 1000) errors.message = tr("ui.libCompanyAccessRequest.t1000CaracteresAuPlus");
+  if (!form.consent) errors.consent = tr("ui.libCompanyAccessRequest.cochezCetteCasePourEnvoyer");
   return errors;
 }

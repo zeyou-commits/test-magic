@@ -74,14 +74,14 @@ function LignesPage() {
   const groups = [
     {
       id: "vers-algerie",
-      overline: "Aller",
-      title: "Depuis l'Europe vers l'Algérie",
+      overline: tr("ui.pageLignesIndex.aller"),
+      title: tr("ui.pageLignesIndex.depuisLEuropeVersL"),
       items: sortRoutes(routes.filter((route) => !fromAlgeria(route))),
     },
     {
       id: "vers-europe",
-      overline: "Retour",
-      title: "Depuis l'Algérie vers l'Europe",
+      overline: tr("ui.pageLignesIndex.retour"),
+      title: tr("ui.pageLignesIndex.depuisLAlgerieVersL"),
       items: sortRoutes(routes.filter(fromAlgeria)),
     },
   ];
@@ -99,35 +99,35 @@ function LignesPage() {
   const facts: Fact[] = [
     {
       icon: RouteIcon,
-      label: "Lignes",
+      label: tr("ui.pageLignesIndex.lignes"),
       value: String(routes.length),
-      hint: `${groups[0]!.items.length} vers l'Algérie · ${groups[1]!.items.length} vers l'Europe`,
+      hint: tr("ui.pageLignesIndex.versLAlgerieVersL", { length: groups[0]!.items.length, length2: groups[1]!.items.length }),
     },
     {
       icon: MapPin,
-      label: "Ports",
+      label: tr("ui.pageLignesIndex.ports"),
       value: String(usedPorts.size),
-      hint: "Des deux côtés de la Méditerranée",
+      hint: tr("ui.pageLignesIndex.desDeuxCotesDeLa"),
     },
   ];
   if (durations.length)
     facts.push({
       icon: Clock3,
-      label: "Durée",
+      label: tr("ui.pageLignesIndex.duree"),
       value: `${formatDuration(Math.min(...durations))} à ${formatDuration(Math.max(...durations))}`,
-      hint: "Durées typiques, de la plus courte à la plus longue",
+      hint: tr("ui.pageLignesIndex.dureesTypiquesDeLaPlus"),
     });
   if (pace)
     facts.push({
       icon: CalendarDays,
-      label: pace.kind === "average" ? "Départs par semaine" : "Départs sous 7 jours",
+      label: pace.kind === "average" ? tr("ui.pageLignesIndex.departsParSemaine") : tr("ui.pageLignesIndex.departsSous7Jours"),
       value: pace.kind === "average" ? `≈ ${pace.value}` : String(pace.value),
-      hint: "Toutes lignes et compagnies confondues",
+      hint: tr("ui.pageLignesIndex.toutesLignesEtCompagniesConfondues"),
     });
   else
     facts.push({
       icon: Building2,
-      label: "Compagnies",
+      label: tr("ui.pageLignesIndex.compagnies"),
       value: String(activeCompanies.length),
       hint: activeCompanies.map((company) => company.name).join(", "),
     });
@@ -139,15 +139,15 @@ function LignesPage() {
         name="Lignes de ferry Europe ↔ Algérie"
         items={groups.flatMap((group) =>
           group.items.map((route) => ({
-            name: `Ferry ${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}`,
+            name: tr("ui.pageLignesIndex.ferry", { portName: portName(route.departure_port_id), portName2: portName(route.arrival_port_id) }),
             path: `/lignes/${route.slug}`,
           })),
         )}
       />
-      <Breadcrumbs items={[{ name: "Lignes", path: "/lignes" }]} />
+      <Breadcrumbs items={[{ name: tr("ui.pageLignesIndex.lignes"), path: "/lignes" }]} />
       <ShowcaseHero
         overline={tr("ui.pageLignesIndex.lignes")}
-        title="Toutes les lignes de ferry Europe ↔ Algérie"
+        title={tr("ui.pageLignesIndex.toutesLesLignesDeFerry")}
         intro={<p>{tr("ui.pageLignesIndex.comparezLesLignesLeurDuree")}</p>}
         chips={
           <>
@@ -162,13 +162,13 @@ function LignesPage() {
         actions={
           <>
             <Link to="/" className={heroPrimary}>
-              <MapIcon className="size-4" aria-hidden /> Voir les navires en direct
+              <MapIcon className="size-4" aria-hidden />{tr("ui.pageLignesIndex.voirLesNaviresEnDirect")}
             </Link>
             <a
               href="#vers-algerie"
               className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-border bg-white px-5 text-sm font-semibold text-[#0f2a3d] transition hover:border-[#0e7a43]/40 hover:bg-[#f1f8f4]"
             >
-              Choisir une ligne <ArrowRight className="size-4" aria-hidden />
+              {tr("ui.pageLignesIndex.choisirUneLigne")}<ArrowRight className="size-4" aria-hidden />
             </a>
           </>
         }
@@ -181,7 +181,7 @@ function LignesPage() {
           />
         }
       />
-      <KeyFacts facts={facts} label="Les lignes en chiffres" />
+      <KeyFacts facts={facts} label={tr("ui.pageLignesIndex.lesLignesEnChiffres")} />
 
       {groups.map((group) => (
         <section
@@ -191,8 +191,7 @@ function LignesPage() {
           aria-labelledby={`${group.id}-titre`}
         >
           <SectionTitle id={`${group.id}-titre`} overline={group.overline} title={group.title}>
-            Les lignes qui partent le plus souvent d'abord. Les prix repères sont des allers simples
-            relevés en septembre–octobre 2026 : le devis de la compagnie fait foi.
+            {tr("ui.pageLignesIndex.lesLignesQuiPartentLe")}
           </SectionTitle>
           <ul className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {group.items.map((route) => {
@@ -230,13 +229,13 @@ function LignesPage() {
                     </span>
                     <span className="mt-3 grid grid-cols-3 gap-1.5 text-center">
                       <span className="rounded-lg bg-secondary/70 px-1.5 py-2">
-                        <span className="block text-[11px] text-muted-foreground">Durée</span>
+                        <span className="block text-[11px] text-muted-foreground">{tr("ui.pageLignesIndex.duree")}</span>
                         <span className="block text-sm font-bold">
                           {formatDuration(route.typical_duration_minutes)}
                         </span>
                       </span>
                       <span className="rounded-lg bg-secondary/70 px-1.5 py-2">
-                        <span className="block text-[11px] text-muted-foreground">Par semaine</span>
+                        <span className="block text-[11px] text-muted-foreground">{tr("ui.pageLignesIndex.parSemaine")}</span>
                         <span className="block text-sm font-bold">
                           {linePace
                             ? `${linePace.kind === "average" ? "≈ " : ""}${linePace.value}`
@@ -245,7 +244,7 @@ function LignesPage() {
                       </span>
                       <span className="rounded-lg bg-secondary/70 px-1.5 py-2">
                         <span className="block text-[11px] text-muted-foreground">
-                          Avec voiture
+                          {tr("ui.pageLignesIndex.avecVoiture")}
                         </span>
                         <span className="block text-sm font-bold text-[#0e7a43]">
                           {benchmark ? `${benchmark.withCar} €` : "—"}
@@ -255,13 +254,13 @@ function LignesPage() {
                     <span className="mt-3 text-sm text-muted-foreground">
                       {next ? (
                         <>
-                          Prochain départ :{" "}
+                          {tr("ui.pageLignesIndex.prochainDepart")}{" "}
                           <strong className="font-semibold text-[#0f2a3d]">
                             {formatDate(next.departure_at, portTimeZone(from))}
                           </strong>
                         </>
                       ) : (
-                        "Aucun départ publié pour le moment"
+                        tr("ui.pageLignesIndex.aucunDepartPubliePourLe")
                       )}
                     </span>
                     {lineCompanies.length ? (
@@ -292,21 +291,21 @@ function LignesPage() {
       ))}
 
       <nav
-        aria-label="Pour aller plus loin"
+        aria-label={tr("ui.pageLignesIndex.pourAllerPlusLoin")}
         className="mt-12 grid grid-cols-1 gap-3 sm:grid-cols-3"
       >
         {[
           {
             href: "/ports",
-            title: "Les ports",
-            text: "Lignes, départs et services de chaque port",
+            title: tr("ui.pageLignesIndex.lesPorts"),
+            text: tr("ui.pageLignesIndex.lignesDepartsEtServicesDe"),
           },
           {
             href: "/barometre-prix",
-            title: "Baromètre des prix",
-            text: "Repères par ligne et par saison",
+            title: tr("ui.pageLignesIndex.barometreDesPrix"),
+            text: tr("ui.pageLignesIndex.reperesParLigneEtPar"),
           },
-          { href: "/bateaux", title: "Les navires", text: "Photos, capacités, lignes desservies" },
+          { href: "/bateaux", title: tr("ui.pageLignesIndex.lesNavires"), text: tr("ui.pageLignesIndex.photosCapacitesLignesDesservies") },
         ].map((item) => (
           <a
             key={item.href}

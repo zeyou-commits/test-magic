@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import type { TravellerCard } from "@/lib/community/travellers";
 import { chatRefusal } from "./portPassage";
+import { tr } from "@/lib/i18n/translate";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 
@@ -11,10 +12,10 @@ const supabase = typedSupabase as unknown as SupabaseClient;
 export const REACTIONS = [
   { code: "like", emoji: "👍", label: "J'aime" },
   { code: "love", emoji: "❤️", label: "J'adore" },
-  { code: "haha", emoji: "😂", label: "Mdr" },
-  { code: "wow", emoji: "😮", label: "Waouh" },
-  { code: "sad", emoji: "😢", label: "Triste" },
-  { code: "pray", emoji: "🙏", label: "Merci" },
+  { code: "haha", emoji: "😂", get label() { return tr("ui.libFerryChatReactions.mdr"); } },
+  { code: "wow", emoji: "😮", get label() { return tr("ui.libFerryChatReactions.waouh"); } },
+  { code: "sad", emoji: "😢", get label() { return tr("ui.libFerryChatReactions.triste"); } },
+  { code: "pray", emoji: "🙏", get label() { return tr("ui.libFerryChatReactions.merci"); } },
 ] as const;
 export type ReactionCode = (typeof REACTIONS)[number]["code"];
 export const reactionEmoji = (code: string) =>

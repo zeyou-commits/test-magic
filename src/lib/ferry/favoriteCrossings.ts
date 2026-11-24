@@ -3,6 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { portsQuery, routesQuery } from "./queries";
+import { tr } from "@/lib/i18n/translate";
+import { lazyDateFormat } from "@/lib/i18n";
 
 // bw_follows (suivis) n'est pas dans les types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -99,14 +101,14 @@ export function useFavoriteCrossings(): FavoriteCrossing[] {
       departureAt: row.departure_at,
       fromPortId: from?.id ?? null,
       toPortId: to?.id ?? null,
-      label: from && to ? `${from.name} → ${to.name}` : "Traversée en favori",
+      label: from && to ? `${from.name} → ${to.name}` : tr("ui.libFerryFavoriteCrossings.traverseeEnFavori"),
     };
   });
 }
 
 /** « mer. 25 nov. · 11:00 », à l'heure de l'appareil. */
 export const favoriteWhen = (iso: string) =>
-  new Intl.DateTimeFormat("fr-FR", {
+  lazyDateFormat({
     weekday: "short",
     day: "numeric",
     month: "short",

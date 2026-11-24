@@ -16,7 +16,7 @@ export type GlanceTile = {
   onClick: () => void;
 };
 
-const statusText = { ok: "Prêt", todo: "À faire", missing: "À compléter" } as const;
+const statusText = { get ok() { return tr("ui.tripGlance.pret"); }, get todo() { return tr("ui.tripGlance.aFaire"); }, get missing() { return tr("ui.tripGlance.aCompleter"); } } as const;
 
 /**
  * Le récap en un coup d'œil : le départ et le compte à rebours en tête, puis une tuile par
@@ -53,7 +53,7 @@ export function TripGlance({
           </p>
         </div>
         {daysLeft !== null && daysLeft >= 0 ? (
-          <span className="bw-glance__count" aria-label={`Départ dans ${daysLeft} jours`}>
+          <span className="bw-glance__count" aria-label={tr("ui.tripGlance.departDansJours", { daysLeft })}>
             <b>{daysLeft === 0 ? tr("ui.tripGlance.jourJ") : `J-${daysLeft}`}</b>
             <small>{daysLeft === 0 ? tr("ui.tripGlance.cEstAujourdHui") : tr("ui.tripGlance.avantLeDepart")}</small>
           </span>
@@ -82,7 +82,7 @@ export function TripGlance({
               <button
                 type="button"
                 onClick={tile.onClick}
-                aria-label={`${tile.label} : ${tile.value}, ${tile.detail}. ${statusText[tile.status]}. Ouvrir`}
+                aria-label={tr("ui.tripGlance.ouvrir", { label: tile.label, value: tile.value, detail: tile.detail, v: statusText[tile.status] })}
               >
                 <span className="bw-glance__top">
                   <span className="bw-glance__ico" aria-hidden>

@@ -36,8 +36,8 @@ export const Route = createFileRoute("/bateaux/")({
   },
   head: () =>
     seoHead(
-      "Navires Europe ↔ Algérie : flotte et caractéristiques | BledWay",
-      "Toute la flotte des ferries entre l'Europe et l'Algérie par compagnie : photos des navires, lignes desservies, capacité passagers et véhicules, âge et vitesse.",
+      tr("ui.pageBateauxIndex.naviresEuropeAlgerieFlotteEt"),
+      tr("ui.pageBateauxIndex.touteLaFlotteDesFerries"),
       "/bateaux",
     ),
   component: Boats,
@@ -75,14 +75,14 @@ function Boats() {
 
   return (
     <SiteLayout>
-      <Breadcrumbs items={[{ name: "Navires", path: "/bateaux" }]} />
+      <Breadcrumbs items={[{ name: tr("ui.pageBateauxIndex.navires"), path: "/bateaux" }]} />
       <CollectionSchema
         path="/bateaux"
         name="Flotte des ferries Europe ↔ Algérie"
         items={vesselDossiers.map((v) => ({ name: v.name, path: `/bateaux/${v.slug}` }))}
       />
       <ShowcaseHero
-        overline="Navires"
+        overline={tr("ui.pageBateauxIndex.navires")}
         title={tr("ui.pageBateauxIndex.laFlotteEntreLEurope")}
         intro={<p>{tr("ui.pageBateauxIndex.lesNaviresRenseignesSurBledway")}</p>}
         chips={
@@ -101,7 +101,7 @@ function Boats() {
         }
         actions={
           <Link to="/" className={heroPrimary}>
-            <MapIcon className="size-4" aria-hidden /> Voir les navires en direct
+            <MapIcon className="size-4" aria-hidden />{tr("ui.pageBateauxIndex.voirLesNaviresEnDirect")}
           </Link>
         }
         visual={
@@ -178,8 +178,8 @@ function Boats() {
         })}
       </div>
       <section className="mt-12" aria-labelledby="dossiers">
-        <SectionTitle id="dossiers" overline="À lire" title="Les dossiers des navires">
-          Cabines, fauteuils, vie à bord et questions à poser avant le départ, avec leurs sources.
+        <SectionTitle id="dossiers" overline={tr("ui.pageBateauxIndex.aLire")} title={tr("ui.pageBateauxIndex.lesDossiersDesNavires")}>
+          {tr("ui.pageBateauxIndex.cabinesFauteuilsVieABord")}
         </SectionTitle>
         <ul className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {vesselDossiers.map((dossier) => (

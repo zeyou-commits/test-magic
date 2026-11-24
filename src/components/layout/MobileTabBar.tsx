@@ -10,7 +10,7 @@ import {
 import { OPEN_ROOM_PICKER_EVENT } from "@/lib/ferry/chatDemo";
 import { useFleet } from "@/lib/ferry/useFleet";
 import { useVoyageTrip } from "@/lib/ferry/voyageTrip";
-import { useT } from "@/lib/i18n";
+import { useT, tr } from "@/lib/i18n";
 import { MainMenuSheet } from "./MainMenu";
 import {
   familyById,
@@ -49,7 +49,7 @@ interface MobileTabBarProps {
 function SeaCountBadge() {
   const count = useFleet().filter((ship) => ship.state === "sea" && !ship.ashore).length;
   if (!count) return null;
-  const label = `${count} navire${count > 1 ? "s" : ""} en mer en ce moment`;
+  const label = tr("ui.mobileTabBar.navireEnMerEnCe", { count, v: count > 1 ? "s" : "" });
   return (
     <span className="bw-sea-count" role="img" aria-label={label} title={label}>
       {count > 99 ? "99+" : count}

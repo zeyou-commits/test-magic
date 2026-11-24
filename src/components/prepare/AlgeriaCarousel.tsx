@@ -137,7 +137,7 @@ export function AlgeriaCarousel() {
           <button
             key={photo.slug}
             type="button"
-            aria-label={`Voir ${photo.place}`}
+            aria-label={tr("ui.algeriaCarousel.voir", { place: photo.place })}
             aria-current={i === index || undefined}
             data-running={(i === index && !paused) || undefined}
             onClick={() => go(i)}

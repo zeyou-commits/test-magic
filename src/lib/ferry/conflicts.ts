@@ -1,4 +1,5 @@
 // Détection des incohérences de calendrier par navire (aucune modification automatique).
+import { tr } from "@/lib/i18n/translate";
 export interface ConflictLeg {
   id: string;
   vesselId: string;
@@ -38,7 +39,7 @@ export function detectVesselConflicts(legs: ConflictLeg[]): PlanningConflict[] {
           severity: "high",
           vesselId,
           departureIds: [a.id, b.id],
-          message: `Chevauchement : ${a.fromName} → ${a.toName} n'est pas terminé quand ${b.fromName} → ${b.toName} doit partir.`,
+          message: tr("ui.libFerryConflicts.chevauchementNEstPasTermine", { fromName: a.fromName, toName: a.toName, fromName2: b.fromName, toName2: b.toName }),
         });
       } else if (a.toId !== b.fromId) {
         out.push({
@@ -46,7 +47,7 @@ export function detectVesselConflicts(legs: ConflictLeg[]): PlanningConflict[] {
           severity: "medium",
           vesselId,
           departureIds: [a.id, b.id],
-          message: `Escale incohérente : arrive à ${a.toName} puis repart de ${b.fromName} sans traversée entre les deux.`,
+          message: tr("ui.libFerryConflicts.escaleIncoherenteArriveAPuis", { toName: a.toName, fromName: b.fromName }),
         });
       }
     }

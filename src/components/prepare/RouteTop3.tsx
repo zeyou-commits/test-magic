@@ -33,7 +33,7 @@ import {
   TOLL_EURO_PER_KM,
   type CompanionPlan,
 } from "@/lib/ferry/companion";
-import { tr, lazyDateFormat, lazyNumberFormat } from "@/lib/i18n";
+import { tr, lazyDateFormat, lazyNumberFormat, placeName } from "@/lib/i18n";
 
 export { FUEL_EURO_PER_L, FUEL_L_PER_100, TOLL_EURO_PER_KM };
 
@@ -55,10 +55,10 @@ export function travelDays(plan: CompanionPlan) {
 // Le prix a son étape (Budget) : la route compare les durées, portion par portion.
 export type Asset = "balance" | "trip" | "sea" | "road";
 export const assetLabels: Record<Asset, string> = {
-  balance: "Notre conseil",
-  trip: "Voyage le plus court",
-  sea: "Traversée la plus courte",
-  road: "Route la plus courte jusqu'au port",
+  get balance() { return tr("ui.routeTop3.notreConseil"); },
+  get trip() { return tr("ui.routeTop3.voyageLePlusCourt"); },
+  get sea() { return tr("ui.routeTop3.traverseeLaPlusCourte"); },
+  get road() { return tr("ui.routeTop3.routeLaPlusCourteJusqu"); },
 };
 
 /**
@@ -94,17 +94,17 @@ export function selectionByAsset(pool: ItineraryOption[], limit = 4, children = 
  * Sans montant : le prix a son étape (Budget).
  */
 export function adviceReason(leader: ItineraryOption, fastest: ItineraryOption, children = 0) {
-  if (leader === fastest) return "Le plus rapide porte à porte, à un horaire confortable.";
+  if (leader === fastest) return tr("ui.routeTop3.lePlusRapidePorteA");
   const gap = leader.totalMinutes - fastest.totalMinutes;
   const other = `${fastest.sailing.from.name} → ${fastest.sailing.to.name}`;
   const traveler = children > 0 ? "family" : "couple";
   const cheaper =
     leader.totalEuro < fastest.totalEuro &&
     priceGapMatters(leader.totalEuro, fastest.totalEuro, traveler);
-  const extra = gap < TIE_MIN ? "presque aussi rapide" : `pour ${formatDuration(gap)} de plus`;
+  const extra = gap < TIE_MIN ? tr("ui.routeTop3.presqueAussiRapide") : tr("ui.routeTop3.pourDePlus", { formatDuration: formatDuration(gap) });
   if (cheaper)
-    return `Nettement moins cher au total (traversée, essence et péages) que ${other}, ${extra}.`;
-  return `Un départ à une heure plus confortable${children > 0 ? " pour les enfants" : ""} que ${other}, ${extra}.`;
+    return tr("ui.routeTop3.nettementMoinsCherAuTotal", { other, extra });
+  return tr("ui.routeTop3.unDepartAUneHeure", { v: children > 0 ? " pour les enfants" : "", other, extra });
 }
 
 /**
@@ -296,13 +296,13 @@ export function RouteTop3({
     ? lazyDateFormat({ month: "long", year: "numeric" }).format(
         new Date(`${plan.month}-15T12:00:00Z`),
       )
-    : "date à choisir";
+    : tr("ui.routeTop3.dateAChoisir");
   const estimated = top.some(({ option }) => option.sailing.isSimulation);
 
   return (
     <section ref={section} aria-labelledby="top3-title" className="bw-route__top scroll-mt-4">
       <h3 id="top3-title" className="bw-route__h">
-        {top.length > 1 ? `Vos ${top.length} meilleurs trajets` : tr("ui.routeTop3.votreTrajet")}
+        {top.length > 1 ? tr("ui.routeTop3.vosMeilleursTrajets", { length: top.length }) : tr("ui.routeTop3.votreTrajet")}
         <span>{tr("ui.routeTop3.porteAPorte")}{monthLabel}</span>
       </h3>
       {road.isPending || (road.isFetching && !top.length) ? (
@@ -383,10 +383,10 @@ function RouteCard({
   const when = (at: number, arrival = false) =>
     simulated
       ? at === option.leaveHomeAt
-        ? monthLabel === "date à choisir"
-          ? "Date à choisir"
-          : `Date à confirmer en ${monthLabel}`
-        : `≈ ${formatDuration(Math.round((at - option.leaveHomeAt) / 60_000))} après le départ`
+        ? monthLabel === tr("ui.routeTop3.dateAChoisir")
+          ? tr("ui.routeTop3.dateAChoisir2")
+          : tr("ui.routeTop3.dateAConfirmerEn", { monthLabel })
+        : tr("ui.routeTop3.apresLeDepart", { formatDuration: formatDuration(Math.round((at - option.leaveHomeAt) / 60_000)) })
       : formatDayTime(at, arrival ? toZone : fromZone);
   const atPort = option.leaveHomeAt + legWithPauses(option.originRoad.durationMin) * 60_000;
   const sail = Date.parse(option.sailing.departure.departure_at);
@@ -398,37 +398,37 @@ function RouteCard({
     {
       icon: "🏠",
       at: when(option.leaveHomeAt),
-      title: "Départ de chez vous",
-      text: `${Math.round(option.originRoad.distanceKm)} km, ${formatDuration(option.originRoad.durationMin)} jusqu'à ${option.sailing.from.name}${pauseNote(option.originRoad.durationMin)}`,
+      title: tr("ui.routeTop3.departDeChezVous"),
+      text: tr("ui.routeTop3.kmJusquA", { v: Math.round(option.originRoad.distanceKm), formatDuration: formatDuration(option.originRoad.durationMin), name: option.sailing.from.name, pauseNote: pauseNote(option.originRoad.durationMin) }),
     },
     {
       icon: "⚓",
       at: when(atPort),
-      title: `Au port de ${option.sailing.from.name}`,
-      text: `${BOARDING_BUFFER_MIN / 60} h de marge avant le départ : l'heure de convocation de votre billet fait foi`,
+      title: tr("ui.routeTop3.auPortDe", { name: option.sailing.from.name }),
+      text: tr("ui.routeTop3.hDeMargeAvantLe", { v: BOARDING_BUFFER_MIN / 60 }),
     },
     {
       icon: "🚢",
       at: when(sail),
-      title: `Traversée${option.sailing.company ? ` avec ${option.sailing.company.name}` : ""}`,
-      text: `${formatDuration(option.sailing.durationMin ?? 0)} de mer jusqu'à ${option.sailing.to.name}${simulated ? " (durée estimée)" : ""}`,
+      title: tr("ui.routeTop3.traversee", { v: option.sailing.company ? ` avec ${option.sailing.company.name}` : "" }),
+      text: tr("ui.routeTop3.deMerJusquA", { formatDuration: formatDuration(option.sailing.durationMin ?? 0), name: option.sailing.to.name, v: simulated ? " (durée estimée)" : "" }),
     },
     {
       icon: "🛃",
       at: when(land, true),
-      title: `Arrivée à ${option.sailing.to.name}`,
-      text: `Débarquement, contrôles et sortie du port : ${DISEMBARK_BUFFER_MIN / 60} h de marge`,
+      title: tr("ui.routeTop3.arriveeA", { name: option.sailing.to.name }),
+      text: tr("ui.routeTop3.debarquementControlesEtSortieDu", { v: DISEMBARK_BUFFER_MIN / 60 }),
     },
     {
       icon: "🛣️",
       at: when(out, true),
-      title: "La dernière route",
+      title: tr("ui.routeTop3.laDerniereRoute"),
       text: `${Math.round(option.destinationRoad.distanceKm)} km, ${formatDuration(option.destinationRoad.durationMin)}${pauseNote(option.destinationRoad.durationMin)}`,
     },
     {
       icon: "🏁",
       at: when(option.arrivalAt, true),
-      title: "Bien arrivé au bled",
+      title: tr("ui.routeTop3.bienArriveAuBled"),
       text: destination,
     },
   ];
@@ -440,7 +440,7 @@ function RouteCard({
       time: option.originRoad.durationMin,
       sub: `${Math.round(option.originRoad.distanceKm)} km`,
     },
-    { kind: "sea", icon: "⛴️", time: option.sailing.durationMin ?? 0, sub: "en mer" },
+    { kind: "sea", icon: "⛴️", time: option.sailing.durationMin ?? 0, sub: tr("ui.routeTop3.enMer") },
     {
       kind: "road",
       icon: "🚗",
@@ -465,7 +465,7 @@ function RouteCard({
               ))}
             </span>
             <strong className="bw-rcard__name">
-              {option.sailing.from.name} → {option.sailing.to.name}
+              {placeName(option.sailing.from.name)} → {placeName(option.sailing.to.name)}
             </strong>
             {reason ? <span className="bw-rcard__why">{reason}</span> : null}
           </span>
@@ -524,18 +524,18 @@ function RouteCard({
 
 const loadingSteps = (month: string, destination: string) => [
   {
-    title: "Je trace la route jusqu'aux ports",
-    sub: "Les ports de France, d'Espagne et d'Italie à ta portée",
+    title: tr("ui.routeTop3.jeTraceLaRouteJusqu"),
+    sub: tr("ui.routeTop3.lesPortsDeFranceD"),
   },
   {
-    title: month === "date à choisir" ? "Je regarde les traversées" : `Je regarde les traversées de ${month}`,
-    sub: "Horaires publiés, sinon les habitudes de chaque ligne",
+    title: month === tr("ui.routeTop3.dateAChoisir") ? tr("ui.routeTop3.jeRegardeLesTraversees") : tr("ui.routeTop3.jeRegardeLesTraverseesDe", { month }),
+    sub: tr("ui.routeTop3.horairesPubliesSinonLesHabitudes"),
   },
   {
-    title: "Je compte l'attente et la dernière route",
+    title: tr("ui.routeTop3.jeCompteLAttenteEt"),
     sub: destination
-      ? `Du port d'arrivée jusqu'à ${destination}`
-      : "Du port d'arrivée jusqu'au bled",
+      ? tr("ui.routeTop3.duPortDArriveeJusqu", { destination })
+      : tr("ui.routeTop3.duPortDArriveeJusqu2"),
   },
 ];
 

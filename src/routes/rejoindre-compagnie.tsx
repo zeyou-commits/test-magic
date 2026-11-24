@@ -8,7 +8,7 @@ import { tr } from "@/lib/i18n";
 export const Route = createFileRoute("/rejoindre-compagnie")({
   head: () => ({
     meta: [
-      { title: "Rejoindre un espace compagnie — BledWay" },
+      { title: tr("ui.pageRejoindreCompagnie.rejoindreUnEspaceCompagnieBledway") },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -53,55 +53,55 @@ const OUTCOMES: Record<
   { title: string; text: string; done?: boolean; final?: boolean }
 > = {
   accepted: {
-    title: "Accès ouvert",
-    text: "Votre compte a maintenant accès à l'espace de",
+    get title() { return tr("ui.pageRejoindreCompagnie.accesOuvert"); },
+    get text() { return tr("ui.pageRejoindreCompagnie.votreCompteAMaintenantAcces"); },
     done: true,
   },
   already_accepted: {
-    title: "Accès déjà ouvert",
-    text: "Vous avez déjà accepté cette invitation pour",
+    get title() { return tr("ui.pageRejoindreCompagnie.accesDejaOuvert"); },
+    get text() { return tr("ui.pageRejoindreCompagnie.vousAvezDejaAccepteCette"); },
     done: true,
   },
   already_member: {
-    title: "Accès déjà ouvert",
-    text: "Votre compte avait déjà accès à l'espace de",
+    get title() { return tr("ui.pageRejoindreCompagnie.accesDejaOuvert"); },
+    get text() { return tr("ui.pageRejoindreCompagnie.votreCompteAvaitDejaAcces"); },
     done: true,
   },
   wrong_account: {
-    title: "Ce n'est pas le bon compte",
-    text: "Ce lien a été créé pour une autre adresse e-mail. Déconnectez-vous, puis connectez-vous ou créez votre compte avec l'adresse à laquelle vous avez reçu ce lien.",
+    get title() { return tr("ui.pageRejoindreCompagnie.ceNEstPasLe"); },
+    get text() { return tr("ui.pageRejoindreCompagnie.ceLienAEteCree"); },
   },
   email_unconfirmed: {
-    title: "Adresse à confirmer",
-    text: "Confirmez d'abord votre adresse e-mail avec le message reçu à l'inscription, puis rouvrez ce lien.",
+    get title() { return tr("ui.pageRejoindreCompagnie.adresseAConfirmer"); },
+    get text() { return tr("ui.pageRejoindreCompagnie.confirmezDAbordVotreAdresse"); },
   },
   expired: {
-    title: "Lien expiré",
-    text: "Ce lien n'est plus valable. Demandez une nouvelle invitation à votre interlocuteur BledWay.",
+    get title() { return tr("ui.pageRejoindreCompagnie.lienExpire"); },
+    get text() { return tr("ui.pageRejoindreCompagnie.ceLienNEstPlus"); },
     final: true,
   },
   revoked: {
-    title: "Lien annulé",
-    text: "Cette invitation a été annulée par BledWay. Contactez votre interlocuteur si besoin.",
+    get title() { return tr("ui.pageRejoindreCompagnie.lienAnnule"); },
+    get text() { return tr("ui.pageRejoindreCompagnie.cetteInvitationAEteAnnulee"); },
     final: true,
   },
   used: {
-    title: "Lien déjà utilisé",
-    text: "Ce lien a déjà servi à un autre compte. Il ne fonctionne qu'une fois.",
+    get title() { return tr("ui.pageRejoindreCompagnie.lienDejaUtilise"); },
+    get text() { return tr("ui.pageRejoindreCompagnie.ceLienADejaServi"); },
     final: true,
   },
   not_found: {
-    title: "Lien inconnu",
-    text: "Ce lien n'est pas reconnu. Vérifiez que vous l'avez copié en entier.",
+    get title() { return tr("ui.pageRejoindreCompagnie.lienInconnu"); },
+    get text() { return tr("ui.pageRejoindreCompagnie.ceLienNEstPas"); },
     final: true,
   },
   account_inactive: {
-    title: "Compte bloqué",
-    text: "Votre compte ne peut pas recevoir d'accès pour le moment. Contactez BledWay.",
+    get title() { return tr("ui.pageRejoindreCompagnie.compteBloque"); },
+    get text() { return tr("ui.pageRejoindreCompagnie.votreCompteNePeutPas"); },
   },
   suspended: {
-    title: "Accès suspendu",
-    text: "Votre accès à cette compagnie est suspendu. Contactez votre interlocuteur BledWay.",
+    get title() { return tr("ui.pageRejoindreCompagnie.accesSuspendu"); },
+    get text() { return tr("ui.pageRejoindreCompagnie.votreAccesACetteCompagnie"); },
     final: true,
   },
 };
@@ -138,17 +138,17 @@ function JoinCompanyPage() {
     </main>
   );
 
-  if (loading || code === undefined) return shell("Espace compagnie", <p>{tr("ui.pageRejoindreCompagnie.chargement")}</p>);
+  if (loading || code === undefined) return shell(tr("ui.pageRejoindreCompagnie.espaceCompagnie"), <p>{tr("ui.pageRejoindreCompagnie.chargement")}</p>);
   if (!code)
     return shell(
-      "Lien incomplet",
+      tr("ui.pageRejoindreCompagnie.lienIncomplet"),
       <p>
         {tr("ui.pageRejoindreCompagnie.ouvrezLeLienDInvitation")}
       </p>,
     );
   if (!user)
     return shell(
-      "Rejoindre un espace compagnie",
+      tr("ui.pageRejoindreCompagnie.rejoindreUnEspaceCompagnie"),
       <>
         <p>{tr("ui.pageRejoindreCompagnie.bledwayVousInviteARejoindre")}</p>
         <p>
@@ -162,7 +162,7 @@ function JoinCompanyPage() {
 
   if (accept.isError)
     return shell(
-      "Vérification impossible",
+      tr("ui.pageRejoindreCompagnie.verificationImpossible"),
       <p>{(accept.error as Error).message}</p>,
       <button
         type="button"
@@ -178,7 +178,7 @@ function JoinCompanyPage() {
       outcome.title,
       <p>
         {outcome.done
-          ? `${outcome.text} ${accept.data.companyName ?? "votre compagnie"}.`
+          ? `${outcome.text} ${accept.data.companyName ?? tr("ui.pageRejoindreCompagnie.votreCompagnie")}.`
           : outcome.text}
       </p>,
       outcome.done ? (
@@ -200,7 +200,7 @@ function JoinCompanyPage() {
     );
   }
   return shell(
-    "Rejoindre un espace compagnie",
+    tr("ui.pageRejoindreCompagnie.rejoindreUnEspaceCompagnie"),
     <>
       <p>
         {tr("ui.pageRejoindreCompagnie.compteConnecte")}<strong className="text-foreground">{user.email}</strong>.

@@ -86,8 +86,8 @@ export function LiveFare({ sailing, profile }: { sailing: Sailing; profile: Trip
     profile.passengers.adults + profile.passengers.seniors + profile.passengers.children + profile.passengers.babies;
   const otherTime = fare.departureLocal.slice(11, 16);
   const conditions = [
-    fare.amendable == null ? null : fare.amendable ? (fare.amendmentFee ? "Modifiable avec frais" : "Modifiable sans frais") : "Non modifiable",
-    fare.cancellable == null ? null : fare.cancellable ? (fare.refundFee ? "Remboursable avec frais" : "Remboursable") : "Non remboursable",
+    fare.amendable == null ? null : fare.amendable ? (fare.amendmentFee ? tr("ui.liveFare.modifiableAvecFrais") : tr("ui.liveFare.modifiableSansFrais")) : tr("ui.liveFare.nonModifiable"),
+    fare.cancellable == null ? null : fare.cancellable ? (fare.refundFee ? tr("ui.liveFare.remboursableAvecFrais") : tr("ui.liveFare.remboursable")) : tr("ui.liveFare.nonRemboursable"),
   ].filter(Boolean);
   const href = partnerBookingUrl(sailing, profile);
   // Couchage imposé dont on ne connaît pas le prix : on n'affiche pas un total qui serait faux.
@@ -153,7 +153,7 @@ export function LiveFare({ sailing, profile }: { sailing: Sailing; profile: Trip
         }}
         className="flex h-11 w-full items-center justify-center rounded-full bg-cta text-sm font-bold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-[0.98]"
       >
-        {missingCompulsory ? tr("ui.liveFare.voirLePrixComplet") : `Réserver à ${money(fare.total, fare.currency)}`}
+        {missingCompulsory ? tr("ui.liveFare.voirLePrixComplet") : tr("ui.liveFare.reserverA", { money: money(fare.total, fare.currency) })}
       </a>
       <p className="text-center text-[11px] text-muted-foreground">
         {fare.options.length ? tr("ui.liveFare.couchageAChoisirAL") : ""}{tr("ui.liveFare.prixDuMomentIlPeut")}
@@ -171,11 +171,11 @@ function SleepIcon({ kind }: { kind: "seat" | "berth" | "cabin" }) {
 }
 
 function whoLabel(travellers: number, profile: TripProfileValue) {
-  const who = travellers > 1 ? `pour vous ${travellers}` : "pour vous";
+  const who = travellers > 1 ? tr("ui.liveFare.pourVous", { travellers }) : tr("ui.liveFare.pourVous2");
   if (profile.vehicle === "none") return who;
   const loaded = (profile.load?.extraHeight ?? (profile.accessories.includes("roofbox") ? 50 : 0)) > 0;
   const car = profile.car
     ? `la ${profile.car.model.replace(/\s*\(.*\)$/, "")}`
     : `votre ${VEHICLES.find((item) => item.id === profile.vehicle)?.label.toLowerCase() ?? "voiture"}`;
-  return `${who} + ${car}${loaded ? " chargée" : ""}`;
+  return `${who} + ${car}${loaded ? tr("ui.liveFare.chargee") : ""}`;
 }

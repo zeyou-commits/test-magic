@@ -208,35 +208,35 @@ export function RoomInvite({ onSelect }: { onSelect: (selection: Selection) => v
         <DialogTitle>
           {open?.askAboard
             ? asking
-              ? "Vous êtes à bord ?"
+              ? tr("ui.roomInvite.vousEtesABord")
               : aboard === "quay"
-                ? "Le départ approche"
-                : "Bonne traversée !"
+                ? tr("ui.roomInvite.leDepartApproche")
+                : tr("ui.roomInvite.bonneTraversee")
             : open?.title}
         </DialogTitle>
         {/* En mer, l'image parle : la phrase reste pour les lecteurs d'écran. */}
         <DialogDescription className={open?.askAboard ? "sr-only" : undefined}>
           {open?.askAboard
-            ? `Le navire${sceneVessel ? ` ${sceneVessel.name}` : ""} a pris la mer. ${open.body}`
+            ? tr("ui.roomInvite.leNavireAPrisLa", { v: sceneVessel ? ` ${sceneVessel.name}` : "", body: open.body })
             : open?.body}
         </DialogDescription>
         {asking ? (
           <>
             {/* On cite la source au lieu d'affirmer : le signal peut avoir de l'avance. */}
-            <p className="bw-aboard-source">D'après le suivi, le navire est parti.</p>
+            <p className="bw-aboard-source">{tr("ui.roomInvite.dApresLeSuiviLe")}</p>
             <div className="bw-aboard-ask__row">
               <button type="button" className="bw-action-primary" onClick={() => sayAboard("sea")}>
-                <Waves size={18} aria-hidden /> À bord, en mer
+                <Waves size={18} aria-hidden />{tr("ui.roomInvite.aBordEnMer")}
               </button>
               <button type="button" className="bw-aboard-ask__no" onClick={() => sayAboard("quay")}>
-                <Anchor size={17} aria-hidden /> À bord, encore à quai
+                <Anchor size={17} aria-hidden />{tr("ui.roomInvite.aBordEncoreAQuai")}
               </button>
               <button
                 type="button"
                 className="bw-aboard-ask__no bw-aboard-ask__none"
                 onClick={() => setOpen(null)}
               >
-                <X size={17} aria-hidden /> Non
+                <X size={17} aria-hidden />{tr("ui.roomInvite.non")}
               </button>
             </div>
           </>
@@ -252,11 +252,11 @@ export function RoomInvite({ onSelect }: { onSelect: (selection: Selection) => v
                 >
                   {check.state === "verified" ? (
                     <>
-                      <BadgeCheck size={18} aria-hidden /> Vérifié en mer
+                      <BadgeCheck size={18} aria-hidden />{tr("ui.roomInvite.verifieEnMer")}
                     </>
                   ) : (
                     <>
-                      <ShieldQuestion size={16} aria-hidden /> Non vérifié
+                      <ShieldQuestion size={16} aria-hidden />{tr("ui.roomInvite.nonVerifie")}
                       {check.reason ? <span className="sr-only"> : {check.reason}</span> : null}
                     </>
                   )}
@@ -265,9 +265,9 @@ export function RoomInvite({ onSelect }: { onSelect: (selection: Selection) => v
                 <div className="bw-aboard-check">
                   <button type="button" onClick={verify} disabled={checking}>
                     <LocateFixed size={16} aria-hidden />
-                    {checking ? "Vérification…" : "Vérifier ma position"}
+                    {checking ? tr("ui.roomInvite.verification") : tr("ui.roomInvite.verifierMaPosition")}
                   </button>
-                  <small>Facultatif · rien n'est enregistré</small>
+                  <small>{tr("ui.roomInvite.facultatifRienNEstEnregistre")}</small>
                 </div>
               )
             ) : null}
@@ -276,7 +276,7 @@ export function RoomInvite({ onSelect }: { onSelect: (selection: Selection) => v
                 {open.examples.map((example, index) => {
                   const Icon = open.askAboard ? [UtensilsCrossed, Waves][index] : null;
                   // Encore à quai : la question utile est « on part quand ? », pas l'état de la mer.
-                  if (aboard === "quay" && index === 1) example = "On part quand ?";
+                  if (aboard === "quay" && index === 1) example = tr("ui.roomInvite.onPartQuand");
                   return (
                     <li key={example}>
                       {Icon ? <Icon size={14} aria-hidden /> : null}

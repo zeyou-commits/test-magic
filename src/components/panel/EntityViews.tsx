@@ -62,7 +62,7 @@ export function CompanyView({
     .sort((a, b) => a.departure_at.localeCompare(b.departure_at));
   const scheduled = new Set(programmes.map((d) => d.route_id));
   const lines = routes.filter((r) => r.company_ids.includes(companyId) || scheduled.has(r.id));
-  const portName = (id: string) => ports.find((p) => p.id === id)?.name ?? "Port à confirmer";
+  const portName = (id: string) => ports.find((p) => p.id === id)?.name ?? tr("ui.entityViews.portAConfirmer");
   const site = safeExternalUrl(company.website_url);
   return (
     <article className="bw-company-profile">
@@ -179,7 +179,7 @@ export function CompanyView({
                     </strong>
                     <small>
                       {scheduled.has(r.id)
-                        ? `${formatDuration(r.typical_duration_minutes)} · programme publié`
+                        ? tr("ui.entityViews.programmePublie", { formatDuration: formatDuration(r.typical_duration_minutes) })
                         : tr("ui.entityViews.sansDepartPublieAVenir")}
                     </small>
                   </button>

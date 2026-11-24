@@ -7,8 +7,8 @@ import { tr } from "@/lib/i18n";
 export const Route = createFileRoute("/simulateurs/")({
   head: () =>
     seoHead(
-      "Simulateurs Algérie : âge voiture et budgets de voyage | BledWay",
-      "Quatre outils gratuits pour calculer l'âge d'une voiture, construire un budget d'importation, comparer deux voyages et partager les frais de la route.",
+      tr("ui.pageSimulateursIndex.simulateursAlgerieAgeVoitureEt"),
+      tr("ui.pageSimulateursIndex.quatreOutilsGratuitsPourCalculer"),
       "/simulateurs",
     ),
   component: Tools,
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/simulateurs/")({
 function Tools() {
   return (
     <SiteLayout>
-      <Breadcrumbs items={[{ name: "Simulateurs", path: "/simulateurs" }]} />
+      <Breadcrumbs items={[{ name: tr("ui.pageSimulateursIndex.simulateurs"), path: "/simulateurs" }]} />
       <CollectionSchema
         path="/simulateurs"
         name="Simulateurs BledWay"

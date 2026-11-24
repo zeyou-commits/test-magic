@@ -59,8 +59,8 @@ export function NotificationInbox({ userId }: { userId: string }) {
           </button>
         </p>
       ) : !notices.data.length ? (
-        <Bw504Note className="my-3" title="Rien de nouveau pour l'instant">
-          Les nouvelles des navires et des traversées que tu suis arriveront ici.
+        <Bw504Note className="my-3" title={tr("ui.notificationInbox.rienDeNouveauPourL")}>
+          {tr("ui.notificationInbox.lesNouvellesDesNaviresEt")}
         </Bw504Note>
       ) : (
         <div className="divide-y divide-border">

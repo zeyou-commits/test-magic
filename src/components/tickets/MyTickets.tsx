@@ -24,7 +24,7 @@ const day = (date: string | null) =>
         month: "long",
         timeZone: "UTC",
       })
-    : "date à compléter";
+    : tr("ui.myTickets.dateACompleter");
 
 /** Les billets d'une même traversée (un billet par passager) regroupés en un seul voyage. */
 export function groupTickets(rows: TicketRow[]) {
@@ -46,7 +46,7 @@ const ticketName = (t: TicketRow, i: number) =>
     ? t.details.passengers
         .map((name) => name.toLowerCase().replace(/(^|[\s-])\p{L}/gu, (c) => c.toUpperCase()))
         .join(", ")
-    : `Billet ${i + 1}`;
+    : tr("ui.myTickets.billet2", { v: i + 1 });
 
 function useTicketLabels() {
   const { data: ports = [] } = useQuery(portsQuery);
@@ -56,8 +56,8 @@ function useTicketLabels() {
     route: (t: TicketRow) => {
       const leg = t.details.legs[0];
       return leg
-        ? `${port(leg.fromPortId)} → ${port(leg.toPortId)}${t.details.legs.length > 1 ? " · aller-retour" : ""}`
-        : "Billet";
+        ? `${port(leg.fromPortId)} → ${port(leg.toPortId)}${t.details.legs.length > 1 ? tr("ui.myTickets.allerRetour") : ""}`
+        : tr("ui.myTickets.billet");
     },
     company: (t: TicketRow) => companies.find((c) => c.id === t.company_id)?.name ?? null,
     port,
@@ -99,7 +99,7 @@ export function TicketViewer({
           void import("@/lib/tickets/read")
             .then((m) => m.pdfPageImages(file))
             .then(setPages)
-            .catch(() => setProblem("Aperçu indisponible : utilisez « Télécharger »."));
+            .catch(() => setProblem(tr("ui.myTickets.apercuIndisponibleUtilisezTelecharger")));
         setOffline(local);
       })
       .catch((error: Error) => setProblem(error.message));
@@ -111,7 +111,7 @@ export function TicketViewer({
     mutationFn: () => deleteTicket(ticket!),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: ticketsKey });
-      toast.success("Billet supprimé, document compris.");
+      toast.success(tr("ui.myTickets.billetSupprimeDocumentCompris"));
       onClose();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -138,7 +138,7 @@ export function TicketViewer({
                           onClick={() => setZoom((value) => !value)}
                           aria-label={zoom ? tr("ui.myTickets.reduireLeBillet") : tr("ui.myTickets.agrandirLeBilletQrCode")}
                         >
-                          <img src={page} alt={`Billet, page ${i + 1}`} />
+                          <img src={page} alt={tr("ui.myTickets.billetPage", { v: i + 1 })} />
                         </button>
                       ))}
                     </div>
@@ -280,7 +280,7 @@ export function MyTickets() {
                     {day(first.details.legs[0]?.date ?? null)}
                     {labels.company(first) ? ` · ${labels.company(first)}` : ""}
                     {group.length > 1
-                      ? ` · ${group.length} billets${people.length ? ` · ${people.length} passager${people.length > 1 ? "s" : ""}` : ""}`
+                      ? tr("ui.myTickets.billets", { length: group.length, v: people.length ? ` · ${people.length} passager${people.length > 1 ? "s" : ""}` : "" })
                       : people.length
                         ? ` · ${people.join(", ")}`
                         : ""}

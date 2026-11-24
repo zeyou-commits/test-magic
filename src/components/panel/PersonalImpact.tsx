@@ -45,24 +45,24 @@ export function PersonalImpact({
   );
   const reason =
     departure.status === "cancelled"
-      ? { title: "Votre traversée est annulée", tone: "critical" as const }
+      ? { title: tr("ui.personalImpact.votreTraverseeEstAnnulee"), tone: "critical" as const }
       : vesselAlert
-        ? { title: `${vesselAlert.label} : votre traversée est menacée`, tone: "critical" as const }
+        ? { title: tr("ui.personalImpact.votreTraverseeEstMenacee", { label: vesselAlert.label }), tone: "critical" as const }
         : disruption
           ? { title: disruption.title, tone: "warning" as const }
           : departure.status === "modified"
-            ? { title: "L’horaire de votre traversée a changé", tone: "warning" as const }
+            ? { title: tr("ui.personalImpact.lHoraireDeVotreTraversee"), tone: "warning" as const }
             : null;
   if (!reason || Date.parse(departure.departure_at) < Date.now() - 86_400_000) return null;
 
   const advice =
     departure.status === "cancelled"
-      ? `Contactez ${company?.name ?? "la compagnie"} pour un report ou un remboursement, et gardez votre billet.`
+      ? tr("ui.personalImpact.contactezPourUnReportOu", { v: company?.name ?? "la compagnie" })
       : vesselAlert
-        ? "Attendez la confirmation de la compagnie avant de prendre la route vers le port. Gardez votre billet."
+        ? tr("ui.personalImpact.attendezLaConfirmationDeLa")
         : disruption
-          ? "Vérifiez l’heure auprès de la compagnie avant de prendre la route."
-          : "Vérifiez votre nouvelle heure de présentation au port.";
+          ? tr("ui.personalImpact.verifiezLHeureAupresDe")
+          : tr("ui.personalImpact.verifiezVotreNouvelleHeureDe");
 
   const { sameLine, nearby } = findAlternatives(
     departure,

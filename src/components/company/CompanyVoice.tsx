@@ -161,8 +161,8 @@ function ReplyBlock({
     onSuccess: () => {
       toast.success(
         kind === "contest"
-          ? "Contestation envoyée à BledWay. Le signalement reste affiché pendant l'examen."
-          : "Réponse publiée sous l'avis.",
+          ? tr("ui.companyVoice.contestationEnvoyeeABledwayLe")
+          : tr("ui.companyVoice.reponsePublieeSousLAvis"),
       );
       setOpen(false);
       setBody("");
@@ -176,7 +176,7 @@ function ReplyBlock({
   const withdraw = useMutation({
     mutationFn: (id: string) => companyAccessRequest({ action: "reply_withdraw", id }),
     onSuccess: () => {
-      toast.success(kind === "contest" ? "Contestation retirée." : "Réponse retirée.");
+      toast.success(kind === "contest" ? tr("ui.companyVoice.contestationRetiree") : tr("ui.companyVoice.reponseRetiree"));
       refresh();
     },
     onError: (error: Error) => {
@@ -187,11 +187,11 @@ function ReplyBlock({
   const label =
     kind === "contest"
       ? current?.status === "submitted"
-        ? "Modifier la contestation"
-        : "Contester"
+        ? tr("ui.companyVoice.modifierLaContestation")
+        : tr("ui.companyVoice.contester")
       : current
-        ? "Modifier la réponse"
-        : "Répondre";
+        ? tr("ui.companyVoice.modifierLaReponse")
+        : tr("ui.companyVoice.repondre");
   const status = current ? REPLY_STATUS[current.status] : null;
   const valid = body.trim().length >= 3;
 
@@ -245,8 +245,8 @@ function ReplyBlock({
                 if (
                   window.confirm(
                     kind === "contest"
-                      ? "Retirer cette contestation ?"
-                      : "Retirer cette réponse ? Elle ne sera plus affichée.",
+                      ? tr("ui.companyVoice.retirerCetteContestation")
+                      : tr("ui.companyVoice.retirerCetteReponseElleNe"),
                   )
                 )
                   withdraw.mutate(current.id);
@@ -285,7 +285,7 @@ function ReplyBlock({
             <span className="text-xs text-muted-foreground">
               {kind === "contest"
                 ? tr("ui.companyVoiceDesk.lueParLEquipeBledway")
-                : `Publiée tout de suite sous « Réponse de ${ctx.companyName} ». L'avis reste affiché tel quel. BledWay peut retirer une réponse qui enfreint les règles communes.`}{" "}
+                : tr("ui.companyVoice.publieeToutDeSuiteSous", { companyName: ctx.companyName })}{" "}
               {body.trim().length}/1000
             </span>
           </label>
@@ -307,10 +307,10 @@ function ReplyBlock({
 // ─── Avis ────────────────────────────────────────────────────────────────────────────────────
 
 function reviewSummary(review: FeedbackReview) {
-  if (review.kind === "vessel_review") return review.score ? `${review.score}/5` : "Note";
+  if (review.kind === "vessel_review") return review.score ? `${review.score}/5` : tr("ui.companyVoice.note");
   const kind = review.targetKind === "vessel" ? "vessel" : "company";
   const rated = reviewCriteria[kind].filter((c) => typeof review.scores?.[c.code] === "number");
-  if (!rated.length) return "Note";
+  if (!rated.length) return tr("ui.companyVoice.note");
   const mean = rated.reduce((sum, c) => sum + (review.scores![c.code] as number), 0) / rated.length;
   return `${reviewNumber(mean)}/5`;
 }
@@ -342,8 +342,8 @@ export function CompanyReviewsTab({ ctx, summary }: { ctx: VoiceContext; summary
         <div className="mb-2 flex flex-wrap gap-2" role="group" aria-label={tr("ui.companyVoiceDesk.filtrerLesAvis")}>
           {(
             [
-              ["all", "Tous"],
-              ["todo", "Sans réponse"],
+              ["all", tr("ui.companyVoice.tous")],
+              ["todo", tr("ui.companyVoice.sansReponse")],
             ] as const
           ).map(([value, text]) => (
             <Button
@@ -592,7 +592,7 @@ function ProfileForm({
         changes: Object.fromEntries(changed.map((field) => [field.key, values[field.key]!.trim()])),
       }),
     onSuccess: () => {
-      toast.success("Fiche mise à jour : les voyageurs voient déjà la nouvelle version.");
+      toast.success(tr("ui.companyVoice.ficheMiseAJourLes"));
       setEditing(false);
       setValues({});
       refresh();
@@ -605,7 +605,7 @@ function ProfileForm({
   const withdraw = useMutation({
     mutationFn: (id: string) => companyAccessRequest({ action: "profile_withdraw", id }),
     onSuccess: () => {
-      toast.success("Proposition retirée.");
+      toast.success(tr("ui.companyVoice.propositionRetiree"));
       refresh();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -686,7 +686,7 @@ function ProfileForm({
               >
                 <Send className="size-4" aria-hidden />
                 {changed.length
-                  ? `Enregistrer ${changed.length} modification${changed.length > 1 ? "s" : ""}`
+                  ? tr("ui.companyVoice.enregistrerModification", { length: changed.length, v: changed.length > 1 ? "s" : "" })
                   : tr("ui.companyVoiceDesk.aucunChangement")}
               </Button>
               <Button
@@ -797,9 +797,9 @@ function ProfilePreview({
   live: boolean;
 }) {
   const links = [
-    ["Réserver sur le site", safeExternalUrl(values.booking_url)],
-    ["Contacter le service client", safeExternalUrl(values.contact_url)],
-    ["Réclamation et droits des passagers", safeExternalUrl(values.claims_url)],
+    [tr("ui.companyVoice.reserverSurLeSite"), safeExternalUrl(values.booking_url)],
+    [tr("ui.companyVoice.contacterLeServiceClient"), safeExternalUrl(values.contact_url)],
+    [tr("ui.companyVoice.reclamationEtDroitsDesPassagers"), safeExternalUrl(values.claims_url)],
   ] as const;
   const site = safeExternalUrl(values.website_url);
   const any = links.some(([, href]) => href) || values.phone || values.contact_email || site;
@@ -926,7 +926,7 @@ function Galleries({
         key={current.id ?? "company"}
         ctx={ctx}
         vesselId={current.id}
-        title={current.id ? current.name : `Galerie générale de ${ctx.companyName}`}
+        title={current.id ? current.name : tr("ui.companyVoice.galerieGeneraleDe", { companyName: ctx.companyName })}
         photos={photosOf(current.id)}
       />
     </section>
@@ -953,7 +953,7 @@ function Gallery({
   const withdraw = useMutation({
     mutationFn: (id: string) => companyAccessRequest({ action: "photo_withdraw", id }),
     onSuccess: () => {
-      toast.success("Photo retirée.");
+      toast.success(tr("ui.companyVoice.photoRetiree"));
       refresh();
     },
     onError: (error: Error) => {
@@ -1040,10 +1040,10 @@ function Gallery({
                         <button
                           type="button"
                           className="bo-link min-h-8"
-                          aria-label={`Retirer la photo « ${photo.caption} »`}
+                          aria-label={tr("ui.companyVoice.retirerLaPhoto", { caption: photo.caption })}
                           disabled={withdraw.isPending}
                           onClick={() => {
-                            if (window.confirm("Retirer cette photo ? Elle sera effacée."))
+                            if (window.confirm(tr("ui.companyVoice.retirerCettePhotoElleSera")))
                               withdraw.mutate(photo.id);
                           }}
                         >
@@ -1122,7 +1122,7 @@ export function CompanyManagerPanel({ ctx }: { ctx: VoiceContext }) {
   const act = useMutation({
     mutationFn: (input: Record<string, unknown>) => companyAccessRequest(input),
     onSuccess: () => {
-      toast.success("Modification enregistrée.");
+      toast.success(tr("ui.companyVoice.modificationEnregistree"));
       refresh();
     },
     onError: (error: Error) => {
@@ -1152,7 +1152,7 @@ export function CompanyManagerPanel({ ctx }: { ctx: VoiceContext }) {
             <Button
               size="sm"
               onClick={() =>
-                void navigator.clipboard.writeText(link).then(() => toast.success("Lien copié."))
+                void navigator.clipboard.writeText(link).then(() => toast.success(tr("ui.companyVoice.lienCopie")))
               }
             >
               <Copy className="size-4" aria-hidden />{tr("ui.companyVoiceDesk.copier")}
@@ -1294,7 +1294,7 @@ export function CompanyManagerPanel({ ctx }: { ctx: VoiceContext }) {
                         variant="ghost"
                         disabled={act.isPending}
                         onClick={() => {
-                          const reason = ask("Motif de la suspension (visible par BledWay) :");
+                          const reason = ask(tr("ui.companyVoice.motifDeLaSuspensionVisible"));
                           if (reason)
                             act.mutate({
                               action: "manager_member",
@@ -1327,7 +1327,7 @@ export function CompanyManagerPanel({ ctx }: { ctx: VoiceContext }) {
                       variant="ghost"
                       disabled={act.isPending}
                       onClick={() => {
-                        const reason = ask("Motif du retrait de l'accès (visible par BledWay) :");
+                        const reason = ask(tr("ui.companyVoice.motifDuRetraitDeL"));
                         if (reason)
                           act.mutate({
                             action: "manager_member",

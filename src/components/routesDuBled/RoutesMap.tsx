@@ -1,3 +1,4 @@
+import { mapLocale } from "@/lib/i18n/mapLocale";
 import { useEffect, useRef } from "react";
 import {
   LngLatBounds,
@@ -52,23 +53,16 @@ export type MapPlace = { lon: number; lat: number; label: string };
 
 // Pictos : tracés des icônes lucide déjà utilisées dans le site (licence ISC).
 const GLYPH: Record<StopKind, string> = {
-  carburant:
-    '<path d="M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 4 0v-6.998a2 2 0 0 0-.59-1.42L18 5"/><path d="M14 21V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v16"/><path d="M2 21h13"/><path d="M3 9h11"/>',
-  aire: '<path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/>',
-  manger:
-    '<path d="m16 2-2.3 2.3a3 3 0 0 0 0 4.2l1.8 1.8a3 3 0 0 0 4.2 0L22 8"/><path d="M15 15 3.3 3.3a4.2 4.2 0 0 0 0 6l7.3 7.3c.7.7 2 .7 2.8 0L15 15Zm0 0 7 7"/><path d="m2.1 21.8 6.4-6.3"/><path d="m19 5-7 7"/>',
+  get carburant() { return "<path d=\"M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 4 0v-6.998a2 2 0 0 0-.59-1.42L18 5\"/><path d=\"M14 21V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v16\"/><path d=\"M2 21h13\"/><path d=\"M3 9h11\"/>"; },
+  get aire() { return "<path d=\"M10 2v2\"/><path d=\"M14 2v2\"/><path d=\"M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1\"/><path d=\"M6 2v2\"/>"; },
+  get manger() { return "<path d=\"m16 2-2.3 2.3a3 3 0 0 0 0 4.2l1.8 1.8a3 3 0 0 0 4.2 0L22 8\"/><path d=\"M15 15 3.3 3.3a4.2 4.2 0 0 0 0 6l7.3 7.3c.7.7 2 .7 2.8 0L15 15Zm0 0 7 7\"/><path d=\"m2.1 21.8 6.4-6.3\"/><path d=\"m19 5-7 7\"/>"; },
   // Une mosquée : coupole à bulbe et croissant, porte en arc, minaret.
-  priere:
-    '<path d="M2 21h20"/><path d="M4 21v-5.5h12V21"/><path d="M5 15.5c0-2.8 2.2-4.4 5-6.3 2.8 1.9 5 3.5 5 6.3"/><path d="M10 9.2V7.4"/><path d="M10.9 3.4a1.7 1.7 0 1 0 0 2.9 1.45 1.45 0 0 1 0-2.9z"/><path d="M8.5 21v-2.3a1.5 1.5 0 0 1 3 0V21"/><path d="M18.5 21V10.5h3V21"/><path d="M18.5 10.5 20 7.5l1.5 3"/><path d="M20 7.5V6"/>',
-  dormir:
-    '<path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8"/><path d="M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"/><path d="M12 4v6"/><path d="M2 18h20"/>',
-  garage:
-    '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"/>',
-  billets:
-    '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/>',
+  get priere() { return "<path d=\"M2 21h20\"/><path d=\"M4 21v-5.5h12V21\"/><path d=\"M5 15.5c0-2.8 2.2-4.4 5-6.3 2.8 1.9 5 3.5 5 6.3\"/><path d=\"M10 9.2V7.4\"/><path d=\"M10.9 3.4a1.7 1.7 0 1 0 0 2.9 1.45 1.45 0 0 1 0-2.9z\"/><path d=\"M8.5 21v-2.3a1.5 1.5 0 0 1 3 0V21\"/><path d=\"M18.5 21V10.5h3V21\"/><path d=\"M18.5 10.5 20 7.5l1.5 3\"/><path d=\"M20 7.5V6\"/>"; },
+  get dormir() { return "<path d=\"M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8\"/><path d=\"M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4\"/><path d=\"M12 4v6\"/><path d=\"M2 18h20\"/>"; },
+  get garage() { return "<path d=\"M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z\"/>"; },
+  get billets() { return "<path d=\"M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z\"/><path d=\"M13 5v2\"/><path d=\"M13 17v2\"/><path d=\"M13 11v2\"/>"; },
   port: '<path d="M12 10.189V14"/><path d="M12 2v3"/><path d="M19 13V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6"/><path d="M19.38 20A11.6 11.6 0 0 0 21 14l-8.188-3.639a2 2 0 0 0-1.624 0L3 14a11.6 11.6 0 0 0 2.81 7.76"/><path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1s1.2 1 2.5 1c2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>',
-  autre:
-    '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
+  get autre() { return "<path d=\"M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/>"; },
 };
 const HOUSE =
   '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>';
@@ -133,7 +127,7 @@ function placeEl(kind: "start" | "end", label: string) {
   el.className = `rdb-mk rdb-mk--${kind}`;
   const icon =
     kind === "start"
-      ? '<img src="/cabas/persos/voiture_504.webp" alt="" width="46" height="46">'
+      ? "<img src=\"/cabas/persos/voiture_504.webp\" alt=\"\" width=\"46\" height=\"46\">"
       : `<span class="rdb-mk__pin"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${HOUSE}</svg></span>`;
   el.innerHTML = `${icon}<span class="rdb-mk__label"></span>`;
   el.querySelector(".rdb-mk__label")!.textContent = label;
@@ -254,7 +248,7 @@ export default function RoutesMap({
       if (!carRef.current) {
         const el = document.createElement("div");
         el.className = "rdb-mk rdb-mk--car";
-        el.innerHTML = '<img src="/cabas/persos/voiture_504.webp" alt="" width="34" height="34">';
+        el.innerHTML = "<img src=\"/cabas/persos/voiture_504.webp\" alt=\"\" width=\"34\" height=\"34\">";
         carRef.current = new Marker({ element: el, anchor: "bottom" });
       }
       carRef.current.setLngLat([car.lon, car.lat]).addTo(map);
@@ -337,6 +331,7 @@ export default function RoutesMap({
       // à la souris, la molette reste à la page sauf avec Ctrl.
       cooperativeGestures: !window.matchMedia("(pointer: coarse)").matches,
       locale: {
+        ...mapLocale(),
         "CooperativeGesturesHandler.WindowsHelpText": tr("ui.pageRoutesDuBled.carteZoomPc"),
         "CooperativeGesturesHandler.MacHelpText": tr("ui.pageRoutesDuBled.carteZoomMac"),
         "CooperativeGesturesHandler.MobileHelpText": tr("ui.pageRoutesDuBled.carteZoomMobile"),
@@ -355,7 +350,7 @@ export default function RoutesMap({
           b.title = tr("ui.pageRoutesDuBled.recadrer");
           b.setAttribute("aria-label", b.title);
           b.innerHTML =
-            '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4"/><circle cx="12" cy="12" r="2.5"/></svg>';
+            "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4\"/><circle cx=\"12\" cy=\"12\" r=\"2.5\"/></svg>";
           b.onclick = () => {
             if (!lastBounds.current) return;
             lastFocus.current = null;

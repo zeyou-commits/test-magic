@@ -1,5 +1,6 @@
 // Le salon général (ouvert à tout compte, avec ou sans traversée) et le fil qui défile sur la carte.
 import { queryOptions } from "@tanstack/react-query";
+import { tr } from "@/lib/i18n/translate";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import type { ChatAuthor } from "@/components/panel/StaffChat";
@@ -9,6 +10,8 @@ const supabase = typedSupabase as unknown as SupabaseClient;
 /** Identifiant fixe du salon général, le même que côté serveur (private.bw_chat_general_room). */
 export const GENERAL_ROOM = "00000000-0000-4000-8000-000000000001";
 export const GENERAL_TITLE = "Salon général";
+/** Le nom du salon général dans la langue affichée. */
+export const generalTitle = () => tr("ui.libFerryGeneralRoom.salonGeneral");
 
 /** Ouvrir le salon général depuis n'importe où (liste des salons, fil de la carte, lien). */
 export const OPEN_GENERAL_ROOM_EVENT = "bledway:open-general-room";

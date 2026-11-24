@@ -54,11 +54,11 @@ export function FollowCenter({ userId }: { userId: string }) {
         </div>
         <div className="bw-account-filter" role="group" aria-label={tr("ui.followCenter.filtrerMesSuivis")}>
           {[
-            { id: "all", label: "Tout" },
-            { id: "vessel", label: "Navires" },
-            { id: "departure", label: "Traversées" },
-            { id: "company", label: "Compagnies" },
-            { id: "opening", label: "Alertes" },
+            { id: "all", label: tr("ui.followCenter.tout") },
+            { id: "vessel", label: tr("ui.followCenter.navires") },
+            { id: "departure", label: tr("ui.followCenter.traversees") },
+            { id: "company", label: tr("ui.followCenter.compagnies") },
+            { id: "opening", label: tr("ui.followCenter.alertes") },
           ].map((item) => (
             <button
               type="button"
@@ -89,15 +89,14 @@ export function FollowCenter({ userId }: { userId: string }) {
         ) : empty ? (
           <Bw504Note
             className="mt-4"
-            title="Ton prochain voyage commence ici"
+            title={tr("ui.followCenter.tonProchainVoyageCommenceIci")}
             actions={
               <Bw504Button primary onClick={() => window.location.assign("/")}>
-                Explorer la carte
+                {tr("ui.followCenter.explorerLaCarteB")}
               </Bw504Button>
             }
           >
-            Sur la fiche d'un navire ou d'une traversée, touche le cœur « Suivre » : je regroupe
-            ici tout ce qui le concerne.
+            {tr("ui.followCenter.surLaFicheDUn")}
           </Bw504Note>
         ) : (
           <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -105,7 +104,7 @@ export function FollowCenter({ userId }: { userId: string }) {
               <span className="bw-account-kicker">{tr("ui.followCenter.monVoyage")}</span>
               <h3 className="mt-1 font-semibold">{journey.outbound_departure_id && activeDepartures.has(journey.outbound_departure_id) && journey.inbound_departure_id && activeDepartures.has(journey.inbound_departure_id) ? tr("ui.followCenter.allerEtRetour") : journey.inbound_departure_id && activeDepartures.has(journey.inbound_departure_id) ? tr("ui.followCenter.monRetour") : tr("ui.followCenter.monAller")}</h3>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {([ ["Aller", journey.outbound_departure_id], ["Retour", journey.inbound_departure_id] ] as const).map(([leg, id]) => id && activeDepartures.has(id) ? <a key={leg} href={`/?select=departure&id=${id}`} className="flex min-h-12 items-center justify-between rounded-lg border bg-background px-3 py-2 text-sm font-semibold text-primary">
+                {([ [tr("ui.followCenter.aller"), journey.outbound_departure_id], [tr("ui.followCenter.retour"), journey.inbound_departure_id] ] as const).map(([leg, id]) => id && activeDepartures.has(id) ? <a key={leg} href={`/?select=departure&id=${id}`} className="flex min-h-12 items-center justify-between rounded-lg border bg-background px-3 py-2 text-sm font-semibold text-primary">
                   <span><small className="block text-[11px] font-normal text-muted-foreground">{leg}</small>{details.data?.[id]?.label ?? tr("ui.followCenter.traverseeSuivie")} <VesselAlertTag vesselId={details.data?.[id]?.vesselId} /></span><ArrowUpRight size={15} aria-hidden />
                 </a> : <div key={leg} className="rounded-lg border border-dashed px-3 py-2 text-sm text-muted-foreground"><small className="block text-[11px]">{leg}</small>{leg === "Retour" && journey.outbound_departure_id ? tr("ui.followCenter.aAjouterDepuisLAller") : tr("ui.followCenter.nonSuivi")}</div>)}
               </div>
@@ -120,8 +119,8 @@ export function FollowCenter({ userId }: { userId: string }) {
                     </span>
                     <button
                       type="button"
-                      aria-label={`Ne plus suivre ${detail?.label ?? "ce voyage"}`}
-                      onClick={() => setPending({ kind: "follow", id: follow.id, label: detail?.label ?? "ce voyage" })}
+                      aria-label={tr("ui.followCenter.nePlusSuivre2", { v: detail?.label ?? "ce voyage" })}
+                      onClick={() => setPending({ kind: "follow", id: follow.id, label: detail?.label ?? tr("ui.followCenter.ceVoyage") })}
                       className="grid size-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-destructive/5 hover:text-destructive"
                     >
                       <Trash2 className="size-4" />
@@ -159,7 +158,7 @@ export function FollowCenter({ userId }: { userId: string }) {
                           type: "follow",
                           kind: follow.target_kind as "vessel" | "departure",
                           targetId: follow.target_id,
-                          label: detail?.label ?? "Ma traversée",
+                          label: detail?.label ?? tr("ui.followCenter.maTraversee"),
                           upgrade: true,
                         })
                       }
@@ -195,7 +194,7 @@ export function FollowCenter({ userId }: { userId: string }) {
                     <button
                       type="button"
                       aria-label={tr("ui.followCenter.arreterCetteAlerte")}
-                      onClick={() => setPending({ kind: "watch", id: watch.id, label: "cette alerte d’ouverture" })}
+                      onClick={() => setPending({ kind: "watch", id: watch.id, label: tr("ui.followCenter.cetteAlerteDOuverture") })}
                       className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-destructive/5"
                     >
                       <Trash2 className="size-4" />
@@ -227,7 +226,7 @@ export function FollowCenter({ userId }: { userId: string }) {
       </section>
       <AlertDialog open={Boolean(pending)} onOpenChange={(open) => { if (!open) setPending(null); }}>
         <AlertDialogContent>
-          <AlertDialogTitle>{pending?.kind === "watch" ? tr("ui.followCenter.arreterCetteAlerte2") : `Ne plus suivre ${pending?.label} ?`}</AlertDialogTitle>
+          <AlertDialogTitle>{pending?.kind === "watch" ? tr("ui.followCenter.arreterCetteAlerte2") : tr("ui.followCenter.nePlusSuivre3", { label: pending?.label })}</AlertDialogTitle>
           <AlertDialogDescription>
             {pending?.kind === "watch"
               ? tr("ui.followCenter.vousNeSerezPlusPrevenu")

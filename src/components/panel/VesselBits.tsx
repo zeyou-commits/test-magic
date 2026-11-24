@@ -9,24 +9,24 @@ const number = (value: number | null | undefined) => value?.toLocaleString(intlL
 
 export function VesselSpecs({ vessel }: { vessel: Vessel }) {
   const items = [
-    { label: "Passagers", value: number(vessel.passenger_capacity) },
-    { label: "Véhicules", value: number(vessel.car_capacity) },
-    { label: "Cabines", value: number(vessel.cabin_capacity) },
-    { label: "Fauteuils", value: number(vessel.seat_capacity) },
-    { label: "Longueur", value: vessel.length_meters ? `${number(vessel.length_meters)} m` : null },
-    { label: "Largeur", value: vessel.beam_meters ? `${number(vessel.beam_meters)} m` : null },
-    { label: "Ponts", value: vessel.deck_count },
+    { label: tr("ui.vesselBits.passagers"), value: number(vessel.passenger_capacity) },
+    { label: tr("ui.vesselBits.vehicules"), value: number(vessel.car_capacity) },
+    { label: tr("ui.vesselBits.cabines"), value: number(vessel.cabin_capacity) },
+    { label: tr("ui.vesselBits.fauteuils"), value: number(vessel.seat_capacity) },
+    { label: tr("ui.vesselBits.longueur"), value: vessel.length_meters ? `${number(vessel.length_meters)} m` : null },
+    { label: tr("ui.vesselBits.largeur"), value: vessel.beam_meters ? `${number(vessel.beam_meters)} m` : null },
+    { label: tr("ui.vesselBits.ponts"), value: vessel.deck_count },
     {
-      label: "Jauge brute",
+      label: tr("ui.vesselBits.jaugeBrute"),
       value: vessel.gross_tonnage ? `${number(vessel.gross_tonnage)} t` : null,
     },
-    { label: "Mise en service", value: vessel.build_year },
+    { label: tr("ui.vesselBits.miseEnService"), value: vessel.build_year },
     {
-      label: "Vitesse",
+      label: tr("ui.vesselBits.vitesse"),
       value: vessel.speed_knots ? `${Math.round(vessel.speed_knots * 1.852)} km/h` : null,
     },
-    { label: "Construit par", value: vessel.builder },
-    { label: "Type", value: vessel.vessel_type },
+    { label: tr("ui.vesselBits.construitPar"), value: vessel.builder },
+    { label: tr("ui.vesselBits.type"), value: vessel.vessel_type },
   ].filter((i) => i.value !== null && i.value !== undefined && i.value !== "");
   const source = safeExternalUrl(vessel.specs_source_url);
   return items.length ? (
@@ -75,7 +75,7 @@ export function ShipPhoto({
           <button
             type="button"
             className="bw-ship-photo__zoom"
-            aria-label={`Agrandir la photo du ${name}`}
+            aria-label={tr("ui.vesselBits.agrandirLaPhotoDu", { name })}
             onClick={() => setOpen(true)}
           />
           <Dialog open={open} onOpenChange={setOpen}>

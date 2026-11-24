@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { haversineKm } from "./tracking";
+import { tr } from "@/lib/i18n/translate";
 
 // Script « verifie_en_mer » (1-SUPABASE), absent des types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -20,13 +21,13 @@ export function seaCheck(
   here: [number, number] | null,
   ship: { latitude: number; longitude: number; ageMinutes: number } | null,
 ): SeaCheck {
-  if (!here) return { state: "unverified", reason: "Position indisponible sur cet appareil." };
+  if (!here) return { state: "unverified", reason: tr("ui.libFerryAtSea.positionIndisponibleSurCetAppareil") };
   if (!ship || ship.ageMinutes > SHIP_FRESH_MINUTES)
-    return { state: "unverified", reason: "La position du navire n'est pas connue en ce moment." };
+    return { state: "unverified", reason: tr("ui.libFerryAtSea.laPositionDuNavireN") };
   const km = haversineKm([here[1], here[0]], [ship.longitude, ship.latitude]);
   return km <= AT_SEA_KM
     ? { state: "verified", reason: null }
-    : { state: "unverified", reason: "Votre position ne correspond pas à celle du navire." };
+    : { state: "unverified", reason: tr("ui.libFerryAtSea.votrePositionNeCorrespondPas") };
 }
 
 const missing = (code?: string) => code === "PGRST202" || code === "42883" || code === "PGRST205";
@@ -53,7 +54,7 @@ export async function confirmAtSea(
     : {
         ...local,
         state: "unverified",
-        reason: local.reason ?? "Votre position ne correspond pas à celle du navire.",
+        reason: local.reason ?? tr("ui.libFerryAtSea.votrePositionNeCorrespondPas"),
       };
 }
 

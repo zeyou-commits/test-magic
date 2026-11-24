@@ -1,4 +1,5 @@
 import { normalizeText } from "@/lib/ferry/filtering";
+import { intlLocale } from "@/lib/i18n";
 
 /**
  * Pourquoi une recherche de traversée ne donne rien ? La 504 ne dit que ce que les données
@@ -61,7 +62,7 @@ export function weekdayList(weekdays: number[]) {
 
 /** Nom du jour demandé, ex. « mardi ». */
 export function weekdayName(date: string) {
-  return new Date(`${date}T00:00:00Z`).toLocaleDateString("fr-FR", {
+  return new Date(`${date}T00:00:00Z`).toLocaleDateString(intlLocale(), {
     weekday: "long",
     timeZone: "UTC",
   });

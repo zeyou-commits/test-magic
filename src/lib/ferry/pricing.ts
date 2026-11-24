@@ -1,6 +1,7 @@
 import { createContext, useContext } from "react";
 import type { Sailing } from "./trips";
 import { defaultTripProfile, type TripProfileValue, type VehicleKind } from "@/components/panel/TripProfile";
+import { intlLocale } from "@/lib/i18n";
 
 /** Repères publiés par Direct Ferries en septembre–octobre 2026, aller simple.
  * « Avec voiture » est le prix d'une réservation avec voiture, pas un supplément véhicule.
@@ -90,8 +91,8 @@ export function estimateFerryFare(sailing: Sailing, profile: TripProfileValue): 
 
 export const estimateFare = (sailing: Sailing, profile: TripProfileValue) => estimateFerryFare(sailing, profile).amount;
 export const estimateVehicleFare = (sailing: Sailing, profile: TripProfileValue) => estimateFerryFare(sailing, profile).vehiclePart;
-export const formatEuro = (value: number) => `~${value.toLocaleString("fr-FR")} €`;
-export const formatFareRange = (fare: FareEstimate) => `${fare.low.toLocaleString("fr-FR")}–${fare.high.toLocaleString("fr-FR")} €`;
+export const formatEuro = (value: number) => `~${value.toLocaleString(intlLocale())} €`;
+export const formatFareRange = (fare: FareEstimate) => `${fare.low.toLocaleString(intlLocale())}–${fare.high.toLocaleString(intlLocale())} €`;
 
 export const FareProfileContext = createContext<TripProfileValue>(defaultTripProfile);
 export const useFareProfile = () => useContext(FareProfileContext);

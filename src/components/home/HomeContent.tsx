@@ -13,27 +13,28 @@ import {
 import type { Port, RouteLine } from "@/lib/ferry/types";
 import { JourneyArtwork } from "./JourneyArtwork";
 import { FaqSchema } from "@/components/editorial/Editorial";
-import { tr } from "@/lib/i18n";
+import { tr, placeName } from "@/lib/i18n";
 import { TICKETING } from "@/lib/seo/pitch";
+import { lazyConst } from "@/lib/i18n/translate";
 
-const questions = [
+const questions = lazyConst(() => ([
   [
-    "Comment réserver ma traversée ?",
-    `Touchez « Réserver » : choisissez votre ligne, vos dates et votre véhicule. ${TICKETING.howToBook}`,
+    tr("ui.homeContent.commentReserverMaTraversee"),
+    tr("ui.homeContent.touchezReserverChoisissezVotreLigne", { howToBook: TICKETING.howToBook }),
   ],
   [
-    "Les positions des navires sont-elles en temps réel ?",
-    "Pas toujours, et BledWay l’indique à chaque fois. « Position réelle » : le signal du navire a été reçu il y a moins de 30 minutes. « Estimation » : le signal n’est pas capté, souvent en pleine mer ou près des côtes algériennes, et l’avancement est calculé d’après l’horaire. Ces repères ne constituent pas un suivi GPS de navigation.",
+    tr("ui.homeContent.lesPositionsDesNaviresSont"),
+    tr("ui.homeContent.pasToujoursEtBledwayL"),
   ],
   [
-    "Puis-je voyager avec ma voiture ?",
-    "Les conditions varient selon la compagnie, le navire et le véhicule. Renseignez votre véhicule dans la recherche, puis vérifiez ses dimensions, les documents et les conditions auprès de la compagnie.",
+    tr("ui.homeContent.puisJeVoyagerAvecMa"),
+    tr("ui.homeContent.lesConditionsVarientSelonLa"),
   ],
   [
-    "À quoi correspondent les prix affichés ?",
-    "Les montants estimés sont des repères de budget, pas des offres disponibles. Le prix final et les prestations incluses doivent être vérifiés sur le site de réservation.",
+    tr("ui.homeContent.aQuoiCorrespondentLesPrix"),
+    tr("ui.homeContent.lesMontantsEstimesSontDes"),
   ],
-];
+]));
 
 export function HomeContent({
   ports,
@@ -65,9 +66,9 @@ export function HomeContent({
     return () => observer.disconnect();
   }, []);
   const pairs = [
-    ["Marseille", "Alger"],
-    ["Alicante", "Oran"],
-    ["Sète", "Béjaïa"],
+    [tr("ui.homeContent.marseille"), tr("ui.homeContent.alger")],
+    [tr("ui.homeContent.alicante"), tr("ui.homeContent.oran")],
+    [tr("ui.homeContent.sete"), tr("ui.homeContent.bejaia")],
   ];
   const featured = pairs.flatMap(([from, to]) => {
     const departure = ports.find((p) => p.name === from);
@@ -142,7 +143,7 @@ export function HomeContent({
                     {departure.country_name} → {arrival.country_name}
                   </span>
                   <h3>
-                    {departure.name} <ArrowRight size={19} /> {arrival.name}
+                    {placeName(departure.name)} <ArrowRight size={19} /> {placeName(arrival.name)}
                   </h3>
                   <Link
                     to="/lignes/$slug"
@@ -155,7 +156,7 @@ export function HomeContent({
                 <button
                   className="bw-icon-button"
                   type="button"
-                  aria-label={`Explorer ${departure.name} vers ${arrival.name} sur la carte`}
+                  aria-label={tr("ui.homeContent.explorerVersSurLaCarte", { name: departure.name, name2: arrival.name })}
                   onClick={() => onExplore(route)}
                 >
                   <ArrowUpRight size={22} />

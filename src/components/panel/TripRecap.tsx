@@ -61,7 +61,7 @@ import { LeaveTrip } from "./LeaveTrip";
 import { RoomPicker } from "./RoomPicker";
 import { PortPresence, TripStatusPicker, VesselPresence } from "./TripPresence";
 import { VesselSpecs } from "./VesselBits";
-import { tr, lazyDateFormat } from "@/lib/i18n";
+import { tr, lazyDateFormat, placeName } from "@/lib/i18n";
 
 const HOUR = 3_600_000;
 const time = (iso: string, timeZone: string) =>
@@ -132,7 +132,7 @@ export function TripRecap({
   });
   // Une traversée suivie par curiosité ou pour un proche n'est pas « Ma traversée ».
   const myDeparture = Boolean(follow.data?.active && follow.data.traveller);
-  const heading = myDeparture ? "Ma traversée" : "Cette traversée";
+  const heading = myDeparture ? tr("ui.tripRecap.maTraversee") : tr("ui.tripRecap.cetteTraversee");
   const fromZone = portTimeZone(from);
   const toZone = portTimeZone(to);
   const { data: incidents = [] } = useQuery(incidentsQuery);
@@ -172,34 +172,34 @@ export function TripRecap({
   const confirmedAtSea = progress.signal?.phase === "sea";
   const atSea = !arrived && !hold && !stopped && (confirmedAtSea || (departed && !arrivalDue));
   const status = cancelled
-    ? { tone: "bad", label: "Annulée" }
+    ? { tone: "bad", label: tr("ui.tripRecap.annulee") }
     : arrived && !stopped
-      ? { tone: "done", label: "Arrivée" }
+      ? { tone: "done", label: tr("ui.tripRecap.arrivee") }
       : stopped
-        ? { tone: "bad", label: vesselAlert?.label ?? "Navire immobilisé" }
+        ? { tone: "bad", label: vesselAlert?.label ?? tr("ui.tripRecap.navireImmobilise") }
         : vesselAlert && Date.parse(departIso) > now
-          ? { tone: "bad", label: `${vesselAlert.label} · départ à confirmer` }
+          ? { tone: "bad", label: tr("ui.tripRecap.departAConfirmer", { label: vesselAlert.label }) }
           : hold
-            ? { tone: "warn", label: hold.fresh ? "Encore à quai" : "Départ à confirmer" }
+            ? { tone: "warn", label: hold.fresh ? tr("ui.tripRecap.encoreAQuai") : tr("ui.tripRecap.departAConfirmer2") }
             : atSea
               ? progress.trust === "live"
-                ? { tone: "live", label: "En mer" }
-                : { tone: "ok", label: "En mer · estimé" }
+                ? { tone: "live", label: tr("ui.tripRecap.enMer") }
+                : { tone: "ok", label: tr("ui.tripRecap.enMerEstime") }
               : arrivalDue
-                ? { tone: "ok", label: "Arrivée à confirmer" }
+                ? { tone: "ok", label: tr("ui.tripRecap.arriveeAConfirmer") }
                 : shift !== null && shift >= 5
-                  ? { tone: "warn", label: `Retard ≈ ${formatDuration(shift)}` }
+                  ? { tone: "warn", label: tr("ui.tripRecap.retard", { formatDuration: formatDuration(shift) }) }
                   : departure.status === "modified"
-                    ? { tone: "warn", label: "Horaire modifié" }
-                    : { tone: "ok", label: "Prévue" };
+                    ? { tone: "warn", label: tr("ui.tripRecap.horaireModifie") }
+                    : { tone: "ok", label: tr("ui.tripRecap.prevue") };
   const days = daysUntil(departIso, fromZone);
   const countdown =
     cancelled || arrived || atSea || hold || vesselAlert || arrivalDue
       ? null
       : days <= 0
-        ? "Aujourd’hui"
+        ? tr("ui.tripRecap.aujourdHui")
         : days === 1
-          ? "Demain"
+          ? tr("ui.tripRecap.demain")
           : `J-${days}`;
   // Arrivée « pas avant » : un minimum, la durée de traversée reste celle de l'horaire.
   const durationEnd = times.arrival.notBefore ? times.arrival.scheduledIso : arriveIso;
@@ -319,7 +319,7 @@ export function TripRecap({
             onClick={() => onSelect({ type: "port", id: from.id })}
           >
             <strong>{time(departIso, fromZone)}</strong>
-            <span>{from.name}</span>
+            <span>{placeName(from.name)}</span>
             <small>{zoneLabel(fromZone)}</small>
           </button>
           <div className="bw-recap__line" aria-hidden={progress.ratio === null}>
@@ -354,7 +354,7 @@ export function TripRecap({
               {arriveIso ? time(arriveIso, toZone) : "—"}
               {nextDay ? <sup>+1</sup> : null}
             </strong>
-            <span>{to.name}</span>
+            <span>{placeName(to.name)}</span>
             <small>{zoneLabel(toZone)}</small>
           </button>
         </div>
@@ -362,7 +362,7 @@ export function TripRecap({
           <p className="bw-recap__shift">
             {tr("ui.tripRecap.prevuA")}{time(times.departure.scheduledIso, fromZone)} ·{" "}
             {shift > 0
-              ? `${times.arrival.notBefore ? "retard d'au moins" : "retard estimé"} ${formatDuration(shift)}`
+              ? `${times.arrival.notBefore ? tr("ui.tripRecap.retardDAuMoins") : tr("ui.tripRecap.retardEstime")} ${formatDuration(shift)}`
               : `avance ${formatDuration(-shift)}`}
           </p>
         ) : null}
@@ -400,19 +400,19 @@ export function TripRecap({
           tiles={[
             {
               id: "salon",
-              label: "Salon",
+              label: tr("ui.tripRecap.salon"),
               count: roomFeed?.messages.length,
               // Le salon de cette traversée, directement (les autres salons restent à un clic).
               onClick: () => enterRoom("crossing", departure.id),
             },
             {
               id: "questions",
-              label: "Questions",
+              label: tr("ui.tripRecap.questions"),
               onClick: () => revealBlock(".bw-room--questions"),
             },
             {
               id: "where",
-              label: "Vous êtes où ?",
+              label: tr("ui.tripRecap.vousEtesOu"),
               status: myStatus,
               onClick: () =>
                 myDeparture
@@ -428,7 +428,7 @@ export function TripRecap({
             },
             {
               id: "report",
-              label: "Signaler",
+              label: tr("ui.tripRecap.signaler"),
               count: liveCount,
               // Déjà des infos : on les montre, et on peut y ajouter la sienne.
               onClick: liveCount ? openLive : report,
@@ -484,7 +484,7 @@ export function TripRecap({
         <LiveRoom
           kind="crossing"
           room={departure.id}
-          title={`Salon · ${from.name} → ${to.name}`}
+          title={tr("ui.tripRecap.salon2", { name: from.name, name2: to.name })}
           moment={roomMoment(departIso, arriveIso ?? null, now)}
           starterContext={{
             depart: from.name,
@@ -514,9 +514,9 @@ export function TripRecap({
       <div className="bw-recap__tabs" role="tablist" aria-label={tr("ui.tripRecap.detailDeLaTraversee")}>
         {(
           [
-            ["prepare", "Préparer", ClipboardCheck],
-            ["live", "En direct", Radio],
-            ["ship", "Bateau", Ship],
+            ["prepare", tr("ui.tripRecap.preparer"), ClipboardCheck],
+            ["live", tr("ui.tripRecap.enDirect"), Radio],
+            ["ship", tr("ui.tripRecap.bateau"), Ship],
           ] as const
         )
           .filter(([id]) => !started || id !== "prepare")
@@ -550,7 +550,7 @@ export function TripRecap({
           {upcoming && car && walk ? (
             <div className="bw-recap__arrive">
               <p>
-                {tr("ui.tripRecap.etreA")}{from.name}{" "}
+                {tr("ui.tripRecap.etreA")}{placeName(from.name)}{" "}
                 <small>
                   ({day(car.callTime.toISOString(), fromZone)}, {zoneLabel(fromZone)})
                 </small>
@@ -581,7 +581,7 @@ export function TripRecap({
                 <MapPin size={15} aria-hidden />
                 <span>
                   <small>{index === 0 ? tr("ui.tripRecap.portDeDepart") : tr("ui.tripRecap.portDArrivee")}</small>
-                  <strong>{port.name}</strong>
+                  <strong>{placeName(port.name)}</strong>
                 </span>
                 <ArrowRight size={14} aria-hidden />
               </button>
@@ -621,7 +621,7 @@ export function TripRecap({
             kind="port"
             target={from.id}
             compact
-            title={`Voyageurs · port de ${from.name}`}
+            title={tr("ui.tripRecap.voyageursPortDe", { name: from.name })}
           />
           {vessel ? (
             <TravelSignals
@@ -630,7 +630,7 @@ export function TripRecap({
               target={vessel.id}
               departureId={departure.id}
               compact
-              title={`Voyageurs · à bord de ${vessel.name}`}
+              title={tr("ui.tripRecap.voyageursABordDe", { name: vessel.name })}
             />
           ) : null}
           <PortPresence portId={from.id} />

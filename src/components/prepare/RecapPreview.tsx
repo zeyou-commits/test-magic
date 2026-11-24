@@ -52,7 +52,7 @@ export function RecapPreview({
   return (
     <figure
       className="bw-rprev"
-      aria-label={`${example ? "Exemple de récap" : "Votre récap"} : ${done} sur ${rows.length} rubriques remplies`}
+      aria-label={`${example ? tr("ui.recapPreview.exempleDeRecap") : tr("ui.recapPreview.votreRecap")} : ${done} sur ${rows.length} rubriques remplies`}
       style={
         {
           "--from": 1 - ratio(before),
@@ -105,7 +105,7 @@ export function RecapPreview({
                   type="button"
                   className="bw-rprev__hit"
                   onClick={row.onClick}
-                  aria-label={`Ouvrir : ${row.label}`}
+                  aria-label={tr("ui.recapPreview.ouvrir", { label: row.label })}
                 />
               ) : null}
             </li>

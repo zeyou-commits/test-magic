@@ -10,6 +10,7 @@ import {
   pendingRoomInvite,
 } from "@/lib/ferry/roomGuests";
 import { pendingTravelAction } from "@/lib/notifications/actions";
+import { tr } from "@/lib/i18n";
 
 /**
  * Invitation reçue par lien et personne connectée : on l'accepte tout de suite, puis on ouvre le
@@ -41,8 +42,8 @@ export function RoomGuestAccept() {
         if (result.status === "guest")
           toast.success(
             result.inviter
-              ? `${result.inviter} vous invite : vous pouvez écrire dans ce salon jusqu'à l'arrivée.`
-              : "Invitation acceptée : vous pouvez écrire dans ce salon jusqu'à l'arrivée.",
+              ? tr("ui.roomGuestAccept.vousInviteVousPouvezEcrire", { inviter: result.inviter })
+              : tr("ui.roomGuestAccept.invitationAccepteeVousPouvezEcrire"),
           );
         enterRoom("crossing", result.departureId);
       })

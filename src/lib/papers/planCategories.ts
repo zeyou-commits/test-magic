@@ -1,4 +1,5 @@
 import { isPaperToDo, paperKind, type Task } from "@/content/formalites";
+import { tr } from "@/lib/i18n/translate";
 
 /**
  * Le bilan de « Mes papiers » rangé en quatre rubriques, dans l'ordre où on s'en occupe :
@@ -16,28 +17,28 @@ export const planCategoryLabels: Record<
   { title: string; short: string; empty: string; hint: string }
 > = {
   steps: {
-    title: "Démarches à faire avant",
-    short: "Démarches",
-    empty: "Aucune démarche à faire",
-    hint: "Rendez-vous, dossiers, inscriptions : à lancer avant d'acheter le billet.",
+    get title() { return tr("ui.libPapersPlanCategories.demarchesAFaireAvant"); },
+    get short() { return tr("ui.libPapersPlanCategories.demarches"); },
+    get empty() { return tr("ui.libPapersPlanCategories.aucuneDemarcheAFaire"); },
+    get hint() { return tr("ui.libPapersPlanCategories.rendezVousDossiersInscriptionsA"); },
   },
   documents: {
-    title: "Documents à préparer",
-    short: "À préparer",
-    empty: "Rien à faire établir",
-    hint: "Des papiers à demander ou faire signer avant le départ.",
+    get title() { return tr("ui.libPapersPlanCategories.documentsAPreparer"); },
+    get short() { return tr("ui.libPapersPlanCategories.aPreparer"); },
+    get empty() { return tr("ui.libPapersPlanCategories.rienAFaireEtablir"); },
+    get hint() { return tr("ui.libPapersPlanCategories.desPapiersADemanderOu"); },
   },
   pack: {
-    title: "À emporter le jour J",
-    short: "À emporter",
-    empty: "Juste vos pièces d'identité",
-    hint: "Dans la pochette du voyage : présentés au port, à l'aller comme au retour.",
+    get title() { return tr("ui.libPapersPlanCategories.aEmporterLeJourJ"); },
+    get short() { return tr("ui.libPapersPlanCategories.aEmporter"); },
+    get empty() { return tr("ui.libPapersPlanCategories.justeVosPiecesDIdentite"); },
+    get hint() { return tr("ui.libPapersPlanCategories.dansLaPochetteDuVoyage"); },
   },
   attention: {
-    title: "Points d'attention",
-    short: "Attention",
-    empty: "Rien de particulier",
-    hint: "Les règles à connaître au port, sur place et au retour.",
+    get title() { return tr("ui.libPapersPlanCategories.pointsDAttention"); },
+    get short() { return tr("ui.libPapersPlanCategories.attention"); },
+    get empty() { return tr("ui.libPapersPlanCategories.rienDeParticulier"); },
+    get hint() { return tr("ui.libPapersPlanCategories.lesReglesAConnaitreAu"); },
   },
 };
 
@@ -61,6 +62,6 @@ export const isCheckable = (category: PlanCategory) => category !== "attention";
  */
 export function groupWho(who: string[], childNames: string[]): string[] {
   if (childNames.length < 2 || !childNames.every((name) => who.includes(name))) return who;
-  const label = childNames.length === 2 ? "Les 2 enfants" : `Les ${childNames.length} enfants`;
+  const label = childNames.length === 2 ? tr("ui.libPapersPlanCategories.les2Enfants") : tr("ui.libPapersPlanCategories.lesEnfants", { length: childNames.length });
   return [...who.filter((name) => !childNames.includes(name)), label];
 }

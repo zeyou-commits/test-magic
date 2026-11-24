@@ -10,7 +10,7 @@ import type { Company, Departure, Port, Selection, Vessel } from "@/lib/ferry/ty
 import type { MapPreview } from "@/lib/ferry/mapPresentation";
 import { CompanyBadge } from "./CompanyBadge";
 import { FollowButton } from "./FollowButton";
-import { tr } from "@/lib/i18n";
+import { tr, placeName } from "@/lib/i18n";
 
 export type TrafficCrossing = {
   departure: Departure;
@@ -65,7 +65,7 @@ export function TrafficCard({
     ? { type: "vessel", id: c.vessel.id }
     : { type: "departure", id: c.departure.id };
   const time = (iso: string | null, port: typeof c.from) =>
-    iso ? formatDateParts(iso, portTimeZone(port)).time : "À confirmer";
+    iso ? formatDateParts(iso, portTimeZone(port)).time : tr("ui.trafficCard.aConfirmer");
   const startDay = c.times.departure.iso
     ? dateKeyInZone(c.times.departure.iso, portTimeZone(c.from))
     : "";
@@ -82,7 +82,7 @@ export function TrafficCard({
         type="button"
         className="absolute inset-0 z-0 rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         onClick={() => onSelect(target)}
-        aria-label={`Ouvrir la fiche ${c.vessel?.name ?? "de la traversée"}, ${c.from.name} vers ${c.to.name}`}
+        aria-label={tr("ui.trafficCard.ouvrirLaFicheVers", { v: c.vessel?.name ?? "de la traversée", name: c.from.name, name2: c.to.name })}
       />
       <div className="pointer-events-none relative z-[1]">
         <div className="bw-tc-company mb-1 flex min-w-0 items-center gap-2">
@@ -128,7 +128,7 @@ export function TrafficCard({
               onFocus={() => onPreview?.({ portId: port.id })}
               className="pointer-events-auto truncate rounded-md leading-tight underline-offset-4 hover:text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary"
             >
-              {port.name}
+              {placeName(port.name)}
             </button>
           ))}
         </div>

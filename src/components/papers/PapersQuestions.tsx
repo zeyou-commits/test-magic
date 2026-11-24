@@ -243,7 +243,7 @@ export function PapersQuestions({
           {who}
           <Question title={tr("ui.papersQuestions.quelSeraSonAgeLe")}>
             {choice(
-              "Âge le jour du départ",
+              tr("ui.papersQuestions.ageLeJourDuDepart"),
               hasAnswered(t, "age") ? String(ageBandOf(t.age).age) : "",
               (v) => update({ age: Number(v), answered: mark(t, "age") }),
               ageBands.map((band) => ({
@@ -253,10 +253,10 @@ export function PapersQuestions({
               })),
             )}
             {why(
-              "Pourquoi l'âge ?",
-              "Selon l'âge, je n'ajoute pas les mêmes papiers à ta liste.",
+              tr("ui.papersQuestions.pourquoiLAge"),
+              tr("ui.papersQuestions.selonLAgeJeN"),
               {
-                text: `Le visa est gratuit avant 6 ans et moins cher avant 12 ans. Jusqu'au ${BINATIONAL_MEASURE_END}, un binational de 15 ans ou moins peut entrer avec son passeport étranger, sous conditions. Majeur en France à 18 ans, on reste mineur en Algérie jusqu'à 19 ans.`,
+                text: tr("ui.papersQuestions.leVisaEstGratuitAvant", { BINATIONALMEASUREEND: BINATIONAL_MEASURE_END }),
                 sources: ["amb-visa", "cons-binationaux", "justice-algerie"],
               },
             )}
@@ -270,22 +270,22 @@ export function PapersQuestions({
           <Question
             title={me ? tr("ui.papersQuestions.quelleEstVotreNationalite") : tr("ui.papersQuestions.quelleEstSaNationalite")}
           >
-            {choice("Nationalité", (hasAnswered(t, "nat") ? t.nat : "") as Nat, (nat) => update({ nat, answered: mark(t, "nat") }), [
-              { value: "bi", label: "Algérien et français (ou autre)", hint: "Binational" },
+            {choice(tr("ui.papersQuestions.nationalite"), (hasAnswered(t, "nat") ? t.nat : "") as Nat, (nat) => update({ nat, answered: mark(t, "nat") }), [
+              { value: "bi", label: tr("ui.papersQuestions.algerienEtFrancaisOuAutre"), hint: tr("ui.papersQuestions.binational") },
               {
                 value: "dz",
-                label: "Algérien seulement",
-                hint: child ? "Vit en Europe" : "Vit en Europe avec un titre de séjour",
+                label: tr("ui.papersQuestions.algerienSeulement"),
+                hint: child ? tr("ui.papersQuestions.vitEnEurope") : tr("ui.papersQuestions.vitEnEuropeAvecUn"),
               },
               {
                 value: "etr",
-                label: "Pas algérien",
-                hint: "Français, belge… sans nationalité algérienne",
+                label: tr("ui.papersQuestions.pasAlgerien"),
+                hint: tr("ui.papersQuestions.francaisBelgeSansNationaliteAlgerienne"),
               },
             ])}
             {why(
-              "Pourquoi la nationalité ?",
-              "C'est elle qui décide presque tout : s'il faut un visa, et quels papiers algériens présenter à la frontière.",
+              tr("ui.papersQuestions.pourquoiLaNationalite"),
+              tr("ui.papersQuestions.cEstElleQuiDecide"),
             )}
           </Question>
         </>
@@ -313,10 +313,10 @@ export function PapersQuestions({
               }
             />
             {why(
-              "Pourquoi tous les papiers ?",
-              "Ce sont les papiers algériens, même expirés, qui me disent si un visa est nécessaire.",
+              tr("ui.papersQuestions.pourquoiTousLesPapiers"),
+              tr("ui.papersQuestions.ceSontLesPapiersAlgeriens"),
               {
-                text: `En Algérie, un binational est traité comme un Algérien. Avec le passeport étranger seul, la carte d'identité algérienne, même expirée, évite le visa jusqu'au ${BINATIONAL_MEASURE_END}.`,
+                text: tr("ui.papersQuestions.enAlgerieUnBinationalEst", { BINATIONALMEASUREEND: BINATIONAL_MEASURE_END }),
                 sources: ["cons-binationaux", "be-pratique"],
               },
             )}
@@ -335,7 +335,7 @@ export function PapersQuestions({
             }
           >
             {choice<DzTravel>(
-              "Passeport montré à la frontière",
+              tr("ui.papersQuestions.passeportMontreALaFrontiere"),
               travellerValue("dzTravel", t.dzTravel ?? "dz"),
               (dzTravel) =>
                 update({
@@ -343,17 +343,17 @@ export function PapersQuestions({
                   answered: mark(t, "dzTravel"),
                 }),
               [
-                { value: "dz", label: "Mon passeport algérien" },
+                { value: "dz", label: tr("ui.papersQuestions.monPasseportAlgerien") },
                 {
                   value: "foreign",
-                  label: "Mon passeport français (ou autre)",
-                  hint: "Le passeport algérien reste à la maison",
+                  label: tr("ui.papersQuestions.monPasseportFrancaisOuAutre"),
+                  hint: tr("ui.papersQuestions.lePasseportAlgerienResteA"),
                 },
               ],
             )}
             {why(
-              "Pourquoi le passeport de la frontière ?",
-              "C'est lui qui décide : je regarde s'il faut un visa, et quel passeport doit tenir jusqu'au retour.",
+              tr("ui.papersQuestions.pourquoiLePasseportDeLa"),
+              tr("ui.papersQuestions.cEstLuiQuiDecide"),
             )}
           </Question>
         </>
@@ -363,29 +363,29 @@ export function PapersQuestions({
         <>
           {who}
           <Question
-            title={`${me ? "Votre" : "Son"} passeport algérien sera-t-il encore valable au retour ?`}
+            title={tr("ui.papersQuestions.passeportAlgerienSeraTIl", { v: me ? "Votre" : "Son" })}
             hint={tr("ui.papersQuestions.laDateDeFinEst")}
           >
             {choice<DzValid>(
-              "Passeport valable au retour",
+              tr("ui.papersQuestions.passeportValableAuRetour"),
               travellerValue("dzValid", t.dzValid ?? "unknown"),
               (dzValid) => update({ dzValid, answered: mark(t, "dzValid") }),
               [
-                { value: "yes", label: "Oui, avec de la marge" },
+                { value: "yes", label: tr("ui.papersQuestions.ouiAvecDeLaMarge") },
                 {
                   value: "tight",
-                  label: "Oui, mais il expire peu après le retour",
-                  hint: "Quelques jours ou semaines après",
+                  label: tr("ui.papersQuestions.ouiMaisIlExpirePeu"),
+                  hint: tr("ui.papersQuestions.quelquesJoursOuSemainesApres"),
                 },
-                { value: "no", label: "Non, il expire avant" },
-                { value: "unknown", label: "Je ne sais pas" },
+                { value: "no", label: tr("ui.papersQuestions.nonIlExpireAvant") },
+                { value: "unknown", label: tr("ui.papersQuestions.jeNeSaisPas") },
               ],
             )}
             {why(
-              "Pourquoi le retour ?",
-              "C'est avec ce passeport qu'on ressort d'Algérie : je regarde s'il tient jusqu'au retour, sinon je te dis quoi faire avant de partir.",
+              tr("ui.papersQuestions.pourquoiLeRetour"),
+              tr("ui.papersQuestions.cEstAvecCePasseport"),
               {
-                text: "Le passeport algérien doit couvrir la date du retour, et même plusieurs jours au-delà.",
+                text: tr("ui.papersQuestions.lePasseportAlgerienDoitCouvrir"),
                 sources: ["be-pratique", "cons-passeport"],
               },
             )}
@@ -397,15 +397,15 @@ export function PapersQuestions({
         <>
           {who}
           <Question
-            title={`${me ? "Votre" : "Son"} titre de séjour sera-t-il encore valable au retour ?`}
+            title={tr("ui.papersQuestions.titreDeSejourSeraT", { v: me ? "Votre" : "Son" })}
           >
-            {choice<Residence>("Titre de séjour", travellerValue("residence", t.residence), (residence) => update({ residence, answered: mark(t, "residence") }), [
-              { value: "titre", label: "Oui" },
-              { value: "fragile", label: "Non, ou j'ai un récépissé" },
+            {choice<Residence>(tr("ui.papersQuestions.titreDeSejour"), travellerValue("residence", t.residence), (residence) => update({ residence, answered: mark(t, "residence") }), [
+              { value: "titre", label: tr("ui.papersQuestions.oui") },
+              { value: "fragile", label: tr("ui.papersQuestions.nonOuJAiUn") },
             ])}
             {why(
-              "Pourquoi le titre de séjour ?",
-              "Je regarde s'il couvre le retour en France. Sinon, je te dis quoi faire avant de partir.",
+              tr("ui.papersQuestions.pourquoiLeTitreDeSejour"),
+              tr("ui.papersQuestions.jeRegardeSIlCouvre"),
             )}
           </Question>
         </>
@@ -422,39 +422,39 @@ export function PapersQuestions({
             }
           >
             {choice<SnStatus>(
-              "Service national",
+              tr("ui.papersQuestions.serviceNational"),
               travellerValue("sn", t.sn === "exempt" ? "ok" : (t.sn ?? "unknown")),
               (sn) => update({ sn, answered: mark(t, "sn") }),
               [
                 {
                   value: "ok",
-                  label: "Recensé ou dispensé au consulat",
-                  hint: "Attestation de recensement, carte ou dispense",
+                  label: tr("ui.papersQuestions.recenseOuDispenseAuConsulat"),
+                  hint: tr("ui.papersQuestions.attestationDeRecensementCarteOu"),
                 },
                 ...(t.nat === "bi"
                   ? [
                       {
                         value: "option" as const,
-                        label: "Déclaration d'option pour la France",
-                        hint: "Faite à la préfecture, entre 16 et 25 ans",
+                        label: tr("ui.papersQuestions.declarationDOptionPourLa"),
+                        hint: tr("ui.papersQuestions.faiteALaPrefectureEntre"),
                       },
                       {
                         value: "jdc" as const,
-                        label: "J'ai fait la JDC en France",
-                        hint: "Journée défense et citoyenneté (ex-JAPD)",
+                        label: tr("ui.papersQuestions.jAiFaitLaJdc"),
+                        hint: tr("ui.papersQuestions.journeeDefenseEtCitoyenneteEx"),
                       },
                     ]
                   : []),
-                { value: "todo", label: "Rien de fait" },
-                { value: "unknown", label: "Je ne sais pas" },
+                { value: "todo", label: tr("ui.papersQuestions.rienDeFait") },
+                { value: "unknown", label: tr("ui.papersQuestions.jeNeSaisPas") },
               ],
             )}
             {why(
-              "Pourquoi le service national ?",
-              "Selon ta réponse, je mets la preuve dans la pochette du voyage, ou la démarche dans ta liste.",
+              tr("ui.papersQuestions.pourquoiLeServiceNational"),
+              tr("ui.papersQuestions.selonTaReponseJeMets"),
               t.nat === "bi"
                 ? {
-                    text: "Pour un franco-algérien, l'accord franco-algérien de 1983 fait compter le service national choisi en France (JDC ou déclaration d'option).",
+                    text: tr("ui.papersQuestions.pourUnFrancoAlgerienL"),
                     sources: ["accord-1983", "pref-accord-sn"],
                   }
                 : undefined,
@@ -469,15 +469,15 @@ export function PapersQuestions({
           <Question
             title={me ? tr("ui.papersQuestions.vousEtesUnHommeOu") : tr("ui.papersQuestions.unHommeOuUneFemme")}
           >
-            {choice("Homme ou femme", (hasAnswered(t, "man") ? (t.man ? "yes" : "no") : "") as "yes" | "no", (v) => update({ man: v === "yes", answered: mark(t, "man") }), [
-              { value: "yes", label: "Un homme" },
-              { value: "no", label: "Une femme" },
+            {choice(tr("ui.papersQuestions.hommeOuFemme"), (hasAnswered(t, "man") ? (t.man ? "yes" : "no") : "") as "yes" | "no", (v) => update({ man: v === "yes", answered: mark(t, "man") }), [
+              { value: "yes", label: tr("ui.papersQuestions.unHomme") },
+              { value: "no", label: tr("ui.papersQuestions.uneFemme") },
             ])}
             {why(
-              "Pourquoi je le demande ?",
-              "Pour savoir si le service national algérien entre en jeu. Si oui, je regarde quelle preuve emporter.",
+              tr("ui.papersQuestions.pourquoiJeLeDemande"),
+              tr("ui.papersQuestions.pourSavoirSiLeService"),
               {
-                text: "Le service national est obligatoire pour un homme algérien de 19 ans révolus. Une preuve (recensement ou dispense) peut être demandée à la sortie d'Algérie.",
+                text: tr("ui.papersQuestions.leServiceNationalEstObligatoire"),
                 sources: ["cons-recensement"],
               },
             )}
@@ -490,16 +490,16 @@ export function PapersQuestions({
         <Question
           title={tr("ui.papersQuestions.deuxDesAdultesSontIls")}
         >
-          {choice<Couple>("Couple", groupValue("couple", answers.couple), (couple) => setGroup("couple", { couple }), [
-            { value: "married", label: "Oui, mariés" },
-            { value: "unmarried", label: "Oui, sans être mariés" },
-            { value: "none", label: "Non" },
+          {choice<Couple>(tr("ui.papersQuestions.couple"), groupValue("couple", answers.couple), (couple) => setGroup("couple", { couple }), [
+            { value: "married", label: tr("ui.papersQuestions.ouiMaries") },
+            { value: "unmarried", label: tr("ui.papersQuestions.ouiSansEtreMaries") },
+            { value: "none", label: tr("ui.papersQuestions.non") },
           ])}
           {why(
-            "Pourquoi le couple ?",
-            "Un mariage peut changer les papiers d'un conjoint qui n'est pas algérien : je regarde lesquels.",
+            tr("ui.papersQuestions.pourquoiLeCouple"),
+            tr("ui.papersQuestions.unMariagePeutChangerLes"),
             {
-              text: "Marié à un Algérien, un conjoint étranger peut demander le visa familial de conjoint.",
+              text: tr("ui.papersQuestions.marieAUnAlgerienUn"),
               sources: ["cons-visa-familial"],
             },
           )}
@@ -510,16 +510,16 @@ export function PapersQuestions({
         <Question
           title={tr("ui.papersQuestions.leMariageEstIlTranscrit")}
         >
-          {choice<Answers["transcribed"]>("Mariage transcrit", groupValue("transcribed", answers.transcribed), (transcribed) => setGroup("transcribed", { transcribed }), [
-            { value: "yes", label: "Oui" },
-            { value: "no", label: "Non" },
-            { value: "unknown", label: "Je ne sais pas" },
+          {choice<Answers["transcribed"]>(tr("ui.papersQuestions.mariageTranscrit"), groupValue("transcribed", answers.transcribed), (transcribed) => setGroup("transcribed", { transcribed }), [
+            { value: "yes", label: tr("ui.papersQuestions.oui") },
+            { value: "no", label: tr("ui.papersQuestions.non") },
+            { value: "unknown", label: tr("ui.papersQuestions.jeNeSaisPas") },
           ])}
           {why(
-            "Pourquoi la transcription ?",
-            "Si elle n'est pas faite, je l'ajoute à tes démarches, en premier.",
+            tr("ui.papersQuestions.pourquoiLaTranscription"),
+            tr("ui.papersQuestions.siElleNEstPas"),
             {
-              text: "Le visa familial de conjoint demande l'acte de mariage transcrit à l'état civil algérien.",
+              text: tr("ui.papersQuestions.leVisaFamilialDeConjoint"),
               sources: ["cons-visa-familial"],
             },
           )}
@@ -530,18 +530,18 @@ export function PapersQuestions({
         <Question
           title={tr("ui.papersQuestions.avecQuiVoyagentLesEnfants")}
         >
-          {choice<KidsWith>("Les enfants voyagent avec", groupValue("kidsWith", answers.kidsWith), (kidsWith) => setGroup("kidsWith", { kidsWith }), [
-            { value: "both", label: "Leurs deux parents" },
-            { value: "father", label: "Leur père" },
-            { value: "mother", label: "Leur mère, sans le père" },
-            { value: "other", label: "Un autre adulte", hint: "Grands-parents, oncle, tante…" },
-            { value: "alone", label: "Seuls" },
+          {choice<KidsWith>(tr("ui.papersQuestions.lesEnfantsVoyagentAvec"), groupValue("kidsWith", answers.kidsWith), (kidsWith) => setGroup("kidsWith", { kidsWith }), [
+            { value: "both", label: tr("ui.papersQuestions.leursDeuxParents") },
+            { value: "father", label: tr("ui.papersQuestions.leurPere") },
+            { value: "mother", label: tr("ui.papersQuestions.leurMereSansLePere") },
+            { value: "other", label: tr("ui.papersQuestions.unAutreAdulte"), hint: tr("ui.papersQuestions.grandsParentsOncleTante") },
+            { value: "alone", label: tr("ui.papersQuestions.seuls") },
           ])}
           {why(
-            "Pourquoi l'accompagnant ?",
-            "Selon l'adulte qui part avec eux, je te dis quels papiers ajouter.",
+            tr("ui.papersQuestions.pourquoiLAccompagnant"),
+            tr("ui.papersQuestions.selonLAdulteQuiPart"),
             {
-              text: "Un mineur algérien qui voyage sans son père présente une autorisation paternelle à la sortie d'Algérie. Elle se fait au consulat.",
+              text: tr("ui.papersQuestions.unMineurAlgerienQuiVoyage"),
               sources: ["cons-autorisation", "justice-algerie"],
             },
           )}
@@ -551,7 +551,7 @@ export function PapersQuestions({
       body = (
         <Question title={tr("ui.papersQuestions.lesParentsSontIlsSepares")}>
           {choice(
-            "Parents séparés",
+            tr("ui.papersQuestions.parentsSepares"),
             groupValue<"yes" | "no">("separated", answers.separated ? "yes" : "no"),
             (v) =>
               setGroup("separated", {
@@ -559,8 +559,8 @@ export function PapersQuestions({
                 ...(v === "no" ? { motherCustody: false } : {}),
               }),
             [
-              { value: "no", label: "Non" },
-              { value: "yes", label: "Oui" },
+              { value: "no", label: tr("ui.papersQuestions.non") },
+              { value: "yes", label: tr("ui.papersQuestions.oui") },
             ],
           )}
         </Question>
@@ -569,19 +569,19 @@ export function PapersQuestions({
       body = (
         <Question title={tr("ui.papersQuestions.laGardeDesEnfantsEst")}>
           {choice(
-            "Garde à la mère",
+            tr("ui.papersQuestions.gardeALaMere"),
             groupValue<"yes" | "no">("custody", answers.motherCustody ? "yes" : "no"),
             (v) => setGroup("custody", { motherCustody: v === "yes" }),
             [
-              { value: "yes", label: "Oui, par jugement" },
-              { value: "no", label: "Non, ou pas de jugement" },
+              { value: "yes", label: tr("ui.papersQuestions.ouiParJugement") },
+              { value: "no", label: tr("ui.papersQuestions.nonOuPasDeJugement") },
             ],
           )}
           {why(
-            "Pourquoi la garde ?",
-            "Selon ta réponse, je mets dans la pochette du voyage le jugement de garde ou l'autorisation paternelle.",
+            tr("ui.papersQuestions.pourquoiLaGarde"),
+            tr("ui.papersQuestions.selonTaReponseJeMets2"),
             {
-              text: "Les enfants de parents séparés ou divorcés dont la mère a la garde sont dispensés de l'autorisation paternelle : on emporte le jugement qui fixe la garde.",
+              text: tr("ui.papersQuestions.lesEnfantsDeParentsSepares"),
               sources: ["cons-autorisation"],
             },
           )}
@@ -595,7 +595,7 @@ export function PapersQuestions({
       <WizardNav
         {...(at > 0 ? { back: () => setIndex(at - 1) } : {})}
         next={{
-          label: at + 1 < list.length ? "Continuer" : "Voir mon plan d'action",
+          label: at + 1 < list.length ? tr("ui.papersQuestions.continuer") : tr("ui.papersQuestions.voirMonPlanDAction"),
           onClick: forward,
           // Aucune réponse par défaut : « Continuer » attend que le voyageur ait choisi.
           disabled:

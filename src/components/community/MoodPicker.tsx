@@ -41,7 +41,7 @@ export function MoodPicker({
     mutationFn: (code: string | null) => setMood(code),
     onSuccess: (_, code) => {
       void client.invalidateQueries({ queryKey: communityKey });
-      toast.success(code ? "Humeur partagée pour 24 h." : "Humeur retirée.");
+      toast.success(code ? tr("ui.moodPicker.humeurPartageePour24H") : tr("ui.moodPicker.humeurRetiree"));
       onOpenChange(false);
     },
     onError: (error: Error) => toast.error(error.message),
@@ -51,7 +51,7 @@ export function MoodPicker({
     mutationFn: (item: string) => setMoodItem(item),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: communityKey });
-      toast.success("Humeur partagée pour 24 h.");
+      toast.success(tr("ui.moodPicker.humeurPartageePour24H"));
       onOpenChange(false);
     },
     onError: (error: Error) => toast.error(error.message),

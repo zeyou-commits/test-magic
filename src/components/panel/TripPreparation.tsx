@@ -36,7 +36,7 @@ function PapersLink({ item }: { item: PrepItem }) {
   useEffect(() => setProgress(papersProgress()), []);
   return (
     <a href={item.href}>
-      {progress ? `Mes papiers : ${progress.done} sur ${progress.total}` : item.linkLabel}{" "}
+      {progress ? tr("ui.tripPreparation.mesPapiersSur", { done: progress.done, total: progress.total }) : item.linkLabel}{" "}
       <ArrowRight size={13} aria-hidden />
     </a>
   );

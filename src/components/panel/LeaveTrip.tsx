@@ -26,7 +26,7 @@ export function LeaveTrip({ departureId }: { departureId: string }) {
       .eq("target_kind", "departure")
       .eq("target_id", departureId);
     if (issue) {
-      setError("Le suivi n’a pas pu être arrêté. Réessayez.");
+      setError(tr("ui.leaveTrip.leSuiviNAPas"));
       setBusy(false);
       return;
     }

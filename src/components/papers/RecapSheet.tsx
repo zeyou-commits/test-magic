@@ -58,7 +58,7 @@ interface Item {
 type Deadlines = Partial<Record<When, { label: string; why?: string }>>;
 
 function dueLabel(when: When, deadlines: Deadlines) {
-  if (when === "first") return "Dès maintenant";
+  if (when === "first") return tr("ui.recapSheet.desMaintenant");
   return deadlines[when]?.label ?? whenLabels[when].title;
 }
 const isUrgent = (when: When, label: string) =>
@@ -91,12 +91,12 @@ export function PaperKpis({
   ).length;
   const tiles: { key: PlanCategory | "urgent"; n: number; label: string; icon: LucideIcon }[] = [
     ...(urgent
-      ? [{ key: "urgent" as const, n: urgent, label: urgent > 1 ? "urgentes : à faire dès maintenant" : "urgente : à faire dès maintenant", icon: AlertTriangle }]
+      ? [{ key: "urgent" as const, n: urgent, label: urgent > 1 ? tr("ui.recapSheet.urgentesAFaireDesMaintenant") : tr("ui.recapSheet.urgenteAFaireDesMaintenant"), icon: AlertTriangle }]
       : []),
-    { key: "steps", n: left("steps").length, label: "démarches", icon: ClipboardList },
-    { key: "documents", n: left("documents").length, label: "documents à préparer", icon: FileText },
-    { key: "pack", n: left("pack").length, label: "à emporter le jour J", icon: Luggage },
-    { key: "attention", n: left("attention").length, label: "points d'attention", icon: Info },
+    { key: "steps", n: left("steps").length, label: tr("ui.recapSheet.demarches"), icon: ClipboardList },
+    { key: "documents", n: left("documents").length, label: tr("ui.recapSheet.documentsAPreparer"), icon: FileText },
+    { key: "pack", n: left("pack").length, label: tr("ui.recapSheet.aEmporterLeJourJ"), icon: Luggage },
+    { key: "attention", n: left("attention").length, label: tr("ui.recapSheet.pointsDAttention"), icon: Info },
   ];
   return (
     <div className="bw-kpis" role="list" aria-label={tr("ui.recapSheet.leRecapEnChiffres")}>
@@ -200,10 +200,10 @@ export function RecapSheet({
             key: "visas",
             category,
             tasks: visas,
-            title: "Demander les visas",
+            title: tr("ui.recapSheet.demanderLesVisas"),
             who: groupWho([...new Set(visas.flatMap((v) => v.who))], childNames),
             when: task.when,
-            cost: eur ? { label: `${eur} € en tout`, eur } : null,
+            cost: eur ? { label: tr("ui.recapSheet.enTout", { eur }), eur } : null,
           });
           continue;
         }
@@ -232,9 +232,9 @@ export function RecapSheet({
     blocks.flatMap((b) => b.items).find((item) => item.tasks.some((t) => t.consulate))?.key ?? null;
 
   const filters: { value: string | null; label: string }[] = [
-    { value: null, label: "Tout le monde" },
-    ...(coupleNames.length === 2 ? [{ value: COUPLE, label: "Le couple" }] : []),
-    ...(childNames.length > 1 ? [{ value: KIDS, label: "Les enfants" }] : []),
+    { value: null, label: tr("ui.recapSheet.toutLeMonde") },
+    ...(coupleNames.length === 2 ? [{ value: COUPLE, label: tr("ui.recapSheet.leCouple") }] : []),
+    ...(childNames.length > 1 ? [{ value: KIDS, label: tr("ui.recapSheet.lesEnfants") }] : []),
     ...travellers.map((name) => ({ value: name, label: name })),
   ];
 
@@ -248,7 +248,7 @@ export function RecapSheet({
         <div
           className="bw-recap__ring"
           role="img"
-          aria-label={allDone ? tr("ui.recapSheet.toutEstPret") : `${doneCount} sur ${total} faites`}
+          aria-label={allDone ? tr("ui.recapSheet.toutEstPret") : tr("ui.recapSheet.surFaites", { doneCount, total })}
           style={{ "--p": total ? doneCount / total : 0 } as CSSProperties}
         >
           <svg viewBox="0 0 44 44" aria-hidden>
@@ -294,7 +294,7 @@ export function RecapSheet({
           </dt>
           <dd>
             {adults}{tr("ui.recapSheet.adulte")}{adults > 1 ? "s" : ""}
-            {kids ? ` · ${kids} enfant${kids > 1 ? "s" : ""}` : ""}
+            {kids ? tr("ui.recapSheet.enfant", { kids, v: kids > 1 ? "s" : "" }) : ""}
           </dd>
         </div>
         {fees ? (
@@ -492,7 +492,7 @@ function Row({
           type="button"
           role="checkbox"
           aria-checked={full ? true : partial ? "mixed" : false}
-          aria-label={`${item.title} : ${full ? "fait" : "à faire"}`}
+          aria-label={`${item.title} : ${full ? "fait" : tr("ui.recapSheet.aFaire")}`}
           onClick={onCheck}
           className="bw-recap__check"
         >

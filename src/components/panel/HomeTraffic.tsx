@@ -25,7 +25,7 @@ import { MyTripsShortcut } from "./MyTrip";
 import { MyTripHero } from "./MyTripHero";
 import { useMyTrip } from "@/lib/ferry/myTrip";
 import type { MapPreview } from "@/lib/ferry/mapPresentation";
-import { tr, lazyDateFormat } from "@/lib/i18n";
+import { tr, lazyDateFormat, placeName } from "@/lib/i18n";
 
 /** Mouvements montrés d'abord, puis ajoutés à chaque « Voir plus ». */
 const PAGE = 6;
@@ -35,8 +35,8 @@ const MORE = 8;
 function dayLabel(key: string, todayKey: string) {
   const at = Date.parse(`${key}T12:00:00Z`);
   const gap = Math.round((at - Date.parse(`${todayKey}T12:00:00Z`)) / 86_400_000);
-  if (gap <= 0) return "Aujourd'hui";
-  if (gap === 1) return "Demain";
+  if (gap <= 0) return tr("ui.homeTraffic.aujourdHui");
+  if (gap === 1) return tr("ui.homeTraffic.demain");
   return lazyDateFormat({
     timeZone: "UTC",
     weekday: "long",
@@ -240,8 +240,8 @@ export function HomeTraffic({
                   <span className="min-w-0 flex-1 leading-tight">
                     <strong className="block truncate text-[13px]">{d.ship.name}</strong>
                     <small className="block truncate text-[11px] text-muted-foreground">
-                      {d.ship.ashore ? "Immobilisé · " : "À quai · "}
-                      {d.port?.name ?? "port à confirmer"}
+                      {d.ship.ashore ? tr("ui.homeTraffic.immobilise") : tr("ui.homeTraffic.aQuai")}
+                      {d.port?.name ?? tr("ui.homeTraffic.portAConfirmer")}
                     </small>
                   </span>
                   {d.next ? (
@@ -261,9 +261,9 @@ export function HomeTraffic({
         <div className="mb-2 flex rounded-xl bg-secondary p-1" aria-label={tr("ui.homeTraffic.filtrerLesMouvements")}>
           {(
             [
-              ["all", "Tous"],
-              ["departure", "Départs"],
-              ["arrival", "Arrivées"],
+              ["all", tr("ui.homeTraffic.tous")],
+              ["departure", tr("ui.homeTraffic.departs")],
+              ["arrival", tr("ui.homeTraffic.arrivees")],
             ] as const
           ).map(([value, label]) => (
             <button
@@ -308,7 +308,7 @@ export function HomeTraffic({
                 className="flex w-full items-center gap-1.5 border-b border-border/70 bg-secondary/70 px-3 py-2 text-start text-[11px] font-bold uppercase tracking-wide text-foreground hover:text-primary"
               >
                 <MapPin className="size-3.5 shrink-0 text-primary" aria-hidden />
-                {list[0]!.port.name}
+                {placeName(list[0]!.port.name)}
               </button>
               {list.map((event) => {
                 const parts = formatDateParts(event.iso!, portTimeZone(event.port));
@@ -330,7 +330,7 @@ export function HomeTraffic({
                             : { type: "departure", id: event.departure.id },
                         )
                       }
-                      aria-label={`${event.kind === "arrival" ? "Arrivée" : "Départ"} ${event.vessel?.name ?? "traversée"}, ${event.from.name} vers ${event.to.name}`}
+                      aria-label={tr("ui.homeTraffic.vers", { v: event.kind === "arrival" ? "Arrivée" : "Départ", v2: event.vessel?.name ?? "traversée", name: event.from.name, name2: event.to.name })}
                       className="absolute inset-0 rounded-md focus-visible:outline-2 focus-visible:outline-primary"
                     />
                     <span className="pointer-events-none relative flex w-12 shrink-0 flex-col tabular-nums">
@@ -352,8 +352,8 @@ export function HomeTraffic({
                           <ArrowUpRight className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
                         )}
                         {event.kind === "arrival"
-                          ? `Arrivée de ${event.from.name}`
-                          : `Départ vers ${event.to.name}`}
+                          ? tr("ui.homeTraffic.arriveeDe", { name: event.from.name })
+                          : tr("ui.homeTraffic.departVers", { name: event.to.name })}
                       </span>
                       <span className="block truncate text-[10px] text-muted-foreground">
                         {[event.vessel?.name, event.company?.name].filter(Boolean).join(" · ")}{" "}
@@ -388,11 +388,11 @@ export function HomeTraffic({
             onClick={() => setVisible((count) => count + MORE)}
             className="bw-traffic-more"
           >
-            {filter === "arrival" ? "Voir plus d'arrivées" : "Voir plus de départs"}
+            {filter === "arrival" ? tr("ui.homeTraffic.voirPlusDArrivees") : tr("ui.homeTraffic.voirPlusDeDeparts")}
             <ChevronDown className="size-4" aria-hidden />
           </button>
         ) : events.length > PAGE ? (
-          <p className="bw-traffic-end">Tous les mouvements publiés sont affichés.</p>
+          <p className="bw-traffic-end">{tr("ui.homeTraffic.tousLesMouvementsPubliesSont")}</p>
         ) : null}
       </section>
     </div>

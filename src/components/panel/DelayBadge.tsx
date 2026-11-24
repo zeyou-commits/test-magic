@@ -10,12 +10,12 @@ const stop = (event: { stopPropagation: () => void }) => event.stopPropagation()
 function sourceOf(time: TrackingTime, zone: string) {
   if (time.fromSignal)
     return time.signalAt
-      ? `Calculée sur la position du navire (signal de ${formatDateParts(time.signalAt, zone).time}).`
-      : "Calculée sur la position du navire.";
-  if (time.reported) return "D'après un signalement de voyageur vérifié par l'équipe.";
-  if (time.updated) return "Horaire mis à jour par l'équipe BledWay.";
-  if (time.kind === "observed") return "Heure constatée.";
-  return "Estimation BledWay d'après l'horaire et les traversées précédentes.";
+      ? tr("ui.delayBadge.calculeeSurLaPositionDu", { time: formatDateParts(time.signalAt, zone).time })
+      : tr("ui.delayBadge.calculeeSurLaPositionDu2");
+  if (time.reported) return tr("ui.delayBadge.dApresUnSignalementDe");
+  if (time.updated) return tr("ui.delayBadge.horaireMisAJourPar");
+  if (time.kind === "observed") return tr("ui.delayBadge.heureConstatee");
+  return tr("ui.delayBadge.estimationBledwayDApresL");
 }
 
 /**
@@ -54,7 +54,7 @@ export function DelayBadge({
         <button
           type="button"
           className={`bw-delay-badge${compact ? " bw-delay-badge--compact" : ""}`}
-          aria-label={`Retardé ${label} : voir le détail`}
+          aria-label={tr("ui.delayBadge.retardeVoirLeDetail", { label })}
         >
           {tr("ui.delayBadge.retarde")}{label}
           <ChevronRight className="bw-sea-chip__more" aria-hidden />

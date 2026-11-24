@@ -10,6 +10,7 @@ import {
   type LiveShip,
 } from "./tracking";
 import type { Port } from "./types";
+import { tr } from "@/lib/i18n/translate";
 
 /**
  * D'où vient l'état affiché : arrivée constatée, position récente, position ancienne, ou horaire seul.
@@ -18,12 +19,12 @@ import type { Port } from "./types";
 export type TrackingTrust = "observed" | "live" | "aged" | "schedule" | "reported" | "updated";
 
 export function trustLabel(trust: TrackingTrust, ageMinutes: number | null) {
-  if (trust === "observed") return "Arrivée constatée";
-  if (trust === "updated") return "Horaires mis à jour";
-  if (trust === "reported") return "Estimation d’après un signalement validé par BledWay";
-  if (trust === "live") return `Position réelle · ${formatAge(ageMinutes ?? 0)}`;
-  if (trust === "aged") return `Estimation · dernière position ${formatAge(ageMinutes ?? 0)}`;
-  return "Estimation d’après l’horaire";
+  if (trust === "observed") return tr("ui.libFerryCrossingProgress.arriveeConstatee");
+  if (trust === "updated") return tr("ui.libFerryCrossingProgress.horairesMisAJour");
+  if (trust === "reported") return tr("ui.libFerryCrossingProgress.estimationDApresUnSignalement");
+  if (trust === "live") return tr("ui.libFerryCrossingProgress.positionReelle", { formatAge: formatAge(ageMinutes ?? 0) });
+  if (trust === "aged") return tr("ui.libFerryCrossingProgress.estimationDernierePosition", { formatAge: formatAge(ageMinutes ?? 0) });
+  return tr("ui.libFerryCrossingProgress.estimationDApresLHoraire");
 }
 
 /** L'ancien horaire à barrer : seulement s'il a vraiment bougé. */
@@ -44,12 +45,12 @@ export type CrossingScene =
   | "stale";
 
 const SCENE_LABELS: Partial<Record<CrossingScene, string>> = {
-  boarding: "Embarquement en cours · estimé",
-  closed: "Embarquement clos · estimé",
-  departing: "Appareillage en cours",
-  approaching: "En approche",
-  anchored: "Au mouillage · en attente",
-  disembarking: "Débarquement en cours · estimé",
+  get boarding() { return tr("ui.libFerryCrossingProgress.embarquementEnCoursEstime"); },
+  get closed() { return tr("ui.libFerryCrossingProgress.embarquementClosEstime"); },
+  get departing() { return tr("ui.libFerryCrossingProgress.appareillageEnCours"); },
+  get approaching() { return tr("ui.libFerryCrossingProgress.enApproche"); },
+  get anchored() { return tr("ui.libFerryCrossingProgress.auMouillageEnAttente"); },
+  get disembarking() { return tr("ui.libFerryCrossingProgress.debarquementEnCoursEstime"); },
 };
 
 export function sceneLabel(scene: CrossingScene | null) {

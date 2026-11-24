@@ -20,7 +20,7 @@ import { TrackingTimes } from "./TrackingTimes";
 import { MiniFerry } from "./MiniFerry";
 import { SeaChip } from "./SeaForecast";
 import { DelayBadge } from "./DelayBadge";
-import { tr } from "@/lib/i18n";
+import { tr, placeName } from "@/lib/i18n";
 
 export function CrossingCard({
   departure,
@@ -45,7 +45,7 @@ export function CrossingCard({
   const awaited = Boolean(alert) && at < Date.parse(departure.departure_at);
   const progress = crossingProgress(departure, from, to, live, at, stopped);
   const estimated = progress.trust !== "live" && progress.trust !== "observed";
-  const atSeaLabel = estimated ? "En mer · estimé" : "En mer";
+  const atSeaLabel = estimated ? tr("ui.crossingCard.enMerEstime") : tr("ui.crossingCard.enMer");
   const scene = awaited ? "stopped" : progress.scene;
   const label = sceneLabel(scene);
   const delay = progress.reportedPostponed ? null : delayLabel(progress.times);
@@ -68,29 +68,29 @@ export function CrossingCard({
         });
   const status =
     departure.status === "cancelled"
-      ? "Traversée annulée"
+      ? tr("ui.crossingCard.traverseeAnnulee")
       : progress.reportedPostponed
-        ? "Report ou annulation signalé"
+        ? tr("ui.crossingCard.reportOuAnnulationSignale")
         : progress.reportedQuay
-          ? "Encore à quai · en retard"
+          ? tr("ui.crossingCard.encoreAQuaiEnRetard")
           : label && !progress.hold
             ? label
             : progress.times.arrival.kind === "observed"
-              ? "Arrivée constatée"
+              ? tr("ui.crossingCard.arriveeConstatee")
               : progress.hold
                 ? progress.hold.fresh
-                  ? "Encore à quai · en retard"
-                  : "Départ à confirmer · en retard"
+                  ? tr("ui.crossingCard.encoreAQuaiEnRetard")
+                  : tr("ui.crossingCard.departAConfirmerEnRetard")
                 : progress.arrivalDue && progress.signal?.phase !== "sea"
-                  ? "Arrivée à confirmer"
+                  ? tr("ui.crossingCard.arriveeAConfirmer")
                   : stopped || awaited
-                    ? `${alert?.label ?? "Navire immobilisé"}${awaited ? " · départ à confirmer" : ""}`
+                    ? `${alert?.label ?? tr("ui.crossingCard.navireImmobilise")}${awaited ? tr("ui.crossingCard.departAConfirmer") : ""}`
                     : at < Date.parse(departure.departure_at) && progress.signal?.phase !== "sea"
-                      ? "Prochaine traversée"
+                      ? tr("ui.crossingCard.prochaineTraversee")
                       : progress.signal
                         ? progress.signal.phase === "sea"
-                          ? `Parti · ${atSeaLabel.toLowerCase()}`
-                          : "Au port"
+                          ? tr("ui.crossingCard.parti", { v: atSeaLabel.toLowerCase() })
+                          : tr("ui.crossingCard.auPort")
                         : atSeaLabel;
   return (
     <section className="bw-crossing" aria-label={tr("ui.crossingCard.avancementDeLaTraversee")}>
@@ -130,9 +130,9 @@ export function CrossingCard({
         ) : null}
       </div>
       <div className="bw-crossing-route">
-        <strong>{from.name}</strong>
+        <strong>{placeName(from.name)}</strong>
         <ArrowRight size={17} aria-hidden />
-        <strong>{to.name}</strong>
+        <strong>{placeName(to.name)}</strong>
       </div>
       {scene === "stopped" ? (
         <div className="bw-crossing-progress">
@@ -216,18 +216,18 @@ export function CrossingCard({
 }
 
 const STEP_LABEL: Record<CrossingStep, string> = {
-  boarding: "Embarquement",
-  departure: "Départ",
-  sea: "Traversée",
-  arrival: "Arrivée",
-  landing: "Débarquement",
+  get boarding() { return tr("ui.crossingCard.embarquement"); },
+  get departure() { return tr("ui.crossingCard.depart"); },
+  get sea() { return tr("ui.crossingCard.traversee"); },
+  get arrival() { return tr("ui.crossingCard.arrivee"); },
+  get landing() { return tr("ui.crossingCard.debarquement"); },
 };
 const MARK_TITLE = {
-  done: "Constaté",
-  assumed: "D’après l’horaire, pas encore confirmé",
-  current: "En cours",
-  pending: "Heure passée, pas encore confirmé",
-  todo: "À venir",
+  get done() { return tr("ui.crossingCard.constate"); },
+  get assumed() { return tr("ui.crossingCard.dApresLHorairePas"); },
+  get current() { return tr("ui.crossingCard.enCours"); },
+  get pending() { return tr("ui.crossingCard.heurePasseePasEncoreConfirme"); },
+  get todo() { return tr("ui.crossingCard.aVenir"); },
 } as const;
 
 /** Embarquement, départ, traversée, arrivée, débarquement : ce qui est fait, en cours ou à confirmer. */
@@ -263,16 +263,16 @@ function CrossingSteps({
         )
       : null;
   const sub: Record<CrossingStep, string | null> = {
-    boarding: presentation ? `présentation ${presentation}` : null,
+    boarding: presentation ? tr("ui.crossingCard.presentation", { presentation }) : null,
     departure:
       times.departure.kind === "observed"
-        ? `parti à ${leave}`
+        ? tr("ui.crossingCard.partiA", { leave })
         : seenAtSea
-          ? "parti, vu en mer"
+          ? tr("ui.crossingCard.partiVuEnMer")
           : marks.departure === "assumed" && leave
-            ? `${leave} d’après l’horaire`
+            ? tr("ui.crossingCard.dApresLHoraire", { leave })
             : leave
-              ? `prévu ${leave}`
+              ? tr("ui.crossingCard.prevu", { leave })
               : null,
     sea:
       marks.sea === "current" && ratio !== null
@@ -280,10 +280,10 @@ function CrossingSteps({
         : null,
     arrival: land
       ? times.arrival.kind === "observed"
-        ? `arrivé à ${land}`
+        ? tr("ui.crossingCard.arriveA", { land })
         : marks.arrival === "pending"
-          ? `prévue ${land} · à confirmer`
-          : `${times.arrival.kind === "estimated" ? "≈" : "prévue"} ${land}`
+          ? tr("ui.crossingCard.prevueAConfirmer", { land })
+          : `${times.arrival.kind === "estimated" ? "≈" : tr("ui.crossingCard.prevue")} ${land}`
       : null,
     landing: null,
   };

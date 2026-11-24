@@ -26,7 +26,7 @@ function TermsPage() {
         sections={[
           {
             id: "service",
-            title: "Le service",
+            title: tr("ui.pageConditionsUtilisation.leService"),
             body: (
               <>
                 <p>
@@ -48,7 +48,7 @@ function TermsPage() {
           },
           {
             id: "fiabilite",
-            title: "Des informations indicatives",
+            title: tr("ui.pageConditionsUtilisation.desInformationsIndicatives"),
             body: (
               <>
                 <p>
@@ -65,7 +65,7 @@ function TermsPage() {
           },
           {
             id: "compte",
-            title: "Votre compte",
+            title: tr("ui.pageConditionsUtilisation.votreCompte"),
             body: (
               <ul>
                 <li>{tr("ui.pageConditionsUtilisation.t15AnsMinimumPourCreer")}</li>
@@ -81,7 +81,7 @@ function TermsPage() {
           },
           {
             id: "contenus",
-            title: "Ce que vous publiez",
+            title: tr("ui.pageConditionsUtilisation.ceQueVousPubliez"),
             body: (
               <>
                 <p>
@@ -105,7 +105,7 @@ function TermsPage() {
           },
           {
             id: "moderation",
-            title: "Modération et signalement",
+            title: tr("ui.pageConditionsUtilisation.moderationEtSignalement"),
             body: (
               <>
                 <p>
@@ -119,7 +119,7 @@ function TermsPage() {
           },
           {
             id: "propriete",
-            title: "Propriété intellectuelle",
+            title: tr("ui.pageConditionsUtilisation.proprieteIntellectuelle"),
             body: (
               <p>
                 {tr("ui.pageConditionsUtilisation.leSiteSesTextesIllustrations")}
@@ -128,7 +128,7 @@ function TermsPage() {
           },
           {
             id: "responsabilite",
-            title: "Responsabilité",
+            title: tr("ui.pageConditionsUtilisation.responsabilite"),
             body: (
               <p>
                 {tr("ui.pageConditionsUtilisation.bledwayNePeutEtreTenu")}
@@ -137,7 +137,7 @@ function TermsPage() {
           },
           {
             id: "donnees",
-            title: "Données personnelles",
+            title: tr("ui.pageConditionsUtilisation.donneesPersonnelles"),
             body: (
               <p>
                 {tr("ui.pageConditionsUtilisation.leurUsageEstDecritDans")}{" "}
@@ -147,7 +147,7 @@ function TermsPage() {
           },
           {
             id: "evolution",
-            title: "Évolution, droit applicable",
+            title: tr("ui.pageConditionsUtilisation.evolutionDroitApplicable"),
             body: (
               <>
                 <p>

@@ -41,7 +41,7 @@ import {
 } from "@/lib/ferry/companyOverview";
 import { useVesselAlerts } from "@/lib/ferry/vesselAlerts";
 import { formatDuration } from "@/lib/ferry/format";
-import { tr, intlLocale } from "@/lib/i18n";
+import { tr, intlLocale, placeName } from "@/lib/i18n";
 
 const title = "Compagnies de ferry Europe ↔ Algérie — BledWay";
 const description =
@@ -103,26 +103,26 @@ function CompagniesPage() {
     : null;
   const sector = [
     { icon: Building2, value: number(companies.length), label: "compagnies" },
-    { icon: Ship, value: number(allFleet.length), label: "navires en service" },
-    { icon: CalendarDays, value: sectorAge ? `${sectorAge} ans` : "—", label: "d'âge moyen" },
+    { icon: Ship, value: number(allFleet.length), label: tr("ui.pageCompagnies.naviresEnService") },
+    { icon: CalendarDays, value: sectorAge ? `${sectorAge} ans` : "—", label: tr("ui.pageCompagnies.dAgeMoyen") },
     { icon: RouteIcon, value: number(routes.length), label: "liaisons" },
     {
       icon: Repeat,
       value: departures.data
         ? number(Math.round(companies.reduce((t, c) => t + overviewOf(c).perWeek, 0)))
         : "—",
-      label: "départs par semaine",
+      label: tr("ui.pageCompagnies.departsParSemaine"),
     },
     {
       icon: Users,
       value: number(allFleet.reduce((t, v) => t + (v.passenger_capacity ?? 0), 0)),
-      label: "places passagers",
+      label: tr("ui.pageCompagnies.placesPassagers"),
     },
   ];
 
   return (
     <SiteLayout>
-      <StructuredData value={breadcrumbSchema([{ name: "Compagnies", path: "/compagnies" }])} />
+      <StructuredData value={breadcrumbSchema([{ name: tr("ui.pageCompagnies.compagnies"), path: "/compagnies" }])} />
       <StructuredData
         value={{
           "@context": "https://schema.org",
@@ -156,7 +156,7 @@ function CompagniesPage() {
             <option value="">{tr("ui.pageCompagnies.jeParsDeTousLes")}</option>
             {departurePorts.map((port) => (
               <option key={port.id} value={port.id}>
-                {tr("ui.pageCompagnies.jeParsDe2")}{port.name}
+                {tr("ui.pageCompagnies.jeParsDe2")}{placeName(port.name)}
               </option>
             ))}
           </select>
@@ -260,23 +260,23 @@ function CompanySection({
     {
       icon: CalendarDays,
       value: overview.averageAge != null ? `${overview.averageAge} ans` : "—",
-      label: "d'âge moyen",
+      label: tr("ui.pageCompagnies.dAgeMoyen"),
     },
     { icon: RouteIcon, value: number(lines.length), label: lines.length > 1 ? "lignes" : "ligne" },
     {
       icon: Repeat,
       value: programmesReady ? decimal(overview.perWeek) : "—",
-      label: "départs / semaine",
+      label: tr("ui.pageCompagnies.departsSemaine2"),
     },
     {
       icon: Users,
       value: overview.passengersMax ? number(overview.passengersMax) : "—",
-      label: "passagers max",
+      label: tr("ui.pageCompagnies.passagersMax"),
     },
     {
       icon: Clock,
       value: overview.next ? shortDate(overview.next.departure_at) : programmesReady ? "—" : "…",
-      label: "prochain départ",
+      label: tr("ui.pageCompagnies.prochainDepart"),
     },
   ];
   return (
@@ -379,15 +379,15 @@ function CompanySection({
                     <strong>{vessel.name}</strong>
                     <small>
                       {vessel.build_year
-                        ? `${vessel.build_year} · ${thisYear - vessel.build_year} ans`
+                        ? tr("ui.pageCompagnies.ans", { buildyear: vessel.build_year, v: thisYear - vessel.build_year })
                         : tr("ui.pageCompagnies.anneeACompleter")}
                     </small>
                     <small>
                       {[
                         vessel.passenger_capacity
-                          ? `${number(vessel.passenger_capacity)} pass.`
+                          ? tr("ui.pageCompagnies.passagersCourt", { v: number(vessel.passenger_capacity) })
                           : null,
-                        vessel.car_capacity ? `${number(vessel.car_capacity)} véh.` : null,
+                        vessel.car_capacity ? tr("ui.pageCompagnies.veh", { number: number(vessel.car_capacity) }) : null,
                       ]
                         .filter(Boolean)
                         .join(" · ") || tr("ui.pageCompagnies.capacitesACompleter")}
@@ -417,7 +417,7 @@ function CompanySection({
                     {!programmesReady
                       ? "…"
                       : perWeek
-                        ? `${decimal(perWeek)} / sem.`
+                        ? tr("ui.pageCompagnies.parSemaineCourt", { v: decimal(perWeek) })
                         : tr("ui.pageCompagnies.pasDeProgrammePublie")}
                     {next ? <small>{tr("ui.pageCompagnies.prochain")}{shortDate(next)}</small> : null}
                   </span>
@@ -427,7 +427,7 @@ function CompanySection({
           </ul>
           {lines.length > 6 ? (
             <button type="button" className="bw-cos__more" onClick={() => setAllLines((v) => !v)}>
-              {allLines ? tr("ui.pageCompagnies.moinsDeLignes") : `+ ${lines.length - 6} lignes`}
+              {allLines ? tr("ui.pageCompagnies.moinsDeLignes") : tr("ui.pageCompagnies.lignes2", { v: lines.length - 6 })}
             </button>
           ) : null}
         </div>

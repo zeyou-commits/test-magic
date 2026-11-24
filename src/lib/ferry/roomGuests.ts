@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
+import { tr } from "@/lib/i18n/translate";
 
 /**
  * Inviter un proche dans le salon de sa traversée : un lien personnel par passager et par traversée.
@@ -41,10 +42,10 @@ export const roomInviteInfoQuery = (token: string | null) =>
   });
 
 const REFUSED: Record<string, string> = {
-  account: "Connectez-vous pour accepter l'invitation.",
-  unknown: "Ce lien d'invitation n'est plus valable.",
-  expired: "Cette traversée est terminée : l'invitation n'est plus valable.",
-  full: "Ce lien a déjà servi à 10 personnes. Demandez un nouveau lien à la personne qui vous invite.",
+  get account() { return tr("ui.libFerryRoomGuests.connectezVousPourAccepterL"); },
+  get unknown() { return tr("ui.libFerryRoomGuests.ceLienDInvitationN"); },
+  get expired() { return tr("ui.libFerryRoomGuests.cetteTraverseeEstTermineeL"); },
+  get full() { return tr("ui.libFerryRoomGuests.ceLienADejaServi"); },
 };
 
 export type AcceptResult = { status: "guest" | "member"; departureId: string; inviter?: string };
@@ -114,17 +115,17 @@ export type VisitState = {
 };
 
 const VISIT_REFUSED: Record<string, string> = {
-  account: "Connectez-vous pour rejoindre ce salon en invité.",
-  charter: "Acceptez d'abord la charte du salon.",
-  banned: "Votre compte ne peut pas écrire dans les salons pour le moment.",
-  muted: "Trop de messages refusés aujourd'hui : réessayez demain.",
-  removed: "Un de vos messages a été masqué dans ce salon : vous ne pouvez plus y écrire.",
-  expired: "Cette traversée est terminée : le salon n'accueille plus d'invités.",
-  too_many: "Vous êtes déjà invité dans 3 salons. Quittez-en un pour rejoindre celui-ci.",
-  room: "Ce salon n'existe plus.",
+  get account() { return tr("ui.libFerryRoomGuests.connectezVousPourRejoindreCe"); },
+  get charter() { return tr("ui.libFerryRoomGuests.acceptezDAbordLaCharte"); },
+  get banned() { return tr("ui.libFerryRoomGuests.votreCompteNePeutPas"); },
+  get muted() { return tr("ui.libFerryRoomGuests.tropDeMessagesRefusesAujourd"); },
+  get removed() { return tr("ui.libFerryRoomGuests.unDeVosMessagesA"); },
+  get expired() { return tr("ui.libFerryRoomGuests.cetteTraverseeEstTermineeLe"); },
+  get too_many() { return tr("ui.libFerryRoomGuests.vousEtesDejaInviteDans"); },
+  get room() { return tr("ui.libFerryRoomGuests.ceSalonNExistePlus"); },
 };
 export const visitRefusal = (code: string | undefined) =>
-  VISIT_REFUSED[code ?? ""] ?? "Impossible de rejoindre ce salon pour le moment. Réessayez.";
+  VISIT_REFUSED[code ?? ""] ?? tr("ui.libFerryRoomGuests.impossibleDeRejoindreCeSalon");
 
 export async function joinRoomAsVisitor(departureId: string): Promise<"visitor" | "member"> {
   const { data, error } = await supabase.rpc("bw_room_visit_join", { p_departure: departureId });

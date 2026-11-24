@@ -16,42 +16,43 @@ import { newsDay, newsFeedQuery, newsSlug } from "@/lib/ferry/newsFeed";
 import { TICKETING } from "@/lib/seo/pitch";
 import { HomeTour } from "./HomeTour";
 import { tr, intlLocale } from "@/lib/i18n";
+import { lazyConst } from "@/lib/i18n/translate";
 
 const COMMUNITY = [
   {
     icon: Megaphone,
-    title: "Vous signalez",
-    text: "File au port, retard, navire changé, contrôle : un signalement en quelques gestes, visible sur la carte.",
+    get title() { return tr("ui.homeServices.vousSignalez"); },
+    get text() { return tr("ui.homeServices.fileAuPortRetardNavire"); },
   },
   {
     icon: MessagesSquare,
-    title: "Vous échangez",
-    text: "Chaque traversée et chaque port a son salon. On y pose ses questions à ceux qui sont déjà sur place.",
+    get title() { return tr("ui.homeServices.vousEchangez"); },
+    get text() { return tr("ui.homeServices.chaqueTraverseeEtChaquePort"); },
   },
   {
     icon: Ship,
-    title: "Vous confirmez",
-    text: "« À bord ? » : les passagers confirment le départ réel. La carte devient plus juste pour tout le monde.",
+    get title() { return tr("ui.homeServices.vousConfirmez"); },
+    get text() { return tr("ui.homeServices.aBordLesPassagersConfirment"); },
   },
 ];
 
-const TRUST = [
+const TRUST = lazyConst(() => ([
   {
     icon: Clock3,
-    title: "Les horaires",
-    text: "Ceux publiés par les compagnies. Au-delà des ventes ouvertes, la rotation habituelle des navires est marquée « Estimé ».",
+    get title() { return tr("ui.homeServices.lesHoraires"); },
+    get text() { return tr("ui.homeServices.ceuxPubliesParLesCompagnies"); },
   },
   {
     icon: Navigation,
-    title: "Les positions",
-    text: "« Position réelle » si le signal du navire a moins de 30 minutes. Sinon, une estimation d'après l'horaire, annoncée comme telle.",
+    get title() { return tr("ui.homeServices.lesPositions"); },
+    get text() { return tr("ui.homeServices.positionReelleSiLeSignal"); },
   },
   {
     icon: Receipt,
-    title: "Les prix",
-    text: `Des repères de budget, pas des offres. ${TICKETING.short}`,
+    get title() { return tr("ui.homeServices.lesPrix"); },
+    text: tr("ui.homeServices.desReperesDeBudgetPas", { short: TICKETING.short }),
   },
-];
+]));
 
 /**
  * Sous le module de réservation (ordinateur) : ce que BledWay apporte, moment par moment.
@@ -97,11 +98,11 @@ export function HomeServices({
     activeRoutes.flatMap((route) => route.company_ids ?? []),
   );
   const stats = [
-    { value: activeRoutes.length, label: "lignes suivies" },
-    { value: ports.filter((port) => servedPorts.has(port.id)).length, label: "ports reliés" },
+    { value: activeRoutes.length, label: tr("ui.homeServices.lignesSuivies") },
+    { value: ports.filter((port) => servedPorts.has(port.id)).length, label: tr("ui.homeServices.portsRelies") },
     {
       value: servedCompanies.size || companies.length,
-      label: "compagnies comparées",
+      label: tr("ui.homeServices.compagniesComparees"),
     },
   ].filter((stat) => stat.value > 0);
   const latest = news.slice(0, 3);

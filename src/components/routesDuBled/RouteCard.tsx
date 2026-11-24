@@ -11,7 +11,7 @@ import {
   Ship,
   Waypoints,
 } from "lucide-react";
-import { tr, intlLocale } from "@/lib/i18n";
+import { tr, intlLocale, placeName } from "@/lib/i18n";
 import { KIND_COLOR, mapsLink, type BledRoute, type StopFeature } from "@/lib/routesDuBled/data";
 import {
   anonyme,
@@ -41,14 +41,14 @@ export const portDe = (p: string) => (/^[aeiouyéè]/i.test(p) ? `d'${p}` : `de 
 const routeName = (r: BledRoute) => r.name.replace(/ \(.*\)$/, "");
 /** Le nom que les voyageurs donnent à la route qu'ils rejoignent. */
 const NOM_ROUTE: Record<string, string> = {
-  E1: "l'Autoroute du Soleil",
-  E2: "la Languedocienne",
-  E3: "la route de la Méditerranée",
-  E4: "la route d'Almería",
-  E5: "la route de Bordeaux et Madrid",
-  E6: "la route d'Alicante",
-  E7: "la route d'Almería par Grenade",
-  E8: "la route du port de Sète",
+  get E1() { return tr("ui.routeCard.lAutorouteDuSoleil"); },
+  get E2() { return tr("ui.routeCard.laLanguedocienne"); },
+  get E3() { return tr("ui.routeCard.laRouteDeLaMediterranee"); },
+  get E4() { return tr("ui.routeCard.laRouteDAlmeria"); },
+  get E5() { return tr("ui.routeCard.laRouteDeBordeauxEt"); },
+  get E6() { return tr("ui.routeCard.laRouteDAlicante"); },
+  get E7() { return tr("ui.routeCard.laRouteDAlmeriaPar"); },
+  get E8() { return tr("ui.routeCard.laRouteDuPortDe"); },
 };
 /** La ville la plus proche (moins de 40 km), pour nommer une halte que la carte ne nomme pas. */
 const villeProche = (s: { lat: number; lon: number }) => {
@@ -517,7 +517,7 @@ function PasView({
       <div className="rdb-pas" data-k="ville" data-side={p.side} id={`pas-${p.id}`} data-pas={p.id}>
         <span className="rdb-pas__dot" aria-hidden />
         <p className="rdb-pas__ville">
-          {p.name}{" "}
+          {placeName(p.name)}{" "}
           <span>
             ·{" "}
             {clock != null

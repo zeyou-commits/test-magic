@@ -16,7 +16,7 @@ import { postToRoom } from "@/lib/ferry/chat";
 import { roomKey } from "./LiveRoom";
 import { tr } from "@/lib/i18n";
 
-const voyageurs = (n: number) => `${n} voyageur${n > 1 ? "s" : ""} BledWay`;
+const voyageurs = (n: number) => tr("ui.portPassage.voyageurBledway", { n, v: n > 1 ? "s" : "" });
 const STEPS: TripStatus[] = ["landing", "controls", "arrived"];
 
 /** Carte de l'arrivée : depuis combien de temps à quai, qui reste dans le port, une question à un doigt. */
@@ -57,16 +57,16 @@ export function PortPassage({
     <div className="bw-passage">
       <p className="bw-passage__time">
         <strong>
-          {minutes === null ? `Au port de ${portName}` : `À quai depuis ${formatDocked(minutes)}`}
+          {minutes === null ? tr("ui.portPassage.auPortDe", { portName }) : tr("ui.portPassage.aQuaiDepuis", { formatDocked: formatDocked(minutes) })}
         </strong>
         {inPort || out ? (
           <small>
-            {inPort ? `${voyageurs(inPort)} encore dans le port` : ""}
+            {inPort ? tr("ui.portPassage.encoreDansLePort", { voyageurs: voyageurs(inPort) }) : ""}
             {inPort && out ? " · " : ""}
             {out ? `${out} sorti${out > 1 ? "s" : ""}` : ""}
           </small>
         ) : (
-          <small>{minutes === null ? "" : `Port de ${portName}`}</small>
+          <small>{minutes === null ? "" : tr("ui.portPassage.portDe", { portName })}</small>
         )}
       </p>
       {user ? (

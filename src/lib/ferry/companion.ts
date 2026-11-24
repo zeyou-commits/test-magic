@@ -2,6 +2,8 @@ import type { VehicleKind } from "@/components/panel/TripProfile";
 import { estimateFerryFare, priceSeason, type FareEstimate, type PriceSeason } from "./pricing";
 import type { Sailing } from "./trips";
 import type { Port, RouteLine } from "./types";
+import { tr } from "@/lib/i18n/translate";
+import { lazyDateFormat, intlLocale } from "@/lib/i18n";
 
 /**
  * Le compagnon « Préparer mon voyage » : d'abord quand l'on part (une période), qui part et avec
@@ -64,7 +66,7 @@ export function nextMonths(count = 12, from = new Date()) {
     const key = monthKey(date);
     return {
       key,
-      label: new Intl.DateTimeFormat("fr-FR", { month: "short" }).format(date).replace(".", ""),
+      label: lazyDateFormat({ month: "short" }).format(date).replace(".", ""),
       year: date.getFullYear(),
       season: priceSeason(`${key}-15`),
     };
@@ -196,7 +198,7 @@ export function departurePorts(
         (a.route.typical_duration_minutes ?? 9999) - (b.route.typical_duration_minutes ?? 9999),
     );
   return [...choices.values()].sort((a, b) =>
-    a.km !== null && b.km !== null ? a.km - b.km : a.port.name.localeCompare(b.port.name, "fr"),
+    a.km !== null && b.km !== null ? a.km - b.km : a.port.name.localeCompare(b.port.name, intlLocale()),
   );
 }
 
@@ -231,7 +233,7 @@ export const earliestDay = (plan: Pick<CompanionPlan, "month" | "date" | "window
     : (plan.window?.from ?? `${plan.month}-01`);
 
 const shortDay = (key: string) =>
-  new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" })
+  lazyDateFormat({ day: "numeric", month: "long" })
     .format(new Date(`${key}T12:00:00`))
     .replace(/^1 /, "1er ");
 
@@ -245,10 +247,10 @@ export const planHasWhen = (plan: Pick<CompanionPlan, "month" | "date" | "window
  */
 export function planWhenLabel(plan: Pick<CompanionPlan, "month" | "date" | "window">) {
   if (plan.date && plan.date.startsWith(plan.month))
-    return `le ${new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${plan.date}T12:00:00`))}`;
+    return `le ${lazyDateFormat({ weekday: "long", day: "numeric", month: "long" }).format(new Date(`${plan.date}T12:00:00`))}`;
   if (plan.window)
-    return `entre le ${shortDay(plan.window.from)} et le ${shortDay(plan.window.to)}`;
-  return "date à choisir";
+    return tr("ui.libFerryCompanion.entreLeEtLe", { shortDay: shortDay(plan.window.from), shortDay2: shortDay(plan.window.to) });
+  return tr("ui.libFerryCompanion.dateAChoisir");
 }
 
 /** Les pays de résidence proposés : la France d'abord, puis l'Europe où vivent les voyageurs. */
@@ -313,10 +315,10 @@ export async function communeOfPostcode(postcode: string): Promise<CompanionPlan
 }
 
 export const seasonLabels: Record<PriceSeason, string> = {
-  calme: "Basse saison",
-  intermediaire: "Saison moyenne",
-  forte: "Haute saison",
-  pointe: "Pic de l'été",
+  get calme() { return tr("ui.libFerryCompanion.basseSaison"); },
+  get intermediaire() { return tr("ui.libFerryCompanion.saisonMoyenne"); },
+  get forte() { return tr("ui.libFerryCompanion.hauteSaison"); },
+  get pointe() { return tr("ui.libFerryCompanion.picDeLEte"); },
 };
 
 /** La recherche de traversées, déjà remplie : ports, jour (± 3 jours). */
@@ -333,12 +335,12 @@ export function bookingSearch(plan: CompanionPlan) {
 
 /** Les titres des étapes, partout où l'on parle du compagnon (page, accueil de la carte). */
 export const companionStepTitles: Record<CompanionStep, string> = {
-  profile: "Mon départ en 3 questions",
-  papers: "Mes papiers",
-  car: "Ma voiture",
+  get profile() { return tr("ui.libFerryCompanion.monDepartEn3Questions"); },
+  get papers() { return tr("ui.libFerryCompanion.mesPapiers"); },
+  get car() { return tr("ui.libFerryCompanion.maVoiture"); },
   route: "Ma route jusqu'à destination",
-  budget: "Mon budget",
-  book: "Mon billet",
+  get budget() { return tr("ui.libFerryCompanion.monBudget"); },
+  get book() { return tr("ui.libFerryCompanion.monBillet"); },
 };
 
 export const formatDuration = (minutes: number | null) => {

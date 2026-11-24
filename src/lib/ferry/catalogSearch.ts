@@ -1,4 +1,6 @@
 import { normalizeText } from "./filtering";
+import { tr } from "@/lib/i18n/translate";
+import { lazyDateFormat } from "@/lib/i18n";
 
 export type CatalogResult = {
   kind: "vessel" | "company" | "port" | "route";
@@ -29,7 +31,7 @@ type Source = {
 };
 
 const day = (iso: string) =>
-  new Intl.DateTimeFormat("fr-FR", {
+  lazyDateFormat({
     day: "numeric",
     month: "short",
     timeZone: "Europe/Paris",
@@ -49,8 +51,8 @@ export function searchCatalog(term: string, source: Source, limit = 6): CatalogR
     .sort((a, b) => a.departure_at.localeCompare(b.departure_at));
   const nextHint = (next: { departure_at: string } | undefined, count: number) =>
     next
-      ? `Prochaine traversée le ${day(next.departure_at)} · ${count} à venir`
-      : "Aucune traversée programmée pour le moment";
+      ? tr("ui.libFerryCatalogSearch.prochaineTraverseeLeAVenir", { day: day(next.departure_at), count })
+      : tr("ui.libFerryCatalogSearch.aucuneTraverseeProgrammeePourLe");
   const portName = (id: string) => source.ports.find((p) => p.id === id)?.name ?? "?";
   const companyName = (id: string | null) => source.companies.find((c) => c.id === id)?.name;
 
@@ -63,7 +65,7 @@ export function searchCatalog(term: string, source: Source, limit = 6): CatalogR
         kind: "vessel",
         id: v.id,
         label: v.name,
-        hint: `${companyName(v.company_id) ?? "Compagnie à confirmer"} · ${nextHint(own[0], own.length)}`,
+        hint: `${companyName(v.company_id) ?? tr("ui.libFerryCatalogSearch.compagnieAConfirmer")} · ${nextHint(own[0], own.length)}`,
       };
     });
   const companies: CatalogResult[] = source.companies
@@ -76,7 +78,7 @@ export function searchCatalog(term: string, source: Source, limit = 6): CatalogR
   const ports: CatalogResult[] = source.ports
     .filter((p) => p.status !== "draft" && hit(p.name, p.city, p.country_name))
     .slice(0, limit)
-    .map((p) => ({ kind: "port", id: p.id, label: p.name, hint: p.country_name ?? "Port" }));
+    .map((p) => ({ kind: "port", id: p.id, label: p.name, hint: p.country_name ?? tr("ui.libFerryCatalogSearch.port") }));
   const routes: CatalogResult[] = source.routes
     .filter((r) => hit(portName(r.departure_port_id), portName(r.arrival_port_id)))
     .slice(0, limit)

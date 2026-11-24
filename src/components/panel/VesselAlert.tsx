@@ -39,7 +39,7 @@ export function LineAlertNotice({
     <div role="status" className="bw-vessel-alert-banner">
       <p className="bw-vessel-alert-banner__title">
         <CircleAlert size={17} aria-hidden />{" "}
-        {touched.map((id) => vessels.find((v) => v.id === id)?.name ?? "Un navire").join(", ")} :{" "}
+        {touched.map((id) => vessels.find((v) => v.id === id)?.name ?? tr("ui.vesselAlert.unNavire")).join(", ")} :{" "}
         {touched.map((id) => alerts.get(id)?.short.toLowerCase()).join(", ")}
       </p>
       <p>
@@ -69,7 +69,7 @@ export function VesselPhotoInfo({ count, onOpen }: { count: number; onOpen: () =
       type="button"
       className="bw-vessel-photo-info"
       onClick={onOpen}
-      aria-label={`Voir ${count} info${count > 1 ? "s" : ""} sur ce navire`}
+      aria-label={tr("ui.vesselAlert.voirInfoSurCeNavire", { count, v: count > 1 ? "s" : "" })}
     >
       <Megaphone size={19} aria-hidden />
       <b>{count > 9 ? "9+" : count}</b>
@@ -101,7 +101,7 @@ export function VesselAlertBanner({
         {onDeparture
           ? tr("ui.vesselAlert.departAConfirmerAupresDe")
           : tr("ui.vesselAlert.verifiezVotreTraverseeAupresDe")}
-        {alert.source ? ` · Source : ${alert.source}` : ""}
+        {alert.source ? tr("ui.vesselAlert.source", { source: alert.source }) : ""}
         {href ? (
           <>
             {" · "}

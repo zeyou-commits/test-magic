@@ -22,7 +22,7 @@ const da = (value: number) => `${lazyNumberFormat({ maximumFractionDigits: 0 }).
 const cur = (value: number, currency: Currency) =>
   lazyNumberFormat({ style: "currency", currency, maximumFractionDigits: 0 }).format(value);
 const day = (date: string | null | undefined) =>
-  date ? new Date(date).toLocaleDateString(intlLocale(), { day: "numeric", month: "short" }) : "date inconnue";
+  date ? new Date(date).toLocaleDateString(intlLocale(), { day: "numeric", month: "short" }) : tr("ui.dinarTools.dateInconnue");
 
 function readJson(key: string) {
   try {
@@ -45,7 +45,7 @@ export function RateCompare({ rate, currency }: { rate: Rate | undefined; curren
   const official = rate.official * 100;
   const parallel = rate.parallel * 100;
   return (
-    <section className="bw-dz-compare" aria-label={`Ce que rapportent 100 ${currency}`}>
+    <section className="bw-dz-compare" aria-label={tr("ui.dinarTools.ceQueRapportent100", { currency })}>
       <h2>
         <Scale size={16} aria-hidden />{tr("ui.dinarTools.pour100")}{currency}
       </h2>
@@ -115,9 +115,9 @@ export function StayPlanner({ rate, currency }: { rate: Rate | undefined; curren
       </h2>
       <p className="bw-dz-plan__intro">{tr("ui.dinarTools.votreSejourEnQuelquesReglages")}</p>
       <div className="bw-dz-plan__grid">
-        {number("days", "Jours sur place")}
-        {number("adults", "Adultes")}
-        {number("children", "Enfants")}
+        {number("days", tr("ui.dinarTools.joursSurPlace"))}
+        {number("adults", tr("ui.dinarTools.adultes"))}
+        {number("children", tr("ui.dinarTools.enfants"))}
       </div>
       <div className="bw-dz-plan__styles" role="group" aria-label={tr("ui.dinarTools.trainDeVie")}>
         {PLAN_STYLES.map((style) => (
@@ -131,8 +131,8 @@ export function StayPlanner({ rate, currency }: { rate: Rate | undefined; curren
           <input type="checkbox" checked={plan.car} onChange={(event) => set({ car: event.target.checked })} />
           <Car size={15} aria-hidden />{tr("ui.dinarTools.enVoiture")}
         </label>
-        {plan.car ? number("km", "Km port → maison", 10) : null}
-        {number("gifts", "Cadeaux (DA)", 1000)}
+        {plan.car ? number("km", tr("ui.dinarTools.kmPortMaison"), 10) : null}
+        {number("gifts", tr("ui.dinarTools.cadeauxDa"), 1000)}
       </div>
       <div className="bw-dz-plan__result" aria-live="polite">
         <small>{tr("ui.dinarTools.ilVousFautEnviron")}</small>
@@ -158,7 +158,7 @@ export function StayPlanner({ rate, currency }: { rate: Rate | undefined; curren
       </ul>
       <details className="bw-dz-plan__more">
         <summary>{tr("ui.dinarTools.ajusterLesReperes")}</summary>
-        <div className="bw-dz-plan__grid">{number("fuelPrice", "Essence (DA le litre)")}</div>
+        <div className="bw-dz-plan__grid">{number("fuelPrice", tr("ui.dinarTools.essenceDaLeLitre"))}</div>
         <p>
           {tr("ui.dinarTools.reperesBledwayParAdulteEt")}
         </p>
@@ -313,11 +313,11 @@ export function PocketCount({ left, started }: { left: number; started: boolean 
           <li key={value}>
             <span>{value.toLocaleString(intlLocale())}{tr("ui.dinarTools.da")}</span>
             <div className="bw-dz-pocket__qty">
-              <button type="button" aria-label={`Retirer un billet de ${value} DA`} disabled={!counts[value]} onClick={() => step(value, -1)}>
+              <button type="button" aria-label={tr("ui.dinarTools.retirerUnBilletDeDa", { value })} disabled={!counts[value]} onClick={() => step(value, -1)}>
                 <Minus size={16} aria-hidden />
               </button>
-              <output aria-label={`Nombre de ${value} DA`}>{counts[value] ?? 0}</output>
-              <button type="button" aria-label={`Ajouter un billet de ${value} DA`} onClick={() => step(value, 1)}>
+              <output aria-label={tr("ui.dinarTools.nombreDeDa", { value })}>{counts[value] ?? 0}</output>
+              <button type="button" aria-label={tr("ui.dinarTools.ajouterUnBilletDeDa", { value })} onClick={() => step(value, 1)}>
                 <Plus size={16} aria-hidden />
               </button>
             </div>
@@ -333,8 +333,8 @@ export function PocketCount({ left, started }: { left: number; started: boolean 
           {gap === 0
             ? tr("ui.dinarTools.leCompteEstBonC")
             : gap > 0
-              ? `${da(gap)} de plus que votre budget : un change ou des dinars pas encore notés ?`
-              : `${da(-gap)} de moins que votre budget : une dépense pas encore notée ?`}
+              ? tr("ui.dinarTools.dePlusQueVotreBudget", { da: da(gap) })
+              : tr("ui.dinarTools.deMoinsQueVotreBudget", { da: da(-gap) })}
         </p>
       ) : null}
       <label className="bw-dz-pocket__days">

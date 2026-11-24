@@ -71,12 +71,12 @@ export function HomeSearchCard({
   const dates = filters.date
     ? `${day(filters.date)}${
         filters.roundTrip
-          ? ` → ${filters.returnDate ? day(filters.returnDate) : "retour à choisir"}`
+          ? ` → ${filters.returnDate ? day(filters.returnDate) : tr("ui.homeSearchCard.retourAChoisir")}`
           : ""
       }${filters.flexDays ? ` ±${filters.flexDays} j` : ""}`
-    : "Choisir les dates";
+    : tr("ui.homeSearchCard.choisirLesDates");
   const travellers = `${summarizePassengers(profile.passengers)}${
-    profile.vehicle !== "none" ? ` · ${summarizeVehicle(profile)}` : " · sans véhicule"
+    profile.vehicle !== "none" ? ` · ${summarizeVehicle(profile)}` : tr("ui.homeSearchCard.sansVehicule")
   }`;
 
   return (
@@ -113,7 +113,7 @@ export function HomeSearchCard({
           className="bw-home-card__swap"
           title={tr("ui.homeSearchCard.inverserLeSens")}
           onClick={() => onFiltersChange(swapDirection(filters))}
-          aria-label={`Inverser le sens : actuellement ${reversed ? "Algérie → Europe" : "Europe → Algérie"}`}
+          aria-label={tr("ui.homeSearchCard.inverserLeSensActuellement", { v: reversed ? "Algérie → Europe" : "Europe → Algérie" })}
         >
           <ArrowLeftRight size={16} aria-hidden />
         </button>

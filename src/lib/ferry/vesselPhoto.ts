@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { Vessel } from "./types";
+import { tr } from "@/lib/i18n/translate";
 
 export interface VesselPhoto {
   url: string;

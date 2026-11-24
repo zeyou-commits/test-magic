@@ -83,15 +83,15 @@ export function PortPlaces({ portId, portName }: { portId: string; portName: str
   const groups = [
     {
       id: "before",
-      title: "Avant le terminal",
-      hint: "Plein, stationnement, repas, pharmacie",
+      title: tr("ui.portPlaces.avantLeTerminal"),
+      hint: tr("ui.portPlaces.pleinStationnementRepasPharmacie"),
       icon: Car,
       items: list.filter((place) => placeKinds[place.kind].group === "before"),
     },
     {
       id: "after",
-      title: "À l’arrivée",
-      hint: "Change, distributeurs, cartes SIM",
+      title: tr("ui.portPlaces.aLArrivee"),
+      hint: tr("ui.portPlaces.changeDistributeursCartesSim"),
       icon: Banknote,
       items: list.filter((place) => placeKinds[place.kind].group === "after"),
     },

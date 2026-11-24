@@ -4,6 +4,7 @@
  * /api/company-access ; le serveur et la base revérifient chaque droit.
  */
 import type { CompanyLevel, MemberStatus } from "./access";
+import { tr } from "@/lib/i18n/translate";
 
 export type ReplyTargetKind = "entity_review" | "vessel_review" | "alert";
 export type ReplyKind = "reply" | "contest";
@@ -54,13 +55,13 @@ export interface CompanyFeedback {
 }
 
 export const REPLY_STATUS: Record<ReplyStatus, { label: string; tone?: string }> = {
-  submitted: { label: "En examen par BledWay", tone: "warn" },
-  published: { label: "Publiée" },
-  acknowledged: { label: "Prise en compte" },
-  refused: { label: "Refusée", tone: "bad" },
-  withdrawn: { label: "Retirée", tone: "mute" },
-  replaced: { label: "Remplacée", tone: "mute" },
-  removed: { label: "Retirée par BledWay", tone: "bad" },
+  submitted: { get label() { return tr("ui.libCompanyDesk.enExamenParBledway"); }, tone: "warn" },
+  published: { get label() { return tr("ui.libCompanyDesk.publiee"); } },
+  acknowledged: { get label() { return tr("ui.libCompanyDesk.priseEnCompte"); } },
+  refused: { get label() { return tr("ui.libCompanyDesk.refusee"); }, tone: "bad" },
+  withdrawn: { get label() { return tr("ui.libCompanyDesk.retiree"); }, tone: "mute" },
+  replaced: { get label() { return tr("ui.libCompanyDesk.remplacee"); }, tone: "mute" },
+  removed: { get label() { return tr("ui.libCompanyDesk.retireeParBledway"); }, tone: "bad" },
 };
 
 /** Dernière réponse (ou contestation) utile pour un avis ou un signalement. */
@@ -83,26 +84,26 @@ export function latestReply(
 export const PROFILE_FIELDS = [
   {
     key: "description",
-    label: "Présentation",
-    hint: "Quelques phrases neutres : lignes desservies, services. 1 000 caractères au plus.",
+    get label() { return tr("ui.libCompanyDesk.presentation"); },
+    get hint() { return tr("ui.libCompanyDesk.quelquesPhrasesNeutresLignesDesservies"); },
   },
-  { key: "website_url", label: "Site officiel", hint: "Adresse complète en https://" },
-  { key: "booking_url", label: "Page de réservation", hint: "Adresse complète en https://" },
-  { key: "contact_url", label: "Page de contact", hint: "Adresse complète en https://" },
-  { key: "claims_url", label: "Réclamations", hint: "Adresse complète en https://" },
-  { key: "phone", label: "Téléphone voyageurs", hint: "Avec l'indicatif, par exemple +33 4 …" },
-  { key: "contact_email", label: "E-mail voyageurs", hint: "Adresse publique de la compagnie" },
+  { key: "website_url", get label() { return tr("ui.libCompanyDesk.siteOfficiel"); }, get hint() { return tr("ui.libCompanyDesk.adresseCompleteEnHttps"); } },
+  { key: "booking_url", get label() { return tr("ui.libCompanyDesk.pageDeReservation"); }, get hint() { return tr("ui.libCompanyDesk.adresseCompleteEnHttps"); } },
+  { key: "contact_url", get label() { return tr("ui.libCompanyDesk.pageDeContact"); }, get hint() { return tr("ui.libCompanyDesk.adresseCompleteEnHttps"); } },
+  { key: "claims_url", get label() { return tr("ui.libCompanyDesk.reclamations"); }, get hint() { return tr("ui.libCompanyDesk.adresseCompleteEnHttps"); } },
+  { key: "phone", get label() { return tr("ui.libCompanyDesk.telephoneVoyageurs"); }, get hint() { return tr("ui.libCompanyDesk.avecLIndicatifParExemple"); } },
+  { key: "contact_email", get label() { return tr("ui.libCompanyDesk.eMailVoyageurs"); }, get hint() { return tr("ui.libCompanyDesk.adressePubliqueDeLaCompagnie"); } },
 ] as const;
 export type ProfileField = (typeof PROFILE_FIELDS)[number]["key"];
 export type ProfileValues = Record<ProfileField, string | null>;
 
 export type ProposalStatus = "submitted" | "applied" | "refused" | "stale" | "withdrawn";
 export const PROPOSAL_STATUS: Record<ProposalStatus, { label: string; tone?: string }> = {
-  submitted: { label: "En attente", tone: "warn" },
-  applied: { label: "Appliquée" },
-  refused: { label: "Refusée", tone: "bad" },
-  stale: { label: "Dépassée", tone: "mute" },
-  withdrawn: { label: "Retirée", tone: "mute" },
+  submitted: { get label() { return tr("ui.libCompanyDesk.enAttente"); }, tone: "warn" },
+  applied: { get label() { return tr("ui.libCompanyDesk.appliquee"); } },
+  refused: { get label() { return tr("ui.libCompanyDesk.refusee"); }, tone: "bad" },
+  stale: { get label() { return tr("ui.libCompanyDesk.depassee"); }, tone: "mute" },
+  withdrawn: { get label() { return tr("ui.libCompanyDesk.retiree"); }, tone: "mute" },
 };
 export interface ProfileProposal {
   id: string;
@@ -116,11 +117,11 @@ export interface ProfileProposal {
 
 export type PhotoStatus = "pending" | "published" | "refused" | "withdrawn" | "removed";
 export const PHOTO_STATUS: Record<PhotoStatus, { label: string; tone?: string }> = {
-  pending: { label: "En attente", tone: "warn" },
-  published: { label: "Publiée" },
-  refused: { label: "Refusée", tone: "bad" },
-  withdrawn: { label: "Retirée", tone: "mute" },
-  removed: { label: "Retirée par BledWay", tone: "bad" },
+  pending: { get label() { return tr("ui.libCompanyDesk.enAttente"); }, tone: "warn" },
+  published: { get label() { return tr("ui.libCompanyDesk.publiee"); } },
+  refused: { get label() { return tr("ui.libCompanyDesk.refusee"); }, tone: "bad" },
+  withdrawn: { get label() { return tr("ui.libCompanyDesk.retiree"); }, tone: "mute" },
+  removed: { get label() { return tr("ui.libCompanyDesk.retireeParBledway"); }, tone: "bad" },
 };
 export interface CompanyPhoto {
   id: string;
@@ -153,14 +154,14 @@ export const GALLERY_LIMIT = 24;
 export function profileFieldError(key: ProfileField, value: string): string | null {
   const v = value.trim();
   if (!v) return null;
-  if (key === "description") return v.length > 1000 ? "1 000 caractères au plus." : null;
+  if (key === "description") return v.length > 1000 ? tr("ui.libCompanyDesk.t1000CaracteresAuPlus") : null;
   if (key === "phone")
-    return /^\+?[0-9 ().-]{6,40}$/.test(v) ? null : "Chiffres, espaces et + seulement.";
+    return /^\+?[0-9 ().-]{6,40}$/.test(v) ? null : tr("ui.libCompanyDesk.chiffresEspacesEtSeulement");
   if (key === "contact_email")
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) && v.length <= 255 ? null : "Adresse illisible.";
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) && v.length <= 255 ? null : tr("ui.libCompanyDesk.adresseIllisible");
   return /^https:\/\/[^\s/]+\.[^\s]+$/.test(v) && v.length <= 300
     ? null
-    : "Adresse complète en https:// attendue.";
+    : tr("ui.libCompanyDesk.adresseCompleteEnHttpsAttendue");
 }
 
 // ─── Responsable de compagnie ────────────────────────────────────────────────────────────────

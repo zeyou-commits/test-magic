@@ -14,6 +14,7 @@ import {
   type CarModel,
   type LiveFare,
 } from "./quote";
+import { tr } from "@/lib/i18n/translate";
 
 const carSchema = z.object({
   typeId: z.number().int().nullable(),
@@ -106,27 +107,27 @@ export const getLiveFare = createServerFn({ method: "POST" })
     if (!config) return { status: "off" };
     const withVehicle = data.vehicle !== "none";
     const travellers = data.passengers.adults + data.passengers.seniors + data.passengers.children + data.passengers.babies;
-    if (!travellers) return { status: "unavailable", reason: "Ajoutez au moins un voyageur." };
+    if (!travellers) return { status: "unavailable", reason: tr("ui.libDirectferriesFunctions.ajoutezAuMoinsUnVoyageur") };
     if (withVehicle && data.accessories.includes("trailer"))
-      return { status: "unavailable", reason: "Avec remorque, le prix se calcule sur le site de réservation." };
+      return { status: "unavailable", reason: tr("ui.libDirectferriesFunctions.avecRemorqueLePrixSe") };
     if (data.passengers.pets)
-      return { status: "unavailable", reason: "Avec un animal, le prix se calcule sur le site de réservation." };
+      return { status: "unavailable", reason: tr("ui.libDirectferriesFunctions.avecUnAnimalLePrix") };
     try {
       const ports = await api.dfPorts(config);
       const from = matchPort(data.from, ports);
       const to = matchPort(data.to, ports);
-      if (!from || !to) return { status: "unavailable", reason: "Cette ligne n'est pas proposée par notre partenaire." };
+      if (!from || !to) return { status: "unavailable", reason: tr("ui.libDirectferriesFunctions.cetteLigneNEstPas") };
       const route = pickRoute(await api.dfRoutesFrom(config, from.code), to.code, data.company, withVehicle);
-      if (!route) return { status: "unavailable", reason: "Ce départ n'est pas proposé par notre partenaire." };
+      if (!route) return { status: "unavailable", reason: tr("ui.libDirectferriesFunctions.ceDepartNEstPas") };
 
       let vehicleLabel: string | null = null;
       let vehicles: unknown[] = [];
       if (withVehicle) {
         const car = data.car ?? (await representativeCar(config, data.vehicle));
-        if (!car) return { status: "unavailable", reason: "Choisissez le modèle exact de votre voiture." };
+        if (!car) return { status: "unavailable", reason: tr("ui.libDirectferriesFunctions.choisissezLeModeleExactDe") };
         const load = loadFromAccessories(data.accessories, data.load);
         vehicles = [buildVehicle(car, load)];
-        vehicleLabel = `${car.make} ${car.model}${data.car ? "" : " (gabarit type)"}`;
+        vehicleLabel = `${car.make} ${car.model}${data.car ? "" : tr("ui.libDirectferriesFunctions.gabaritType")}`;
       }
       const bands = await api.dfAgeBands(config, route.operator.id, route.routeId);
       const body = {
@@ -151,7 +152,7 @@ export const getLiveFare = createServerFn({ method: "POST" })
       };
       const quotes = await api.dfQuotes(config, body, JSON.stringify(body));
       const picked = pickQuote(quotes, data.departureLocal);
-      if (!picked) return { status: "unavailable", reason: "Plus de prix disponible pour ce départ." };
+      if (!picked) return { status: "unavailable", reason: tr("ui.libDirectferriesFunctions.plusDePrixDisponiblePour") };
       // Couchage : seulement pour le départ affiché, et sans bloquer le prix s'il échoue.
       let options: ReturnType<typeof summarizeAccommodations> = [];
       if (picked.sameSailing && picked.quote.hasAccommodations !== false) {
@@ -164,6 +165,6 @@ export const getLiveFare = createServerFn({ method: "POST" })
       return summarizeQuote(picked, config.currency, vehicleLabel, new Date(), options);
     } catch (error) {
       console.error("[directferries] devis", error);
-      return { status: "unavailable", reason: "Le prix en direct ne répond pas pour l'instant." };
+      return { status: "unavailable", reason: tr("ui.libDirectferriesFunctions.lePrixEnDirectNe") };
     }
   });

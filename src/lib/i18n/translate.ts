@@ -1,5 +1,6 @@
 import { fr, type MessageKey, type PartialMessages } from "./messages/fr";
-import { DEFAULT_LOCALE, type Locale } from "./config";
+import { DEFAULT_LOCALE, dirOf, type Locale } from "./config";
+import { localizePlace } from "./places";
 
 /** Les traductions disponibles. Une langue sans dictionnaire s'affiche entièrement en français. */
 export const CATALOGS: Partial<Record<Locale, PartialMessages>> = { fr };
@@ -13,7 +14,7 @@ export async function loadCatalog(locale: Locale): Promise<void> {
   if (locale === "ar") CATALOGS.ar = (await import("./messages/ar")).ar;
 }
 
-export type TranslateVars = Record<string, string | number>;
+export type TranslateVars = Record<string, string | number | boolean | null | undefined>;
 
 function lookup(dict: PartialMessages | undefined, key: string): string | undefined {
   let node: unknown = dict;
@@ -26,9 +27,41 @@ function lookup(dict: PartialMessages | undefined, key: string): string | undefi
 
 let current: Locale = DEFAULT_LOCALE;
 
+/** La langue affichée en ce moment. */
+export function currentLocale(): Locale {
+  return current;
+}
+
 /** Langue utilisée par tr(). Le fournisseur la règle avant de dessiner l'interface. */
 export function setCurrentLocale(locale: Locale) {
   current = locale;
+}
+
+/**
+ * Une liste ou un objet de libellés déclaré une seule fois en haut d'un fichier, mais relu dans la
+ * langue affichée : `const WORDS = lazyConst(() => [tr("…"), tr("…")])`. Une copie par langue.
+ */
+export function lazyConst<T extends object>(make: () => T): T {
+  const cache = new Map<Locale, T>();
+  const get = (): T => {
+    let value = cache.get(current);
+    if (!value) cache.set(current, (value = make()));
+    return value;
+  };
+  const target = (Array.isArray(get()) ? [] : {}) as T;
+  return new Proxy(target, {
+    get: (_t, prop) => {
+      const value = get();
+      const out = Reflect.get(value, prop, value);
+      return typeof out === "function" ? out.bind(value) : out;
+    },
+    has: (_t, prop) => Reflect.has(get(), prop),
+    ownKeys: () => Reflect.ownKeys(get()),
+    getOwnPropertyDescriptor: (_t, prop): PropertyDescriptor | undefined => {
+      const d = Reflect.getOwnPropertyDescriptor(get(), prop);
+      return d ? { ...d, configurable: prop === "length" ? Boolean(d.configurable) : true } : undefined;
+    },
+  });
 }
 
 /**
@@ -84,9 +117,25 @@ export function lazyNumberFormat(options?: Intl.NumberFormatOptions): Intl.Numbe
 
 /** Le texte d'une clé dans la langue voulue, sinon en français ; « {year} » est remplacé par vars.year. */
 export function translate(locale: Locale, key: MessageKey, vars?: TranslateVars): string {
-  const text = lookup(CATALOGS[locale], key) ?? lookup(CATALOGS[DEFAULT_LOCALE], key) ?? key;
-  if (!vars) return text;
-  return text.replace(/\{(\w+)\}/g, (match, name: string) =>
-    name in vars ? String(vars[name]) : match,
-  );
+  let text = lookup(CATALOGS[locale], key) ?? lookup(CATALOGS[DEFAULT_LOCALE], key) ?? key;
+  if (vars) {
+    text = text.replace(/\{(\w+)\}/g, (match, name: string) => {
+      if (!(name in vars)) return match;
+      const value = String(vars[name]);
+      if (locale === DEFAULT_LOCALE) return value;
+      // « traversée{v} » : la marque du pluriel français (s, x, es, e) n'a pas de sens dans les autres langues.
+      if (/^(s|x|es|e)$/.test(value)) return "";
+      // Un nom de port ou de pays passé en variable s'affiche dans la langue du visiteur.
+      return localizePlace(locale, value);
+    });
+  }
+  // En arabe, la flèche d'un trajet pointe dans le sens de la lecture (de droite à gauche).
+  return dirOf(locale) === "rtl" ? text.replace(/→/g, "←") : text;
+}
+
+/** {placeName(port.name)} : le nom d'un lieu dans la langue affichée ; les données restent en français. */
+export function placeName(name: string): string;
+export function placeName(name: string | null | undefined): string | null | undefined;
+export function placeName(name: string | null | undefined) {
+  return name ? localizePlace(current, name) : name;
 }

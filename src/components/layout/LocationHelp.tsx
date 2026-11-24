@@ -92,7 +92,7 @@ export function LocationHelp() {
   }, []);
   const located = useRef(() => {
     setProblem(null);
-    toast.success("Position activée : vous pouvez renvoyer votre action.");
+    toast.success(tr("ui.locationHelp.positionActiveeVousPouvezRenvoyer"));
   }).current;
   const failed = useRef((code: number) => {
     setProblem(code === 1 ? "denied" : "unavailable");
@@ -113,7 +113,7 @@ export function LocationHelp() {
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
-      toast.success("Lien copié : collez-le dans Chrome ou Safari.");
+      toast.success(tr("ui.locationHelp.lienCopieCollezLeDans"));
     } catch {
       toast.error("Copie impossible : notez l’adresse de cette page.");
     }

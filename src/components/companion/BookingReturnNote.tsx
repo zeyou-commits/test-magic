@@ -12,9 +12,9 @@ export function BookingReturnNote({ className = "" }: { className?: string }) {
       className={className}
       // Site inconnu : « sur la compagnie » sonnait faux.
       title={
-        back.site === "la compagnie"
+        back.site === tr("ui.libCompanionBookingReturn.laCompagnie")
           ? tr("ui.bookingReturnNote.tAsPrisTonBillet")
-          : `T'as pris ton billet sur ${back.site} ?`
+          : tr("ui.bookingReturnNote.tAsPrisTonBillet2", { site: back.site })
       }
       actions={
         <>

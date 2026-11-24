@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Star } from "lucide-react";
 import { reviewNumber } from "@/lib/ferry/reviewCriteria";
 import { tr } from "@/lib/i18n";
+import { lazyConst } from "@/lib/i18n/translate";
 
-const WORDS = ["", "Décevant", "Bof", "Correct", "Bien", "Excellent"];
+const WORDS = lazyConst(() => (["", tr("ui.rateStars.decevant"), tr("ui.rateStars.bof"), tr("ui.rateStars.correct"), tr("ui.rateStars.bien"), tr("ui.rateStars.excellent")]));
 
 /**
  * Étoiles de note cliquables, partout (navire, port, compagnie) : elles montrent la moyenne,
@@ -31,7 +32,7 @@ export function RateStars({
   const shown = hover || (count ? (average ?? 0) : 0);
   return (
     <div className="bw-rate" data-empty={count ? undefined : ""} onMouseLeave={() => setHover(0)}>
-      <span className="bw-rate__stars" role="group" aria-label={`Noter ${subject}`}>
+      <span className="bw-rate__stars" role="group" aria-label={tr("ui.rateStars.noter", { subject })}>
         {[1, 2, 3, 4, 5].map((n) => {
           const fill = hover
             ? n <= hover
@@ -44,7 +45,7 @@ export function RateStars({
               type="button"
               className="bw-rate__star"
               style={{ "--i": n, "--s": `${size}px` } as React.CSSProperties}
-              aria-label={`Donner ${n} étoile${n > 1 ? "s" : ""} à ${subject}`}
+              aria-label={tr("ui.rateStars.donnerEtoileA", { n, v: n > 1 ? "s" : "", subject })}
               onMouseEnter={() => setHover(n)}
               onFocus={() => setHover(n)}
               onBlur={() => setHover(0)}

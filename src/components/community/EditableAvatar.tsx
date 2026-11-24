@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Pencil } from "lucide-react";
+import { tr } from "@/lib/i18n";
 
 /**
  * Mon avatar, comme sur les réseaux sociaux : on le touche pour le changer. Un petit crayon en
@@ -8,7 +9,7 @@ import { Pencil } from "lucide-react";
 export function EditableAvatar({
   children,
   onEdit,
-  label = "Changer mon avatar",
+  label = tr("ui.editableAvatar.changerMonAvatar"),
 }: {
   children: ReactNode;
   onEdit: () => void;

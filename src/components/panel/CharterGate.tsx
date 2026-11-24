@@ -4,15 +4,16 @@ import { ShieldCheck } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { acceptCharter, CHARTER_VERSION } from "@/lib/ferry/chat";
 import { tr } from "@/lib/i18n";
+import { lazyConst } from "@/lib/i18n/translate";
 
 /** Les règles affichées avant le premier message : celles de la charte, en bref. */
-export const CHARTER_RULES = [
-  "Je reste courtois : pas d'insulte, de moquerie ni de propos haineux.",
-  "Je ne publie ni numéro, ni adresse, ni lien, ni publicité.",
-  "Je partage ce que je vois vraiment ; seule la compagnie confirme un départ.",
-  "Face à un message gênant, je le signale au lieu d'y répondre.",
-  "Mes photos ne montrent ni visage reconnaissable ni plaque lisible, et j'ai le droit de les publier.",
-];
+export const CHARTER_RULES = lazyConst(() => ([
+  tr("ui.charterGate.jeResteCourtoisPasD"),
+  tr("ui.charterGate.jeNePublieNiNumero"),
+  tr("ui.charterGate.jePartageCeQueJe"),
+  tr("ui.charterGate.faceAUnMessageGenant"),
+  tr("ui.charterGate.mesPhotosNeMontrentNi"),
+]));
 
 /**
  * Avant le premier message d'un compte, la charte s'affiche une fois. Le message écrit est gardé
@@ -44,7 +45,7 @@ export function useCharterGate(accepted: boolean | undefined) {
       pending.current?.();
       pending.current = null;
     } catch (error) {
-      setProblem(error instanceof Error ? error.message : "Réessayez dans un instant.");
+      setProblem(error instanceof Error ? error.message : tr("ui.charterGate.reessayezDansUnInstant"));
     } finally {
       setBusy(false);
     }

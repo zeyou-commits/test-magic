@@ -21,9 +21,10 @@ import {
 } from "@/lib/ferry/privateMessages";
 import { tr } from "@/lib/i18n";
 import { canAutoFocus } from "@/lib/utils";
+import { lazyConst } from "@/lib/i18n/translate";
 
 const MAX = 200;
-const INTROS = ["Bonjour, je peux vous poser une question ?", "Il vous reste de la place ?"];
+const INTROS = lazyConst(() => ([tr("ui.privateMessages.bonjourJePeuxVousPoser"), tr("ui.privateMessages.ilVousResteDeLa")]));
 
 /** Écrire à quelqu'un : une courte présentation, envoyée comme une demande. */
 export function DmRequest({
@@ -179,8 +180,8 @@ function Conversation({ thread, onBack }: { thread: DmThread; onBack: () => void
         <p className="bw-dm__confirm">
           <span>
             {confirm === "block"
-              ? `Bloquer ${thread.other.pseudo} ? Vous ne pourrez plus vous écrire.`
-              : `Signaler cette conversation ? ${thread.other.pseudo} sera bloqué et l'équipe pourra la lire.`}
+              ? tr("ui.privateMessages.bloquerVousNePourrezPlus", { pseudo: thread.other.pseudo })
+              : tr("ui.privateMessages.signalerCetteConversationSeraBloque", { pseudo: thread.other.pseudo })}
           </span>
           <button type="button" disabled={stop.isPending} onClick={() => stop.mutate(confirm)}>
             {tr("ui.privateMessages.oui")}

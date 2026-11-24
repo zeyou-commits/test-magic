@@ -12,8 +12,8 @@ import { tr } from "@/lib/i18n";
 export const Route = createFileRoute("/methode-editoriale")({
   head: () =>
     seoHead(
-      "Sources, calculs et méthode éditoriale | BledWay",
-      "Comment BledWay distingue sources officielles, dossiers documentaires, informations évolutives et calculs personnels pour préparer un voyage en Algérie.",
+      tr("ui.pageMethodeEditoriale.sourcesCalculsEtMethodeEditoriale"),
+      tr("ui.pageMethodeEditoriale.commentBledwayDistingueSourcesOfficielles"),
       "/methode-editoriale",
     ),
   component: Method,
@@ -21,7 +21,7 @@ export const Route = createFileRoute("/methode-editoriale")({
 const sections: Section[] = [
   {
     id: "sources",
-    title: "Des références identifiables",
+    get title() { return tr("ui.pageMethodeEditoriale.desReferencesIdentifiables"); },
     paragraphs: [
       "Les nouveaux dossiers documentaires privilégient les autorités pour les formalités, les transporteurs pour leurs services et les gestionnaires pour les accès. Les liens sont placés à la fin de chaque dossier avec une note de portée. Une publication ancienne peut attester l'existence d'un lieu sans confirmer ses conditions actuelles.",
       "Le travail éditorial de ce lot est daté du 17 octobre 2026. Il ne constitue pas une visite des lieux, un essai à bord ou une certification juridique. Les contenus d'organisation et les exemples sont rédigés pour aider à préparer les bonnes questions.",
@@ -29,7 +29,7 @@ const sections: Section[] = [
   },
   {
     id: "dates",
-    title: "Des informations qui n'évoluent pas au même rythme",
+    get title() { return tr("ui.pageMethodeEditoriale.desInformationsQuiNEvoluent"); },
     paragraphs: [
       "La taille d'un navire, son affectation du jour, un horaire de ferry et une règle d'importation sont des informations différentes. Une fiche de caractéristiques ne confirme pas une place disponible. Le billet et les communications du transporteur restent la référence de votre départ.",
       "Pour une décision douanière, faites confirmer le régime et les règles applicables au moment de l'opération par le service compétent. Le texte fondateur de 2023 ne constitue pas à lui seul une consolidation exhaustive de tous les textes ultérieurs.",
@@ -37,7 +37,7 @@ const sections: Section[] = [
   },
   {
     id: "calculs",
-    title: "Des simulateurs dont les hypothèses restent visibles",
+    get title() { return tr("ui.pageMethodeEditoriale.desSimulateursDontLesHypotheses"); },
     paragraphs: [
       "Les outils de ce lot calculent localement à partir des champs saisis. Ils ne récupèrent pas de prix de billets, de taux de change ou de barème fiscal. Les exemples sont fictifs et identifiés comme tels. L'outil d'âge ne statue pas sur l'éligibilité d'un véhicule.",
       "Le budget d'importation affiche un résultat incomplet si la fiscalité ou la conversion ne sont pas renseignées. Le partage de frais inclut le conducteur dans les occupants. La comparaison des voyages attend des montants totaux pour le groupe et le périmètre choisi.",
@@ -45,7 +45,7 @@ const sections: Section[] = [
   },
   {
     id: "independance",
-    title: "Une information indépendante, sans classement inventé",
+    get title() { return tr("ui.pageMethodeEditoriale.uneInformationIndependanteSansClassement"); },
     paragraphs: [
       "BledWay ne se présente pas comme une autorité douanière ou une compagnie maritime. Les nouvelles fiches de covoiturage ne classent pas les lieux par notoriété ou fréquentation, faute de mesure disponible. Aucun avis de voyageur, score ou témoignage n'a été fabriqué pour ces dossiers. Si un lien devient un jour rémunéré, il portera la mention « lien partenaire » et n'influencera jamais le classement.",
       "La page Contact indique les canaux disponibles et la préparation d'une correction : URL, passage concerné et référence datée. Évitez d'envoyer des documents personnels qui ne sont pas nécessaires à la correction.",
@@ -55,7 +55,7 @@ const sections: Section[] = [
 function Method() {
   return (
     <SiteLayout>
-      <Breadcrumbs items={[{ name: "Méthode éditoriale", path: "/methode-editoriale" }]} />
+      <Breadcrumbs items={[{ name: tr("ui.pageMethodeEditoriale.methodeEditoriale"), path: "/methode-editoriale" }]} />
       <EditorialHero
         label={tr("ui.pageMethodeEditoriale.laConfianceSeDocumente")}
         title={tr("ui.pageMethodeEditoriale.ceQueNosInformationsPermettent")}

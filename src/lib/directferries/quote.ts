@@ -1,5 +1,6 @@
 // Direct Ferries Connect : la partie « calcul » (sans réseau), partagée par le serveur et les tests.
 // Le client ne voit jamais les clés : il reçoit seulement un LiveFare déjà résumé.
+import { tr } from "@/lib/i18n/translate";
 
 /** Véhicule tel que le catalogue Direct Ferries le décrit (dimensions en centimètres). */
 export interface CarModel {
@@ -129,15 +130,15 @@ export function summarizeAccommodations(list: RawAccommodation[], travellers: nu
   const cheapest = <T extends { extra: number }>(rows: T[]) => [...rows].sort((a, b) => a.extra - b.extra)[0];
   const options: SleepOption[] = [];
   const s = cheapest(seat);
-  if (s) options.push({ id: s.item.accommodationId ?? null, kind: "seat", label: travellers > 1 ? `${travellers} fauteuils` : "Fauteuil", extra: s.extra, units: s.units });
+  if (s) options.push({ id: s.item.accommodationId ?? null, kind: "seat", label: travellers > 1 ? `${travellers} fauteuils` : tr("ui.libDirectferriesQuote.fauteuil"), extra: s.extra, units: s.units });
   const b = cheapest(berth);
-  if (b) options.push({ id: b.item.accommodationId ?? null, kind: "berth", label: travellers > 1 ? `${travellers} couchettes` : "Couchette", extra: b.extra, units: b.units });
+  if (b) options.push({ id: b.item.accommodationId ?? null, kind: "berth", label: travellers > 1 ? `${travellers} couchettes` : tr("ui.libDirectferriesQuote.couchette"), extra: b.extra, units: b.units });
   const c = cheapest(cabin);
   if (c)
     options.push({
       id: c.item.accommodationId ?? null,
       kind: "cabin",
-      label: c.units > 1 ? `${c.units} cabines ${c.item.capacity} pers.` : `Cabine ${c.item.capacity} pers.`,
+      label: c.units > 1 ? tr("ui.libDirectferriesQuote.cabinesPers", { units: c.units, capacity: c.item.capacity }) : tr("ui.libDirectferriesQuote.cabinePers", { capacity: c.item.capacity }),
       extra: c.extra,
       units: c.units,
     });
@@ -148,15 +149,15 @@ export function summarizeAccommodations(list: RawAccommodation[], travellers: nu
 
 // Tranches utilisées quand la compagnie n'en publie pas (même découpage que le profil BledWay).
 export const DEFAULT_AGE_BANDS: AgeBand[] = [
-  { label: "Infant", from: 0, to: 3 },
-  { label: "Child", from: 4, to: 11 },
-  { label: "Adult", from: 12, to: 59 },
-  { label: "Senior", from: 60, to: 120 },
+  { get label() { return "Infant"; }, from: 0, to: 3 },
+  { get label() { return "Child"; }, from: 4, to: 11 },
+  { get label() { return "Adult"; }, from: 12, to: 59 },
+  { get label() { return "Senior"; }, from: 60, to: 120 },
 ];
 
 // Âge représentatif de chaque compteur du profil, pour trouver la tranche de la compagnie.
 const REPRESENTATIVE_AGE = { adults: 35, seniors: 65, children: 8, babies: 1 } as const;
-const FALLBACK_LABEL = { adults: "Adult", seniors: "Senior", children: "Child", babies: "Infant" } as const;
+const FALLBACK_LABEL = { get adults() { return "Adult"; }, get seniors() { return "Senior"; }, get children() { return "Child"; }, get babies() { return "Infant"; } } as const;
 
 function bandFor(age: number, bands: AgeBand[]): AgeBand | null {
   return bands.find((band) => age >= band.from && age <= band.to) ?? null;
@@ -392,11 +393,11 @@ export function summarizeQuote(
 
 /** Modèle « type » par gabarit, quand le voyageur n'a pas choisi sa voiture exacte. */
 export const REPRESENTATIVE_MODELS: Record<string, { make: string; model: string }> = {
-  city: { make: "Renault", model: "Clio" },
-  sedan: { make: "Peugeot", model: "308" },
-  suv: { make: "Dacia", model: "Duster" },
-  van: { make: "Renault", model: "Kangoo" },
-  utility: { make: "Renault", model: "Trafic" },
+  city: { get make() { return "Renault"; }, get model() { return "Clio"; } },
+  sedan: { get make() { return "Peugeot"; }, model: "308" },
+  suv: { get make() { return "Dacia"; }, get model() { return "Duster"; } },
+  van: { get make() { return "Renault"; }, get model() { return "Kangoo"; } },
+  utility: { get make() { return "Renault"; }, get model() { return "Trafic"; } },
 };
 
 /**

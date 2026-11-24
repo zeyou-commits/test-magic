@@ -2,6 +2,7 @@ import { queryOptions, useQuery } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { personas, rememberAvatarImages } from "./travellers";
+import { tr } from "@/lib/i18n/translate";
 
 // Table du script « avatars_admin », pas encore dans les types générés.
 const db = typedSupabase as unknown as SupabaseClient;
@@ -19,9 +20,9 @@ export type AvatarRow = {
 };
 
 export const avatarKinds: Record<AvatarKind, string> = {
-  persona: "Personnages",
-  mood: "Humeurs",
-  other: "Ajoutés par l'équipe",
+  get persona() { return tr("ui.libCommunityAvatars.personnages"); },
+  get mood() { return tr("ui.libCommunityAvatars.humeurs"); },
+  get other() { return tr("ui.libCommunityAvatars.ajoutesParLEquipe"); },
 };
 
 /** Sans le script : les 14 personnages (la 504 est réservée à la mascotte). */

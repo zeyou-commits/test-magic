@@ -34,18 +34,19 @@ import { generalFaq, lineFaq } from "@/lib/seo/answers";
 import { track } from "@/lib/usage";
 import { safeExternalUrl } from "@/components/panel/shared";
 import { tr } from "@/lib/i18n";
+import { lazyConst } from "@/lib/i18n/translate";
 
 /** Les sujets qu'on cherche le plus : un toucher remplit la recherche. */
-const TOPICS = [
-  "Papiers et TPD",
-  "Heure d'arrivée au port",
-  "Prix avec voiture",
-  "Espèces et devises",
-  "Voyager avec des enfants",
-  "Animaux",
-  "Cabine ou fauteuil",
-  "Retard ou annulation",
-];
+const TOPICS = lazyConst(() => ([
+  tr("ui.questionHelp.papiersEtTpd"),
+  tr("ui.questionHelp.heureDArriveeAuPort"),
+  tr("ui.questionHelp.prixAvecVoiture"),
+  tr("ui.questionHelp.especesEtDevises"),
+  tr("ui.questionHelp.voyagerAvecDesEnfants"),
+  tr("ui.questionHelp.animaux"),
+  tr("ui.questionHelp.cabineOuFauteuil"),
+  tr("ui.questionHelp.retardOuAnnulation"),
+]));
 
 /**
  * Assistants IA ouverts avec la question (quand ils l'acceptent dans l'adresse) ; elle est aussi
@@ -110,8 +111,8 @@ export function QuestionHelp({
   routeId,
   companyId,
   onAskTravellers,
-  travellersLabel = "Demander aux voyageurs",
-  travellersHint = "Ceux qui font la traversée répondent dans le salon.",
+  travellersLabel = tr("ui.questionHelp.demanderAuxVoyageurs"),
+  travellersHint = tr("ui.questionHelp.ceuxQuiFontLaTraversee"),
   autoFocus = false,
   bare = false,
 }: {
@@ -270,7 +271,7 @@ export function QuestionHelp({
               <h3>{tr("ui.questionHelp.uneQuestion")}</h3>
               <p>
                 {lineLabel
-                  ? `Les réponses de BledWay pour ${lineLabel}, puis les bons contacts.`
+                  ? tr("ui.questionHelp.lesReponsesDeBledwayPour", { lineLabel })
                   : tr("ui.questionHelp.lesReponsesDeBledwayPuis")}
               </p>
             </div>
@@ -314,7 +315,7 @@ export function QuestionHelp({
           <p className="bw-help__count" aria-live="polite">
             {searching
               ? hits.length
-                ? `${hits.length} réponse${hits.length > 1 ? "s" : ""}`
+                ? tr("ui.questionHelp.reponse2", { length: hits.length, v: hits.length > 1 ? "s" : "" })
                 : tr("ui.questionHelp.pasDeReponseToutePrete")
               : tr("ui.questionHelp.lesPlusDemandees")}
           </p>

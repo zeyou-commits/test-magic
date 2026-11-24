@@ -15,7 +15,7 @@ import { estimateFare, formatEuro, useFareProfile } from "@/lib/ferry/pricing";
 import { summarizePassengers, summarizeVehicle } from "./TripProfile";
 import { vesselPositionsQuery } from "@/lib/ferry/useLiveShips";
 import { wallTimeInZone } from "@/lib/ferry/time";
-import { tr, lazyDateFormat } from "@/lib/i18n";
+import { tr, lazyDateFormat, placeName } from "@/lib/i18n";
 
 const dayFormatter = lazyDateFormat({
   weekday: "short",
@@ -118,7 +118,7 @@ function Leg({
               )}
             </div>
             <div className="mt-0.5 max-w-[96px] truncate text-xs font-semibold">
-              {sailing.from.name}
+              {placeName(sailing.from.name)}
             </div>
           </div>
           <div className="relative flex flex-col items-center px-1" aria-hidden>
@@ -144,7 +144,7 @@ function Leg({
               ) : null}
             </div>
             <div className="ms-auto mt-0.5 max-w-[96px] truncate text-xs font-semibold">
-              {sailing.to.name}
+              {placeName(sailing.to.name)}
             </div>
           </div>
         </div>
@@ -180,7 +180,7 @@ function Leg({
       <div
         id={panelId}
         role="region"
-        aria-label={`Détail du trajet ${label.toLowerCase()}`}
+        aria-label={tr("ui.roundTripCard.detailDuTrajet", { v: label.toLowerCase() })}
         className={`grid transition-[grid-template-rows] duration-300 ease-out ${expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
       >
         <div className="overflow-hidden">
@@ -251,11 +251,11 @@ export function RoundTripCard({
       <header className="flex items-center gap-2 border-b border-border/70 bg-muted/30 px-3.5 py-1.5">
         <Repeat2 className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
         <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-muted-foreground">
-          {trip.out.from.name} ⇄ {trip.out.to.name}
-          {trip.mirror ? "" : ` · retour depuis ${trip.back.from.name}`}
+          {placeName(trip.out.from.name)} ⇄ {placeName(trip.out.to.name)}
+          {trip.mirror ? "" : tr("ui.roundTripCard.retourDepuis", { name: trip.back.from.name })}
         </span>
         <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">
-          {trip.stayDays > 0 ? `${trip.stayDays} j sur place` : tr("ui.roundTripCard.allerRetour")}
+          {trip.stayDays > 0 ? tr("ui.roundTripCard.jSurPlace", { stayDays: trip.stayDays }) : tr("ui.roundTripCard.allerRetour")}
         </span>
       </header>
       <Leg
@@ -362,7 +362,7 @@ function CompactLeg({
         <span className="block font-display text-lg font-bold tabular-nums tracking-tight">
           {atdAt ? wallTimeInZone(atdAt, sailing.fromZone) : sailing.depTime}
         </span>
-        <span className="block truncate text-[11px] text-muted-foreground">{sailing.from.name}</span>
+        <span className="block truncate text-[11px] text-muted-foreground">{placeName(sailing.from.name)}</span>
       </div>
       <div className="flex flex-col items-center gap-1" aria-hidden>
         <span className="text-[11px] font-semibold tabular-nums text-muted-foreground">
@@ -381,14 +381,14 @@ function CompactLeg({
             <sup className="ms-0.5 text-[10px] font-semibold text-cta">+{sailing.arrDayOffset}</sup>
           ) : null}
         </span>
-        <span className="block truncate text-[11px] text-muted-foreground">{sailing.to.name}</span>
+        <span className="block truncate text-[11px] text-muted-foreground">{placeName(sailing.to.name)}</span>
       </div>
       <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
         <span className="min-w-0 truncate">
           {sailing.vessel?.name ?? sailing.company?.name ?? tr("ui.roundTripCard.compagnie")}
         </span>
         {overnight ? (
-          <Moon className="size-3.5 shrink-0 text-primary" role="img" aria-label="Traversée de nuit" />
+          <Moon className="size-3.5 shrink-0 text-primary" role="img" aria-label={tr("ui.roundTripCard.traverseeDeNuit")} />
         ) : null}
         <VesselAlertTag vesselId={sailing.vessel?.id} />
       </div>
@@ -482,13 +482,13 @@ export function RoundTripRow({
                 {formatEuro(total)}
               </span>
               <span className="text-[11px] leading-snug text-muted-foreground">
-                Aller-retour estimé · {who}
+                {tr("ui.roundTripCard.allerRetourEstime")}{who}
               </span>
             </>
           )}
           <span className="text-[11px] font-semibold text-muted-foreground">
-            {trip.stayDays > 0 ? `${trip.stayDays}\u00a0j sur place` : tr("ui.roundTripCard.allerRetour")}
-            {trip.mirror ? "" : ` · retour par ${trip.back.from.name}`}
+            {trip.stayDays > 0 ? tr("ui.roundTripCard.jSurPlace2", { stayDays: trip.stayDays }) : tr("ui.roundTripCard.allerRetour")}
+            {trip.mirror ? "" : tr("ui.roundTripCard.retourPar", { name: trip.back.from.name })}
           </span>
           <button
             type="button"
@@ -497,7 +497,7 @@ export function RoundTripRow({
             aria-controls={panelId}
             className="mt-1 inline-flex h-9 items-center gap-1 rounded-full bg-primary px-4 text-xs font-bold text-primary-foreground transition-[filter,transform] hover:brightness-110 active:scale-95 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
-            {open ? "Masquer" : "Voir les prix"}
+            {open ? tr("ui.roundTripCard.masquer") : tr("ui.roundTripCard.voirLesPrix")}
             <ChevronDown
               className={`size-4 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
               aria-hidden
@@ -508,7 +508,7 @@ export function RoundTripRow({
       <div
         id={panelId}
         role="region"
-        aria-label="Détail de l'aller et du retour"
+        aria-label={tr("ui.roundTripCard.detailDeLAllerEt")}
         className={`grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
       >
         <div className="overflow-hidden">
@@ -520,7 +520,7 @@ export function RoundTripRow({
                   ["back", trip.back],
                 ] as const
               ).map(([tone, sailing]) => (
-                <section key={tone} aria-label={tone === "out" ? "Aller" : "Retour"} className="min-w-0">
+                <section key={tone} aria-label={tone === "out" ? tr("ui.roundTripCard.aller") : tr("ui.roundTripCard.retour")} className="min-w-0">
                   <h3
                     className="flex items-center gap-1.5 px-3.5 pt-3 text-[11px] font-bold uppercase tracking-wider"
                     style={{ color: LEG_TONES[tone].bar }}

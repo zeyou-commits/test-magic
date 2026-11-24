@@ -15,35 +15,35 @@ export const Route = createFileRoute("/a-propos")({
 
 const PILLARS = [
   {
-    title: "Informer d'abord",
+    get title() { return tr("ui.pageAPropos.informerDAbord"); },
     text: TICKETING.aboutPillar,
   },
   {
-    title: "Avec les voyageurs",
-    text: "Le signal des navires et les remontées des voyageurs sur place complètent les horaires. Une erreur signalée est corrigée pour tous.",
+    get title() { return tr("ui.pageAPropos.avecLesVoyageurs"); },
+    get text() { return tr("ui.pageAPropos.leSignalDesNaviresEt"); },
   },
   {
-    title: "Honnête sur ce qu'on sait",
-    text: "Un retard estimé est dit estimé, un navire sans signal est dit sans signal. Nous préférons « on ne sait pas » à une fausse certitude.",
+    get title() { return tr("ui.pageAPropos.honneteSurCeQuOn"); },
+    get text() { return tr("ui.pageAPropos.unRetardEstimeEstDit"); },
   },
 ];
 
 const STEPS = [
   {
-    title: "Préparer",
-    text: "Les papiers de chacun, la voiture, le trajet de porte à porte, l'heure de départ conseillée et la check-list du voyage.",
+    get title() { return tr("ui.pageAPropos.preparer"); },
+    get text() { return tr("ui.pageAPropos.lesPapiersDeChacunLa"); },
   },
   {
-    title: "Réserver",
+    get title() { return tr("ui.pageAPropos.reserver"); },
     text: `Toutes les traversées de toutes les compagnies sur une seule carte, avec les durées, les jours de départ et les prix indicatifs. ${TICKETING.aboutStep}`,
   },
   {
-    title: "Suivre",
-    text: "Le navire en direct, l'embarquement, les retards, l'état de la mer, et le salon des voyageurs de la traversée.",
+    get title() { return tr("ui.pageAPropos.suivre"); },
+    get text() { return tr("ui.pageAPropos.leNavireEnDirectL"); },
   },
   {
-    title: "Partager",
-    text: "Signaler ce qui se passe au port ou à bord, noter les navires et les ports, répondre aux questions des autres.",
+    get title() { return tr("ui.pageAPropos.partager"); },
+    get text() { return tr("ui.pageAPropos.signalerCeQuiSePasse"); },
   },
 ];
 

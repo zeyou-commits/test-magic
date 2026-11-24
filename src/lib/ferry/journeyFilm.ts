@@ -3,6 +3,7 @@
  * Tout est calculé ici, sans carte, pour que le curseur et l'animation disent la même chose.
  */
 import { PAUSE_EVERY_MIN, PAUSE_MIN, drivingPauses } from "./itinerary";
+import { tr } from "@/lib/i18n/translate";
 
 export { PAUSE_EVERY_MIN, PAUSE_MIN, drivingPauses };
 export type LngLat = [number, number];
@@ -225,19 +226,19 @@ export const DEMO_FILM: JourneyFilm = {
   lastKm: 140,
   shipImage: "/vessel-visuals/map/tassili-ii.webp",
   pins: [
-    { label: "Lyon", point: [4.84, 45.76] },
-    { label: "Marseille", point: [5.37, 43.3] },
-    { label: "Oran", point: [-0.64, 35.7] },
-    { label: "Tlemcen", point: [-1.32, 34.88] },
+    { get label() { return tr("ui.libFerryJourneyFilm.lyon"); }, point: [4.84, 45.76] },
+    { get label() { return tr("ui.libFerryJourneyFilm.marseille"); }, point: [5.37, 43.3] },
+    { get label() { return tr("ui.libFerryJourneyFilm.oran"); }, point: [-0.64, 35.7] },
+    { get label() { return tr("ui.libFerryJourneyFilm.tlemcen"); }, point: [-1.32, 34.88] },
   ],
 };
 export const DEMO_CAPTIONS: Record<FilmStage, string> = {
-  road: "De chez vous au port",
+  get road() { return tr("ui.libFerryJourneyFilm.deChezVousAuPort"); },
   port: "Attente et formalités au port",
-  sea: "La traversée",
-  disembark: "Débarquement et sortie du port",
-  last: "La dernière route jusqu'au bled",
-  done: "Vous êtes arrivé",
+  get sea() { return tr("ui.libFerryJourneyFilm.laTraversee"); },
+  get disembark() { return tr("ui.libFerryJourneyFilm.debarquementEtSortieDuPort"); },
+  get last() { return tr("ui.libFerryJourneyFilm.laDerniereRouteJusquAu"); },
+  get done() { return tr("ui.libFerryJourneyFilm.vousEtesArrive"); },
 };
 
 export const formatMinutes = (minutes: number) => {
@@ -274,7 +275,7 @@ export function filmChips(film: JourneyFilm): FilmChip[] {
       return {
         id: `${prefix}-pause-${index}`,
         kind: "pause" as const,
-        label: `Pause ${PAUSE_MIN} min`,
+        label: tr("ui.libFerryJourneyFilm.pauseMin", { PAUSEMIN: PAUSE_MIN }),
         point: pathUntil(points, fraction).at(-1) ?? points[0]!,
         at: start + (index + 1) * PAUSE_EVERY_MIN + index * PAUSE_MIN,
       };
@@ -291,15 +292,15 @@ export function filmChips(film: JourneyFilm): FilmChip[] {
     {
       id: "port",
       kind: "port",
-      label: `${formatMinutes(film.boardMin)} au port`,
+      label: tr("ui.libFerryJourneyFilm.auPort", { formatMinutes: formatMinutes(film.boardMin) }),
       point: film.road.at(-1) ?? film.sea[0]!,
       at: times.port,
     },
-    { id: "sea", kind: "sea", label: `${formatMinutes(film.ferryMin)} de mer`, point: middle(film.sea), at: times.sea },
+    { id: "sea", kind: "sea", label: tr("ui.libFerryJourneyFilm.deMer", { formatMinutes: formatMinutes(film.ferryMin) }), point: middle(film.sea), at: times.sea },
     {
       id: "disembark",
       kind: "port",
-      label: `${formatMinutes(film.disembarkMin)} de sortie`,
+      label: tr("ui.libFerryJourneyFilm.deSortie", { formatMinutes: formatMinutes(film.disembarkMin) }),
       point: film.sea.at(-1) ?? film.last[0]!,
       at: times.disembark,
     },

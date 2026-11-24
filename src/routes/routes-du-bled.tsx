@@ -67,8 +67,8 @@ const RoutesMap = lazy(() => import("@/components/routesDuBled/RoutesMap"));
 export const Route = createFileRoute("/routes-du-bled")({
   head: () =>
     seoHead(
-      "Routes du bled : votre trajet en voiture jusqu'au bled, porte à porte | BledWay",
-      "Partez de votre adresse ou de votre position, choisissez votre village en Algérie : la carte trace votre trajet jusqu'au port puis au bled, avec les pauses, où manger, prier et dormir.",
+      tr("ui.pageRoutesDuBled.routesDuBledVotreTrajet"),
+      tr("ui.pageRoutesDuBled.partezDeVotreAdresseOu"),
       "/routes-du-bled",
     ),
   component: RoutesDuBledPage,
@@ -87,16 +87,16 @@ const VILLES: Record<string, LonLat> = {
 };
 const EXEMPLES: [Lieu, Lieu][] = [
   [
-    { label: "Lyon", point: [4.8357, 45.764] },
-    { label: "Tlemcen", point: [-1.315, 34.878] },
+    { get label() { return tr("ui.pageRoutesDuBled.lyon"); }, point: [4.8357, 45.764] },
+    { get label() { return tr("ui.pageRoutesDuBled.tlemcen"); }, point: [-1.315, 34.878] },
   ],
   [
-    { label: "Paris", point: [2.3522, 48.8566] },
-    { label: "Béjaïa", point: [5.084, 36.751] },
+    { get label() { return tr("ui.pageRoutesDuBled.paris"); }, point: [2.3522, 48.8566] },
+    { get label() { return tr("ui.pageRoutesDuBled.bejaia"); }, point: [5.084, 36.751] },
   ],
   [
-    { label: "Bordeaux", point: [-0.5792, 44.8378] },
-    { label: "Oran", point: [-0.633, 35.697] },
+    { get label() { return tr("ui.pageRoutesDuBled.bordeaux"); }, point: [-0.5792, 44.8378] },
+    { get label() { return tr("ui.pageRoutesDuBled.oran"); }, point: [-0.633, 35.697] },
   ],
 ];
 const isLieu = (x: unknown): x is Lieu =>

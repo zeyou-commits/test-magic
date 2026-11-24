@@ -99,7 +99,7 @@ export function PhotoPicker({
         }
         next.push(photo);
       } catch (cause) {
-        setProblem(cause instanceof Error ? cause.message : "Photo illisible.");
+        setProblem(cause instanceof Error ? cause.message : tr("ui.photos.photoIllisible"));
       }
     }
     onChange(next);
@@ -118,7 +118,7 @@ export function PhotoPicker({
         <ul>
           {photos.map((photo, index) => (
             <li key={photo.url}>
-              <img src={photo.url} alt={`Photo ${index + 1}`} />
+              <img src={photo.url} alt={tr("ui.photos.photo", { v: index + 1 })} />
               {photo.faces + photo.plates ? (
                 <span className="bw-photo-picker__faces" title={tr("ui.photos.zonesFlouteesAutomatiquement")}>
                   <ScanFace size={12} aria-hidden /> {photo.faces + photo.plates}
@@ -126,7 +126,7 @@ export function PhotoPicker({
               ) : null}
               <button
                 type="button"
-                aria-label={`Retirer la photo ${index + 1}`}
+                aria-label={tr("ui.photos.retirerLaPhoto", { v: index + 1 })}
                 onClick={() => {
                   URL.revokeObjectURL(photo.url);
                   onChange(photos.filter((item) => item !== photo));
@@ -157,7 +157,7 @@ export function PhotoPicker({
       {busy ? (
         <p className="bw-photo-picker__busy" role="status">
           <LoaderCircle size={15} className="animate-spin" aria-hidden />
-          {profile ? "Préparation de la photo…" : tr("ui.photos.floutageDesVisagesEtPlaques")}
+          {profile ? tr("ui.photos.preparationDeLaPhoto") : tr("ui.photos.floutageDesVisagesEtPlaques")}
         </p>
       ) : null}
       {/* Un seul bouton : le téléphone propose lui-même « Appareil photo » ou « Galerie ». */}
@@ -167,7 +167,7 @@ export function PhotoPicker({
           {photos.length && max === 1
             ? tr("ui.photos.changerDePhoto")
             : max > 1
-              ? `Ajouter une photo (${photos.length}/${max})`
+              ? tr("ui.photos.ajouterUnePhoto2", { length: photos.length, max })
               : tr("ui.photos.ajouterUnePhoto")}
           <input
             ref={input}
@@ -193,8 +193,8 @@ function blurredLabel(photos: PreparedPhoto[]) {
     plates ? `${plates} plaque${plates > 1 ? "s" : ""}` : null,
   ].filter(Boolean);
   return parts.length
-    ? `${parts.join(" et ")} flouté${faces + plates > 1 ? "s" : ""} automatiquement. `
-    : "Visages et plaques floutés automatiquement s’il y en a. ";
+    ? tr("ui.photos.flouteAutomatiquement", { v: parts.join(" et "), v2: faces + plates > 1 ? "s" : "" })
+    : tr("ui.photos.visagesEtPlaquesFloutesAutomatiquement");
 }
 
 /** Vignettes des photos publiées ; un toucher les agrandit, avec « Signaler ». */
@@ -222,7 +222,7 @@ export function PhotoStrip({
                 setReported(false);
                 setOpen(photo);
               }}
-              aria-label={`Agrandir la photo ${index + 1}`}
+              aria-label={tr("ui.photos.agrandirLaPhoto", { v: index + 1 })}
             >
               <img
                 src={photoUrl(photo.path)}
@@ -249,7 +249,7 @@ export function PhotoStrip({
                 void reportPhoto(open.id)
                   .then(() => {
                     setReported(true);
-                    toast.success("Merci, l’équipe va regarder cette photo.");
+                    toast.success(tr("ui.photos.merciLEquipeVaRegarder"));
                   })
                   .catch((error: Error) => toast.error(error.message))
               }
@@ -262,12 +262,12 @@ export function PhotoStrip({
               type="button"
               className="bw-photo-viewer__report"
               onClick={() => {
-                if (!window.confirm("Retirer définitivement cette photo ?")) return;
+                if (!window.confirm(tr("ui.photos.retirerDefinitivementCettePhoto"))) return;
                 void deletePhoto(open)
                   .then(() => {
                     setOpen(null);
                     void client.invalidateQueries({ queryKey: photosKey });
-                    toast.success("Photo retirée.");
+                    toast.success(tr("ui.photos.photoRetiree"));
                   })
                   .catch((error: Error) => toast.error(error.message));
               }}

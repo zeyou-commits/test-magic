@@ -1,17 +1,19 @@
 import { queryOptions } from "@tanstack/react-query";
+import { tr } from "@/lib/i18n/translate";
+import { intlLocale } from "@/lib/i18n";
 
 /** Échelle de Douglas, d'après la hauteur des vagues en mètres. */
 export function seaLevel(height: number) {
-  if (height < 0.5) return { id: "calm", label: "Mer belle", short: "Belle", rank: 1 } as const;
-  if (height < 1.25) return { id: "slight", label: "Mer peu agitée", short: "Peu agitée", rank: 2 } as const;
-  if (height < 2.5) return { id: "moderate", label: "Mer agitée", short: "Agitée", rank: 3 } as const;
-  if (height < 4) return { id: "rough", label: "Mer forte", short: "Forte", rank: 4 } as const;
-  return { id: "high", label: "Mer très forte", short: "Très forte", rank: 5 } as const;
+  if (height < 0.5) return { id: "calm", label: tr("ui.libFerrySeaState.merBelle"), short: tr("ui.libFerrySeaState.belle"), rank: 1 } as const;
+  if (height < 1.25) return { id: "slight", label: tr("ui.libFerrySeaState.merPeuAgitee"), short: tr("ui.libFerrySeaState.peuAgitee"), rank: 2 } as const;
+  if (height < 2.5) return { id: "moderate", label: tr("ui.libFerrySeaState.merAgitee"), short: tr("ui.libFerrySeaState.agitee"), rank: 3 } as const;
+  if (height < 4) return { id: "rough", label: tr("ui.libFerrySeaState.merForte"), short: tr("ui.libFerrySeaState.forte"), rank: 4 } as const;
+  return { id: "high", label: tr("ui.libFerrySeaState.merTresForte"), short: tr("ui.libFerrySeaState.tresForte"), rank: 5 } as const;
 }
 
 /** La hauteur de vagues, à une décimale. */
 export function seaHeight(height: number) {
-  return `${(Math.round(height * 10) / 10).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} m`;
+  return `${(Math.round(height * 10) / 10).toLocaleString(intlLocale(), { maximumFractionDigits: 1 })} m`;
 }
 
 type Point = { latitude: number; longitude: number };

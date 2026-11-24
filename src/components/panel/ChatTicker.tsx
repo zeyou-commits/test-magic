@@ -7,7 +7,7 @@ import {
   emptyTicker,
   enqueueTicker,
   GENERAL_ROOM,
-  GENERAL_TITLE,
+  generalTitle,
   OPEN_GENERAL_ROOM_EVENT,
   openGeneralRoom,
   readOverlayOn,
@@ -47,7 +47,7 @@ export function GeneralRoomHost() {
       onOpenChange={setOpen}
       kind="general"
       room={GENERAL_ROOM}
-      title={GENERAL_TITLE}
+      title={generalTitle()}
     />
   );
 }
@@ -201,7 +201,7 @@ export function ChatTicker({
       <div className="bw-ticker__head">
         <button type="button" className="bw-ticker__general" onClick={openGeneralRoom}>
           <i aria-hidden />
-          {GENERAL_TITLE}
+          {generalTitle()}
           <ChevronRight size={13} aria-hidden />
         </button>
         <OverlaySwitch on onToggle={toggle} />

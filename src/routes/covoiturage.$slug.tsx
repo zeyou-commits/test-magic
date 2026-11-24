@@ -20,11 +20,11 @@ export const Route = createFileRoute("/covoiturage/$slug")({
   head: ({ loaderData: p }) =>
     p
       ? seoHead(
-          `Covoiturage ${p.name} : accès et rendez-vous | BledWay`,
+          tr("ui.pageCovoiturageSlug.covoiturageAccesEtRendezVous", { name: p.name }),
           p.relevance,
           `/covoiturage/${p.slug}`,
         )
-      : { meta: [{ title: "Aire introuvable | BledWay" }, { name: "robots", content: "noindex" }] },
+      : { meta: [{ title: tr("ui.pageCovoiturageSlug.aireIntrouvableBledway") }, { name: "robots", content: "noindex" }] },
   component: Place,
 });
 function Place() {
@@ -33,13 +33,13 @@ function Place() {
     <SiteLayout>
       <Breadcrumbs
         items={[
-          { name: "Covoiturage", path: "/covoiturage" },
+          { name: tr("ui.pageCovoiturageSlug.covoiturage"), path: "/covoiturage" },
           { name: p.name, path: `/covoiturage/${p.slug}` },
         ]}
       />
       <EditorialHero
         label={`${p.road} · ${p.area}`}
-        title={`Covoiturage à ${p.name}`}
+        title={tr("ui.pageCovoiturageSlug.covoiturageA", { name: p.name })}
         intro={p.relevance}
       />
       <div className="max-w-3xl">

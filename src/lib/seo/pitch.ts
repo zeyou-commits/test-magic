@@ -1,5 +1,7 @@
 // La promesse de BledWay et ce que l'on dit de la billetterie : un seul endroit, repris partout
-// (titres, données structurées, llms.txt, FAQ, À propos, Préparer).
+// (titres, données structurées, llms.txt, FAQ, À propos, Préparer). Les autres langues : libSeoPitch.
+import { currentLocale, lazyConst, tr } from "@/lib/i18n/translate";
+import type { MessageKey } from "@/lib/i18n/messages/fr";
 
 /** La promesse, telle qu'on l'écrit au voyageur. Même ordre que le menu : Préparer · Réserver · Suivre. */
 export const PROMISE = "Préparez, réservez et suivez votre traversée vers l'Algérie";
@@ -69,7 +71,16 @@ const WITH_SALES: TicketingTexts = {
   aboutStep: "Vous réservez ensuite depuis BledWay, auprès de son partenaire de billetterie.",
 };
 
-export const TICKETING: TicketingTexts = SELLS_TICKETS ? WITH_SALES : WITHOUT_SALES;
+const FIELDS = Object.keys(WITHOUT_SALES) as (keyof TicketingTexts)[];
+/** Textes de billetterie dans la langue affichée ; en français, ceux écrits ci-dessus. */
+export const TICKETING: TicketingTexts = lazyConst(() => {
+  const set = SELLS_TICKETS ? "avec" : "sans";
+  const source = SELLS_TICKETS ? WITH_SALES : WITHOUT_SALES;
+  if (currentLocale() === "fr") return { ...source };
+  return Object.fromEntries(
+    FIELDS.map((field) => [field, tr(`ui.libSeoPitch.${set}.${field}` as MessageKey)]),
+  ) as TicketingTexts;
+});
 
 /** Présentation générale, identique dans les données structurées et dans llms.txt. */
 export const PITCH = `BledWay est le Waze du ferry entre l'Europe et le Maghreb : ${PROMISE.charAt(0).toLowerCase()}${PROMISE.slice(1)}. Navires en direct, alertes de retard, de report ou d'annulation, signalements et salons des voyageurs, départs de toutes les compagnies et voyage préparé de porte à porte. Indépendant et gratuit. ${TICKETING.pitch} Disponible dès aujourd'hui pour l'Algérie ; la Tunisie et le Maroc arrivent dans les prochains mois.`;

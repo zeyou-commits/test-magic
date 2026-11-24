@@ -39,7 +39,7 @@ export function JourneyPlanner({
       outbound_departure_id: leg === "outbound" ? departureId : null,
       inbound_departure_id: leg === "inbound" ? departureId : null,
     });
-    if (result.error) setError("Impossible de classer cette traversée pour le moment.");
+    if (result.error) setError(tr("ui.journeyPlanner.impossibleDeClasserCetteTraversee"));
     else
       await Promise.all([
         client.invalidateQueries({ queryKey: ["journey"] }),
@@ -86,7 +86,7 @@ export function JourneyPlanner({
       ]);
       setOpen(false);
     } catch {
-      setError("Le retour n’a pas pu être enregistré. Réessayez.");
+      setError(tr("ui.journeyPlanner.leRetourNAPas"));
     } finally {
       setBusy(false);
     }

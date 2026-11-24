@@ -10,7 +10,7 @@ import { tr } from "@/lib/i18n";
 export function ConfirmChange({
   title,
   children,
-  confirmLabel = "Oui, modifier",
+  confirmLabel = tr("ui.confirmChange.ouiModifier"),
   onConfirm,
   onCancel,
 }: {

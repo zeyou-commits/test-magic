@@ -8,6 +8,7 @@ import {
   openTravellerProfile,
   type TravellerCard,
 } from "@/lib/community/travellers";
+import { tr } from "@/lib/i18n";
 
 /**
  * L'avatar d'un voyageur : sa photo de profil validée s'il en a une, sinon son cabas sur sa
@@ -85,7 +86,7 @@ export function TravellerAvatar({
       type="button"
       className="bw-tavatar"
       style={style}
-      aria-label={`Profil de ${card.pseudo}${card.mood ? ` · ${card.mood.label}` : ""}`}
+      aria-label={tr("ui.travellerAvatar.profilDe", { pseudo: card.pseudo, v: card.mood ? ` · ${card.mood.label}` : "" })}
       onClick={(event) => {
         event.stopPropagation();
         openTravellerProfile(card.handle);

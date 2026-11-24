@@ -1,3 +1,4 @@
+import { lazyNumberFormat } from "@/lib/i18n";
 /** Calculs purs : aucune donnée de formulaire envoyée à un serveur. */
 export function parseAmount(value: string): number | null {
   if (!value.trim()) return null;
@@ -77,4 +78,4 @@ export function splitRoadCosts(
   return { fuel, total, perPerson: total / occupants };
 }
 export const euros = (n: number) =>
-  new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(n);
+  lazyNumberFormat({ style: "currency", currency: "EUR" }).format(n);

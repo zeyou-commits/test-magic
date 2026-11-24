@@ -1,4 +1,5 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
+import { tr } from "@/lib/i18n";
 
 /** Travail différé : quand le téléphone est libre (repli : petit délai), pour ne pas figer l'ouverture. */
 function whenIdle(task: () => void) {

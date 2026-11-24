@@ -1,6 +1,7 @@
 // Traversées prêtes à afficher : heures locales, durée, jour, recommandation.
 import type { Company, Departure, Port, RouteLine, Vessel } from "./types";
 import { dateKeyInZone, portTimeZone, wallTimeInZone } from "./time";
+import { tr } from "@/lib/i18n/translate";
 
 export type TravelerType = "solo" | "couple" | "family";
 
@@ -202,7 +203,7 @@ export function relativeDay(dayKey: string, timeZone: string): string {
   const diff = Math.round(
     (Date.parse(`${dayKey}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86400000,
   );
-  if (diff <= 0) return "Aujourd’hui";
-  if (diff === 1) return "Demain";
-  return `Dans ${diff} jours`;
+  if (diff <= 0) return tr("ui.libFerryTrips.aujourdHui");
+  if (diff === 1) return tr("ui.libFerryTrips.demain");
+  return tr("ui.libFerryTrips.dansJours", { diff });
 }

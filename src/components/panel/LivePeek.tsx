@@ -4,7 +4,7 @@ import { dateKeyInZone, portTimeZone } from "@/lib/ferry/time";
 import type { Selection } from "@/lib/ferry/types";
 import { VesselThumb } from "./LineOverview";
 import type { TrafficCrossing } from "./TrafficCard";
-import { tr } from "@/lib/i18n";
+import { tr, placeName } from "@/lib/i18n";
 
 /**
  * Téléphone, tiroir replié : la traversée en cours (ou, sans navire en mer, la prochaine), en miniature.
@@ -48,12 +48,12 @@ export function LivePeek({
             : { type: "departure", id: c.departure.id },
         )
       }
-      aria-label={`Suivre ${c.vessel?.name ?? "la traversée"}, ${c.from.name} vers ${c.to.name}`}
+      aria-label={tr("ui.livePeek.suivreVers", { v: c.vessel?.name ?? "la traversée", name: c.from.name, name2: c.to.name })}
     >
       <span className="bw-live-peek__kicker">
         <i aria-hidden />
         {kind === "sea"
-          ? `En mer maintenant${others > 0 ? ` · + ${others} ${others > 1 ? "autres" : "autre"}` : ""}`
+          ? tr("ui.livePeek.enMerMaintenant", { v: others > 0 ? ` · + ${others} ${others > 1 ? "autres" : "autre"}` : "" })
           : tr("ui.livePeek.prochainDepart")}
         <em>{tr("ui.livePeek.suivre")}</em>
       </span>
@@ -63,7 +63,7 @@ export function LivePeek({
       <span className="bw-live-peek__main">
         <strong>{c.vessel?.name ?? c.company?.name ?? tr("ui.livePeek.traversee")}</strong>
         <small>
-          {c.from.name} → {c.to.name}
+          {placeName(c.from.name)} → {placeName(c.to.name)}
         </small>
       </span>
       <span className="bw-live-peek__eta">

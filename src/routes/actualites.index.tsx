@@ -49,7 +49,7 @@ export const Route = createFileRoute("/actualites/")({
         {
           rel: "alternate",
           type: "application/rss+xml",
-          title: "Actualités BledWay",
+          title: tr("ui.pageActualitesIndex.actualitesBledway"),
           href: absoluteUrl("/actualites.xml"),
         },
       ],
@@ -59,7 +59,7 @@ export const Route = createFileRoute("/actualites/")({
 });
 
 const FILTERS = [
-  { id: "all", label: "Tout" },
+  { id: "all", get label() { return tr("ui.pageActualitesIndex.tout"); } },
   ...Object.entries(newsKinds).map(([id, kind]) => ({ id, label: kind.label })),
 ];
 
@@ -137,7 +137,7 @@ function SeriousNow({
             {blocked.map((incident) => {
               const vessel = vessels.find((item) => item.id === incident.vessel_id);
               const port = ports.find((item) => item.id === incident.location_port_id);
-              const text = incidentHeadline(incident, vessel?.name ?? "Navire", port?.name);
+              const text = incidentHeadline(incident, vessel?.name ?? tr("ui.pageActualitesIndex.navire"), port?.name);
               return (
                 <li key={incident.id} data-status={incident.status}>
                   {vessel ? (
@@ -200,7 +200,7 @@ function NewsTile({
         <span className="bw-news-kind" data-kind={item.kind}>
           {newsKinds[item.kind].label}
         </span>
-        {over ? <span className="bw-news-over">Terminé</span> : null}
+        {over ? <span className="bw-news-over">{tr("ui.pageActualitesIndex.termine")}</span> : null}
         <time dateTime={item.starts_at} title={newsDay(item.starts_at)}>
           {newsAgo(item.starts_at)}
         </time>
@@ -210,7 +210,7 @@ function NewsTile({
       <span className="bw-news-tile__foot">
         <span>
           {item.source_name}
-          {count ? ` · ${count} traversée${count > 1 ? "s" : ""} concernée${count > 1 ? "s" : ""}` : ""}
+          {count ? tr("ui.pageActualitesIndex.traverseeConcernee", { count, v: count > 1 ? "s" : "", v2: count > 1 ? "s" : "" }) : ""}
         </span>
         <span className="bw-news-tile__more">
           {tr("ui.pageActualitesIndex.lire")}
@@ -270,7 +270,7 @@ function NewsPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdString(schema) }}
       />
-      <Breadcrumbs items={[{ name: "Actualités", path: "/actualites" }]} />
+      <Breadcrumbs items={[{ name: tr("ui.pageActualitesIndex.actualites"), path: "/actualites" }]} />
       <PageHero
         compact
         overline={tr("ui.pageActualitesIndex.actualites")}
@@ -329,7 +329,7 @@ function NewsPage() {
         <div className="bw-news-empty">
           <h2 className="text-lg font-bold">
             {older.length
-              ? "Rien de nouveau ces trois dernières semaines"
+              ? tr("ui.pageActualitesIndex.rienDeNouveauCesTrois")
               : items.length
                 ? tr("ui.pageActualitesIndex.rienDansCetteSelection")
                 : tr("ui.pageActualitesIndex.lesPremieresActualitesArrivent")}
@@ -356,9 +356,9 @@ function NewsPage() {
           <summary>
             <Archive size={18} aria-hidden />
             <span>
-              <b>Plus anciennes</b>
+              <b>{tr("ui.pageActualitesIndex.plusAnciennes")}</b>
               <small>
-                {older.length} actualité{older.length > 1 ? "s" : ""} de plus de 3 semaines ou terminée
+                {older.length}{tr("ui.pageActualitesIndex.actualite")}{older.length > 1 ? "s" : ""}{tr("ui.pageActualitesIndex.dePlusDe3Semaines")}
                 {older.length > 1 ? "s" : ""}
               </small>
             </span>

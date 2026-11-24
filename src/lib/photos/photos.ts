@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
+import { tr } from "@/lib/i18n/translate";
 
 // Tables, stockage et fonctions du script « photos », absents des types générés.
 const db = typedSupabase as unknown as SupabaseClient;
@@ -128,7 +129,7 @@ export async function submitPhoto(
   });
   if (error) {
     await db.storage.from(PENDING_BUCKET).remove([path]);
-    throw new Error(readable(error.message, "La photo n’a pas pu être jointe."));
+    throw new Error(readable(error.message, tr("ui.libPhotosPhotos.laPhotoNAPas")));
   }
 }
 
@@ -151,7 +152,7 @@ export async function submitProfilePhoto(userId: string, photo: PreparedPhoto) {
   if (!result.ok)
     throw new Error(
       result.reason.startsWith("rpc:")
-        ? readable(result.reason.slice(4), "La photo n’a pas pu être publiée.")
+        ? readable(result.reason.slice(4), tr("ui.libPhotosPhotos.laPhotoNAPas2"))
         : result.reason,
     );
 }
@@ -219,7 +220,7 @@ export async function sendChatPhoto(
   if (!result.ok)
     throw new Error(
       result.reason.startsWith("rpc:")
-        ? readable(result.reason.slice(4), "La photo n’a pas pu être publiée.")
+        ? readable(result.reason.slice(4), tr("ui.libPhotosPhotos.laPhotoNAPas2"))
         : result.reason,
     );
 }
@@ -272,5 +273,5 @@ export async function deletePhoto(photo: { id: string; path: string }) {
 
 export async function reportPhoto(id: string) {
   const { error } = await db.rpc("bw_photo_report", { p_id: id });
-  if (error) throw new Error(readable(error.message, "Signalement non envoyé."));
+  if (error) throw new Error(readable(error.message, tr("ui.libPhotosPhotos.signalementNonEnvoye")));
 }

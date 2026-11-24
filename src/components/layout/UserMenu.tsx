@@ -79,7 +79,7 @@ export function UserMenu({
     );
   }
 
-  const name = profile?.display_name?.trim() || user.email?.split("@")[0] || "Mon compte";
+  const name = profile?.display_name?.trim() || user.email?.split("@")[0] || tr("ui.userMenu.monCompte");
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
@@ -96,7 +96,7 @@ export function UserMenu({
           <button
             type="button"
             aria-label={
-              traveller?.mood ? `Mon compte · humeur : ${traveller.mood.label}` : tr("ui.userMenu.monCompte")
+              traveller?.mood ? tr("ui.userMenu.monCompteHumeur", { label: traveller.mood.label }) : tr("ui.userMenu.monCompte")
             }
             className="bw-usermenu-trigger relative flex items-center gap-2 rounded-full ring-offset-2 ring-offset-card outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >

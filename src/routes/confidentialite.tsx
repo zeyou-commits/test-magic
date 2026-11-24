@@ -26,7 +26,7 @@ function PrivacyPage() {
         sections={[
           {
             id: "responsable",
-            title: "Qui est responsable de vos données",
+            title: tr("ui.pageConfidentialite.quiEstResponsableDeVos"),
             body: (
               <p>
                 {tr("ui.pageConfidentialite.lEditeurDeBledwayUn")}{" "}
@@ -37,7 +37,7 @@ function PrivacyPage() {
           },
           {
             id: "sans-compte",
-            title: "Sans compte",
+            title: tr("ui.pageConfidentialite.sansCompte"),
             body: (
               <>
                 <p>
@@ -56,7 +56,7 @@ function PrivacyPage() {
           },
           {
             id: "compte",
-            title: "Avec un compte",
+            title: tr("ui.pageConfidentialite.avecUnCompte"),
             body: (
               <ul>
                 <li>
@@ -87,7 +87,7 @@ function PrivacyPage() {
           },
           {
             id: "position",
-            title: "Votre position",
+            title: tr("ui.pageConfidentialite.votrePosition"),
             body: (
               <>
                 <p>
@@ -102,7 +102,7 @@ function PrivacyPage() {
           },
           {
             id: "finalites",
-            title: "Pourquoi, et sur quelle base",
+            title: tr("ui.pageConfidentialite.pourquoiEtSurQuelleBase"),
             body: (
               <ul>
                 <li>
@@ -122,7 +122,7 @@ function PrivacyPage() {
           },
           {
             id: "durees",
-            title: "Combien de temps",
+            title: tr("ui.pageConfidentialite.combienDeTemps"),
             body: (
               <ul>
                 <li>
@@ -154,7 +154,7 @@ function PrivacyPage() {
           },
           {
             id: "destinataires",
-            title: "Qui traite vos données",
+            title: tr("ui.pageConfidentialite.quiTraiteVosDonnees"),
             body: (
               <>
                 <p>
@@ -191,7 +191,7 @@ function PrivacyPage() {
           },
           {
             id: "salons",
-            title: "Salons, messages privés et modération",
+            title: tr("ui.pageConfidentialite.salonsMessagesPrivesEtModeration"),
             body: (
               <>
                 <p>
@@ -206,7 +206,7 @@ function PrivacyPage() {
           },
           {
             id: "securite",
-            title: "Sécurité",
+            title: tr("ui.pageConfidentialite.securite"),
             body: (
               <p>
                 {tr("ui.pageConfidentialite.connexionsChiffreesHttpsMotsDe")}
@@ -215,7 +215,7 @@ function PrivacyPage() {
           },
           {
             id: "droits",
-            title: "Vos droits",
+            title: tr("ui.pageConfidentialite.vosDroits"),
             body: (
               <>
                 <p>
@@ -237,7 +237,7 @@ function PrivacyPage() {
           },
           {
             id: "suppression-compte",
-            title: "Supprimer votre compte",
+            title: tr("ui.pageConfidentialite.supprimerVotreCompte"),
             body: (
               <>
                 <p>
@@ -263,7 +263,7 @@ function PrivacyPage() {
           },
           {
             id: "mineurs",
-            title: "Mineurs",
+            title: tr("ui.pageConfidentialite.mineurs"),
             body: (
               <p>
                 {tr("ui.pageConfidentialite.ilFautAvoirAuMoins")}
@@ -272,7 +272,7 @@ function PrivacyPage() {
           },
           {
             id: "evolution",
-            title: "Évolution de cette politique",
+            title: tr("ui.pageConfidentialite.evolutionDeCettePolitique"),
             body: (
               <p>
                 {tr("ui.pageConfidentialite.cettePageEvolueAvecLe")}

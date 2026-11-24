@@ -95,7 +95,7 @@ import { JourneyTimeline } from "@/components/journey/JourneyTimeline";
 import { useVoyage } from "@/components/journey/useVoyage";
 import { GO_HOME_EVENT, OPEN_VOYAGE_EVENT, useVoyageTrip } from "@/lib/ferry/voyageTrip";
 import { readItineraryChoice } from "@/lib/ferry/travelProfile";
-import { tr } from "@/lib/i18n";
+import { tr, placeName } from "@/lib/i18n";
 import { openRoutesDuBled } from "@/lib/routesDuBled/lien";
 
 const FerryMap = lazy(() => import("@/components/map/FerryMap"));
@@ -112,7 +112,7 @@ export const Route = createFileRoute("/")({
   },
   head: () =>
     seoHead(
-      "BledWay — le Waze du ferry vers l'Algérie, en direct",
+      tr("ui.pageIndex.bledwayLeWazeDuFerry"),
       `${PROMISE}. Le Waze du ferry Europe–Maghreb : navires en direct, retards, signalements, toutes les compagnies.`,
       "/",
     ),
@@ -227,15 +227,15 @@ function Index() {
   const backLabel =
     selectionHistory.length > 0
       ? selectionHistory[selectionHistory.length - 1]?.type === "vessel"
-        ? "Navire"
+        ? tr("ui.pageIndex.navire")
         : selectionHistory[selectionHistory.length - 1]?.type === "port"
-          ? "Port"
-          : "Précédent"
+          ? tr("ui.pageIndex.port")
+          : tr("ui.pageIndex.precedent")
       : bookBack
-        ? "Réserver"
+        ? tr("ui.pageIndex.reserver")
         : voyageBack
-          ? "Mon voyage"
-          : "Accueil";
+          ? tr("ui.pageIndex.monVoyage")
+          : tr("ui.pageIndex.accueil2");
   const [filters, setFiltersState] = useState<Filters>(() => filtersFromUrl(initialSearch));
   const [trafficPreview, setTrafficPreview] = useState<MapPreview | null>(null);
   const [lineVisibility, setLineVisibility] = useState<LineVisibility>("all");
@@ -527,7 +527,7 @@ function Index() {
       toast.custom(
         (id) => (
           <Bw504Note
-            title="Votre traversée est dans vos favoris ?"
+            title={tr("ui.pageIndex.votreTraverseeEstDansVos")}
             actions={
               <>
                 <Bw504Button
@@ -544,7 +544,7 @@ function Index() {
                     });
                   }}
                 >
-                  En faire mon voyage
+                  {tr("ui.pageIndex.enFaireMonVoyage")}
                 </Bw504Button>
                 {prepared ? (
                   <Bw504Button
@@ -553,15 +553,14 @@ function Index() {
                       window.location.assign("/preparer-mon-voyage");
                     }}
                   >
-                    Ma préparation
+                    {tr("ui.pageIndex.maPreparation")}
                   </Bw504Button>
                 ) : null}
               </>
             }
           >
             {favorite.label}
-            {favorite.vesselName ? ` (${favorite.vesselName})` : ""}, {favoriteWhen(favorite.departureAt)}.
-            Si c'est votre billet, je la suis pas à pas, avec ce que vous avez préparé.
+            {favorite.vesselName ? ` (${favorite.vesselName})` : ""}, {favoriteWhen(favorite.departureAt)}{tr("ui.pageIndex.siCEstVotreBillet")}
           </Bw504Note>
         ),
         { duration: 12000 },
@@ -572,7 +571,7 @@ function Index() {
     toast.custom(
       (id) => (
         <Bw504Note
-          title="Pas encore de traversée ici"
+          title={tr("ui.pageIndex.pasEncoreDeTraverseeIci")}
           actions={
             <>
               <Bw504Button
@@ -582,7 +581,7 @@ function Index() {
                   window.location.assign("/compte");
                 }}
               >
-                Ajouter mon billet
+                {tr("ui.pageIndex.ajouterMonBillet")}
               </Bw504Button>
               <Bw504Button
                 onClick={() => {
@@ -590,13 +589,12 @@ function Index() {
                   window.dispatchEvent(new Event("bledway:open-itinerary"));
                 }}
               >
-                Simuler mon trajet
+                {tr("ui.pageIndex.simulerMonTrajet")}
               </Bw504Button>
             </>
           }
         >
-          Ajoute ton billet, ou suis celui d'un proche : je garde un œil sur le navire et, avec les
-          notifications, je te préviens d'un retard signalé.
+          {tr("ui.pageIndex.ajouteTonBilletOuSuis")}
         </Bw504Note>
       ),
       { duration: 9000 },
@@ -1399,7 +1397,7 @@ function Index() {
         className="bw-inline-link"
         onClick={() => handleSelect({ type: "port", id: voyage.trip.from.id })}
       >
-        {voyage.trip.from.name}
+        {placeName(voyage.trip.from.name)}
       </button>
       {" → "}
       <button
@@ -1407,7 +1405,7 @@ function Index() {
         className="bw-inline-link"
         onClick={() => handleSelect({ type: "port", id: voyage.trip.to.id })}
       >
-        {voyage.trip.to.name}
+        {placeName(voyage.trip.to.name)}
       </button>
     </>
   ) : null;
@@ -1722,15 +1720,15 @@ function Index() {
                 matchingRoutesCount={matchingRoutes.length}
                 nextLabel={(() => {
                   if (!filters.departurePortIds.length && !filters.arrivalPortIds.length)
-                    return "Ports, dates et voyageurs";
+                    return tr("ui.pageIndex.portsDatesEtVoyageurs");
                   const next = matchingSailings[0];
-                  if (!next) return "aucun départ connu pour cette recherche";
+                  if (!next) return tr("ui.pageIndex.aucunDepartConnuPourCette");
                   const parts = formatDateParts(next.departure.departure_at, next.fromZone);
                   return `${next.from.name} → ${next.to.name}, ${parts.weekday} ${parts.shortDate} à ${parts.time}`;
                 })()}
                 title={
                   hasPair || filters.departurePortIds.length || filters.arrivalPortIds.length
-                    ? `${summarizePorts(filters.departurePortIds, ports, "Tous départs")} → ${summarizePorts(filters.arrivalPortIds, ports, "toutes arrivées")}`
+                    ? `${summarizePorts(filters.departurePortIds, ports, tr("ui.pageIndex.tousDeparts"))} → ${summarizePorts(filters.arrivalPortIds, ports, tr("ui.pageIndex.toutesArrivees"))}`
                     : tr("ui.pageIndex.trouverMaTraversee")
                 }
                 onOpen={() => {
@@ -2042,7 +2040,7 @@ function Index() {
           {mobileLanding ? (
             <button type="button" className="bw-map-expand" onClick={expandMobileMap}>
               <Maximize2 size={15} aria-hidden />
-              Agrandir la carte
+              {tr("ui.pageIndex.agrandirLaCarte")}
             </button>
           ) : null}
 
@@ -2061,7 +2059,7 @@ function Index() {
                 }}
               >
                 <span className="bw-back-live__dot" aria-hidden />
-                Revenir au direct
+                {tr("ui.pageIndex.revenirAuDirect")}
               </button>
             ) : null}
             <MapStatusBar
@@ -2423,7 +2421,7 @@ function CollapsedPanelSummary({
       {...dragHandlers}
       className="h-24 w-full flex-none touch-none flex-col items-stretch justify-start gap-2 rounded-none rounded-t-3xl border-b bg-card px-4 py-2 text-start md:hidden"
       style={{ touchAction: "none" }}
-      aria-label={`${title} — ${matchingRoutesCount} lignes. Ouvrir la liste`}
+      aria-label={tr("ui.pageIndex.lignesOuvrirLaListe", { title, matchingRoutesCount })}
     >
       <span className="batogo-handle mx-auto" aria-hidden />
       <span className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
@@ -2432,7 +2430,7 @@ function CollapsedPanelSummary({
           <span className="mt-1 block truncate text-xs font-normal text-muted-foreground">
             {nextLabel === "Ports, dates et voyageurs"
               ? nextLabel
-              : `Prochain départ : ${nextLabel}`}
+              : tr("ui.pageIndex.prochainDepart", { nextLabel })}
           </span>
         </span>
         <span className="shrink-0 text-sm font-bold text-primary">

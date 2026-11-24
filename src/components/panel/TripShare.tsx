@@ -51,7 +51,7 @@ export function TripShare({
         </p>
         <ShareButtons
           label={tr("ui.tripShare.envoyerLeSuiviAUn")}
-          title={`${from} → ${to} · suivi BledWay`}
+          title={tr("ui.tripShare.suiviBledway", { from, to })}
           text={tripShareText(from, to, departureAt, timeZone)}
           getUrl={() => tripShareUrl(window.location.href, departureId)}
         />

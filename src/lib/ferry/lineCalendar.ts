@@ -1,4 +1,5 @@
 import { wallTimeInZone } from "./time";
+import { lazyDateFormat } from "@/lib/i18n";
 
 type CalendarDeparture = {
   company_id: string;
@@ -28,7 +29,7 @@ function mostFrequent(values: number[]) {
  * jours réellement programmés. Il ne peut donc pas contredire la liste des prochains départs.
  */
 export function lineCalendar(departures: CalendarDeparture[], timeZone: string): LineCalendarEntry[] {
-  const weekday = new Intl.DateTimeFormat("fr-FR", { weekday: "short", timeZone });
+  const weekday = lazyDateFormat({ weekday: "short", timeZone });
   const label = (iso: string) => {
     const name = weekday.format(new Date(iso)).replace(".", "");
     return name.charAt(0).toUpperCase() + name.slice(1);

@@ -26,19 +26,19 @@ import { Link } from "@tanstack/react-router";
 import { tr } from "@/lib/i18n";
 
 const reasons = [
-  { value: "wrong_schedule", label: "Horaire inexact" },
-  { value: "outdated_info", label: "Information obsolète" },
-  { value: "missing_info", label: "Information manquante" },
-  { value: "vessel_immobilized", label: "Navire immobilisé" },
-  { value: "incident_feedback", label: "Alerte navire inexacte ou dépassée" },
-  { value: "inappropriate", label: "Contenu inapproprié" },
-  { value: "other", label: "Autre" },
+  { value: "wrong_schedule", get label() { return tr("ui.reportButton.horaireInexact"); } },
+  { value: "outdated_info", get label() { return tr("ui.reportButton.informationObsolete"); } },
+  { value: "missing_info", get label() { return tr("ui.reportButton.informationManquante"); } },
+  { value: "vessel_immobilized", get label() { return tr("ui.reportButton.navireImmobilise"); } },
+  { value: "incident_feedback", get label() { return tr("ui.reportButton.alerteNavireInexacteOuDepassee"); } },
+  { value: "inappropriate", get label() { return tr("ui.reportButton.contenuInapproprie"); } },
+  { value: "other", get label() { return tr("ui.reportButton.autre"); } },
 ];
 
 export function ReportButton({
   targetType,
   targetId,
-  label = "Signaler une erreur",
+  label = tr("ui.reportButton.signalerUneErreur"),
   initialDetails = "",
   initialReason = "wrong_schedule",
   variant = "button",
@@ -74,7 +74,7 @@ export function ReportButton({
     onSuccess: () => {
       setOpen(false);
       setDetails("");
-      toast.success("Merci, votre signalement a été transmis.");
+      toast.success(tr("ui.reportButton.merciVotreSignalementAEte"));
     },
     onError: (error: Error) => toast.error(error.message),
   });

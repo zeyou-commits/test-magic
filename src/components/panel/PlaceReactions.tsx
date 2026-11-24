@@ -11,12 +11,12 @@ const db = typedSupabase as unknown as SupabaseClient;
 
 export type PlaceKind = "vessel" | "company" | "port";
 export const placeReactions = [
-  { code: "like", emoji: "👍", label: "J’aime" },
-  { code: "love", emoji: "❤️", label: "J’adore" },
-  { code: "haha", emoji: "😂", label: "Haha" },
-  { code: "wow", emoji: "😮", label: "Waouh" },
-  { code: "sad", emoji: "😢", label: "Triste" },
-  { code: "angry", emoji: "😡", label: "Grrr" },
+  { code: "like", emoji: "👍", get label() { return tr("ui.placeReactions.jAime"); } },
+  { code: "love", emoji: "❤️", get label() { return tr("ui.placeReactions.jAdore"); } },
+  { code: "haha", emoji: "😂", get label() { return tr("ui.placeReactions.haha"); } },
+  { code: "wow", emoji: "😮", get label() { return tr("ui.placeReactions.waouh"); } },
+  { code: "sad", emoji: "😢", get label() { return tr("ui.placeReactions.triste"); } },
+  { code: "angry", emoji: "😡", get label() { return tr("ui.placeReactions.grrr"); } },
 ] as const;
 type Counts = { counts: Record<string, number>; mine: string | null };
 
@@ -113,7 +113,7 @@ export function PlaceReactions({ kind, target }: { kind: PlaceKind; target: stri
         type="button"
         className="bw-react__main"
         data-mine={mine?.code}
-        aria-label={mine ? `Votre réaction : ${mine.label}` : "J’aime"}
+        aria-label={mine ? tr("ui.placeReactions.votreReaction", { label: mine.label }) : tr("ui.placeReactions.jAime")}
         aria-pressed={Boolean(mine)}
         aria-expanded={tray}
         onContextMenu={(event) => event.preventDefault()}
@@ -139,7 +139,7 @@ export function PlaceReactions({ kind, target }: { kind: PlaceKind; target: stri
         <span aria-hidden>{mine?.emoji ?? "👍"}</span>
       </button>
       {total ? (
-        <span className="bw-react__sum" aria-label={`${total} réaction${total > 1 ? "s" : ""}`}>
+        <span className="bw-react__sum" aria-label={tr("ui.placeReactions.reaction", { total, v: total > 1 ? "s" : "" })}>
           <span aria-hidden>{top.map((item) => item.emoji).join("")}</span> {total}
         </span>
       ) : null}

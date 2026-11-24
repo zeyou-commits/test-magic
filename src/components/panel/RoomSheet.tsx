@@ -42,17 +42,17 @@ async function inviteToRoom(
   const url = roomInviteUrl(kind, room, token);
   const line = title.replace(/^Salon · /, "");
   const text = token
-    ? `Je t'invite dans le salon de ma traversée sur BledWay (${line}) : tu pourras y écrire et suivre le navire en direct jusqu'à l'arrivée.`
+    ? tr("ui.roomSheet.jeTInviteDansLe", { line })
     : kind === "general"
-      ? "Rejoins-moi dans le salon général de BledWay : les voyageurs s'y entraident sur la route, les papiers et les traversées."
+      ? tr("ui.roomSheet.rejoinsMoiDansLeSalon")
       : kind === "crossing"
-      ? `Rejoins-moi dans le salon de cette traversée sur BledWay (${line}) : on y suit le navire en direct.`
-      : `Rejoins-moi sur BledWay, dans le salon « ${title} ».`;
+      ? tr("ui.roomSheet.rejoinsMoiDansLeSalon2", { line })
+      : tr("ui.roomSheet.rejoinsMoiSurBledwayDans", { title });
   // Téléphone : la feuille de partage (WhatsApp, SMS…). Ordinateur : le lien copié, plus sûr.
   const touch = window.matchMedia("(pointer: coarse)").matches;
   if (touch && typeof navigator.share === "function") {
     try {
-      await navigator.share({ title: "Salon BledWay", text, url });
+      await navigator.share({ title: tr("ui.roomSheet.salonBledway"), text, url });
       return;
     } catch (error) {
       // Partage annulé par la personne : rien à faire.
@@ -61,7 +61,7 @@ async function inviteToRoom(
   }
   const dialog = container.closest<HTMLElement>('[role="dialog"]') ?? document.body;
   if (await copyText(`${text}\n${url}`, dialog))
-    toast.success("Lien d'invitation copié : collez-le dans un message.");
+    toast.success(tr("ui.roomSheet.lienDInvitationCopieCollez"));
   else toast.error("Impossible de copier le lien. Réessayez.");
 }
 

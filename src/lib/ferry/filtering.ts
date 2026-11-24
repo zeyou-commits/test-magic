@@ -2,6 +2,8 @@ import type { Company, Departure, Filters, Port, RouteLine, Vessel } from "./typ
 import { emptyFilters } from "./types";
 import { dateKeyInZone, portTimeZone } from "./time";
 import { schoolBreakOn } from "./schoolCalendar";
+import { tr } from "@/lib/i18n/translate";
+import { lazyDateFormat, intlLocale } from "@/lib/i18n";
 
 export function normalizeText(value: string): string {
   return value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
@@ -31,14 +33,14 @@ export function groupPortsByCountry(ports: Port[]): CountryGroup[] {
   return [...groups.values()]
     .map((group) => ({
       ...group,
-      ports: [...group.ports].sort((a, b) => a.name.localeCompare(b.name, "fr")),
+      ports: [...group.ports].sort((a, b) => a.name.localeCompare(b.name, intlLocale())),
     }))
     .sort((a, b) => {
       const ai = COUNTRY_ORDER.indexOf(a.code);
       const bi = COUNTRY_ORDER.indexOf(b.code);
       if (ai !== -1 || bi !== -1)
         return (ai === -1 ? COUNTRY_ORDER.length : ai) - (bi === -1 ? COUNTRY_ORDER.length : bi);
-      return a.name.localeCompare(b.name, "fr");
+      return a.name.localeCompare(b.name, intlLocale());
     });
 }
 
@@ -259,7 +261,7 @@ export interface FilterChip {
   remove: (filters: Filters) => Filters;
 }
 
-const chipDateFormatter = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
+const chipDateFormatter = lazyDateFormat({ day: "numeric", month: "short" });
 
 export function describeActiveFilters(
   filters: Filters,
@@ -268,19 +270,19 @@ export function describeActiveFilters(
   vessels: Vessel[],
 ): FilterChip[] {
   const chips: FilterChip[] = [];
-  const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "Port";
+  const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? tr("ui.libFerryFiltering.port");
 
   if (filters.departurePortIds.length === 1) {
     const id = filters.departurePortIds[0]!;
     chips.push({
       key: "from",
-      label: `Départ : ${portName(id)}`,
+      label: tr("ui.libFerryFiltering.depart", { portName: portName(id) }),
       remove: (f) => ({ ...f, departurePortIds: [] }),
     });
   } else if (filters.departurePortIds.length > 1) {
     chips.push({
       key: "from",
-      label: `${filters.departurePortIds.length} ports de départ`,
+      label: tr("ui.libFerryFiltering.portsDeDepart", { length: filters.departurePortIds.length }),
       remove: (f) => ({ ...f, departurePortIds: [] }),
     });
   }
@@ -289,13 +291,13 @@ export function describeActiveFilters(
     const id = filters.arrivalPortIds[0]!;
     chips.push({
       key: "to",
-      label: `Arrivée : ${portName(id)}`,
+      label: tr("ui.libFerryFiltering.arrivee", { portName: portName(id) }),
       remove: (f) => ({ ...f, arrivalPortIds: [] }),
     });
   } else if (filters.arrivalPortIds.length > 1) {
     chips.push({
       key: "to",
-      label: `${filters.arrivalPortIds.length} ports d’arrivée`,
+      label: tr("ui.libFerryFiltering.portsDArrivee", { length: filters.arrivalPortIds.length }),
       remove: (f) => ({ ...f, arrivalPortIds: [] }),
     });
   }
@@ -313,7 +315,7 @@ export function describeActiveFilters(
     const [y = 1970, m = 1, d = 1] = filters.returnDate.split("-").map(Number);
     chips.push({
       key: "return",
-      label: `Retour ${chipDateFormatter.format(new Date(y, m - 1, d))}`,
+      label: tr("ui.libFerryFiltering.retour", { v: chipDateFormatter.format(new Date(y, m - 1, d)) }),
       remove: (f) => ({ ...f, returnDate: null }),
     });
   }
@@ -321,7 +323,7 @@ export function describeActiveFilters(
   if (filters.schoolZone) {
     chips.push({
       key: "zone",
-      label: `Vacances zone ${filters.schoolZone}`,
+      label: tr("ui.libFerryFiltering.vacancesZone", { schoolZone: filters.schoolZone }),
       remove: (f) => ({ ...f, schoolZone: null }),
     });
   }
@@ -329,7 +331,7 @@ export function describeActiveFilters(
   if (filters.companyId) {
     chips.push({
       key: "company",
-      label: companies.find((company) => company.id === filters.companyId)?.name ?? "Compagnie",
+      label: companies.find((company) => company.id === filters.companyId)?.name ?? tr("ui.libFerryFiltering.compagnie"),
       remove: (f) => ({ ...f, companyId: null }),
     });
   }
@@ -337,7 +339,7 @@ export function describeActiveFilters(
   if (filters.vesselId) {
     chips.push({
       key: "vessel",
-      label: vessels.find((vessel) => vessel.id === filters.vesselId)?.name ?? "Navire",
+      label: vessels.find((vessel) => vessel.id === filters.vesselId)?.name ?? tr("ui.libFerryFiltering.navire"),
       remove: (f) => ({ ...f, vesselId: null }),
     });
   }
@@ -365,20 +367,20 @@ export function algerianRegion(port: Port): "Ouest" | "Centre" | "Est" | null {
 
 /** Résumé lisible d'une liste de ports : « Marseille », « Toute la France (2) », « 3 ports »… */
 const COUNTRY_LABEL: Record<string, string> = {
-  FR: "Toute la France",
-  ES: "Toute l’Espagne",
-  IT: "Toute l’Italie",
-  DZ: "Toute l’Algérie",
+  get FR() { return tr("ui.libFerryFiltering.touteLaFrance"); },
+  get ES() { return tr("ui.libFerryFiltering.touteLEspagne"); },
+  get IT() { return tr("ui.libFerryFiltering.touteLItalie"); },
+  get DZ() { return tr("ui.libFerryFiltering.touteLAlgerie"); },
 };
 
 export function summarizePorts(
   ids: string[],
   ports: Port[],
-  emptyLabel = "Tous les ports",
+  emptyLabel = tr("ui.libFerryFiltering.tousLesPorts"),
 ): string {
   if (!ids.length) return emptyLabel;
   const portById = new Map(ports.map((port) => [port.id, port]));
-  if (ids.length === 1) return portById.get(ids[0]!)?.name ?? "1 port";
+  if (ids.length === 1) return portById.get(ids[0]!)?.name ?? tr("ui.libFerryFiltering.t1Port");
   const set = new Set(ids);
   const full = groupPortsByCountry(ports).find(
     (c) => c.ports.length === ids.length && c.ports.every((p) => set.has(p.id)),
@@ -387,7 +389,7 @@ export function summarizePorts(
   const regions = new Set(
     ids.map((id) => portById.get(id)).map((p) => (p ? algerianRegion(p) : null)),
   );
-  if (regions.size === 1 && !regions.has(null)) return `Algérie ${[...regions][0]} (${ids.length})`;
+  if (regions.size === 1 && !regions.has(null)) return tr("ui.libFerryFiltering.algerie", { v: [...regions][0], length: ids.length });
   return `${ids.length} ports`;
 }
 

@@ -249,10 +249,10 @@ export function PortLiveBoard({
       {ships.length ? (
         <p className="bw-port-live__summary">
           {[
-            seen ? `${seen} vu${seen > 1 ? "s" : ""} à quai` : null,
-            expected ? `${expected} attendu${expected > 1 ? "s" : ""} d’après l’horaire` : null,
-            boarding ? `${boarding} en embarquement` : null,
-            travellers ? `${travellers} voyageur${travellers > 1 ? "s" : ""} BledWay` : null,
+            seen ? tr("ui.portLiveBoard.vuAQuai", { seen, v: seen > 1 ? "s" : "" }) : null,
+            expected ? tr("ui.portLiveBoard.attenduDApresLHoraire", { expected, v: expected > 1 ? "s" : "" }) : null,
+            boarding ? tr("ui.portLiveBoard.enEmbarquement", { boarding }) : null,
+            travellers ? tr("ui.portLiveBoard.voyageurBledway", { travellers, v: travellers > 1 ? "s" : "" }) : null,
           ]
             .filter(Boolean)
             .join(" · ")}
@@ -274,7 +274,7 @@ export function PortLiveBoard({
             <PortNextShip
               key={departure.id}
               departure={departure}
-              label={`${leaving ? "Vers" : "Depuis"} ${other?.name ?? "—"}`}
+              label={`${leaving ? tr("ui.portLiveBoard.vers2") : tr("ui.portLiveBoard.depuis")} ${other?.name ?? "—"}`}
               when={formatDateTime(departure.departure_at, portTimeZone(port))}
               onSelect={onSelect}
             />

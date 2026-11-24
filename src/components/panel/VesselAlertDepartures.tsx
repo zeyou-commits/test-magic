@@ -9,7 +9,7 @@ import type { Selection } from "@/lib/ferry/types";
 import { useVesselAlert } from "@/lib/ferry/vesselAlerts";
 import { tr } from "@/lib/i18n";
 
-const impactLabel = { confirmed: "Touchée", possible: "Peut être touchée", none: "À vérifier" };
+const impactLabel = { get confirmed() { return tr("ui.vesselAlertDepartures.touchee"); }, get possible() { return tr("ui.vesselAlertDepartures.peutEtreTouchee"); }, get none() { return tr("ui.vesselAlertDepartures.aVerifier"); } };
 
 /** Fiche d'un navire en alerte : ses prochaines traversées, à vérifier auprès de la compagnie. */
 export function VesselAlertDepartures({

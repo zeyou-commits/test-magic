@@ -1,4 +1,5 @@
 /** Détourage sans dépendance : enlève le fond en partant des bords de l'image. */
+import { tr } from "@/lib/i18n/translate";
 
 export class CutoutError extends Error {}
 
@@ -38,11 +39,11 @@ function analyseBackground(data: Uint8ClampedArray, border: number[]): Backgroun
     if (Math.max(r, g, b) - Math.min(r, g, b) <= 16) neutral.push(Math.min(r, g, b));
   }
   // Un personnage cadré de près peut toucher le bord : la moitié de fond suffit.
-  if (neutral.length < border.length / 2) throw new CutoutError("Le fond n'est ni blanc ni uni.");
+  if (neutral.length < border.length / 2) throw new CutoutError(tr("ui.libIllustrationsCutout.leFondNEstNi"));
   const bins = new Array<number>(52).fill(0);
   for (const value of neutral) bins[Math.floor(value / 5)]!++;
   const peak = bins.indexOf(Math.max(...bins));
-  if (peak * 5 < 170) throw new CutoutError("Le fond est trop sombre.");
+  if (peak * 5 < 170) throw new CutoutError(tr("ui.libIllustrationsCutout.leFondEstTropSombre"));
   let second = -1;
   bins.forEach((count, bin) => {
     if (Math.abs(bin - peak) >= 3 && bin * 5 >= 150 && (second < 0 || count > bins[second]!)) {
@@ -228,7 +229,7 @@ export function cutOut(
     const mask = backgroundMask(data, w, h, bg);
     const removed = floodFromBorder(mask, w, h, border);
     if (removed.reduce((sum, value) => sum + value, 0) < 0.03 * w * h) {
-      throw new CutoutError("Le fond n'a pas pu être enlevé : redemandez un fond blanc uni.");
+      throw new CutoutError(tr("ui.libIllustrationsCutout.leFondNAPas"));
     }
     clearEnclosed(data, mask, removed, w, h, bg, options.handles, alerts);
     softenEdge(data, removed, w, h, bg);

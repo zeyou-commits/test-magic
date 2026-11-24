@@ -1,25 +1,27 @@
+import { tr } from "@/lib/i18n/translate";
+import { intlLocale } from "@/lib/i18n";
 export type ReviewKind = "port" | "vessel" | "company";
 export const reviewCriteria: Record<ReviewKind, { code: string; label: string }[]> = {
   vessel: [
-    { code: "cleanliness", label: "Propreté à bord" },
-    { code: "comfort", label: "Confort des espaces" },
-    { code: "rest", label: "Calme et repos" },
-    { code: "food", label: "Restauration" },
-    { code: "facilities", label: "Équipements et services" },
+    { code: "cleanliness", get label() { return tr("ui.libFerryReviewCriteria.propreteABord"); } },
+    { code: "comfort", get label() { return tr("ui.libFerryReviewCriteria.confortDesEspaces"); } },
+    { code: "rest", get label() { return tr("ui.libFerryReviewCriteria.calmeEtRepos"); } },
+    { code: "food", get label() { return tr("ui.libFerryReviewCriteria.restauration"); } },
+    { code: "facilities", get label() { return tr("ui.libFerryReviewCriteria.equipementsEtServices"); } },
   ],
   port: [
-    { code: "access", label: "Accès au terminal" },
-    { code: "signage", label: "Orientation et signalétique" },
-    { code: "cleanliness", label: "Propreté des lieux" },
-    { code: "waiting", label: "Confort pendant l’attente" },
-    { code: "services", label: "Services pratiques" },
+    { code: "access", get label() { return tr("ui.libFerryReviewCriteria.accesAuTerminal"); } },
+    { code: "signage", get label() { return tr("ui.libFerryReviewCriteria.orientationEtSignaletique"); } },
+    { code: "cleanliness", get label() { return tr("ui.libFerryReviewCriteria.propreteDesLieux"); } },
+    { code: "waiting", get label() { return tr("ui.libFerryReviewCriteria.confortPendantLAttente"); } },
+    { code: "services", get label() { return tr("ui.libFerryReviewCriteria.servicesPratiques"); } },
   ],
   company: [
-    { code: "information", label: "Clarté des informations" },
-    { code: "boarding", label: "Organisation de l’embarquement" },
-    { code: "changes", label: "Gestion des changements" },
-    { code: "support", label: "Service client" },
-    { code: "value", label: "Rapport qualité/prix" },
+    { code: "information", get label() { return tr("ui.libFerryReviewCriteria.clarteDesInformations"); } },
+    { code: "boarding", get label() { return tr("ui.libFerryReviewCriteria.organisationDeLEmbarquement"); } },
+    { code: "changes", get label() { return tr("ui.libFerryReviewCriteria.gestionDesChangements"); } },
+    { code: "support", get label() { return tr("ui.libFerryReviewCriteria.serviceClient"); } },
+    { code: "value", get label() { return tr("ui.libFerryReviewCriteria.rapportQualitePrix"); } },
   ],
 };
 export type ReviewScores = Record<string, number | null>;
@@ -32,7 +34,7 @@ export function reviewScore(kind: ReviewKind, scores: ReviewScores): number | nu
 }
 
 export const reviewNumber = (score: number) =>
-  score.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  score.toLocaleString(intlLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 /** Brouillon de note relu par le formulaire (clé partagée avec EntityReviews). */
 export const ratingDraftKey = (kind: ReviewKind, target: string) => `bledway:rating:${kind}:${target}`;

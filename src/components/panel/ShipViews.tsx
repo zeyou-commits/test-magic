@@ -207,7 +207,7 @@ export function VesselView({
             <button
               type="button"
               className="bw-ship-hero-logo"
-              aria-label={`Voir la compagnie ${company.name}`}
+              aria-label={tr("ui.shipViews.voirLaCompagnie", { name: company.name })}
               onClick={() => onSelect({ type: "company", id: company.id })}
             >
               <CompanyBadge
@@ -280,7 +280,7 @@ export function VesselView({
           <p className="mb-1 font-semibold">{tr("ui.shipViews.controleAdminDuSuivi")}</p>
           <p className="mb-2 text-muted-foreground">
             {live
-              ? `Signal AIS associé · âge ${Math.round(live.ageMinutes)} min`
+              ? tr("ui.shipViews.signalAisAssocieAgeMin", { v: Math.round(live.ageMinutes) })
               : tr("ui.shipViews.aucunSignalAisAssociePosition")}
           </p>
           <a
@@ -544,7 +544,7 @@ function VesselHub({
       ? ([
           {
             id: "salon",
-            label: "Salon",
+            label: tr("ui.shipViews.salon"),
             count: currentId ? (counts?.get(currentId) ?? total) : total,
             // La fiche montre déjà une traversée : on entre dans son salon, sans passer par la
             // liste (les autres salons restent à un geste, depuis le salon).
@@ -555,11 +555,11 @@ function VesselHub({
                 }
               : () => setPicker("salon"),
           },
-          { id: "questions", label: "Questions", onClick: () => setPicker("questions") },
+          { id: "questions", label: tr("ui.shipViews.questions"), onClick: () => setPicker("questions") },
         ] as HubTile[])
       : []),
-    ...(onWhere ? ([{ id: "where", label: "Vous êtes où ?", onClick: onWhere }] as HubTile[]) : []),
-    { id: "report", label: "Signaler", count: signals, onClick: onSignal },
+    ...(onWhere ? ([{ id: "where", label: tr("ui.shipViews.vousEtesOu"), onClick: onWhere }] as HubTile[]) : []),
+    { id: "report", label: tr("ui.shipViews.signaler"), count: signals, onClick: onSignal },
   ];
   return (
     <>

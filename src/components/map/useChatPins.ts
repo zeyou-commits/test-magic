@@ -29,6 +29,7 @@ import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
 import { dockSpread, shipShiftY, vesselScreenHeight } from "./shipIcons";
 import { liftAboveMapControls } from "./tooltipStack";
 import { MY_TRIP_TAG_SPACE } from "./useMyTripMarker";
+import { tr } from "@/lib/i18n";
 
 /** À partir de ce zoom, chaque pastille montre son dernier message sur une ligne. */
 export const PEEK_ZOOM = 6.6;
@@ -177,7 +178,7 @@ export function useChatPins(
       const who = document.createElement("b");
       who.textContent = message.author.pseudo;
       const meta = document.createElement("small");
-      if (message.demo) meta.textContent = "Exemple";
+      if (message.demo) meta.textContent = tr("ui.useChatPins.exemple");
       else {
         const age = Math.max(0, (Date.now() - Date.parse(message.created_at)) / 60_000);
         meta.textContent = formatAge(age);
@@ -196,7 +197,7 @@ export function useChatPins(
       const box = document.createElement("div");
       box.className = "bw-pin-sheet";
       box.setAttribute("role", "dialog");
-      box.setAttribute("aria-label", "Messages de ce lieu");
+      box.setAttribute("aria-label", tr("ui.useChatPins.messagesDeCeLieu"));
       box.addEventListener("click", (event) => event.stopPropagation());
       const head = document.createElement("div");
       head.className = "bw-pin-sheet__head";
@@ -206,14 +207,14 @@ export function useChatPins(
         : null;
       const port = place.portId ? latest.current.ports.find((item) => item.id === place.portId) : null;
       const name = document.createElement("b");
-      name.textContent = ship?.name ?? (port ? `Port de ${port.name}` : (group.label ?? "Sur la route"));
+      name.textContent = ship?.name ?? (port ? tr("ui.useChatPins.portDe", { name: port.name }) : (group.label ?? tr("ui.useChatPins.surLaRoute")));
       const sub = document.createElement("small");
-      sub.textContent = `${ship && group.label ? `${group.label} · ` : ""}${group.count} message${group.count > 1 ? "s" : ""}${group.room ? " sur 24 h" : ""}`;
+      sub.textContent = `${ship && group.label ? `${group.label} · ` : ""}${group.count} message${group.count > 1 ? "s" : ""}${group.room ? tr("ui.useChatPins.sur24H") : ""}`;
       title.append(name, sub);
       const close = document.createElement("button");
       close.type = "button";
       close.className = "bw-pin-sheet__close";
-      close.setAttribute("aria-label", "Fermer");
+      close.setAttribute("aria-label", tr("ui.useChatPins.fermer"));
       close.textContent = "✕";
       close.addEventListener("click", closeSheet);
       head.append(title, close);
@@ -225,14 +226,14 @@ export function useChatPins(
       const main = document.createElement("button");
       main.type = "button";
       main.className = "bw-pin-sheet__main";
-      main.textContent = group.room ? "Ouvrir le salon" : "Voir les salons";
+      main.textContent = group.room ? tr("ui.useChatPins.ouvrirLeSalon") : tr("ui.useChatPins.voirLesSalons");
       main.addEventListener("click", () => openRoom(group));
       actions.append(main);
       if (ship?.vesselId || port) {
         const second = document.createElement("button");
         second.type = "button";
         second.className = "bw-pin-sheet__second";
-        second.textContent = ship ? "Fiche du navire" : "Fiche du port";
+        second.textContent = ship ? tr("ui.useChatPins.ficheDuNavire") : tr("ui.useChatPins.ficheDuPort");
         second.addEventListener("click", () => {
           closeSheet();
           latest.current.onSelect(

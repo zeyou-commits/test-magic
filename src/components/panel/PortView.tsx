@@ -57,7 +57,7 @@ import { TravelSignals } from "./TravelCommunity";
 import { PortGallery } from "./CompanyPublic";
 import { PortHelpRequests } from "@/components/community/HelpRequests";
 import { globalCriterionQuery } from "./PortReviewForm";
-import { tr, intlLocale } from "@/lib/i18n";
+import { tr, intlLocale, placeName } from "@/lib/i18n";
 
 const scoreLabel = (value: number) =>
   value.toLocaleString(intlLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -67,7 +67,7 @@ function StarRow({ value, size = 15 }: { value: number; size?: number }) {
   return (
     <span
       className="pv-stars"
-      aria-label={value ? `${scoreLabel(value)} sur 5` : tr("ui.portView.pasEncoreNote")}
+      aria-label={value ? tr("ui.portView.sur5", { scoreLabel: scoreLabel(value) }) : tr("ui.portView.pasEncoreNote")}
     >
       {[1, 2, 3, 4, 5].map((n) => (
         <Star
@@ -248,7 +248,7 @@ export function PortView({
   };
 
   return (
-    <article className="port-profile pv" aria-label={`Fiche du port de ${port.name}`}>
+    <article className="port-profile pv" aria-label={tr("ui.portView.ficheDuPortDe", { name: port.name })}>
       <header className={`pv-hero ${photo ? "has-photo" : ""}`}>
         {photo ? (
           <img
@@ -265,10 +265,10 @@ export function PortView({
             {port.country_name}
             {port.city && port.city !== port.name ? ` · ${port.city}` : ""}
           </p>
-          <h2>{port.name}</h2>
+          <h2>{placeName(port.name)}</h2>
           <p className="pv-hero__meta">
             {scheduledRoutes.size
-              ? `${scheduledRoutes.size} ligne${scheduledRoutes.size > 1 ? "s" : ""} · ${traffic.departures.length} départ${traffic.departures.length > 1 ? "s" : ""} à venir`
+              ? tr("ui.portView.ligneDepartAVenir", { size: scheduledRoutes.size, v: scheduledRoutes.size > 1 ? "s" : "", length: traffic.departures.length, v2: traffic.departures.length > 1 ? "s" : "" })
               : tr("ui.portView.aucuneTraverseeProgrammeePourLe")}
             {port.status === "inactive" ? tr("ui.portView.temporairementFerme") : ""}
           </p>
@@ -322,7 +322,7 @@ export function PortView({
         tiles={[
           {
             id: "salon",
-            label: "Salon",
+            label: tr("ui.portView.salon"),
 
             onClick: () => enterRoom("port", portId),
           },
@@ -330,14 +330,14 @@ export function PortView({
             ? ([
                 {
                   id: "questions",
-                  label: "Questions",
+                  label: tr("ui.portView.questions"),
                   onClick: () => setQuestionsOpen(true),
                 },
               ] as const)
             : []),
           {
             id: "report",
-            label: "Signaler",
+            label: tr("ui.portView.signaler"),
             count: live.official + live.travellers,
             onClick: () =>
               live.official + live.travellers
@@ -370,7 +370,7 @@ export function PortView({
       <LiveRoom
         kind="port"
         room={portId}
-        title={`En direct sur le port de ${port.name}`}
+        title={tr("ui.portView.enDirectSurLePort", { name: port.name })}
         starterContext={{ port: port.name }}
         onAskLine={(routeId) => {
           onSelect({ type: "route", id: routeId });
@@ -387,7 +387,7 @@ export function PortView({
       />
 
       <Tabs value={activeTab} onValueChange={setChosenTab} className="port-profile-tabs">
-        <TabsList aria-label={`Explorer le port de ${port.name}`} className="port-profile-nav">
+        <TabsList aria-label={tr("ui.portView.explorerLePortDe", { name: port.name })} className="port-profile-nav">
           <TabsTrigger value="live">{tr("ui.portView.horaires")}</TabsTrigger>
           <TabsTrigger value="practical">{tr("ui.portView.preparer")}</TabsTrigger>
           <TabsTrigger value="community">
@@ -497,7 +497,7 @@ export function PortView({
           </section>
           <div id={liveId} data-live-anchor>
             <FlashFeed
-              title={`À la une · ${port.name}`}
+              title={tr("ui.portView.aLaUne", { name: port.name })}
               context={{ portIds: [portId], routeIds: portRoutes.map((route) => route.id) }}
               signalPortIds={[portId]}
               withSignals={false}
@@ -615,7 +615,7 @@ export function PortView({
                 const score = getScore(review);
                 // Le cabas et le pseudo du voyageur (jamais son nom) dès que la communauté est active.
                 const card = reviewCommunity.authors?.[review.id];
-                const name = card?.pseudo ?? (review.author?.trim() || "Voyageur");
+                const name = card?.pseudo ?? (review.author?.trim() || tr("ui.portView.voyageur"));
                 return (
                   <li key={review.id}>
                     <div className="pv-review__head">

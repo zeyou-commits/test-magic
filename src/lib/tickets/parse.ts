@@ -3,6 +3,7 @@
  * Règle d'or : un champ n'est rempli que s'il a été trouvé sur le billet. Rien n'est deviné ;
  * ce qui manque reste vide, et le voyageur complète ou corrige avant d'enregistrer.
  */
+import { tr } from "@/lib/i18n/translate";
 
 export type CatalogItem = { id: string; name: string };
 export type Catalog = {
@@ -280,12 +281,12 @@ export function findVehicle(
 ): { kind: string | null; plate: string | null } {
   const kinds: [RegExp, string][] = [
     [/camping[- ]?car|autocaravana|camper/, "Camping-car"],
-    [/caravane|caravana|roulotte/, "Voiture avec caravane"],
-    [/remorque|trailer|rimorchio/, "Voiture avec remorque"],
-    [/fourgon|utilitaire|van\b|furgoneta|furgone/, "Fourgon"],
-    [/moto\b|motorcycle|motocicleta/, "Moto"],
+    [/caravane|caravana|roulotte/, tr("ui.libTicketsParse.voitureAvecCaravane")],
+    [/remorque|trailer|rimorchio/, tr("ui.libTicketsParse.voitureAvecRemorque")],
+    [/fourgon|utilitaire|van\b|furgoneta|furgone/, tr("ui.libTicketsParse.fourgon")],
+    [/moto\b|motorcycle|motocicleta/, tr("ui.libTicketsParse.moto")],
     // Pas « car » : en français, c'est aussi une conjonction.
-    [/voiture|vehicule|vehicle|\bauto\b|coche|turismo|automobile/, "Voiture"],
+    [/voiture|vehicule|vehicle|\bauto\b|coche|turismo|automobile/, tr("ui.libTicketsParse.voiture")],
   ];
   const kind = kinds.find(([re]) => re.test(text))?.[1] ?? null;
   let plate: string | null = null;

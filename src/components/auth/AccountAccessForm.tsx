@@ -9,7 +9,7 @@ import { tr } from "@/lib/i18n";
 
 export function AccountAccessForm({
   onAwaitingConfirmation,
-  signupLabel = "Créer mon compte et garder mon suivi",
+  signupLabel = tr("ui.accountAccessForm.creerMonCompteEtGarder"),
 }: {
   onAwaitingConfirmation: () => void;
   signupLabel?: string;
@@ -50,14 +50,14 @@ export function AccountAccessForm({
       if (mode === "signup" && !result.data.session) {
         onAwaitingConfirmation();
         setMessage(
-          "Consultez votre e-mail pour confirmer votre compte. Votre trajet est conservé sur cet appareil ; il sera ajouté dès votre connexion.",
+          tr("ui.accountAccessForm.consultezVotreEMailPour"),
         );
       }
     } catch {
       setError(
         mode === "signin"
-          ? "Connexion impossible. Vérifiez votre e-mail, votre mot de passe et la confirmation de votre compte."
-          : "Création impossible. Si vous avez déjà un compte, choisissez « Se connecter ».",
+          ? tr("ui.accountAccessForm.connexionImpossibleVerifiezVotreE")
+          : tr("ui.accountAccessForm.creationImpossibleSiVousAvez"),
       );
     } finally {
       setBusy(false);
@@ -72,7 +72,7 @@ export function AccountAccessForm({
       options: { redirectTo: authUrl() },
     });
     if (oauthError) {
-      setError("Connexion Google indisponible. Utilisez votre adresse e-mail.");
+      setError(tr("ui.accountAccessForm.connexionGoogleIndisponibleUtilisezVotre"));
       setBusy(false);
     }
   }

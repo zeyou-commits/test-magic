@@ -29,19 +29,19 @@ const rankings: {
   value: (vessel: Vessel) => number | null | undefined;
   show: (value: number) => string;
 }[] = [
-  { id: "passengers", label: "Passagers", icon: Users, value: (v) => v.passenger_capacity, show: number },
-  { id: "cars", label: "Véhicules", icon: CarFront, value: (v) => v.car_capacity, show: number },
-  { id: "cabins", label: "Cabines", icon: BedDouble, value: (v) => v.cabin_capacity, show: number },
+  { id: "passengers", get label() { return tr("ui.fleetOverview.passagers"); }, icon: Users, value: (v) => v.passenger_capacity, show: number },
+  { id: "cars", get label() { return tr("ui.fleetOverview.vehicules"); }, icon: CarFront, value: (v) => v.car_capacity, show: number },
+  { id: "cabins", get label() { return tr("ui.fleetOverview.cabines"); }, icon: BedDouble, value: (v) => v.cabin_capacity, show: number },
   {
     id: "length",
-    label: "Longueur",
+    get label() { return tr("ui.fleetOverview.longueur"); },
     icon: Ruler,
     value: (v) => v.length_meters,
     show: (n) => `${number(n)} m`,
   },
   {
     id: "age",
-    label: "Âge",
+    get label() { return tr("ui.fleetOverview.age"); },
     icon: CalendarDays,
     value: (v) => (v.build_year ? year - v.build_year : null),
     show: (n) => `${n} ans`,
@@ -71,12 +71,12 @@ export function FleetOverview() {
   if (!overview.vessels) return null;
   const max = rows[0]?.value ?? 1;
   const tiles = [
-    { icon: Ship, value: number(overview.vessels), label: "navires en service" },
+    { icon: Ship, value: number(overview.vessels), label: tr("ui.fleetOverview.naviresEnService") },
     { icon: Medal, value: number(overview.companies), label: "compagnies" },
-    { icon: CalendarDays, value: overview.averageAge ? `${overview.averageAge} ans` : "—", label: "d'âge moyen" },
-    { icon: Users, value: number(overview.passengers), label: "places passagers" },
-    { icon: CarFront, value: number(overview.cars), label: "places véhicules" },
-    { icon: Route, value: number(overview.crossings), label: "traversées à venir" },
+    { icon: CalendarDays, value: overview.averageAge ? `${overview.averageAge} ans` : "—", label: tr("ui.fleetOverview.dAgeMoyen") },
+    { icon: Users, value: number(overview.passengers), label: tr("ui.fleetOverview.placesPassagers") },
+    { icon: CarFront, value: number(overview.cars), label: tr("ui.fleetOverview.placesVehicules") },
+    { icon: Route, value: number(overview.crossings), label: tr("ui.fleetOverview.traverseesAVenir") },
   ];
   return (
     <section className="bw-fleet" aria-label={tr("ui.fleetOverview.laFlotteEnChiffres")}>

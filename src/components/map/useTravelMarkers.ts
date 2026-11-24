@@ -26,6 +26,7 @@ import { SituationIcon } from "@/components/panel/SituationIcon";
 import { QUICK_REPORT_EVENT } from "./QuickReport";
 import { chatDemoSettingQuery } from "@/lib/ferry/chatDemo";
 import { demoReports, isDemoReport } from "@/lib/ferry/reportDemo";
+import { tr } from "@/lib/i18n";
 
 // Pictos et couleurs : les mêmes que dans la saisie et les fiches (catalogue unique).
 function iconInto(host: HTMLElement, category: TravelAlert["category"], size: number, roots: Root[]) {
@@ -152,7 +153,7 @@ export function useTravelMarkers(
       button.style.setProperty("--situation-color", situationOf(alert.category).color);
       button.setAttribute(
         "aria-label",
-        `${demo ? "Exemple de signalement. " : ""}${name} : ${alerts.map(alertLabel).join(", ")}. ${voyageurs(travelers)}${onSite ? `, dont ${onSite} sur place` : ""}. Afficher le détail`,
+        tr("ui.useTravelMarkers.afficherLeDetail", { v: demo ? tr("ui.useTravelMarkers.exempleDeSignalement") : "", name, v2: alerts.map(alertLabel).join(", "), voyageurs: voyageurs(travelers), v3: onSite ? tr("ui.useTravelMarkers.dontSurPlace", { onSite }) : "" }),
       );
       // Le contenu est dans un bloc à part : MapLibre positionne le bouton par transform.
       const body = el("span", "bw-signal-pin__body");
@@ -200,17 +201,17 @@ export function useTravelMarkers(
         unmountLater(bubbleRoots);
         const card = el("button", "bw-signal-bubble__card");
         card.type = "button";
-        card.setAttribute("aria-label", `Ouvrir la fiche ${name}`);
+        card.setAttribute("aria-label", tr("ui.useTravelMarkers.ouvrirLaFiche2", { name }));
         const head = el("span", "bw-signal-bubble__head");
         head.append(
           el(
             "small",
             "",
             demo
-              ? "Exemple de signalement"
+              ? tr("ui.useTravelMarkers.exempleDeSignalement2")
               : isPort
-                ? "Port · infos voyageurs"
-                : "Navire · infos voyageurs",
+                ? tr("ui.useTravelMarkers.portInfosVoyageurs")
+                : tr("ui.useTravelMarkers.navireInfosVoyageurs"),
           ),
           el("strong", "", name),
         );
@@ -229,7 +230,7 @@ export function useTravelMarkers(
             el(
               "small",
               "",
-              `${formatAge(age)} · ${voyageurs(1 + item.confirmations)}${onSiteCount(item) ? ` · ${onSiteCount(item)} sur place` : ""}`,
+              `${formatAge(age)} · ${voyageurs(1 + item.confirmations)}${onSiteCount(item) ? tr("ui.useTravelMarkers.surPlace", { onSiteCount: onSiteCount(item) }) : ""}`,
             ),
           );
           row.append(mark, text);
@@ -241,7 +242,7 @@ export function useTravelMarkers(
             el(
               "span",
               "bw-signal-bubble__more",
-              `+ ${alerts.length - 2} autre${alerts.length > 3 ? "s" : ""} dans la fiche`,
+              tr("ui.useTravelMarkers.autreDansLaFiche", { v: alerts.length - 2, v2: alerts.length > 3 ? "s" : "" }),
             ),
           );
         if (demo)
@@ -249,11 +250,11 @@ export function useTravelMarkers(
             el(
               "span",
               "bw-signal-bubble__note",
-              "Illustration : les vrais signalements des voyageurs s’affichent ici, en direct.",
+              tr("ui.useTravelMarkers.illustrationLesVraisSignalementsDes"),
             ),
           );
         card.append(
-          el("span", "bw-signal-bubble__cta", demo ? "Signaler une situation ici ›" : "Ouvrir la fiche ›"),
+          el("span", "bw-signal-bubble__cta", demo ? tr("ui.useTravelMarkers.signalerUneSituationIci") : tr("ui.useTravelMarkers.ouvrirLaFiche")),
         );
         card.addEventListener("click", open);
         const lift = isPort ? -22 : 22;

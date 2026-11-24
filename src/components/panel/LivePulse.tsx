@@ -116,9 +116,9 @@ export function LivePulse({
 }) {
   const total = info.official + info.travellers;
   const parts = [
-    info.official ? `${info.official} info${info.official > 1 ? "s" : ""} BledWay` : "",
+    info.official ? tr("ui.livePulse.infoBledway", { official: info.official, v: info.official > 1 ? "s" : "" }) : "",
     info.travellers
-      ? `${info.travellers} signalement${info.travellers > 1 ? "s" : ""} voyageur${info.travellers > 1 ? "s" : ""}`
+      ? tr("ui.livePulse.signalementVoyageur", { travellers: info.travellers, v: info.travellers > 1 ? "s" : "", v2: info.travellers > 1 ? "s" : "" })
       : "",
   ].filter(Boolean);
   const urgent = info.headlines.some((item) => item.tone === "alert");
@@ -128,7 +128,7 @@ export function LivePulse({
         type="button"
         className="bw-pulse__main"
         onClick={onOpen}
-        aria-label={total ? `Voir ${parts.join(" et ")}` : tr("ui.livePulse.voirLesInfosEnDirect")}
+        aria-label={total ? tr("ui.livePulse.voir", { v: parts.join(" et ") }) : tr("ui.livePulse.voirLesInfosEnDirect")}
       >
         <span className="bw-pulse__icon" aria-hidden>
           <Megaphone size={17} />

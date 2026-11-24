@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { tr } from "@/lib/i18n/translate";
 
 const portSchema = z.object({
   id: z.string().uuid(),

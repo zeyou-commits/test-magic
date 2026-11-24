@@ -1,5 +1,6 @@
 import type { IllustrationSlot } from "./catalog";
 import { CutoutError, cutOut, subjectBox } from "./cutout";
+import { tr } from "@/lib/i18n/translate";
 
 const WORK_SIDE = 1024;
 
@@ -58,7 +59,7 @@ export async function cutIllustration(
   try {
     bitmap = await createImageBitmap(file);
   } catch {
-    throw new CutoutError("Fichier illisible : enregistrez-le en PNG ou JPG, puis réessayez.");
+    throw new CutoutError(tr("ui.libIllustrationsPrepare.fichierIllisibleEnregistrezLeEn"));
   }
   const scale = Math.min(1, WORK_SIDE / Math.max(bitmap.width, bitmap.height));
   const work = newCanvas(Math.round(bitmap.width * scale), Math.round(bitmap.height * scale));
@@ -75,7 +76,7 @@ export async function cutIllustration(
       ...cutOut(pixels.data, work.width, work.height, { handles: slot.category !== "avatars" }),
     );
     const found = subjectBox(pixels.data, work.width, work.height);
-    if (!found) throw new CutoutError("L'image est vide une fois le fond enlevé.");
+    if (!found) throw new CutoutError(tr("ui.libIllustrationsPrepare.lImageEstVideUne"));
     box = found;
     context.putImageData(pixels, 0, 0);
     if (
@@ -131,6 +132,6 @@ export async function frameIllustration(
   const blob = await new Promise<Blob | null>((resolve) =>
     output.toBlob(resolve, "image/webp", 0.88),
   );
-  if (!blob) throw new CutoutError("Conversion impossible sur ce navigateur.");
+  if (!blob) throw new CutoutError(tr("ui.libIllustrationsPrepare.conversionImpossibleSurCeNavigateur"));
   return { blob, url: URL.createObjectURL(blob), alerts };
 }

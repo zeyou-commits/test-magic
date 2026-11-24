@@ -5,6 +5,7 @@
 // celle imprimée sur son billet.
 
 import type { Port, RouteLine } from "./types";
+import { tr } from "@/lib/i18n/translate";
 
 const COUNTRY_TIME_ZONES: Record<string, string> = {
   DZ: "Africa/Algiers",
@@ -128,17 +129,17 @@ export function wallTimeInZone(value: string | Date, timeZone: string): string {
 }
 
 const CITY_BY_ZONE: Record<string, string> = {
-  "Africa/Algiers": "d'Alger",
-  "Europe/Paris": "de Paris",
-  "Europe/Madrid": "de Madrid",
-  "Europe/Rome": "de Rome",
-  "Europe/Lisbon": "de Lisbonne",
-  "Africa/Tunis": "de Tunis",
-  "Africa/Casablanca": "de Casablanca",
+  get "Africa/Algiers"() { return tr("ui.libFerryTime.dAlger"); },
+  get "Europe/Paris"() { return tr("ui.libFerryTime.deParis"); },
+  get "Europe/Madrid"() { return tr("ui.libFerryTime.deMadrid"); },
+  get "Europe/Rome"() { return tr("ui.libFerryTime.deRome"); },
+  get "Europe/Lisbon"() { return tr("ui.libFerryTime.deLisbonne"); },
+  get "Africa/Tunis"() { return tr("ui.libFerryTime.deTunis"); },
+  get "Africa/Casablanca"() { return tr("ui.libFerryTime.deCasablanca"); },
 };
 
 /** Libellé court : « heure de Paris », « heure d'Alger »… */
 export function zoneLabel(timeZone: string): string {
   const city = CITY_BY_ZONE[timeZone];
-  return city ? `heure ${city}` : "heure locale";
+  return city ? tr("ui.libFerryTime.heureCity", { city }) : tr("ui.libFerryTime.heureLocale");
 }

@@ -15,6 +15,7 @@ import {
   type ReferenceKey,
   type ReferenceSummary,
 } from "./sources";
+import { tr } from "@/lib/i18n/translate";
 
 /** Le relevé (vacances, consulats) : relancé par l'admin, comparé, puis approuvé. */
 
@@ -32,8 +33,8 @@ export interface ReferenceStatus {
 }
 
 const LABELS: Record<ReferenceKey, string> = {
-  vacances: "Vacances scolaires (France et Europe)",
-  consulats: "Consulats d'Algérie en Europe",
+  get vacances() { return tr("ui.libReferenceReferenceFunctions.vacancesScolairesFranceEtEurope"); },
+  get consulats() { return tr("ui.libReferenceReferenceFunctions.consulatsDAlgerieEnEurope"); },
 };
 
 async function admin(userId: string) {

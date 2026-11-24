@@ -94,8 +94,8 @@ function NoticeList({ userId, notices }: { userId: string; notices: Notice[] }) 
   }
   if (!notices.length)
     return (
-      <Bw504Note className="my-3" title="Rien de nouveau pour l'instant">
-        Les nouvelles des traversées que tu suis arriveront ici.
+      <Bw504Note className="my-3" title={tr("ui.flashCenter.rienDeNouveauPourL")}>
+        {tr("ui.flashCenter.lesNouvellesDesTraverseesQue")}
       </Bw504Note>
     );
   // Une alerte non lue passe devant le reste ; sinon, du plus récent au plus ancien.
@@ -265,7 +265,7 @@ export function HeaderInbox() {
       type="button"
       className="bw-icon-button bw-flash-bell"
       data-alert={hasAlert || undefined}
-      aria-label={`Flash info et notifications${hasAlert ? " : alerte grave en cours" : ""}${count ? ` : ${count} nouvelle${count > 1 ? "s" : ""}` : ""}`}
+      aria-label={tr("ui.flashCenter.flashInfoEtNotifications", { v: hasAlert ? " : alerte grave en cours" : "", v2: count ? ` : ${count} nouvelle${count > 1 ? "s" : ""}` : "" })}
       onClick={isMobile ? () => onOpenChange(true) : undefined}
     >
       <Bell size={20} aria-hidden />

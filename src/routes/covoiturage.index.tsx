@@ -9,12 +9,12 @@ import {
 } from "@/components/editorial/Editorial";
 import { carpoolPlaces } from "@/content/carpool";
 import { seoHead } from "@/lib/seo/site";
-import { tr } from "@/lib/i18n";
+import { tr, placeName } from "@/lib/i18n";
 export const Route = createFileRoute("/covoiturage/")({
   head: () =>
     seoHead(
-      "Aires de covoiturage sur la route des ports | BledWay",
-      "Grans–Salon, Avignon Nord, Gallargues et Narbonne : des points documentés pour organiser un rendez-vous sur la route d'un ferry vers l'Algérie.",
+      tr("ui.pageCovoiturageIndex.airesDeCovoiturageSurLa2"),
+      tr("ui.pageCovoiturageIndex.gransSalonAvignonNordGallargues"),
       "/covoiturage",
     ),
   component: Carpool,
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/covoiturage/")({
 function Carpool() {
   return (
     <SiteLayout>
-      <Breadcrumbs items={[{ name: "Covoiturage", path: "/covoiturage" }]} />
+      <Breadcrumbs items={[{ name: tr("ui.pageCovoiturageIndex.covoiturage"), path: "/covoiturage" }]} />
       <CollectionSchema
         path="/covoiturage"
         name="Points de covoiturage sur la route des ports"
@@ -45,7 +45,7 @@ function Carpool() {
           >
             <span className="font-display text-xl font-bold text-primary">{p.road}</span>
             <div>
-              <h2 className="font-display text-xl font-bold">{p.name}</h2>
+              <h2 className="font-display text-xl font-bold">{placeName(p.name)}</h2>
               <p className="mt-1 text-sm text-muted-foreground">{p.area}</p>
               <p className="mt-3 text-sm leading-7 text-muted-foreground">{p.relevance}</p>
               <span className="mt-3 inline-block text-sm font-semibold text-primary">

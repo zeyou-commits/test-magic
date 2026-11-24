@@ -235,7 +235,7 @@ export function TravelSignals({
                       {onSite ? (
                         <span className="bw-onsite-chip">
                           <MapPin size={12} aria-hidden />
-                          {onSite === travelers ? tr("ui.travelCommunity.surPlace") : `${onSite} sur place`}
+                          {onSite === travelers ? tr("ui.travelCommunity.surPlace") : tr("ui.travelCommunity.surPlace2", { onSite })}
                         </span>
                       ) : null}
                       {alert.validated ? (
@@ -260,8 +260,8 @@ export function TravelSignals({
                     )}
                     <span>
                       {formatAge(Math.max(0, (Date.now() - Date.parse(alert.created_at)) / 60_000))}
-                      {travelers > 1 ? ` · ${travelers} voyageurs` : ""}
-                      {alert.denials ? ` · ${alert.denials} « plus le cas »` : ""}
+                      {travelers > 1 ? tr("ui.travelCommunity.voyageurs", { travelers }) : ""}
+                      {alert.denials ? tr("ui.travelCommunity.plusLeCas2", { denials: alert.denials }) : ""}
                     </span>
                   </small>
                   <PhotoStrip photos={reportPhotos?.get(alert.id)} label={tr("ui.travelCommunity.photoDuSignalement")} />
@@ -479,7 +479,7 @@ export function VesselReviews({
                 {new Date(review.created_at).toLocaleDateString(intlLocale())}
               </time>
             </div>
-            <p className="bw-review-stars" aria-label={`${review.score} sur 5`}>
+            <p className="bw-review-stars" aria-label={tr("ui.travelCommunity.sur5", { score: review.score })}>
               {[1, 2, 3, 4, 5].map((n) => (
                 <Star
                   key={n}
@@ -551,7 +551,7 @@ function VesselReviewForm({
                 value={n}
                 checked={score === n}
                 onChange={() => setScore(n)}
-                aria-label={`${n} sur 5`}
+                aria-label={tr("ui.travelCommunity.sur52", { n })}
               />
               <Star size={25} fill={n <= score ? "currentColor" : "none"} aria-hidden />
             </label>

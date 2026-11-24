@@ -1,4 +1,5 @@
 // Inviter au salon dans l'appli quand le voyage change d'état : une seule fenêtre par état.
+import { tr, lazyConst } from "@/lib/i18n/translate";
 const HOUR = 3_600_000;
 /** Passé ce délai après l'arrêt à quai, plus personne n'attend dans le port. */
 const DOCKED_WINDOW = 8 * HOUR;
@@ -29,29 +30,29 @@ export function voyageStage(input: {
   return now >= start - SOON_BEFORE ? "soon" : null;
 }
 
-const STAGE_TEXT: Record<VoyageStage, { title: string; body: string; examples: string[] }> = {
+const STAGE_TEXT: Record<VoyageStage, { title: string; body: string; examples: string[] }> = lazyConst(() => ({
   soon: {
-    title: "Le salon de votre traversée est ouvert",
-    body: "Faites connaissance avec ceux qui partent avec vous et posez vos questions.",
-    examples: ["Qui voyage avec un fourgon ?", "Vous arrivez à quelle heure au port ?"],
+    get title() { return tr("ui.libFerryRoomInvites.leSalonDeVotreTraversee"); },
+    get body() { return tr("ui.libFerryRoomInvites.faitesConnaissanceAvecCeuxQui"); },
+    examples: [tr("ui.libFerryRoomInvites.quiVoyageAvecUnFourgon"), tr("ui.libFerryRoomInvites.vousArrivezAQuelleHeure")],
   },
   boarding: {
-    title: "L’embarquement approche",
-    body: "Dites aux autres passagers comment ça se passe, en un mot.",
-    examples: ["La file avance ?", "L’embarquement a commencé ?"],
+    get title() { return tr("ui.libFerryRoomInvites.lEmbarquementApproche"); },
+    get body() { return tr("ui.libFerryRoomInvites.ditesAuxAutresPassagersComment"); },
+    examples: [tr("ui.libFerryRoomInvites.laFileAvance"), tr("ui.libFerryRoomInvites.lEmbarquementACommence")],
   },
   sea: {
     // Être en mer ne se suppose pas : la fenêtre demande d'abord « à bord ? » (RoomInvite).
-    title: "Le navire a pris la mer",
-    body: "Échangez avec les autres passagers pendant la traversée.",
-    examples: ["Le restaurant est ouvert ?", "La mer bouge de votre côté ?"],
+    get title() { return tr("ui.libFerryRoomInvites.leNavireAPrisLa"); },
+    get body() { return tr("ui.libFerryRoomInvites.echangezAvecLesAutresPassagers"); },
+    examples: [tr("ui.libFerryRoomInvites.leRestaurantEstOuvert"), tr("ui.libFerryRoomInvites.laMerBougeDeVotre")],
   },
   docked: {
-    title: "Le bateau est à quai",
-    body: "Partagez où vous en êtes : ça aide ceux qui attendent encore.",
-    examples: ["On descend quand ?", "La douane, ça avance ?"],
+    get title() { return tr("ui.libFerryRoomInvites.leBateauEstAQuai"); },
+    get body() { return tr("ui.libFerryRoomInvites.partagezOuVousEnEtes"); },
+    examples: [tr("ui.libFerryRoomInvites.onDescendQuand"), tr("ui.libFerryRoomInvites.laDouaneCaAvance")],
   },
-};
+}));
 
 export const stageInvite = (stage: VoyageStage) => STAGE_TEXT[stage];
 
@@ -60,7 +61,7 @@ export const activeWave = (othersMessages: number) =>
   ACTIVE_WAVES.filter((threshold) => othersMessages >= threshold).length;
 
 export const activeInvite = (count: number) => ({
-  title: "Ça discute dans le salon",
+  title: tr("ui.libFerryRoomInvites.caDiscuteDansLeSalon"),
   body: `${count} messages des autres voyageurs : venez lire et partager.`,
   examples: [] as string[],
 });

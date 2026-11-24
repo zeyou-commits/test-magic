@@ -23,7 +23,7 @@ import { searchCatalog, type CatalogResult } from "@/lib/ferry/catalogSearch";
 import type { FleetShip } from "@/lib/ferry/fleet";
 import { useMyTrip } from "@/lib/ferry/myTrip";
 import type { RouteLine, Selection } from "@/lib/ferry/types";
-import { useT, type MessageKey } from "@/lib/i18n";
+import { useT, type MessageKey, tr } from "@/lib/i18n";
 import { canAutoFocus, keepKeyboardClosedOnTouch } from "@/lib/utils";
 import { Bw504Button, Bw504Note } from "@/components/companion/Bw504Note";
 import { closeMatches } from "@/lib/companion/reasons";
@@ -233,7 +233,7 @@ export function MapSearch({
                       tone="stuck"
                       title={
                         close.length
-                          ? `Je le trouve pas… c'est ${close[0]} ?`
+                          ? tr("ui.mapSearch.jeLeTrouvePasC", { v: close[0] })
                           : t("map.search.noMatch", { term: term.trim() })
                       }
                       actions={close.map((name, index) => (
@@ -242,7 +242,7 @@ export function MapSearch({
                         </Bw504Button>
                       ))}
                     >
-                      Tape le nom du navire, de la compagnie ou d'un port : je te montre les navires.
+                      {tr("ui.mapSearch.tapeLeNomDuNavire")}
                     </Bw504Note>
                   );
                 })()}

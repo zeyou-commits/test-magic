@@ -21,8 +21,7 @@ import { tr } from "@/lib/i18n";
 
 /** Ce que l'on perd en ne suivant plus : dit avant, pas après. */
 const UNFOLLOW_TEXT = {
-  departure:
-    "Vous ne recevrez plus les changements d’horaire, les annulations ni les nouvelles du navire pour cette traversée. Si c’est votre voyage, il disparaît de « Ma traversée » avec ses préparatifs.",
+  get departure() { return tr("ui.followButton.vousNeRecevrezPlusLes"); },
   vessel: "Vous ne recevrez plus les alertes ni les nouvelles de ce navire.",
   company: "Vous ne recevrez plus les actualités de cette compagnie.",
 } as const;
@@ -72,7 +71,7 @@ export function FollowButton({
     setMessage("");
     if (demo) {
       setMessage(
-        "Ce navire de démonstration ne déclenche aucune notification. Choisissez un navire publié pour le suivre.",
+        tr("ui.followButton.ceNavireDeDemonstrationNe"),
       );
       return;
     }
@@ -81,7 +80,7 @@ export function FollowButton({
         type: "follow",
         kind,
         targetId,
-        label: label ?? (kind === "vessel" ? "Votre navire" : kind === "company" ? "Cette compagnie" : "Votre traversée"),
+        label: label ?? (kind === "vessel" ? tr("ui.followButton.votreNavire") : kind === "company" ? tr("ui.followButton.cetteCompagnie2") : tr("ui.followButton.votreTraversee")),
         // Suivre une compagnie ne crée aucun voyage : pas de question « vous voyagez ? ».
         ...(kind === "company" ? { traveller: false, purpose: "curieux" as const } : {}),
       });
@@ -105,7 +104,7 @@ export function FollowButton({
         queryClient.invalidateQueries({ queryKey: ["my-follows", user.id] }),
       ]);
     } catch {
-      setMessage("Le suivi n’a pas pu être mis à jour. Réessayez.");
+      setMessage(tr("ui.followButton.leSuiviNAPas"));
     } finally {
       setBusy(false);
     }
@@ -122,7 +121,7 @@ export function FollowButton({
         aria-pressed={Boolean(follow?.active)}
         aria-label={
           iconOnly
-            ? `${follow?.active ? "Ne plus suivre" : "Suivre"} ${label ?? (kind === "vessel" ? "ce navire" : kind === "company" ? "cette compagnie" : "cette traversée")}`
+            ? `${follow?.active ? tr("ui.followButton.nePlusSuivre2") : tr("ui.followButton.suivre")} ${label ?? (kind === "vessel" ? tr("ui.followButton.ceBateau") : kind === "company" ? tr("ui.followButton.cetteCompagnie") : tr("ui.followButton.cetteTraversee"))}`
             : undefined
         }
         title={iconOnly ? (follow?.active ? tr("ui.followButton.suiviActive") : kind === "company" ? tr("ui.followButton.suivreCetteCompagnie") : kind === "departure" ? tr("ui.followButton.suivreCetteTraversee") : tr("ui.followButton.suivreCeBateau")) : undefined}

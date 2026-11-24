@@ -129,7 +129,7 @@ export function ImportBudget() {
             <p className="mt-4 text-sm">
               {result.total === null
                 ? tr("ui.importBudget.ceSousTotalExclutLes")
-                : `Conversion saisie : 1 € = ${values.rate} DZD. Les frais non saisis restent exclus. Il s'agit d'un budget personnel, pas d'une liquidation douanière.`}
+                : tr("ui.importBudget.conversionSaisie1DzdLes", { rate: values.rate })}
             </p>
           </ResultPanel>
         ) : (

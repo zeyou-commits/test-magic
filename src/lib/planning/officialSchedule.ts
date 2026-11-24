@@ -1,3 +1,4 @@
+import { lazyDateFormat } from "@/lib/i18n";
 // Vérification du planning BledWay contre les sources officielles (compagnies, ports).
 // Code pur, sans accès réseau ni base : la fonction Supabase « schedule-check » lit les pages,
 // la base, puis appelle compareSchedule() et portArrivals(). Rien n'est écrit sans validation :
@@ -105,7 +106,7 @@ function offsetMinutes(instant: number, zone: string): number {
 
 /** Heure UTC → « 05/11 à 15:00 » dans le fuseau du port. */
 export function localLabel(iso: string, zone: string): string {
-  return new Intl.DateTimeFormat("fr-FR", {
+  return lazyDateFormat({
     timeZone: zone,
     day: "2-digit",
     month: "2-digit",

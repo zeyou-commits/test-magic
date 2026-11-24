@@ -1,4 +1,5 @@
 import { Toaster as Sonner } from "sonner";
+import { tr } from "@/lib/i18n";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
@@ -6,6 +7,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       className="toaster group"
+      containerAriaLabel={tr("ui.libMapLocale.notifications")}
       toastOptions={{
         classNames: {
           toast:

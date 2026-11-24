@@ -19,8 +19,8 @@ const PATH = "/papiers-voyage-algerie";
 export const Route = createFileRoute("/papiers-voyage-algerie")({
   head: () =>
     seoHead(
-      "Papiers pour voyager en Algérie : visa, enfants, consulat | BledWay",
-      "Visa, binationaux, conjoint étranger, autorisation paternelle, livret de famille, service national et consulat compétent : votre liste de papiers, voyageur par voyageur, avec les sources officielles.",
+      tr("ui.pagePapiersVoyageAlgerie.papiersPourVoyagerEnAlgerie"),
+      tr("ui.pagePapiersVoyageAlgerie.visaBinationauxConjointEtrangerAutorisation"),
       PATH,
     ),
   component: PapersPage,
@@ -28,33 +28,33 @@ export const Route = createFileRoute("/papiers-voyage-algerie")({
 
 const faq = [
   {
-    q: "Faut-il un visa pour aller en Algérie avec un passeport français ?",
-    a: "Oui, si vous n'avez pas la nationalité algérienne. Le visa se demande avant le départ, au consulat d'Algérie de votre lieu de résidence, sur rendez-vous. L'ambassade annonce un délai habituel de 1 à 14 jours.",
+    get q() { return tr("ui.pagePapiersVoyageAlgerie.fautIlUnVisaPour"); },
+    get a() { return tr("ui.pagePapiersVoyageAlgerie.ouiSiVousNAvez"); },
   },
   {
-    q: "Binational, puis-je entrer sans passeport algérien ?",
-    a: "Jusqu'au 31 décembre 2026, oui, sans visa, avec un passeport étranger valide et votre carte d'identité biométrique algérienne (même expirée) ou, à défaut, votre passeport biométrique algérien expiré. Les mêmes documents sont demandés à la sortie. Sans aucun document algérien, il faut un visa.",
+    get q() { return tr("ui.pagePapiersVoyageAlgerie.binationalPuisJeEntrerSans"); },
+    get a() { return tr("ui.pagePapiersVoyageAlgerie.jusquAu31Decembre2026"); },
   },
   {
-    q: "Mon conjoint n'est pas algérien : que faut-il ?",
-    a: "Un visa familial. Le consulat demande l'acte de mariage transcrit à l'état civil algérien et la preuve de votre nationalité algérienne. Faites transcrire le mariage en premier : aucun délai n'est publié.",
+    get q() { return tr("ui.pagePapiersVoyageAlgerie.monConjointNEstPas"); },
+    get a() { return tr("ui.pagePapiersVoyageAlgerie.unVisaFamilialLeConsulat"); },
   },
   {
-    q: "Mon enfant algérien part avec sa mère, sans son père : que faut-il ?",
-    a: "Une autorisation paternelle de sortie, faite au consulat et valable 3 mois. Si les parents sont séparés ou divorcés et que la mère a la garde, l'enfant en est dispensé : emportez le jugement de garde. Côté France, aucune autorisation de sortie n'est demandée quand l'enfant voyage avec l'un de ses parents.",
+    get q() { return tr("ui.pagePapiersVoyageAlgerie.monEnfantAlgerienPartAvec"); },
+    get a() { return tr("ui.pagePapiersVoyageAlgerie.uneAutorisationPaternelleDeSortie"); },
   },
   {
-    q: "Faut-il prendre le livret de famille ?",
-    a: "Oui, dès qu'un enfant voyage. En France, il ne peut pas être exigé à la sortie, mais le consulat d'Algérie le demande, et pour un enfant binational de 15 ans ou moins sans papier algérien, il sert de document d'entrée jusqu'au 31 décembre 2026.",
+    get q() { return tr("ui.pagePapiersVoyageAlgerie.fautIlPrendreLeLivret"); },
+    get a() { return tr("ui.pagePapiersVoyageAlgerie.ouiDesQuUnEnfant"); },
   },
   {
-    q: "Faut-il se déclarer à la police quand on loge en famille ?",
-    a: "Aucune source officielle consultée ne le prévoit pour un Algérien. Pour les étrangers, la fiche française indique de se signaler au bureau des étrangers de la wilaya de résidence, sans dire si cela vaut pour un court séjour chez des proches : demandez au consulat.",
-    note: "Point non tranché par les sources officielles : BledWay ne l'affirme pas.",
+    get q() { return tr("ui.pagePapiersVoyageAlgerie.fautIlSeDeclarerA"); },
+    get a() { return tr("ui.pagePapiersVoyageAlgerie.aucuneSourceOfficielleConsulteeNe"); },
+    get note() { return tr("ui.pagePapiersVoyageAlgerie.pointNonTrancheParLes"); },
   },
   {
-    q: "Un couple peut-il partager une chambre d'hôtel ?",
-    a: "Certains hôtels demandent à un couple non marié de prendre deux chambres. Les couples mariés emportent un extrait d'acte de mariage.",
+    get q() { return tr("ui.pagePapiersVoyageAlgerie.unCouplePeutIlPartager"); },
+    get a() { return tr("ui.pagePapiersVoyageAlgerie.certainsHotelsDemandentAUn"); },
   },
 ];
 
@@ -69,7 +69,7 @@ function PapersPage() {
 
   return (
     <SiteLayout>
-      <Breadcrumbs items={[{ name: "Mes papiers", path: PATH }]} />
+      <Breadcrumbs items={[{ name: tr("ui.pagePapiersVoyageAlgerie.mesPapiers"), path: PATH }]} />
       <div ref={top} className="scroll-mt-24" />
       {state.finished ? (
         <PapersResult

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { portTimeZone } from "@/lib/ferry/time";
+import { tr } from "@/lib/i18n/translate";
 
 const db = typedSupabase as unknown as SupabaseClient;
 

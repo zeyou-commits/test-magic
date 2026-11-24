@@ -5,6 +5,7 @@ import type { VehicleKind } from "@/components/panel/TripProfile";
 import type { Carnet } from "./carnet";
 import type { Chemin } from "./porteAPorte";
 import { PLACE_NAME, type Port } from "./trajets";
+import { intlLocale } from "@/lib/i18n";
 
 /**
  * « Combien ça coûte ? » pour une route du bled, seulement sur demande : la traversée (prix moyens
@@ -89,4 +90,4 @@ export function coutRoute(c: Chemin, k: Carnet, r: Reglages, now = new Date()): 
 
 /** Arrondi lisible : à la dizaine sous 200 €, sinon à la cinquantaine. */
 export const euros = (n: number) =>
-  `${(n < 200 ? Math.round(n / 10) * 10 : Math.round(n / 50) * 50).toLocaleString("fr-FR")}${String.fromCharCode(160)}€`;
+  `${(n < 200 ? Math.round(n / 10) * 10 : Math.round(n / 50) * 50).toLocaleString(intlLocale())}${String.fromCharCode(160)}€`;

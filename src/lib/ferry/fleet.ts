@@ -17,6 +17,7 @@ import {
   type LiveShip,
 } from "./tracking";
 import type { Departure, Port, RouteLine, Vessel } from "./types";
+import { tr } from "@/lib/i18n/translate";
 
 export interface FleetShip {
   id: string;
@@ -165,7 +166,7 @@ export function buildFleet(
   groups.forEach((legs, key) => {
     legs.sort((a, b) => a.start - b.start);
     const vessel = key.startsWith("anon:") ? undefined : vesselById.get(key);
-    const name = vessel?.name ?? "Navire non identifié";
+    const name = vessel?.name ?? tr("ui.libFerryFleet.navireNonIdentifie");
     const live = vessel ? liveByVessel.get(vessel.id) : undefined;
 
     // Signal AIS récent : la position réelle prime sur l'horaire (en mer ou à quai).

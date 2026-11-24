@@ -55,25 +55,25 @@ export function tripPhase(trip: MyTrip, now: number) {
   const start = reportedCrossing(trip.departure, now).start;
   const end = tripEnd(trip.departure);
   if (trip.departure.status === "cancelled")
-    return { phase: "cancelled" as const, text: "Traversée annulée" };
+    return { phase: "cancelled" as const, text: tr("ui.myTripHero.traverseeAnnulee") };
   if (now < start) {
     const seconds = Math.floor((start - now) / 1000);
     const days = Math.floor(seconds / 86_400);
     const hours = Math.floor((seconds % 86_400) / 3_600);
     const minutes = Math.floor((seconds % 3_600) / 60);
     return days >= 1
-      ? { phase: "before" as const, text: `Départ dans ${days} j ${pad(hours)} h`, countdown: null }
+      ? { phase: "before" as const, text: tr("ui.myTripHero.departDansJH", { days, pad: pad(hours) }), countdown: null }
       : {
           phase: "today" as const,
-          text: "Départ dans",
+          text: tr("ui.myTripHero.departDans"),
           countdown: `${pad(hours)} : ${pad(minutes)} : ${pad(seconds % 60)}`,
         };
   }
   if (now < end) {
     const progress = Math.min(1, Math.max(0, (now - start) / (end - start)));
-    return { phase: "sea" as const, text: "En mer", progress };
+    return { phase: "sea" as const, text: tr("ui.myTripHero.enMer"), progress };
   }
-  return { phase: "arrived" as const, text: "Bien arrivés !" };
+  return { phase: "arrived" as const, text: tr("ui.myTripHero.bienArrives") };
 }
 
 /**
@@ -174,18 +174,18 @@ export function MyTripHero({
         ? (steps.find((step) => step.id === "arrived") ?? steps[0]!).image
         : steps[0]!.image);
   const next = held
-    ? "Contactez la compagnie avant de partir et consultez les informations à jour"
+    ? tr("ui.myTripHero.contactezLaCompagnieAvantDe")
     : phase.phase === "cancelled"
-      ? "Voir les autres départs et les informations de la compagnie"
+      ? tr("ui.myTripHero.voirLesAutresDepartsEt")
       : phase.phase === "before"
-        ? "Préparer ma traversée : papiers, horaires, heure de présentation"
+        ? tr("ui.myTripHero.preparerMaTraverseePapiersHoraires")
         : phase.phase === "today"
-          ? `Rejoindre le port${trip.from ? ` ${/^[aeiouyhâéèêîôûAEIOUYHÂÉÈÊÎÔÛ]/.test(trip.from.name) ? "d’" : "de "}${trip.from.name}` : ""} et dire « Au port »`
+          ? tr("ui.myTripHero.rejoindreLePortEtDire", { v: trip.from ? ` ${/^[aeiouyhâéèêîôûAEIOUYHÂÉÈÊÎÔÛ]/.test(trip.from.name) ? "d’" : "de "}${trip.from.name}` : "" })
           : phase.phase === "sea"
-            ? "Suivre le navire et l’arrivée estimée"
+            ? tr("ui.myTripHero.suivreLeNavireEtL")
             : arrivedForSure
-              ? "Partager l’arrivée avec ses proches"
-              : "Vous êtes arrivés ? Dites-le aux autres voyageurs";
+              ? tr("ui.myTripHero.partagerLArriveeAvecSes")
+              : tr("ui.myTripHero.vousEtesArrivesDitesLe");
   return (
     <section
       className="bw-mytrip-hero"
@@ -275,7 +275,7 @@ export function MyTripHero({
             <div
               className="bw-mytrip-hero__sea"
               data-level={seaLevel(seaPeak).id}
-              aria-label={`${seaLevel(seaPeak).label} prévue`}
+              aria-label={tr("ui.myTripHero.prevue", { label: seaLevel(seaPeak).label })}
             >
               <SeaIcon peak={seaPeak} size={18} />
               <b>{seaHeight(seaPeak)}</b>
@@ -306,7 +306,7 @@ export function MyTripHero({
                     className="bw-mytrip-hero__sea"
                     data-compact
                     data-level={seaLevel(seaPeak).id}
-                    aria-label={`${seaLevel(seaPeak).label} prévue sur le reste du trajet`}
+                    aria-label={tr("ui.myTripHero.prevueSurLeResteDu", { label: seaLevel(seaPeak).label })}
                   >
                     <SeaIcon peak={seaPeak} size={16} />
                     <b>{seaHeight(seaPeak)}</b>
@@ -315,7 +315,7 @@ export function MyTripHero({
                 <strong>
                   {waiting
                     ? phase.phase === "today"
-                      ? `Départ dans ${phase.countdown}`
+                      ? tr("ui.myTripHero.departDans2", { countdown: phase.countdown })
                       : phase.text
                     : `${estimated ? "≈ " : ""}${percent} %`}
                 </strong>
@@ -440,25 +440,25 @@ export function MyTripHero({
         <Bw504Note
           tone="win"
           className="mt-3"
-          title={trip.to?.country_code === "DZ" ? "Pouet pouet ! Bien arrivés au bled 🎉" : "Pouet pouet ! Bien rentrés 🎉"}
+          title={trip.to?.country_code === "DZ" ? tr("ui.myTripHero.pouetPouetBienArrivesAu") : tr("ui.myTripHero.pouetPouetBienRentres")}
           actions={
             trip.to?.country_code === "DZ" ? (
               <Bw504Button primary onClick={() => window.location.assign("/preparer-mon-voyage")}>
-                Préparer le retour
+                {tr("ui.myTripHero.preparerLeRetour")}
               </Bw504Button>
             ) : undefined
           }
         >
-          {`${trip.vessel?.name ?? "Le navire"} est à quai à ${trip.to?.name ?? "l'arrivée"}.`}
-          {trip.to?.country_code === "DZ" ? " Bonnes vacances, tonton." : " Bon retour à la maison."}
+          {tr("ui.myTripHero.estAQuaiA", { v: trip.vessel?.name ?? "Le navire", v2: trip.to?.name ?? "l'arrivée" })}
+          {trip.to?.country_code === "DZ" ? tr("ui.myTripHero.bonnesVacancesTonton") : tr("ui.myTripHero.bonRetourALaMaison")}
         </Bw504Note>
       ) : tracking && progress?.trust === "aged" && progress.scene === "sea" && progress.signalAgeMinutes != null ? (
         <Bw504Note
           tone="stuck"
           className="mt-3"
-          title={`Le navire ne donne plus sa position depuis ${formatAge(progress.signalAgeMinutes).replace(/^il y a /, "")}`}
+          title={tr("ui.myTripHero.leNavireNeDonnePlus", { v: formatAge(progress.signalAgeMinutes).replace(/^il y a /, "") })}
         >
-          C'est normal au large, loin des antennes. En attendant, j'estime sa route d'après l'horaire.
+          {tr("ui.myTripHero.cEstNormalAuLarge")}
         </Bw504Note>
       ) : null}
       {closingIn !== null ? (
@@ -508,7 +508,7 @@ export function MyTripMapChip({
           {alert && phase.phase !== "cancelled"
             ? tr("ui.myTripHero.departAConfirmer2")
             : phase.phase === "today"
-              ? `Départ dans ${phase.countdown}`
+              ? tr("ui.myTripHero.departDans2", { countdown: phase.countdown })
               : phase.text}
         </strong>
       </span>

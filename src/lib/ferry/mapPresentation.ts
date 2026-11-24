@@ -3,6 +3,7 @@ import type { Departure, Port, RouteLine, Schedule } from "./types";
 import type { FleetShip } from "./fleet";
 import { dateKeyInZone, portTimeZone, zonedTimeToUtc } from "./time";
 import { runsOn } from "./recurrence";
+import { tr } from "@/lib/i18n/translate";
 
 export type LineVisibility = "published" | "all" | "none" | "ports";
 export type MapPreview = {
@@ -138,18 +139,18 @@ export function fleetShortcutInfo(
     : null;
   const delay =
     minutes === null
-      ? "Aucun départ publié pour le moment"
+      ? tr("ui.libFerryMapPresentation.aucunDepartPubliePourLe")
       : late
-        ? "En retard · départ non constaté"
+        ? tr("ui.libFerryMapPresentation.enRetardDepartNonConstate")
         : minutes < 60
-          ? `Départ prévu dans ${minutes} min`
+          ? tr("ui.libFerryMapPresentation.departPrevuDansMin", { minutes })
           : minutes >= 48 * 60
-            ? `Départ prévu dans ${Math.floor(minutes / 1440)} j${Math.floor((minutes % 1440) / 60) ? ` ${Math.floor((minutes % 1440) / 60)} h` : ""}`
-            : `Départ prévu dans ${Math.floor(minutes / 60)} h${minutes % 60 ? ` ${minutes % 60}` : ""}`;
+            ? tr("ui.libFerryMapPresentation.departPrevuDansJ", { v: Math.floor(minutes / 1440), v2: Math.floor((minutes % 1440) / 60) ? ` ${Math.floor((minutes % 1440) / 60)} h` : "" })
+            : tr("ui.libFerryMapPresentation.departPrevuDansH", { v: Math.floor(minutes / 60), v2: minutes % 60 ? ` ${minutes % 60}` : "" });
   return {
     route: `${portCode(ship.state === "docked" ? (dock ?? from) : from)} → ${portCode(to)}`,
-    dock: dock?.name ?? from?.name ?? "Port à confirmer",
-    destination: to?.name ?? "Destination à confirmer",
+    dock: dock?.name ?? from?.name ?? tr("ui.libFerryMapPresentation.portAConfirmer"),
+    destination: to?.name ?? tr("ui.libFerryMapPresentation.destinationAConfirmer"),
     status: delay,
     late: Boolean(late),
     portId: dock?.id ?? null,

@@ -159,15 +159,15 @@ import { TripLink, useLinkedTrip, openMyVoyage } from "@/components/prepare/Trip
 import { TripGlance, type GlanceTile } from "@/components/prepare/TripGlance";
 import type { PapersFees } from "@/components/prepare/TripOutlook";
 import { openRoutesDuBled } from "@/lib/routesDuBled/lien";
-import { tr, lazyDateFormat, intlLocale } from "@/lib/i18n";
+import { tr, lazyDateFormat, intlLocale, placeName } from "@/lib/i18n";
 
 const PATH = "/preparer-mon-voyage";
 
 export const Route = createFileRoute("/preparer-mon-voyage")({
   head: () =>
     seoHead(
-      "Préparer son voyage en Algérie pas à pas | BledWay",
-      "Papiers de chacun, voiture, route jusqu'au port, budget de la traversée et réservation : tout le voyage en Algérie préparé sur une seule page, avec les sources officielles.",
+      tr("ui.pagePreparerMonVoyage.preparerSonVoyageEnAlgerie"),
+      tr("ui.pagePreparerMonVoyage.papiersDeChacunVoitureRoute"),
       PATH,
     ),
   component: CompanionPage,
@@ -187,47 +187,45 @@ const stepArt: Record<
 > = {
   profile: {
     icon: CalendarDays,
-    short: "Départ",
-    benefit: "Qui part, avec quelle voiture, et quand.",
+    get short() { return tr("ui.pagePreparerMonVoyage.depart"); },
+    get benefit() { return tr("ui.pagePreparerMonVoyage.quiPartAvecQuelleVoiture"); },
     scene: "/illustrations/voyage/depart-a-laube.webp",
-    sceneAlt: "La famille charge la voiture au petit matin",
+    get sceneAlt() { return tr("ui.pagePreparerMonVoyage.laFamilleChargeLaVoiture"); },
   },
   papers: {
     icon: FileText,
-    short: "Papiers",
-    benefit:
-      "Visa, passeports, enfants : la liste de chacun, et votre consulat, en France ou ailleurs en Europe.",
+    get short() { return tr("ui.pagePreparerMonVoyage.papiers"); },
+    get benefit() { return tr("ui.pagePreparerMonVoyage.visaPasseportsEnfantsLaListe"); },
     scene: "/illustrations/voyage/billets-au-port.webp",
-    sceneAlt: "Au guichet du port, la famille présente ses papiers",
+    get sceneAlt() { return tr("ui.pagePreparerMonVoyage.auGuichetDuPortLa"); },
   },
   car: {
     icon: Car,
-    short: "Voiture",
-    benefit:
-      "Carte grise, assurance, TPD (le titre de passage en douane de la voiture) : rien d'oublié pour la douane.",
+    get short() { return tr("ui.pagePreparerMonVoyage.voiture"); },
+    get benefit() { return tr("ui.pagePreparerMonVoyage.carteGriseAssuranceTpdLe"); },
     scene: "/illustrations/voyage/dernier-sac.webp",
-    sceneAlt: "Le dernier sac entre dans le coffre de la 504",
+    get sceneAlt() { return tr("ui.pagePreparerMonVoyage.leDernierSacEntreDans"); },
   },
   route: {
     icon: RouteIcon,
-    short: "Route",
-    benefit: "Le port le plus proche, et le trajet de porte à porte.",
+    get short() { return tr("ui.pagePreparerMonVoyage.route"); },
+    get benefit() { return tr("ui.pagePreparerMonVoyage.lePortLePlusProche"); },
     scene: "/illustrations/voyage/route-du-soleil.webp",
-    sceneAlt: "Pique-nique sur une aire de l'A7, direction Marseille",
+    get sceneAlt() { return tr("ui.pagePreparerMonVoyage.piqueNiqueSurUneAire"); },
   },
   budget: {
     icon: Wallet,
-    short: "Budget",
-    benefit: "Le prix de la traversée selon la saison, avant de réserver.",
+    get short() { return tr("ui.pagePreparerMonVoyage.budget"); },
+    get benefit() { return tr("ui.pagePreparerMonVoyage.lePrixDeLaTraversee"); },
     scene: "/illustrations/voyage/station-essence.webp",
-    sceneAlt: "Le plein avant la route du port",
+    get sceneAlt() { return tr("ui.pagePreparerMonVoyage.lePleinAvantLaRoute"); },
   },
   book: {
     icon: Ticket,
-    short: "Billet",
-    benefit: "Les traversées de votre date, prêtes à comparer.",
+    get short() { return tr("ui.pagePreparerMonVoyage.billet"); },
+    get benefit() { return tr("ui.pagePreparerMonVoyage.lesTraverseesDeVotreDate"); },
     scene: "/illustrations/voyage/cote-en-vue.webp",
-    sceneAlt: "Sur le pont du ferry, la côte algérienne en vue",
+    get sceneAlt() { return tr("ui.pagePreparerMonVoyage.surLePontDuFerry"); },
   },
 };
 
@@ -280,12 +278,12 @@ function StepFrieze({
           const isLocked = locked(step);
           const Icon = isDone && !current ? Check : stepArt[step].icon;
           const sub = isDone
-            ? "Fait"
+            ? tr("ui.pagePreparerMonVoyage.fait3")
             : isLocked
-              ? "Avec un compte"
+              ? tr("ui.pagePreparerMonVoyage.avecUnCompte")
               : current
-                ? "En cours"
-                : "À faire";
+                ? tr("ui.pagePreparerMonVoyage.enCours")
+                : tr("ui.pagePreparerMonVoyage.aFaire2");
           return (
             <li
               key={step}
@@ -300,7 +298,7 @@ function StepFrieze({
                 type="button"
                 onClick={() => onOpen(step)}
                 aria-current={current ? "step" : undefined}
-                aria-label={`${stepTitles[step]} · ${sub}${isDone && hasRecap(step) ? " · voir le récap" : ""}`}
+                aria-label={`${stepTitles[step]} · ${sub}${isDone && hasRecap(step) ? tr("ui.pagePreparerMonVoyage.voirLeRecap") : ""}`}
               >
                 {current ? <b className="bw-prep-frieze__here">{tr("ui.pagePreparerMonVoyage.ici")}</b> : null}
                 <span className="bw-prep-frieze__dot">
@@ -340,23 +338,23 @@ const chapters: {
   steps: CompanionStep[];
 }[] = [
   {
-    title: "Vous et votre départ",
-    hint: "Quand vous partez, qui part, avec quelle voiture.",
-    headline: "On fait connaissance",
+    get title() { return tr("ui.pagePreparerMonVoyage.vousEtVotreDepart"); },
+    get hint() { return tr("ui.pagePreparerMonVoyage.quandVousPartezQuiPart"); },
+    get headline() { return tr("ui.pagePreparerMonVoyage.onFaitConnaissance"); },
     icon: Users,
     steps: ["profile"],
   },
   {
-    title: "Vos papiers et votre voiture",
-    hint: "La liste de chacun, avec les dates à tenir.",
-    headline: "Maintenant, les papiers de chacun",
+    get title() { return tr("ui.pagePreparerMonVoyage.vosPapiersEtVotreVoiture"); },
+    get hint() { return tr("ui.pagePreparerMonVoyage.laListeDeChacunAvec"); },
+    get headline() { return tr("ui.pagePreparerMonVoyage.maintenantLesPapiersDeChacun"); },
     icon: FileText,
     steps: ["papers"],
   },
   {
-    title: "Votre route, votre budget, votre billet",
-    hint: "Les ports les plus adaptés, le coût, la réservation.",
-    headline: "Dernière étape : la traversée",
+    get title() { return tr("ui.pagePreparerMonVoyage.votreRouteVotreBudgetVotre"); },
+    get hint() { return tr("ui.pagePreparerMonVoyage.lesPortsLesPlusAdaptes"); },
+    get headline() { return tr("ui.pagePreparerMonVoyage.derniereEtapeLaTraversee"); },
     icon: RouteIcon,
     steps: ["route", "budget", "book"],
   },
@@ -424,10 +422,10 @@ const dayName = (key: string) =>
     new Date(`${key}T12:00:00`),
   );
 const shortSeason = {
-  calme: "Basse",
-  intermediaire: "Moyenne",
-  forte: "Haute",
-  pointe: "Pic",
+  get calme() { return tr("ui.pagePreparerMonVoyage.basse"); },
+  get intermediaire() { return tr("ui.pagePreparerMonVoyage.moyenne"); },
+  get forte() { return tr("ui.pagePreparerMonVoyage.haute"); },
+  get pointe() { return tr("ui.pagePreparerMonVoyage.pic"); },
 } as const;
 const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? "s" : ""}`;
 
@@ -737,14 +735,14 @@ function CompanionPage() {
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   };
   const previewRows: PreviewRow[] = [
-    { icon: CalendarDays, label: "Départ", value: summaries.profile, chapter: 0 },
-    { icon: FileText, label: "Papiers", value: summaries.papers, chapter: 1 },
+    { icon: CalendarDays, label: tr("ui.pagePreparerMonVoyage.depart"), value: summaries.profile, chapter: 0 },
+    { icon: FileText, label: tr("ui.pagePreparerMonVoyage.papiers"), value: summaries.papers, chapter: 1 },
     ...(steps.includes("car")
-      ? [{ icon: Car, label: "Voiture", value: summaries.car, chapter: 1 }]
+      ? [{ icon: Car, label: tr("ui.pagePreparerMonVoyage.voiture"), value: summaries.car, chapter: 1 }]
       : []),
-    { icon: RouteIcon, label: "Route", value: summaries.route, chapter: 2 },
-    { icon: Wallet, label: "Budget", value: summaries.budget, chapter: 2 },
-    { icon: Ticket, label: "Billet", value: summaries.book, chapter: 2 },
+    { icon: RouteIcon, label: tr("ui.pagePreparerMonVoyage.route"), value: summaries.route, chapter: 2 },
+    { icon: Wallet, label: tr("ui.pagePreparerMonVoyage.budget"), value: summaries.budget, chapter: 2 },
+    { icon: Ticket, label: tr("ui.pagePreparerMonVoyage.billet"), value: summaries.book, chapter: 2 },
   ];
   return (
     <SiteLayout>
@@ -772,7 +770,7 @@ function CompanionPage() {
       {/* Sur téléphone, la première question doit se voir tout de suite : fil d'Ariane masqué
           (gardé pour les moteurs), titre et avancement sur une seule ligne. */}
       <div className="hidden md:block">
-        <Breadcrumbs items={[{ name: "Préparer mon voyage", path: PATH }]} />
+        <Breadcrumbs items={[{ name: tr("ui.pagePreparerMonVoyage.preparerMonVoyage"), path: PATH }]} />
       </div>
       <EmbeddedPapers.Provider value>
         <div
@@ -869,7 +867,7 @@ function CompanionPage() {
                               title={stepTitles[step]}
                               summary={
                                 isEmpty(step) && plan.done.includes(step)
-                                  ? "À compléter : choisissez vos ports"
+                                  ? tr("ui.pagePreparerMonVoyage.aCompleterChoisissezVosPorts")
                                   : summaries[step]
                               }
                               done={isDone(step)}
@@ -979,27 +977,27 @@ function useSummaries(
       [plural(adults, "adulte"), children ? plural(children, "enfant") : null]
         .filter(Boolean)
         .join(", "),
-      plan.vehicle === "none" ? "sans voiture" : vehicle?.label.toLowerCase(),
+      plan.vehicle === "none" ? tr("ui.pagePreparerMonVoyage.sansVoiture2") : vehicle?.label.toLowerCase(),
     ]
       .filter(Boolean)
       .join(" · "),
     // Les papiers de la voiture comptent avec ceux des voyageurs.
     papers: papers.finished
       ? plan.vehicle === "none"
-        ? `${ready} sur ${tasks.length} papiers prêts`
-        : `${ready + carReady} sur ${tasks.length + carItems.length} papiers prêts, voiture comprise`
-      : "Votre liste, voyageur par voyageur",
-    car: `${carReady} sur ${carItems.length} faits${plan.importCar ? " · import" : ""}`,
-    route: line ? `${line}${duration ? ` · ${formatDuration(duration)} de traversée` : ""}` : null,
+        ? tr("ui.pagePreparerMonVoyage.surPapiersPrets", { ready, length: tasks.length })
+        : tr("ui.pagePreparerMonVoyage.surPapiersPretsVoitureComprise", { v: ready + carReady, v2: tasks.length + carItems.length })
+      : tr("ui.pagePreparerMonVoyage.votreListeVoyageurParVoyageur"),
+    car: tr("ui.pagePreparerMonVoyage.surFaits", { carReady, length: carItems.length, v: plan.importCar ? tr("ui.pagePreparerMonVoyage.import") : "" }),
+    route: line ? `${line}${duration ? tr("ui.pagePreparerMonVoyage.deTraversee", { formatDuration: formatDuration(duration) }) : ""}` : null,
     // Le même chiffre que le bloc « Votre budget » : bateau et route, arrondi.
     budget:
       fromChoice && toPort
         ? budgetSummary(tripBudget(plan, fromChoice, toPort, { adults, children }, papersFees))
         : null,
     book: linkedTrip
-      ? `${linkedTrip.label} · billet pris, suivi dans Mon voyage`
+      ? tr("ui.pagePreparerMonVoyage.billetPrisSuiviDansMon", { label: linkedTrip.label })
       : line
-        ? `${line} · ${planWhenLabel(plan)} · ${plan.ticket ? "billet pris" : "billet à prendre"}`
+        ? `${line} · ${planWhenLabel(plan)} · ${plan.ticket ? tr("ui.pagePreparerMonVoyage.billetPris") : tr("ui.pagePreparerMonVoyage.billetAPrendre")}`
         : null,
   };
 }
@@ -1197,7 +1195,7 @@ function ProfileStep({
       <WizardNav
         back={index > 0 ? () => go(profileQuestions[index - 1]!) : undefined}
         next={{
-          label: index + 1 < profileQuestions.length ? "Continuer" : "Continuer : mes papiers",
+          label: index + 1 < profileQuestions.length ? tr("ui.pagePreparerMonVoyage.continuer") : tr("ui.pagePreparerMonVoyage.continuerMesPapiers"),
           onClick: next,
           // Pas de départ sans date : c'est elle qui fait le compte à rebours.
           disabled: question === "when" && !plan.date && !plan.window,
@@ -1228,10 +1226,10 @@ function ProfileReview({
   const named = answers.travellers.filter((t) => t.name?.trim());
   const vehicle = VEHICLES.find((v) => v.id === plan.vehicle);
   const rows: { icon: LucideIcon; label: string; value: string }[] = [
-    { icon: CalendarDays, label: "Départ", value: capitalize(planWhenLabel(plan)) },
+    { icon: CalendarDays, label: tr("ui.pagePreparerMonVoyage.depart"), value: capitalize(planWhenLabel(plan)) },
     {
       icon: Users,
-      label: "Voyageurs",
+      label: tr("ui.pagePreparerMonVoyage.voyageurs"),
       value: named.length
         ? answers.travellers.map((t) => travellerLabel(t, answers.travellers)).join(", ")
         : [plural(adults, "adulte"), children ? plural(children, "enfant") : null]
@@ -1240,7 +1238,7 @@ function ProfileReview({
     },
     {
       icon: Car,
-      label: "Véhicule",
+      label: tr("ui.pagePreparerMonVoyage.vehicule"),
       value: plan.vehicle === "none" ? "Sans voiture" : (vehicle?.label ?? "—"),
     },
   ];
@@ -1278,7 +1276,7 @@ function ProfileReview({
           {tr("ui.pagePreparerMonVoyage.changerLaDateOuLes")}
         </ConfirmChange>
       ) : null}
-      <WizardNav next={{ label: "Continuer : mes papiers", onClick: onNext }} />
+      <WizardNav next={{ label: tr("ui.pagePreparerMonVoyage.continuerMesPapiers"), onClick: onNext }} />
     </div>
   );
 }
@@ -1377,7 +1375,7 @@ function PapersStepBody({
             </p>
           )}
           <div className="mt-4">
-            <WizardNav next={{ label: `Continuer : ${next}`, onClick: onDone }} />
+            <WizardNav next={{ label: tr("ui.pagePreparerMonVoyage.continuer2", { next }), onClick: onDone }} />
           </div>
         </>
       ) : (
@@ -1390,7 +1388,7 @@ function PapersStepBody({
               plan={plan}
               patch={patch}
               title={tr("ui.pagePreparerMonVoyage.trouverMonConsulat")}
-              hint={`${reasons ? `${reasons.charAt(0).toUpperCase()}${reasons.slice(1)} se ${reasons.includes(" et ") ? "font" : "fait"} au consulat d'Algérie dont dépend votre domicile, sur rendez-vous. ` : ""}Indiquez votre ville : vous aurez son adresse, son téléphone et le lien pour prendre rendez-vous.`}
+              hint={tr("ui.pagePreparerMonVoyage.indiquezVotreVilleVousAurez", { v: reasons ? tr("ui.pagePreparerMonVoyage.seAuConsulatDAlgerie", { v: reasons.charAt(0).toUpperCase(), v2: reasons.slice(1), v3: reasons.includes(" et ") ? "font" : "fait" }) : "" })}
             />
           }
           steps={steps}
@@ -1405,8 +1403,8 @@ function PapersStepBody({
       {papers.finished ? (
         <MoreLinks
           links={[
-            { href: "/papiers-voyage-algerie", label: "Les règles et leurs sources" },
-            { href: "/guide/arrivee-algerie-port-formalites", label: "Les formalités à l'arrivée" },
+            { href: "/papiers-voyage-algerie", label: tr("ui.pagePreparerMonVoyage.lesReglesEtLeursSources") },
+            { href: "/guide/arrivee-algerie-port-formalites", label: tr("ui.pagePreparerMonVoyage.lesFormalitesALArrivee") },
           ]}
         />
       ) : null}
@@ -1485,13 +1483,13 @@ function CarPapers({
           options={[
             {
               value: "vacances",
-              label: "Non, elle revient avec moi",
-              hint: "Admission temporaire, le temps des vacances",
+              label: tr("ui.pagePreparerMonVoyage.nonElleRevientAvecMoi"),
+              hint: tr("ui.pagePreparerMonVoyage.admissionTemporaireLeTempsDes"),
             },
             {
               value: "import",
-              label: "Oui, je l'importe",
-              hint: "Véhicule de moins de 3 ans : une autre démarche",
+              label: tr("ui.pagePreparerMonVoyage.ouiJeLImporte"),
+              hint: tr("ui.pagePreparerMonVoyage.vehiculeDeMoinsDe3"),
             },
           ]}
         />
@@ -1560,8 +1558,8 @@ function CarPapers({
       </ul>
       <MoreLinks
         links={[
-          { href: "/guide/voyage-algerie-voiture-checklist", label: "La checklist voiture" },
-          { href: "/guide/voiture-vacances-admission-temporaire", label: "L'admission temporaire" },
+          { href: "/guide/voyage-algerie-voiture-checklist", label: tr("ui.pagePreparerMonVoyage.laChecklistVoiture") },
+          { href: "/guide/voiture-vacances-admission-temporaire", label: tr("ui.pagePreparerMonVoyage.lAdmissionTemporaire") },
         ]}
       />
     </section>
@@ -1613,20 +1611,20 @@ function DestinationField({
   return (
     <SearchBox
       id="ville-bled"
-      label={"Où allez-vous en Algérie ? (facultatif)"}
+      label={tr("ui.pagePreparerMonVoyage.ouAllezVousEnAlgerie")}
       value={query}
       onChange={(text) => {
         setQuery(text);
         if (!text.trim()) onPick(null);
       }}
-      placeholder={"Ville ou quartier, par exemple Tizi Ouzou"}
+      placeholder={tr("ui.pagePreparerMonVoyage.villeOuQuartierParExemple")}
       autoComplete={"off"}
       busy={busy}
       picked={Boolean(query.trim()) && query === value?.label}
       searched={searched}
       hits={results.map((place) => ({
         key: `${place.label}-${place.point.join(",")}`,
-        ...splitPlace(place.label, "Algérie"),
+        ...splitPlace(place.label, tr("ui.pagePreparerMonVoyage.algerie")),
         onPick: () => {
           setQuery(place.label);
           setResults([]);
@@ -1817,7 +1815,7 @@ function RouteStep({
                   />
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-semibold">
-                      {choice.port.name}
+                      {placeName(choice.port.name)}
                       <span className="font-normal text-muted-foreground">
                         {" "}
                         · {choice.port.country_name}
@@ -1842,7 +1840,7 @@ function RouteStep({
               onClick={() => setAll(!all)}
               className="mt-2 text-sm font-semibold text-primary underline underline-offset-4"
             >
-              {all ? tr("ui.pagePreparerMonVoyage.moinsDePorts") : `Voir les ${choices.length} ports de départ`}
+              {all ? tr("ui.pagePreparerMonVoyage.moinsDePorts") : tr("ui.pagePreparerMonVoyage.voirLesPortsDeDepart", { length: choices.length })}
             </button>
           ) : null}
 
@@ -1869,7 +1867,7 @@ function RouteStep({
                           : "bg-background hover:border-primary/40"
                       }`}
                     >
-                      <span className="font-semibold">{to.name}</span>
+                      <span className="font-semibold">{placeName(to.name)}</span>
                       {route.typical_duration_minutes ? (
                         <span
                           className={on ? "text-primary-foreground/80" : "text-muted-foreground"}
@@ -1889,16 +1887,16 @@ function RouteStep({
           ni budget ni traversées à montrer ensuite. */}
       <WizardNav
         next={{
-          label: "Continuer : mon budget",
+          label: tr("ui.pagePreparerMonVoyage.continuerMonBudget"),
           onClick: onDone,
           disabled: !fromChoice || !toPortId,
         }}
         skip={
-          fromChoice && toPortId ? undefined : { label: "Passer sans mes ports", onClick: onDone }
+          fromChoice && toPortId ? undefined : { label: tr("ui.pagePreparerMonVoyage.passerSansMesPorts"), onClick: onDone }
         }
       />
       <MoreLinks
-        links={[{ href: "/voyage-algerie", label: "Cabine, enfants, animaux : la traversée" }]}
+        links={[{ href: "/voyage-algerie", label: tr("ui.pagePreparerMonVoyage.cabineEnfantsAnimauxLaTraversee") }]}
       />
     </div>
   );
@@ -1938,8 +1936,8 @@ function BudgetStep({
           {tr("ui.pagePreparerMonVoyage.lePrixDependDuPort")}
         </Bw504Note>
         <WizardNav
-          next={{ label: "Choisir mes ports", onClick: onOpenRoute }}
-          skip={{ label: "Passer le budget", onClick: onDone }}
+          next={{ label: tr("ui.pagePreparerMonVoyage.choisirMesPorts"), onClick: onOpenRoute }}
+          skip={{ label: tr("ui.pagePreparerMonVoyage.passerLeBudget"), onClick: onDone }}
         />
       </div>
     );
@@ -1980,11 +1978,11 @@ function BudgetStep({
                 ) : (
                   tr("ui.pagePreparerMonVoyage.directFerries")
                 )}{" "}
-                {tr("ui.pagePreparerMonVoyage.pour")}{fromChoice.port.name} → {toPort.name}{tr("ui.pagePreparerMonVoyage.relevesEnSeptembreEtOctobre")}
+                {tr("ui.pagePreparerMonVoyage.pour")}{placeName(fromChoice.port.name)} → {placeName(toPort.name)}{tr("ui.pagePreparerMonVoyage.relevesEnSeptembreEtOctobre")}
               </>
             ) : (
               <>
-                {tr("ui.pagePreparerMonVoyage.aucunPrixMoyenNEst")}{fromChoice.port.name} → {toPort.name}{tr("ui.pagePreparerMonVoyage.onPartDUnPrix")}
+                {tr("ui.pagePreparerMonVoyage.aucunPrixMoyenNEst")}{placeName(fromChoice.port.name)} → {placeName(toPort.name)}{tr("ui.pagePreparerMonVoyage.onPartDUnPrix")}
               </>
             )}{" "}
             {tr("ui.pagePreparerMonVoyage.puisOnAjusteSelonLa")}{seasonLabels[fare.season].toLowerCase()}{" "}
@@ -2059,26 +2057,26 @@ function BookStep({
   const vehicle = VEHICLES.find((v) => v.id === plan.vehicle);
   const rows: [string, string][] = [
     [
-      "Traversée",
+      tr("ui.pagePreparerMonVoyage.traversee"),
       fromChoice && toPort
         ? `${fromChoice.port.name} → ${toPort.name}`
-        : "À choisir à l'étape « Ma route »",
+        : tr("ui.pagePreparerMonVoyage.aChoisirALEtape"),
     ],
     [
-      "Départ",
+      tr("ui.pagePreparerMonVoyage.depart"),
       plan.window && !plan.date
-        ? `${capitalize(planWhenLabel(plan))} · recherche autour du ${dayName(planDay(plan))}`
+        ? tr("ui.pagePreparerMonVoyage.rechercheAutourDu", { capitalize: capitalize(planWhenLabel(plan)), dayName: dayName(planDay(plan)) })
         : plan.date
-          ? `${dayName(plan.date)}, ± 3 jours`
-          : "Date à choisir",
+          ? tr("ui.pagePreparerMonVoyage.t3Jours", { dayName: dayName(plan.date) })
+          : tr("ui.pagePreparerMonVoyage.dateAChoisir"),
     ],
     [
-      "Voyageurs",
+      tr("ui.pagePreparerMonVoyage.voyageurs"),
       [plural(group.adults, "adulte"), group.children ? plural(group.children, "enfant") : null]
         .filter(Boolean)
         .join(", "),
     ],
-    ["Véhicule", plan.vehicle === "none" ? "Sans voiture" : (vehicle?.label ?? "")],
+    [tr("ui.pagePreparerMonVoyage.vehicule"), plan.vehicle === "none" ? tr("ui.pagePreparerMonVoyage.sansVoiture") : (vehicle?.label ?? "")],
   ];
   return (
     <div className="pt-4">
@@ -2134,7 +2132,7 @@ function BookStep({
           </Bw504Note>
         ) : null}
       </div>
-      <WizardNav next={{ label: "Voir mon récap", onClick: onFinish, icon: ListChecks }} />
+      <WizardNav next={{ label: tr("ui.pagePreparerMonVoyage.voirMonRecap"), onClick: onFinish, icon: ListChecks }} />
       <p className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
         <Landmark size={14} className="mt-0.5 shrink-0" aria-hidden />
         {TICKETING.shortPayment}
@@ -2300,10 +2298,10 @@ function WhenQuestion({
             {tr("ui.pagePreparerMonVoyage.depart2")}{planWhenLabel(plan)}
             {countdown > 0
               ? countdown > 60
-                ? `, dans ${Math.round(countdown / 7)} semaines : le temps de tout préparer sans stress.`
+                ? tr("ui.pagePreparerMonVoyage.dansSemainesLeTempsDe", { v: Math.round(countdown / 7) })
                 : countdown > 28
-                  ? `, dans ${Math.round(countdown / 7)} semaines : les papiers longs sont à lancer maintenant.`
-                  : `, dans ${countdown} jour${countdown > 1 ? "s" : ""} : l'essentiel est à faire tout de suite.`
+                  ? tr("ui.pagePreparerMonVoyage.dansSemainesLesPapiersLongs", { v: Math.round(countdown / 7) })
+                  : tr("ui.pagePreparerMonVoyage.dansJourLEssentielEst", { countdown, v: countdown > 1 ? "s" : "" })
               : "."}
             {plan.date ? (
               <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -2529,8 +2527,8 @@ function ResidenceQuestion({
   papers,
   plan,
   patch,
-  title = "Où habitez-vous ?",
-  hint = "Pour trouver votre consulat d'Algérie, où se font vos démarches, et les ports les plus proches. La ville suffit.",
+  title = tr("ui.pagePreparerMonVoyage.ouHabitezVous"),
+  hint = tr("ui.pagePreparerMonVoyage.pourTrouverVotreConsulatD"),
   showConsulate = true,
 }: {
   papers: PapersState;
@@ -2665,13 +2663,13 @@ function EuropeCityField({
   return (
     <SearchBox
       id="ville-europe"
-      label={"Votre ville"}
+      label={tr("ui.pagePreparerMonVoyage.votreVille")}
       value={query}
       onChange={(text) => {
         setQuery(text);
         if (!text.trim()) onPick(null);
       }}
-      placeholder={"Par exemple Bruxelles, Alicante, Milan"}
+      placeholder={tr("ui.pagePreparerMonVoyage.parExempleBruxellesAlicanteMilan")}
       autoComplete={"address-level2"}
       busy={busy}
       picked={Boolean(query.trim()) && query === value?.name}
@@ -2704,8 +2702,8 @@ function EuropeConsulateCard({
       <p className="flex items-center gap-2 font-semibold">
         <Landmark size={16} className="text-primary" aria-hidden />
         {result.embassyOnly
-          ? `${result.country} : l'ambassade d'Algérie`
-          : `${result.country} : ${result.posts.length > 1 ? "les consulats" : "le consulat"} d'Algérie`}
+          ? tr("ui.pagePreparerMonVoyage.lAmbassadeDAlgerie", { country: result.country })
+          : tr("ui.pagePreparerMonVoyage.dAlgerie", { country: result.country, v: result.posts.length > 1 ? tr("ui.pagePreparerMonVoyage.lesConsulats") : tr("ui.pagePreparerMonVoyage.leConsulat") })}
       </p>
       <ul className="mt-3 grid gap-3">
         {result.posts.slice(0, 3).map((post, index) => (
@@ -2767,15 +2765,15 @@ function EuropeConsulateCard({
 function milestoneLead(m: Milestone, plan: CompanionPlan) {
   const today = todayKey();
   if (m.id === "day") return capitalize(planWhenLabel(plan));
-  if (m.lead === "now" || (m.lead === "from" && m.date <= today)) return "Dès maintenant";
-  if (m.lead === "after") return "Ensuite";
+  if (m.lead === "now" || (m.lead === "from" && m.date <= today)) return tr("ui.pagePreparerMonVoyage.desMaintenant");
+  if (m.lead === "after") return tr("ui.pagePreparerMonVoyage.ensuite");
   if (m.lead === "before")
     return m.late
-      ? "Aujourd'hui (délai très court)"
+      ? tr("ui.pagePreparerMonVoyage.aujourdHuiDelaiTresCourt")
       : m.tight
-        ? "Cette semaine (marge réduite)"
-        : `Avant le ${longDate(m.date)}`;
-  if (m.lead === "from") return `À partir du ${longDate(m.date)}`;
+        ? tr("ui.pagePreparerMonVoyage.cetteSemaineMargeReduite")
+        : tr("ui.pagePreparerMonVoyage.avantLe", { longDate: longDate(m.date) });
+  if (m.lead === "from") return tr("ui.pagePreparerMonVoyage.aPartirDu", { longDate: longDate(m.date) });
   return `Le ${longDate(m.date)}`;
 }
 
@@ -2887,8 +2885,8 @@ function useDeadlineSync(
 
 /** « 2 actions à faire · la prochaine avant le 6 novembre » */
 function todoSummary(todo: TodoRow[], plan: CompanionPlan) {
-  if (!todo.length) return "Rien à faire pour l'instant : tout est coché.";
-  return `${todo.length} action${todo.length > 1 ? "s" : ""} à faire · la prochaine ${lowerFirst(milestoneLead(todo[0]!.m, plan))}`;
+  if (!todo.length) return tr("ui.pagePreparerMonVoyage.rienAFairePourL");
+  return tr("ui.pagePreparerMonVoyage.actionAFaireLaProchaine", { length: todo.length, v: todo.length > 1 ? "s" : "", lowerFirst: lowerFirst(milestoneLead(todo[0]!.m, plan)) });
 }
 
 /** Le degré d'urgence d'une action : en retard, bientôt (sous 15 jours ou à lancer), plus tard. */
@@ -2904,12 +2902,12 @@ function urgencyOf(m: Milestone): Urgency {
 /** La famille d'un moment du calendrier, affichée en étiquette. */
 const nodeGroup = (m: Milestone): string =>
   m.id === "book"
-    ? "Traversée"
+    ? tr("ui.pagePreparerMonVoyage.traversee")
     : m.id === "bags"
-      ? "Avant de partir"
+      ? tr("ui.pagePreparerMonVoyage.avantDePartir")
       : m.id === "eve" || m.id === "day"
-        ? "Le voyage"
-        : "Papiers";
+        ? tr("ui.pagePreparerMonVoyage.leVoyage")
+        : tr("ui.pagePreparerMonVoyage.papiers");
 
 /**
  * « À faire » en une seule frise, dans l'ordre des dates : chaque moment porte sa couleur
@@ -3011,7 +3009,7 @@ function PlanTodo({
           aria-expanded={showDone}
           className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-muted-foreground"
         >
-          {showDone ? tr("ui.pagePreparerMonVoyage.masquerCeQuiEstFait") : `Voir ce qui est fait (${finished.length})`}
+          {showDone ? tr("ui.pagePreparerMonVoyage.masquerCeQuiEstFait") : tr("ui.pagePreparerMonVoyage.voirCeQuiEstFait", { length: finished.length })}
           <ChevronDown
             size={15}
             aria-hidden
@@ -3101,7 +3099,7 @@ function TodoItem({
             type="button"
             role="checkbox"
             aria-checked={row.done}
-            aria-label={`${row.title} : ${row.done ? "fait" : "à faire"}`}
+            aria-label={`${row.title} : ${row.done ? "fait" : tr("ui.pagePreparerMonVoyage.aFaire3")}`}
             onClick={() => onToggle(row)}
             className={`mt-px grid size-5 shrink-0 place-items-center rounded-[5px] border-2 transition-colors ${
               row.done
@@ -3222,14 +3220,14 @@ function ReadyDashboard({
   const glance: GlanceTile[] = [
     {
       key: "profile",
-      label: "Départ",
+      label: tr("ui.pagePreparerMonVoyage.depart"),
       icon: CalendarDays,
       value: planHasWhen(plan) ? shortDate(planDay(plan)) : "Date à choisir",
       detail: [
         [plural(group.adults, "adulte"), group.children ? plural(group.children, "enfant") : null]
           .filter(Boolean)
           .join(", "),
-        plan.vehicle === "none" ? "sans voiture" : vehicle?.label.toLowerCase(),
+        plan.vehicle === "none" ? tr("ui.pagePreparerMonVoyage.sansVoiture2") : vehicle?.label.toLowerCase(),
       ]
         .filter(Boolean)
         .join(" · "),
@@ -3238,54 +3236,54 @@ function ReadyDashboard({
     },
     {
       key: "papers",
-      label: "Papiers",
+      label: tr("ui.pagePreparerMonVoyage.papiers"),
       icon: FileText,
       value: papersTotal ? `${papersReady}/${papersTotal}` : "Rien à prévoir",
       detail: papersTotal
-        ? `papiers prêts${withCar ? ", voiture comprise" : ""}`
-        : "aucun papier à cocher",
+        ? tr("ui.pagePreparerMonVoyage.papiersPrets", { v: withCar ? tr("ui.pagePreparerMonVoyage.voitureComprise") : "" })
+        : tr("ui.pagePreparerMonVoyage.aucunPapierACocher"),
       status: !papers.finished ? "missing" : papersReady >= papersTotal ? "ok" : "todo",
       ...(papersTotal ? { progress: papersReady / papersTotal } : {}),
       onClick: () => onOpenStep("papers"),
     },
     {
       key: "route",
-      label: "Route",
+      label: tr("ui.pagePreparerMonVoyage.route"),
       icon: RouteIcon,
       value: fromChoice && toPort ? `${fromChoice.port.name} → ${toPort.name}` : "Ports à choisir",
-      detail: duration ? `${formatDuration(duration)} de traversée` : "le trajet de porte à porte",
+      detail: duration ? tr("ui.pagePreparerMonVoyage.deTraversee2", { formatDuration: formatDuration(duration) }) : tr("ui.pagePreparerMonVoyage.leTrajetDePorteA"),
       status: fromChoice && toPort ? "ok" : "missing",
       onClick: () => onOpenStep("route"),
     },
     {
       key: "budget",
-      label: "Budget",
+      label: tr("ui.pagePreparerMonVoyage.budget"),
       icon: Wallet,
       value: budget
         ? `≈ ${(Math.round(budget.total / 100) * 100).toLocaleString(intlLocale())} €`
         : "À calculer",
       detail: budget
         ? budget.back
-          ? "aller et retour, tout compris"
-          : "l'aller, tout compris"
-        : "il faut vos ports",
+          ? tr("ui.pagePreparerMonVoyage.allerEtRetourToutCompris")
+          : tr("ui.pagePreparerMonVoyage.lAllerToutCompris")
+        : tr("ui.pagePreparerMonVoyage.ilFautVosPorts"),
       status: budget ? "ok" : "missing",
       onClick: () => onOpenStep("budget"),
     },
     {
       key: "book",
-      label: "Billet",
+      label: tr("ui.pagePreparerMonVoyage.billet"),
       icon: Ticket,
       value: ticket ? "Pris" : "À prendre",
-      detail: ticket ? "suivi dans Mon voyage" : "réservez dès que possible",
+      detail: ticket ? tr("ui.pagePreparerMonVoyage.suiviDansMonVoyage") : tr("ui.pagePreparerMonVoyage.reservezDesQuePossible"),
       status: ticket ? "ok" : "todo",
       onClick: ticket && !plan.ticket ? openMyVoyage : () => onOpenStep("book"),
     },
   ];
   const named = papers.answers.travellers.filter((t) => t.name?.trim()).map((t) => t.name!.trim());
   const title = named.length
-    ? `Le voyage de ${named.length > 1 ? `${named.slice(0, -1).join(", ")} et ${named.at(-1)}` : named[0]}`
-    : "Votre voyage au bled";
+    ? tr("ui.pagePreparerMonVoyage.leVoyageDe", { v: named.length > 1 ? `${named.slice(0, -1).join(", ")} et ${named.at(-1)}` : named[0] })
+    : tr("ui.pagePreparerMonVoyage.votreVoyageAuBled");
   return (
     <section id="pret" aria-labelledby="pret-titre" className="bw-ready bw-readygrid mt-4">
       <h2 id="pret-titre" className="sr-only">
@@ -3309,7 +3307,7 @@ function ReadyDashboard({
         <Bw504Note
           tone="stuck"
           className="mt-3"
-          title={`Il manque encore : ${missing.map((row) => row.label.toLowerCase()).join(", ")}`}
+          title={tr("ui.pagePreparerMonVoyage.ilManqueEncore", { v: missing.map((row) => row.label.toLowerCase()).join(", ") })}
           actions={
             <>
               <Bw504Button primary onClick={missing[0]!.onClick}>

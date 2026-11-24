@@ -42,7 +42,7 @@ export function MyEntityReviews({ userId }: { userId: string }) {
                 : r.target_kind === "vessel"
                   ? ships
                   : companies
-              ).find((x) => x.id === r.target_id)?.name ?? "Fiche";
+              ).find((x) => x.id === r.target_id)?.name ?? tr("ui.myEntityReviews.fiche");
             return (
               <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                 <div>
@@ -72,7 +72,7 @@ export function MyEntityReviews({ userId }: { userId: string }) {
                   variant="ghost"
                   disabled={remove.isPending}
                   onClick={() => {
-                    if (window.confirm("Supprimer définitivement cette évaluation ?"))
+                    if (window.confirm(tr("ui.myEntityReviews.supprimerDefinitivementCetteEvaluation")))
                       remove.mutate(r.id);
                   }}
                 >

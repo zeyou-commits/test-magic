@@ -54,7 +54,7 @@ export function JourneyStoryNav({
           className="bw-story__side"
           onClick={() => go(index - 1)}
           disabled={!prev}
-          aria-label={prev ? `Étape précédente : ${prev.label}` : tr("ui.journeyStoryNav.premiereEtape")}
+          aria-label={prev ? tr("ui.journeyStoryNav.etapePrecedente", { label: prev.label }) : tr("ui.journeyStoryNav.premiereEtape")}
         >
           {prev ? (
             <>
@@ -80,7 +80,7 @@ export function JourneyStoryNav({
           data-side="next"
           onClick={() => go(index + 1)}
           disabled={!next}
-          aria-label={next ? `Étape suivante : ${next.label}` : tr("ui.journeyStoryNav.derniereEtape")}
+          aria-label={next ? tr("ui.journeyStoryNav.etapeSuivante", { label: next.label }) : tr("ui.journeyStoryNav.derniereEtape")}
         >
           {next ? (
             <>

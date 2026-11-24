@@ -1,3 +1,4 @@
+import { lazyConst, tr } from "@/lib/i18n/translate";
 export const CURRENCIES = ["EUR", "USD", "GBP", "CAD", "CHF"] as const;
 export type Currency = (typeof CURRENCIES)[number];
 
@@ -18,7 +19,7 @@ export const DENOMINATIONS = [
 export type WalletSnapshot = { day: string; dinars: number; foreign: Partial<Record<Currency, number>> };
 export type PersonalRate = { rate: number; day: string };
 export type ExchangeRecord = { id: string; day: string; currency: Currency; spent: number; received: number; rate: number };
-export const EXPENSE_CATEGORIES = ["Essence", "Courses", "Resto", "Cadeaux", "Autre"] as const;
+export const EXPENSE_CATEGORIES = lazyConst(() => ([tr("ui.libWalletWallet.essence"), tr("ui.libWalletWallet.courses"), tr("ui.libWalletWallet.resto"), tr("ui.libWalletWallet.cadeaux"), tr("ui.libWalletWallet.autre")] as const));
 export type ExpenseRecord = { id: string; day: string; amount: number; category: string };
 export type WalletState = {
   counts: Record<string, number>;

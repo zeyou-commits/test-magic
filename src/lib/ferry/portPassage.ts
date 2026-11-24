@@ -1,5 +1,7 @@
 // Le passage du port : après l'arrêt à quai, le voyage continue jusqu'à la sortie du port.
 import type { TripStatus } from "./presence";
+import { tr } from "@/lib/i18n/translate";
+import { lazyConst } from "@/lib/i18n/translate";
 
 const HOUR = 3_600_000;
 /** Au-delà, le parcours se referme de lui-même, même sans « sorti ». */
@@ -55,54 +57,54 @@ export type PassageQuestion = { question: string; answers: string[] };
 export function passageQuestion(status: TripStatus | null): PassageQuestion {
   if (status === "controls")
     return {
-      question: "Aux contrôles, ça avance ?",
+      question: tr("ui.libFerryPortPassage.auxControlesCaAvance"),
       answers: [
-        "Ça roule aux contrôles",
-        "Lent aux contrôles",
-        "Bloqué aux contrôles",
-        "Fouille en cours",
+        tr("ui.libFerryPortPassage.caRouleAuxControles"),
+        tr("ui.libFerryPortPassage.lentAuxControles"),
+        tr("ui.libFerryPortPassage.bloqueAuxControles"),
+        tr("ui.libFerryPortPassage.fouilleEnCours"),
       ],
     };
   if (status === "landing")
     return {
-      question: "Le débarquement, ça donne quoi ?",
+      question: tr("ui.libFerryPortPassage.leDebarquementCaDonneQuoi"),
       answers: [
-        "On descend enfin",
-        "Encore bloqués à bord",
-        "Longue file sur le quai",
-        "Personne ne sait rien",
+        tr("ui.libFerryPortPassage.onDescendEnfin"),
+        tr("ui.libFerryPortPassage.encoreBloquesABord"),
+        tr("ui.libFerryPortPassage.longueFileSurLeQuai"),
+        tr("ui.libFerryPortPassage.personneNeSaitRien"),
       ],
     };
   return {
-    question: "Vous en êtes où ?",
-    answers: ["Encore à bord", "Sur le quai", "J'ai trop chaud", "Les enfants n'en peuvent plus"],
+    question: tr("ui.libFerryPortPassage.vousEnEtesOu"),
+    answers: [tr("ui.libFerryPortPassage.encoreABord"), tr("ui.libFerryPortPassage.surLeQuai"), tr("ui.libFerryPortPassage.jAiTropChaud"), tr("ui.libFerryPortPassage.lesEnfantsNEnPeuvent")],
   };
 }
 
 const REFUSALS: Record<string, string> = {
-  link: "Pas de lien dans le salon.",
-  email: "Pas d'adresse e-mail dans le salon.",
-  phone: "Pas de numéro de téléphone dans le salon.",
-  word: "Ce message contient un mot refusé. Reformulez-le.",
-  rate: "Doucement : attendez un peu avant de renvoyer un message.",
-  slow: "Salon général : un message toutes les 30 secondes. Patientez un instant.",
-  room: "Ce salon n'existe pas.",
-  muted: "Vous ne pouvez plus écrire pendant 24 h, après plusieurs messages refusés ou masqués.",
-  charter: "Acceptez d'abord la charte de la communauté : elle s'affiche à votre premier message.",
-  banned: "L'équipe BledWay vous a retiré l'accès aux salons pour le moment.",
-  staff_target: "Action impossible sur un membre de l'équipe.",
-  not_member: "Réservé aux passagers de cette traversée.",
-  not_here: "Réservé aux personnes présentes sur le port : votre position n'est pas à proximité.",
-  account: "Connectez-vous pour écrire.",
-  length: "200 caractères au plus.",
-  dm_not_same: "Les messages privés se font entre passagers de la même traversée.",
-  dm_unavailable: "Vous ne pouvez pas écrire à cette personne.",
-  dm_exists: "Une conversation existe déjà avec cette personne sur cette traversée.",
-  dm_pending: "Vous avez déjà 3 demandes en attente. Patientez qu'on vous réponde.",
-  dm_closed: "Cette conversation est fermée.",
-  dm_quota: "Vous avez utilisé vos 3 messages sur cette traversée.",
+  get link() { return tr("ui.libFerryPortPassage.pasDeLienDansLe"); },
+  get email() { return tr("ui.libFerryPortPassage.pasDAdresseEMail"); },
+  get phone() { return tr("ui.libFerryPortPassage.pasDeNumeroDeTelephone"); },
+  get word() { return tr("ui.libFerryPortPassage.ceMessageContientUnMot"); },
+  get rate() { return tr("ui.libFerryPortPassage.doucementAttendezUnPeuAvant"); },
+  get slow() { return tr("ui.libFerryPortPassage.salonGeneralUnMessageToutes"); },
+  get room() { return tr("ui.libFerryPortPassage.ceSalonNExistePas"); },
+  get muted() { return tr("ui.libFerryPortPassage.vousNePouvezPlusEcrire"); },
+  get charter() { return tr("ui.libFerryPortPassage.acceptezDAbordLaCharte"); },
+  get banned() { return tr("ui.libFerryPortPassage.lEquipeBledwayVousA"); },
+  get staff_target() { return tr("ui.libFerryPortPassage.actionImpossibleSurUnMembre"); },
+  get not_member() { return tr("ui.libFerryPortPassage.reserveAuxPassagersDeCette"); },
+  get not_here() { return tr("ui.libFerryPortPassage.reserveAuxPersonnesPresentesSur"); },
+  get account() { return tr("ui.libFerryPortPassage.connectezVousPourEcrire"); },
+  get length() { return tr("ui.libFerryPortPassage.t200CaracteresAuPlus"); },
+  get dm_not_same() { return tr("ui.libFerryPortPassage.lesMessagesPrivesSeFont"); },
+  get dm_unavailable() { return tr("ui.libFerryPortPassage.vousNePouvezPasEcrire"); },
+  get dm_exists() { return tr("ui.libFerryPortPassage.uneConversationExisteDejaAvec"); },
+  get dm_pending() { return tr("ui.libFerryPortPassage.vousAvezDeja3Demandes"); },
+  get dm_closed() { return tr("ui.libFerryPortPassage.cetteConversationEstFermee"); },
+  get dm_quota() { return tr("ui.libFerryPortPassage.vousAvezUtiliseVos3"); },
 };
-export const chatRefusal = (code: string) => REFUSALS[code] ?? "Message refusé. Réessayez.";
+export const chatRefusal = (code: string) => REFUSALS[code] ?? tr("ui.libFerryPortPassage.messageRefuseReessayez");
 
 export type PickerRow = { id: string; routeId: string; line: string; when: string; search: string };
 
@@ -155,37 +157,37 @@ export function roomMoment(departureAt: string, arrivalAt: string | null, now: n
   return now >= start - 8 * HOUR ? "boarding" : "before";
 }
 
-const EXAMPLES: Record<RoomMoment | "port" | "questions", string[]> = {
+const EXAMPLES: Record<RoomMoment | "port" | "questions", string[]> = lazyConst(() => ({
   before: [
-    "Qui part aussi de {depart} sur le {navire} ?",
-    "Première traversée vers {arrivee}, des conseils ?",
-    "Vous comptez arriver à quelle heure au port de {depart} ?",
+    tr("ui.libFerryPortPassage.quiPartAussiDeSur"),
+    tr("ui.libFerryPortPassage.premiereTraverseeVersDesConseils"),
+    tr("ui.libFerryPortPassage.vousComptezArriverAQuelle"),
   ],
   boarding: [
-    "La file au port de {depart}, ça avance ?",
-    "L'embarquement du {navire} a commencé ?",
-    "Combien de temps pour les contrôles à {depart} ?",
+    tr("ui.libFerryPortPassage.laFileAuPortDe"),
+    tr("ui.libFerryPortPassage.lEmbarquementDuACommence"),
+    tr("ui.libFerryPortPassage.combienDeTempsPourLes"),
   ],
   sea: [
-    "Ça bouge beaucoup de votre côté ?",
-    "Le restaurant du {navire} est ouvert ?",
-    "Une prise libre quelque part à bord ?",
+    tr("ui.libFerryPortPassage.caBougeBeaucoupDeVotre"),
+    tr("ui.libFerryPortPassage.leRestaurantDuEstOuvert"),
+    tr("ui.libFerryPortPassage.unePriseLibreQuelquePart"),
   ],
   arrival: [
-    "On débarque bientôt à {arrivee} ?",
-    "La douane à {arrivee}, ça avance ?",
-    "Bien arrivés à {arrivee} !",
+    tr("ui.libFerryPortPassage.onDebarqueBientotA"),
+    tr("ui.libFerryPortPassage.laDouaneACaAvance"),
+    tr("ui.libFerryPortPassage.bienArrivesA"),
   ],
   over: [],
   port: [
-    "La file au port de {port}, ça avance ?",
-    "Le parking du port de {port} est plein ?",
-    "Les contrôles à {port}, ça va vite ce matin ?",
+    tr("ui.libFerryPortPassage.laFileAuPortDe2"),
+    tr("ui.libFerryPortPassage.leParkingDuPortDe"),
+    tr("ui.libFerryPortPassage.lesControlesACaVa"),
   ],
   questions: [
-    "À quelle heure arriver au port de {depart} ?",
-    "Peut-on embarquer une remorque sur {depart} → {arrivee} ?",
-    "Combien de temps dure vraiment la traversée vers {arrivee} ?",
+    tr("ui.libFerryPortPassage.aQuelleHeureArriverAu"),
+    tr("ui.libFerryPortPassage.peutOnEmbarquerUneRemorque"),
+    tr("ui.libFerryPortPassage.combienDeTempsDureVraiment"),
   ],
-};
+}));
 export const roomExamples = (moment: keyof typeof EXAMPLES) => EXAMPLES[moment];

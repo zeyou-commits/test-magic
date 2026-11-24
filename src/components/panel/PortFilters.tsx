@@ -12,7 +12,7 @@ import {
   summarizePorts,
 } from "@/lib/ferry/filtering";
 import type { Port, RouteLine } from "@/lib/ferry/types";
-import { tr } from "@/lib/i18n";
+import { tr, placeName } from "@/lib/i18n";
 import { Bw504Button, Bw504Note } from "@/components/companion/Bw504Note";
 import { closeMatches } from "@/lib/companion/reasons";
 
@@ -64,7 +64,7 @@ export function PortMultiPicker({
   const [search, setSearch] = useState("");
   const [collapsedCountries, setCollapsedCountries] = useState<Record<string, boolean>>({});
   const isMobile = useIsMobile();
-  const label = direction === "departure" ? "Départ" : "Arrivée";
+  const label = direction === "departure" ? tr("ui.portFilters.depart") : tr("ui.portFilters.arrivee");
 
   const { groups, enabledIds, reasons } = useMemo(() => {
     const candidates = (
@@ -131,7 +131,7 @@ export function PortMultiPicker({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={inline ? tr("ui.portFilters.rechercherUnPort") : tr("ui.portFilters.villePortOuPays")}
-          aria-label={`Rechercher un port ${direction === "departure" ? "de départ" : "d'arrivée"}`}
+          aria-label={tr("ui.portFilters.rechercherUnPort2", { v: direction === "departure" ? "de départ" : "d'arrivée" })}
           enterKeyHint="search"
         />
         {search ? (
@@ -150,7 +150,7 @@ export function PortMultiPicker({
           <Globe2 />
         </span>
         <span className="bw-portpick__all-label">
-          {inline ? tr("ui.portFilters.tous") : "Tous les ports"}
+          {inline ? tr("ui.portFilters.tous") : tr("ui.portFilters.tousLesPorts2")}
         </span>
         <span className="bw-portpick__check" data-state={allMode ? "on" : "off"} aria-hidden>
           {allMode ? <Check /> : null}
@@ -193,7 +193,7 @@ export function PortMultiPicker({
                   </button>
                   <button
                     type="button"
-                    aria-label={`${countrySelected ? "Désélectionner" : "Sélectionner"} les ports de ${group.name}`}
+                    aria-label={tr("ui.portFilters.lesPortsDe", { v: countrySelected ? "Désélectionner" : "Sélectionner", name: group.name })}
                     aria-pressed={countrySelected}
                     disabled={!ids.length}
                     onClick={() => toggle(ids)}
@@ -216,9 +216,9 @@ export function PortMultiPicker({
                           aria-pressed={isSelected}
                           aria-disabled={!!reason}
                           title={
-                            reason ? `${reason} · voir la fiche du port` :
+                            reason ? tr("ui.portFilters.voirLaFicheDuPort", { reason }) :
                             (port.facilities?.["dedouanement_vehicule"] === "oui"
-                              ? `${port.name} · dédouanement véhicules -3 ans`
+                              ? tr("ui.portFilters.dedouanementVehicules3Ans", { name: port.name })
                               : port.name)
                           }
                           onClick={() => {
@@ -234,7 +234,7 @@ export function PortMultiPicker({
                             <CalendarX2 aria-hidden />
                           ) : null}
                           {reason === "Port inactif" ? <Ban aria-hidden /> : null}
-                          <span>{port.name}</span>
+                          <span>{placeName(port.name)}</span>
                           {port.facilities?.["dedouanement_vehicule"] === "oui" ? (
                             <Car
                               aria-label={tr("ui.portFilters.dedouanementVehiculesDeMoinsDe")}
@@ -276,7 +276,7 @@ export function PortMultiPicker({
         <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-wider text-primary">
           {title ?? label}
           <span className="ms-1 font-medium normal-case tracking-normal text-muted-foreground">
-            · {summarizePorts(value, ports, "à choisir")}
+            · {summarizePorts(value, ports, tr("ui.portFilters.aChoisir"))}
           </span>
         </p>
         {body}
@@ -288,7 +288,7 @@ export function PortMultiPicker({
     <button
       type="button"
       className="batogo-control flex h-14 w-full min-w-0 items-center justify-between gap-2 px-3 text-start"
-      aria-label={`${label} : ${summarizePorts(value, ports, "à choisir")}`}
+      aria-label={`${label} : ${summarizePorts(value, ports, tr("ui.portFilters.aChoisir"))}`}
     >
       <span className="min-w-0">
         <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -297,7 +297,7 @@ export function PortMultiPicker({
         <span
           className={`block truncate text-sm font-semibold ${value.length ? "text-foreground" : "text-muted-foreground"}`}
         >
-          {summarizePorts(value, ports, direction === "departure" ? "D'où partez-vous ?" : "Où allez-vous ?")}
+          {summarizePorts(value, ports, direction === "departure" ? tr("ui.portFilters.dOuPartezVous") : tr("ui.portFilters.ouAllezVous"))}
         </span>
       </span>
       <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
@@ -363,18 +363,18 @@ function PortTypo({
     <div className="p-2">
       <Bw504Note
         tone="stuck"
-        title={close.length ? `Tu voulais dire ${close[0]!.name} ?` : "Je ne connais pas ce port"}
+        title={close.length ? tr("ui.portFilters.tuVoulaisDire", { name: close[0]!.name }) : tr("ui.portFilters.jeNeConnaisPasCe")}
         actions={
           close.length
             ? close.map((port) => (
                 <Bw504Button key={port.id} primary={port === close[0]} onClick={() => onPick(port.name)}>
-                  {port.name}
+                  {placeName(port.name)}
                 </Bw504Button>
               ))
-            : <Bw504Button onClick={() => onPick("")}>Voir tous les ports</Bw504Button>
+            : <Bw504Button onClick={() => onPick("")}>{tr("ui.portFilters.voirTousLesPorts")}</Bw504Button>
         }
       >
-        {close.length ? null : `${fallback} Essaie le nom de la ville.`}
+        {close.length ? null : tr("ui.portFilters.essaieLeNomDeLa", { fallback })}
       </Bw504Note>
     </div>
   );

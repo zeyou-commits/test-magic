@@ -12,7 +12,7 @@ import {
   type FxQuote,
   type FxTicker,
 } from "@/lib/fx/ticker";
-import { intlLocale } from "@/lib/i18n";
+import { intlLocale, tr } from "@/lib/i18n";
 
 /**
  * Taux de change posé sur l'Algérie : une étiquette compacte et secondaire (taille bornée en CSS),
@@ -34,8 +34,8 @@ const amount2 = (value: number) =>
 
 const ago = (iso: string) => {
   const minutes = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60_000));
-  if (minutes < 1) return "à l'instant";
-  if (minutes < 60) return `il y a ${minutes} min`;
+  if (minutes < 1) return tr("ui.useFxMarker.aLInstant");
+  if (minutes < 60) return tr("ui.useFxMarker.ilYAMin", { minutes });
   return `il y a ${Math.round(minutes / 60)} h`;
 };
 
@@ -50,17 +50,17 @@ function quoteRow(body: HTMLTableSectionElement, quote: FxQuote) {
   official.textContent = quote.official ? amount2(quote.official) : "—";
   const parallel = row.insertCell();
   parallel.textContent = amount(fxMid(quote));
-  parallel.title = `Achat ${amount(quote.buy)} · vente ${amount(quote.sell)} (libellés Square)`;
+  parallel.title = tr("ui.useFxMarker.achatVenteLibellesSquare", { amount: amount(quote.buy), amount2: amount(quote.sell) });
 }
 
 function sheet(ticker: FxTicker) {
   const panel = document.createElement("div");
   panel.className = "bw-fx-sheet";
   panel.setAttribute("role", "dialog");
-  panel.setAttribute("aria-label", "Taux de change du dinar algérien");
+  panel.setAttribute("aria-label", tr("ui.useFxMarker.tauxDeChangeDuDinar"));
   const table = document.createElement("table");
   const head = table.createTHead().insertRow();
-  for (const label of ["1 unité", "Officiel", "Parallèle"]) {
+  for (const label of [tr("ui.useFxMarker.t1Unite"), tr("ui.useFxMarker.officiel"), tr("ui.useFxMarker.parallele")]) {
     const th = document.createElement("th");
     th.scope = "col";
     th.textContent = label;
@@ -78,12 +78,12 @@ function sheet(ticker: FxTicker) {
     toggle.type = "button";
     toggle.className = "bw-fx-more";
     toggle.setAttribute("aria-expanded", "false");
-    toggle.textContent = `+ ${rest.length} devises`;
+    toggle.textContent = tr("ui.useFxMarker.devises", { length: rest.length });
     toggle.addEventListener("click", () => {
       more.hidden = !more.hidden;
       panel.classList.toggle("is-expanded", !more.hidden);
       toggle.setAttribute("aria-expanded", String(!more.hidden));
-      toggle.textContent = more.hidden ? `+ ${rest.length} devises` : "Moins de devises";
+      toggle.textContent = more.hidden ? tr("ui.useFxMarker.devises", { length: rest.length }) : tr("ui.useFxMarker.moinsDeDevises");
     });
     panel.append(toggle);
   }
@@ -99,13 +99,13 @@ function sheet(ticker: FxTicker) {
   note.className = "bw-fx-sheet-note";
   if (ticker.officialDate) {
     note.append(
-      link(FX_OFFICIAL_URL, "Banque d'Algérie"),
+      link(FX_OFFICIAL_URL, tr("ui.useFxMarker.banqueDAlgerie")),
       ` (${new Date(`${ticker.officialDate}T12:00:00`).toLocaleDateString(intlLocale())}) · `,
     );
   }
   note.append(
     link(FX_SOURCE_URL, "Square"),
-    ` (${ago(ticker.updatedAt)}). Taux indicatifs, en DA.`,
+    tr("ui.useFxMarker.tauxIndicatifsEnDa", { ago: ago(ticker.updatedAt) }),
   );
   panel.append(note);
   return panel;
@@ -135,9 +135,7 @@ export function useFxMarker(mapRef: RefObject<MapLibreMap | null>, ready: boolea
     button.setAttribute("aria-expanded", "false");
     button.setAttribute(
       "aria-label",
-      `Taux du dinar : 1 euro vaut ${
-        euro.official ? `${amount2(euro.official)} dinars au cours officiel et ` : ""
-      }environ ${amount(mid)} au marché parallèle. Voir d'autres devises.`,
+      tr("ui.useFxMarker.tauxDuDinar1Euro", { v: euro.official ? tr("ui.useFxMarker.dinarsAuCoursOfficielEt", { amount2: amount2(euro.official) }) : "", amount: amount(mid) }),
     );
     // Ligne principale : le cours officiel ; à défaut, le parallèle, signalé comme tel.
     const main = document.createElement("strong");
@@ -147,7 +145,7 @@ export function useFxMarker(mapRef: RefObject<MapLibreMap | null>, ready: boolea
       : `${fxSymbol("EUR")}1 ≈ ${amount(mid)} DA`;
     const sub = document.createElement("span");
     sub.className = "bw-fx-sub";
-    sub.textContent = euro.official ? `parallèle ${amount(mid)} DA` : "marché parallèle";
+    sub.textContent = euro.official ? tr("ui.useFxMarker.paralleleDa", { amount: amount(mid) }) : tr("ui.useFxMarker.marcheParallele");
     if (trend) {
       const arrow = document.createElement("span");
       arrow.className = `bw-fx-trend is-${trend}`;

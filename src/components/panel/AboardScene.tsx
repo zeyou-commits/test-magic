@@ -1,6 +1,7 @@
 import { BadgeCheck, MessageCircleQuestion } from "lucide-react";
 import type { Port, Vessel } from "@/lib/ferry/types";
 import { VesselThumb } from "./LineOverview";
+import { placeName } from "@/lib/i18n";
 
 /**
  * La fenêtre « à bord » en image plutôt qu'en phrases : le vrai rendu du navire sur la mer, la 504
@@ -41,14 +42,14 @@ export function AboardScene({
       </div>
       {from && to ? (
         <div className="bw-aboard-scene__route">
-          <b>{from.name}</b>
+          <b>{placeName(from.name)}</b>
           <span className="bw-aboard-scene__track">
             <span style={{ width: `${atQuay ? 0 : (percent ?? 0)}%` }} />
             {percent !== null && !atQuay ? (
               <em style={{ left: `${percent}%` }}>{percent} %</em>
             ) : null}
           </span>
-          <b>{to.name}</b>
+          <b>{placeName(to.name)}</b>
         </div>
       ) : null}
     </div>

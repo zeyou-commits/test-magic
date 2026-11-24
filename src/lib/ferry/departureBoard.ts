@@ -2,6 +2,7 @@ import { emptyFilters, type Departure, type Port } from "./types";
 import { formatAge, type LiveShip } from "./tracking";
 import { mapStateToSearch } from "./urlState";
 import type { VesselAlert } from "./vesselAlerts";
+import { tr } from "@/lib/i18n/translate";
 
 export type BoardTone = "alert" | "warning" | "live" | "seen" | "planned" | "done";
 export type BoardStatus = { label: string; tone: BoardTone; proof: string };
@@ -23,59 +24,59 @@ export function boardStatus(input: {
   now: number;
 }): BoardStatus {
   const { departure, observedArrival, hold, signal, shiftMinutes, alert, now } = input;
-  const seen = signal ? `Signal du navire reçu ${formatAge(signal.ageMinutes)}.` : "";
+  const seen = signal ? tr("ui.libFerryDepartureBoard.signalDuNavireRecu", { formatAge: formatAge(signal.ageMinutes) }) : "";
   if (departure.status === "cancelled")
     return {
-      label: "Annulée",
+      label: tr("ui.libFerryDepartureBoard.annulee"),
       tone: "alert",
-      proof: "Traversée annulée selon le programme publié.",
+      proof: tr("ui.libFerryDepartureBoard.traverseeAnnuleeSelonLeProgramme"),
     };
   if (observedArrival)
     return {
-      label: "Arrivée constatée",
+      label: tr("ui.libFerryDepartureBoard.arriveeConstatee"),
       tone: "done",
-      proof: `Arrivée vue par le signal du navire. ${seen}`,
+      proof: tr("ui.libFerryDepartureBoard.arriveeVueParLeSignal", { seen }),
     };
   if (alert)
     return {
-      label: `${alert.short} · à confirmer`,
+      label: tr("ui.libFerryDepartureBoard.aConfirmer", { short: alert.short }),
       tone: "alert",
-      proof: `${alert.label} selon la source. Seule la compagnie décide du sort de cette traversée : contactez-la avant de partir.`,
+      proof: tr("ui.libFerryDepartureBoard.selonLaSourceSeuleLa", { label: alert.label }),
     };
   if (hold)
     return {
-      label: hold.fresh ? "Encore à quai" : "Départ à confirmer",
+      label: hold.fresh ? tr("ui.libFerryDepartureBoard.encoreAQuai") : tr("ui.libFerryDepartureBoard.departAConfirmer"),
       tone: "warning",
       proof: hold.fresh
-        ? `Le navire est toujours à quai après l'heure prévue. ${seen}`
-        : `Dernier signal à quai trop ancien pour savoir s'il est parti. ${seen}`,
+        ? tr("ui.libFerryDepartureBoard.leNavireEstToujoursA", { seen })
+        : tr("ui.libFerryDepartureBoard.dernierSignalAQuaiTrop", { seen }),
     };
   if (signal?.phase === "sea")
     return {
-      label: "En mer",
+      label: tr("ui.libFerryDepartureBoard.enMer"),
       tone: "live",
-      proof: `Constaté en mer. ${seen} Arrivée estimée, à confirmer.`,
+      proof: tr("ui.libFerryDepartureBoard.constateEnMerArriveeEstimee", { seen }),
     };
-  if (signal) return { label: "À quai", tone: "seen", proof: `Constaté à quai. ${seen}` };
+  if (signal) return { label: tr("ui.libFerryDepartureBoard.aQuai"), tone: "seen", proof: tr("ui.libFerryDepartureBoard.constateAQuai", { seen }) };
   if (shiftMinutes !== null && shiftMinutes >= 5)
     return {
-      label: "Retard estimé",
+      label: tr("ui.libFerryDepartureBoard.retardEstime"),
       tone: "warning",
-      proof: "Horaire mis à jour : retard estimé.",
+      proof: tr("ui.libFerryDepartureBoard.horaireMisAJourRetard"),
     };
   if (departure.status === "modified")
     return {
-      label: "Horaire modifié",
+      label: tr("ui.libFerryDepartureBoard.horaireModifie"),
       tone: "warning",
-      proof: "Horaire modifié dans le programme publié.",
+      proof: tr("ui.libFerryDepartureBoard.horaireModifieDansLeProgramme"),
     };
   if (Date.parse(departure.departure_at) <= now)
     return {
-      label: "Non confirmé",
+      label: tr("ui.libFerryDepartureBoard.nonConfirme"),
       tone: "planned",
-      proof: "L'heure prévue est passée, mais aucun signal du navire ne confirme le départ.",
+      proof: tr("ui.libFerryDepartureBoard.lHeurePrevueEstPassee"),
     };
-  return { label: "Prévu", tone: "planned", proof: PLANNED };
+  return { label: tr("ui.libFerryDepartureBoard.prevu"), tone: "planned", proof: PLANNED };
 }
 
 /** Période du tableau, jugée dans le fuseau du port concerné (la date du billet). */

@@ -21,8 +21,8 @@ export const Route = createFileRoute("/simulateurs/$slug")({
   },
   head: ({ loaderData: t }) =>
     t
-      ? seoHead(`${t.title} : simulateur | BledWay`, t.description, `/simulateurs/${t.slug}`)
-      : { meta: [{ title: "Outil introuvable | BledWay" }, { name: "robots", content: "noindex" }] },
+      ? seoHead(tr("ui.pageSimulateursSlug.simulateurBledway", { title: t.title }), t.description, `/simulateurs/${t.slug}`)
+      : { meta: [{ title: tr("ui.pageSimulateursSlug.outilIntrouvableBledway") }, { name: "robots", content: "noindex" }] },
   component: Tool,
 });
 function Tool() {
@@ -41,7 +41,7 @@ function Tool() {
       />
       <Breadcrumbs
         items={[
-          { name: "Simulateurs", path: "/simulateurs" },
+          { name: tr("ui.pageSimulateursSlug.simulateurs"), path: "/simulateurs" },
           { name: t.title, path: `/simulateurs/${t.slug}` },
         ]}
       />

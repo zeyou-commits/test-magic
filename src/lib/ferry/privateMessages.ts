@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import type { TravellerCard } from "@/lib/community/travellers";
 import { chatRefusal } from "./portPassage";
+import { tr } from "@/lib/i18n/translate";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 
@@ -83,10 +84,10 @@ export function dmState(thread: Pick<DmThread, "status" | "mine" | "my_left">) {
 
 export const leftLabel = (left: number) =>
   left > 1
-    ? `Il vous reste ${left} messages`
+    ? tr("ui.libFerryPrivateMessages.ilVousResteMessages", { left })
     : left === 1
-      ? "Il vous reste 1 message"
-      : "Vous avez utilisé vos 3 messages";
+      ? tr("ui.libFerryPrivateMessages.ilVousReste1Message")
+      : tr("ui.libFerryPrivateMessages.vousAvezUtiliseVos3");
 
 // Ouvert depuis la cloche : on arrive sur les messages privés. Lu au chargement.
 let dmFocus = typeof window !== "undefined" && /[?&]dm=1\b/.test(window.location.search);

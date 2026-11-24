@@ -90,7 +90,7 @@ export function CommunityModeration() {
   };
   const placeOf = (item: Observation) =>
     item.port_id
-      ? `Port de ${ports.find((p) => p.id === item.port_id)?.name ?? "?"}`
+      ? tr("ui.communityModeration.portDe", { v: ports.find((p) => p.id === item.port_id)?.name ?? "?" })
       : (vessels.find((v) => v.id === item.vessel_id)?.name ?? tr("ui.communityModeration.bateau"));
   const triage = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: "handled" | "dismissed" }) => {
@@ -177,7 +177,7 @@ export function CommunityModeration() {
         {publish.isError ? <p role="alert">{publish.error.message}</p> : null}
       </section>
       <ModerationSection
-        title="Avis sur les navires"
+        title={tr("ui.communityModeration.avisSurLesNavires")}
         count={feed.data.reviews.filter((r) => r.status === "pending").length}
         hint={tr("ui.communityModeration.lesContributionsRestentPriveesJusqu")}
       >
@@ -222,7 +222,7 @@ export function CommunityModeration() {
       </ModerationSection>
       <ModerationSection
         title={tr("ui.communityModeration.informationsVoyageursActives")}
-        hint="Les signalements visibles en ce moment sur la carte. Valider les marque comme vérifiés ; retirer les fait disparaître."
+        hint={tr("ui.communityModeration.lesSignalementsVisiblesEnCe")}
       >
         {!feed.data.alerts.length ? (
           moderationEmpty(tr("ui.communityModeration.aucunSignalementActif"))

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { safeExternalUrl } from "./shared";
+import { tr } from "@/lib/i18n";
 
 function hueOf(seed: string) {
   let hash = 0;

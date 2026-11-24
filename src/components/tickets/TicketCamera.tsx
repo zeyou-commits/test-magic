@@ -78,11 +78,11 @@ export function TicketCamera({
       })
       .catch(() =>
         setProblem(
-          "Caméra indisponible : autorisez-la, ou importez une photo ou un PDF du billet.",
+          tr("ui.ticketCamera.cameraIndisponibleAutorisezLaOu"),
         ),
       );
     if (!navigator.mediaDevices)
-      setProblem("Caméra indisponible sur ce navigateur : importez une photo ou un PDF.");
+      setProblem(tr("ui.ticketCamera.cameraIndisponibleSurCeNavigateur"));
     return () => {
       window.clearInterval(timer);
       stream?.getTracks().forEach((track) => track.stop());
@@ -108,14 +108,14 @@ export function TicketCamera({
   };
 
   const hint = !quality
-    ? "Placez le billet dans le cadre."
+    ? tr("ui.ticketCamera.placezLeBilletDansLe")
     : quality.light === "dark"
-      ? "Plus de lumière : approchez-vous d’une fenêtre ou d’une lampe."
+      ? tr("ui.ticketCamera.plusDeLumiereApprochezVous")
       : quality.light === "bright"
-        ? "Trop de reflet : inclinez légèrement le billet."
+        ? tr("ui.ticketCamera.tropDeRefletInclinezLegerement")
         : !quality.sharp
-          ? "Tenez le téléphone immobile, ou rapprochez-vous un peu."
-          : "C’est net : prenez la photo.";
+          ? tr("ui.ticketCamera.tenezLeTelephoneImmobileOu")
+          : tr("ui.ticketCamera.cEstNetPrenezLa");
   const good = quality?.light === "ok" && quality.sharp;
 
   return (

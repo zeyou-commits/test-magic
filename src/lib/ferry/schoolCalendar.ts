@@ -4,6 +4,7 @@
 // (exclu), comme dans les calendriers officiels : « du samedi 17 octobre au lundi 2 novembre ».
 // Source : calendrier officiel du ministère de l'Éducation nationale (education.gouv.fr).
 // Les dates sont à vérifier chaque année sur ce site avant de les considérer comme définitives.
+import { tr } from "@/lib/i18n/translate";
 
 export type SchoolZone = "A" | "B" | "C";
 
@@ -16,9 +17,9 @@ export interface SchoolBreak {
 
 /** Description lisible de chaque zone, pour aider à choisir la sienne. */
 export const SCHOOL_ZONES: Record<SchoolZone, { label: string; cities: string }> = {
-  A: { label: "Zone A", cities: "Lyon, Bordeaux, Grenoble, Dijon, Poitiers, Limoges…" },
-  B: { label: "Zone B", cities: "Marseille, Nice, Lille, Nantes, Rennes, Strasbourg, Reims…" },
-  C: { label: "Zone C", cities: "Paris, Créteil, Versailles, Toulouse, Montpellier" },
+  A: { get label() { return tr("ui.libFerrySchoolCalendar.zoneA"); }, get cities() { return tr("ui.libFerrySchoolCalendar.lyonBordeauxGrenobleDijonPoitiers"); } },
+  B: { get label() { return tr("ui.libFerrySchoolCalendar.zoneB"); }, get cities() { return tr("ui.libFerrySchoolCalendar.marseilleNiceLilleNantesRennes"); } },
+  C: { get label() { return tr("ui.libFerrySchoolCalendar.zoneC"); }, get cities() { return tr("ui.libFerrySchoolCalendar.parisCreteilVersaillesToulouseMontpellier"); } },
 };
 
 const ALL: SchoolZone[] = ["A", "B", "C"];

@@ -12,6 +12,7 @@ import {
   vesselScreenHeight,
   vesselScreenWidth,
 } from "./shipIcons";
+import { tr } from "@/lib/i18n";
 
 /** Hauteur de l'étiquette « Mon bateau » et son écart à la coque : les bulles du salon passent au-dessus. */
 export const MY_TRIP_TAG_SPACE = 26;
@@ -33,7 +34,7 @@ export function useMyTripMarker(
   callbacks.current = { onSelect, onOpen };
   const departureId = trip?.departure.id;
   const vesselId = trip?.departure.vessel_id;
-  const vesselName = trip?.vessel?.name ?? "Mon bateau";
+  const vesselName = trip?.vessel?.name ?? tr("ui.useMyTripMarker.monBateau");
   useEffect(() => {
     const map = mapRef.current;
     if (!ready || !map || !departureId || !vesselId) return;
@@ -50,11 +51,11 @@ export function useMyTripMarker(
     const button = document.createElement("button");
     button.type = "button";
     button.className = "bw-mytrip-tag";
-    button.setAttribute("aria-label", `Ma traversée : ${vesselName}`);
+    button.setAttribute("aria-label", tr("ui.useMyTripMarker.maTraversee", { vesselName }));
     const dot = document.createElement("span");
     dot.className = "bw-mytrip-tag__dot";
     dot.setAttribute("aria-hidden", "true");
-    button.append(dot, "Mon bateau");
+    button.append(dot, tr("ui.useMyTripMarker.monBateau"));
     button.addEventListener("mousemove", (event) => event.stopPropagation());
     button.addEventListener("click", (event) => {
       event.stopPropagation();

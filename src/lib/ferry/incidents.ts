@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { haversineKm, PORT_RADIUS_KM, type LivePosition } from "./tracking";
 import type { Departure, Port, RouteLine } from "./types";
+import { tr } from "@/lib/i18n/translate";
 
 /** Tables du script « contacts_incidents_entraide », pas encore dans les types générés. */
 export const incidentsDb = typedSupabase as unknown as SupabaseClient;
@@ -72,10 +73,10 @@ export function incidentHeadline(
 ) {
   const where = portName ? ` à ${portName}` : "";
   if (incident.status === "confirmed")
-    return `${vesselName} : immobilisé${where} selon ${incident.source_name}`;
+    return tr("ui.libFerryIncidents.immobiliseSelon", { vesselName, where, sourcename: incident.source_name });
   if (incident.status === "verifying")
-    return `${vesselName} : possible immobilisation${where}, en cours de vérification`;
-  return `${vesselName} : alerte levée`;
+    return tr("ui.libFerryIncidents.possibleImmobilisationEnCoursDe", { vesselName, where });
+  return tr("ui.libFerryIncidents.alerteLevee", { vesselName });
 }
 
 /** Texte de message pré-rempli, selon l'effet retenu sur le départ. Modifiable avant envoi. */
@@ -88,15 +89,15 @@ export function incidentMessageText(
   const where = portName ? ` à ${portName}` : "";
   const fact =
     incident.status === "verifying"
-      ? `Possible immobilisation du navire ${vesselName}${where}, en cours de vérification.`
-      : `Selon ${incident.source_name || "notre source"}, le navire ${vesselName} est immobilisé${where}.`;
+      ? tr("ui.libFerryIncidents.possibleImmobilisationDuNavireEn", { vesselName, where })
+      : tr("ui.libFerryIncidents.selonLeNavireEstImmobilise", { v: incident.source_name || "notre source", vesselName, where });
   const effect = {
     confirmed:
-      "Votre traversée est touchée selon cette source. Contactez la compagnie avant de partir.",
+      tr("ui.libFerryIncidents.votreTraverseeEstToucheeSelon"),
     possible:
-      "Votre traversée pourrait être touchée : aucune décision de la compagnie à ce stade. Vérifiez auprès d'elle avant de partir.",
-    none: "Aucune conséquence connue sur votre traversée à ce stade. Consultez les informations de la compagnie.",
-    followers: "Si vous voyagez sur ce navire, vérifiez votre réservation auprès de la compagnie.",
+      tr("ui.libFerryIncidents.votreTraverseePourraitEtreTouchee"),
+    none: tr("ui.libFerryIncidents.aucuneConsequenceConnueSurVotre"),
+    followers: tr("ui.libFerryIncidents.siVousVoyagezSurCe"),
   }[impact];
   return `${fact} ${effect}`;
 }

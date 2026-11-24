@@ -18,6 +18,7 @@ import {
   type LngLat,
   type PickTarget,
 } from "@/lib/ferry/journeyFilm";
+import { tr } from "@/lib/i18n";
 
 const SOURCE = "journey-film";
 /** Le tracé parcouru, à part : son dégradé (line-progress) demande les mesures de ligne. */
@@ -42,56 +43,56 @@ function cardFor(film: JourneyFilm, id: string, label: string): CardContent {
     const town = placeAt(film, film.last.at(-1) ?? film.sea.at(-1));
     return {
       image: art("33_bien_arrive"),
-      kicker: town ? `Arrivée à ${town}` : "Arrivée",
-      title: "Bien arrivé au bled !",
-      detail: `${formatMinutes(filmTimes(film).total)} de porte à porte`,
+      kicker: town ? tr("ui.useJourneyFilm.arriveeA", { town }) : tr("ui.useJourneyFilm.arrivee"),
+      title: tr("ui.useJourneyFilm.bienArriveAuBled"),
+      detail: tr("ui.useJourneyFilm.dePorteAPorte", { formatMinutes: formatMinutes(filmTimes(film).total) }),
     };
   }
   if (id.includes("pause"))
     return {
       image: art("22_msemen"),
-      kicker: "Pause",
-      title: "On souffle un peu",
-      detail: `${PAUSE_MIN} min de pause conseillée`,
+      kicker: tr("ui.useJourneyFilm.pause"),
+      title: tr("ui.useJourneyFilm.onSouffleUnPeu"),
+      detail: tr("ui.useJourneyFilm.minDePauseConseillee", { PAUSEMIN: PAUSE_MIN }),
     };
   if (id === "road") {
     const town = placeAt(film, film.road[0]);
     return {
       image: art("05_yallah"),
-      kicker: town ? `Départ de ${town}` : "Le départ",
-      title: "Yallah, on prend la route !",
-      detail: `${label} jusqu'au port`,
+      kicker: town ? tr("ui.useJourneyFilm.departDe", { town }) : tr("ui.useJourneyFilm.leDepart"),
+      title: tr("ui.useJourneyFilm.yallahOnPrendLaRoute"),
+      detail: tr("ui.useJourneyFilm.jusquAuPort", { label }),
     };
   }
   if (id === "port") {
     const town = placeAt(film, film.road.at(-1));
     return {
       image: art("11_file_attente"),
-      kicker: town ? `Port de ${town}` : "Au port",
-      title: "Attente et formalités",
-      detail: `${formatMinutes(film.boardMin)} avant d'embarquer`,
+      kicker: town ? tr("ui.useJourneyFilm.portDe", { town }) : tr("ui.useJourneyFilm.auPort"),
+      title: tr("ui.useJourneyFilm.attenteEtFormalites"),
+      detail: tr("ui.useJourneyFilm.avantDEmbarquer", { formatMinutes: formatMinutes(film.boardMin) }),
     };
   }
   if (id === "sea")
     return {
       image: art("17_embarquement"),
-      kicker: "La traversée",
-      title: "On embarque !",
-      detail: `${formatMinutes(film.ferryMin)} de mer`,
+      kicker: tr("ui.useJourneyFilm.laTraversee"),
+      title: tr("ui.useJourneyFilm.onEmbarque"),
+      detail: tr("ui.useJourneyFilm.deMer", { formatMinutes: formatMinutes(film.ferryMin) }),
     };
   if (id === "disembark") {
     const town = placeAt(film, film.sea.at(-1));
     return {
       image: art("29_douane_ok"),
-      kicker: town ? `Arrivée à ${town}` : "L'arrivée",
-      title: "Terre en vue !",
-      detail: `${formatMinutes(film.disembarkMin)} pour sortir du port`,
+      kicker: town ? tr("ui.useJourneyFilm.arriveeA", { town }) : tr("ui.useJourneyFilm.lArrivee"),
+      title: tr("ui.useJourneyFilm.terreEnVue"),
+      detail: tr("ui.useJourneyFilm.pourSortirDuPort", { formatMinutes: formatMinutes(film.disembarkMin) }),
     };
   }
   return {
     image: art("10_route_longue"),
-    kicker: "Dernière route",
-    title: "Direction le bled",
+    kicker: tr("ui.useJourneyFilm.derniereRoute"),
+    title: tr("ui.useJourneyFilm.directionLeBled"),
     detail: label,
   };
 }
@@ -250,7 +251,7 @@ export function useJourneyFilm(
         id: "journey-pins",
         type: "circle",
         source: SOURCE,
-        filter: ["==", ["geometry-type"], "Point"],
+        filter: ["==", ["geometry-type"], tr("ui.useJourneyFilm.point")],
         paint: {
           "circle-radius": 6,
           "circle-color": "#0e7a43",
@@ -262,7 +263,7 @@ export function useJourneyFilm(
         id: "journey-pin-labels",
         type: "symbol",
         source: SOURCE,
-        filter: ["==", ["geometry-type"], "Point"],
+        filter: ["==", ["geometry-type"], tr("ui.useJourneyFilm.point")],
         layout: {
           "text-field": ["get", "label"],
           "text-font": ["Noto Sans Bold"],
@@ -314,10 +315,10 @@ export function useJourneyFilm(
     vehicle.className = "bw-film-vehicle";
     vehicle.setAttribute("aria-hidden", "true");
     vehicle.innerHTML =
-      '<span class="bw-film-shadow"></span>' +
-      '<img class="bw-film-car" src="/cabas/persos/voiture_504.webp" alt="">' +
-      '<span class="bw-film-ship"><i></i><i></i><i></i><img alt=""></span>' +
-      '<div class="bw-film-card"><img alt=""><span><small></small><b></b><em></em></span><i>Exemple</i></div>';
+      "<span class=\"bw-film-shadow\"></span>" +
+      "<img class=\"bw-film-car\" src=\"/cabas/persos/voiture_504.webp\" alt=\"\">" +
+      "<span class=\"bw-film-ship\"><i></i><i></i><i></i><img alt=\"\"></span>" +
+      tr("ui.useJourneyFilm.divClassBwFilmCard");
     const card = vehicle.querySelector<HTMLElement>(".bw-film-card")!;
     const cardImage = card.querySelector("img")!;
     const cardKicker = card.querySelector("small")!;
@@ -467,7 +468,7 @@ export function useJourneyFilm(
           const element = document.createElement("div");
           element.className = "bw-film-vehicle bw-film-racer";
           element.setAttribute("aria-hidden", "true");
-          element.innerHTML = '<span></span><img alt="">';
+          element.innerHTML = "<span></span><img alt=\"\">";
           entry = { element, marker: new Marker({ element, anchor: "bottom" }).setLngLat(state.point).addTo(map) };
           racerMarkers.set(racer.film.key, entry);
         }
@@ -710,8 +711,8 @@ export function useJourneyFilm(
       caption.dataset["film"] = "";
       caption.textContent =
         target === "destination"
-          ? "Touchez votre destination sur la carte"
-          : "Touchez votre départ sur la carte";
+          ? tr("ui.useJourneyFilm.touchezVotreDestinationSurLa")
+          : tr("ui.useJourneyFilm.touchezVotreDepartSurLa");
       caption.style.left = `${(viewPadding().left + container.clientWidth - viewPadding().right) / 2}px`;
       caption.hidden = false;
       map.once("click", pick);

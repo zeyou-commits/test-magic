@@ -65,7 +65,7 @@ export function VesselElsewhereNotice({ departure }: { departure: Departure }) {
       </div>
     );
   }
-  const port = ports.find((p) => p.id === elsewhere.portId)?.name ?? "un autre port";
+  const port = ports.find((p) => p.id === elsewhere.portId)?.name ?? tr("ui.vesselElsewhereNotice.unAutrePort");
   const started = now >= Date.parse(departure.departure_at);
   return (
     <p

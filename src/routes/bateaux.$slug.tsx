@@ -52,12 +52,12 @@ export const Route = createFileRoute("/bateaux/$slug")({
   head: ({ loaderData: v }) =>
     v
       ? seoHead(
-          `${v.name} (${v.company}) : navire, lignes et vie à bord | BledWay`,
+          tr("ui.pageBateauxSlug.navireLignesEtVieA", { name: v.name, company: v.company }),
           v.summary,
           `/bateaux/${v.slug}`,
         )
       : {
-          meta: [{ title: "Navire introuvable | BledWay" }, { name: "robots", content: "noindex" }],
+          meta: [{ title: tr("ui.pageBateauxSlug.navireIntrouvableBledway") }, { name: "robots", content: "noindex" }],
         },
   component: Boat,
 });
@@ -90,30 +90,30 @@ function Boat() {
   if (vessel?.build_year && vessel.build_year <= year)
     facts.push({
       icon: CalendarDays,
-      label: "Mise en service",
+      label: tr("ui.pageBateauxSlug.miseEnService"),
       value: String(vessel.build_year),
       hint: `${year - vessel.build_year} ans`,
     });
   if (vessel?.passenger_capacity)
     facts.push({
       icon: Users,
-      label: "Passagers",
+      label: tr("ui.pageBateauxSlug.passagers"),
       value: vessel.passenger_capacity.toLocaleString(intlLocale()),
-      hint: "Capacité annoncée",
+      hint: tr("ui.pageBateauxSlug.capaciteAnnoncee"),
     });
   if (vessel?.car_capacity)
     facts.push({
       icon: CarFront,
-      label: "Véhicules",
+      label: tr("ui.pageBateauxSlug.vehicules"),
       value: vessel.car_capacity.toLocaleString(intlLocale()),
-      hint: "Capacité du garage",
+      hint: tr("ui.pageBateauxSlug.capaciteDuGarage"),
     });
   if (vessel?.length_meters)
     facts.push({
       icon: Ruler,
-      label: "Longueur",
+      label: tr("ui.pageBateauxSlug.longueur"),
       value: `${vessel.length_meters.toLocaleString(intlLocale())} m`,
-      hint: vessel.speed_knots ? `Vitesse ${vessel.speed_knots} nœuds` : undefined,
+      hint: vessel.speed_knots ? tr("ui.pageBateauxSlug.vitesseNUds", { speedknots: vessel.speed_knots }) : undefined,
     });
 
   return (
@@ -129,7 +129,7 @@ function Boat() {
           about: {
             "@type": "Vehicle",
             name: v.name,
-            vehicleConfiguration: "Ferry mixte passagers et véhicules",
+            vehicleConfiguration: tr("ui.pageBateauxSlug.ferryMixtePassagersEtVehicules"),
             ...(company ? { brand: { "@type": "Organization", name: company.name } } : {}),
             ...(vessel?.build_year ? { vehicleModelDate: String(vessel.build_year) } : {}),
             ...(vessel?.passenger_capacity ? { seatingCapacity: vessel.passenger_capacity } : {}),
@@ -148,7 +148,7 @@ function Boat() {
       />
       <Breadcrumbs
         items={[
-          { name: "Navires", path: "/bateaux" },
+          { name: tr("ui.pageBateauxSlug.navires"), path: "/bateaux" },
           { name: v.name, path: `/bateaux/${v.slug}` },
         ]}
       />
@@ -158,7 +158,7 @@ function Boat() {
             {company ? (
               <CompanyBadge name={company.name} logoUrl={company.logo_url} size={18} />
             ) : null}
-            Navire · {company?.name ?? v.company}
+            {tr("ui.pageBateauxSlug.navire")}{company?.name ?? v.company}
           </span>
         }
         title={v.name}
@@ -186,7 +186,7 @@ function Boat() {
               search={{ select: "vessel", id: vessel.id } as never}
               className={heroPrimary}
             >
-              <MapIcon className="size-4" aria-hidden /> Où est le {v.name} ?
+              <MapIcon className="size-4" aria-hidden />{tr("ui.pageBateauxSlug.ouEstLe")}{v.name} ?
             </Link>
           ) : null
         }
@@ -205,19 +205,19 @@ function Boat() {
           </div>
         }
       />
-      <KeyFacts facts={facts} label={`Le ${v.name} en chiffres`} />
+      <KeyFacts facts={facts} label={tr("ui.pageBateauxSlug.leEnChiffres", { name: v.name })} />
       <VesselDossierFollow slug={v.slug} />
 
       {vessel ? (
         <section className="mt-10" aria-labelledby="prochains-departs">
           <SectionTitle
             id="prochains-departs"
-            overline="Calendrier"
-            title={`Prochains départs du ${v.name}`}
+            overline={tr("ui.pageBateauxSlug.calendrier")}
+            title={tr("ui.pageBateauxSlug.prochainsDepartsDu", { name: v.name })}
           >
             {servedRoutes.length
-              ? `Programmé sur ${servedRoutes.map((route) => `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}`).join(", ")}. Touchez un départ pour le voir sur la carte.`
-              : "Touchez un départ pour le voir sur la carte."}
+              ? tr("ui.pageBateauxSlug.programmeSurTouchezUnDepart", { v: servedRoutes.map((route) => `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}`).join(", ") })
+              : tr("ui.pageBateauxSlug.touchezUnDepartPourLe")}
           </SectionTitle>
           <DepartureRows
             departures={vesselDepartures.slice(0, 6)}
@@ -257,24 +257,24 @@ function Boat() {
       </div>
 
       <nav
-        aria-label="Pour aller plus loin"
+        aria-label={tr("ui.pageBateauxSlug.pourAllerPlusLoin")}
         className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-3"
       >
         {[
           {
             href: "/bateaux",
-            title: "Toute la flotte",
-            text: "Les navires des lignes Europe–Algérie",
+            title: tr("ui.pageBateauxSlug.touteLaFlotte"),
+            text: tr("ui.pageBateauxSlug.lesNaviresDesLignesEurope"),
           },
           {
             href: "/guide/cabine-ou-fauteuil-ferry",
             title: tr("ui.pageBateauxSlug.cabineOuFauteuilFaireLe"),
-            text: "Bien choisir son installation à bord",
+            text: tr("ui.pageBateauxSlug.bienChoisirSonInstallationA"),
           },
           {
             href: "/guide/voyage-algerie-voiture-checklist",
             title: tr("ui.pageBateauxSlug.preparerLaVoitureEtLe"),
-            text: "La liste avant d'embarquer",
+            text: tr("ui.pageBateauxSlug.laListeAvantDEmbarquer"),
           },
         ].map((item) => (
           <a

@@ -19,8 +19,8 @@ export const Route = createFileRoute("/decouvrir")({
   },
   head: () =>
     seoHead(
-      "Découvrir BledWay : le ferry vers l'Algérie, de la préparation à l'arrivée",
-      "Lignes et ports entre l'Europe et l'Algérie, navires, guides pour les papiers, la voiture et le budget, questions fréquentes : tout ce que BledWay vous aide à préparer.",
+      tr("ui.pageDecouvrir.decouvrirBledwayLeFerryVers"),
+      tr("ui.pageDecouvrir.lignesEtPortsEntreL"),
       "/decouvrir",
     ),
   component: DiscoverPage,

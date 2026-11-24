@@ -1,5 +1,6 @@
 import type { Article } from "@/content/types";
 import type { PrepItem } from "@/lib/ferry/preparation";
+import { tr } from "@/lib/i18n/translate";
 
 /**
  * « Une question ? » : la recherche dans ce que BledWay sait déjà (questions fréquentes,
@@ -20,10 +21,10 @@ export type HelpAnswer = {
 };
 
 export const SOURCE_LABELS: Record<HelpSource, string> = {
-  ligne: "Cette ligne",
-  faq: "Questions fréquentes",
-  guide: "Dossier du guide",
-  preparation: "Préparation du voyage",
+  get ligne() { return tr("ui.libQuestionsSearch.cetteLigne"); },
+  get faq() { return tr("ui.libQuestionsSearch.questionsFrequentes"); },
+  get guide() { return tr("ui.libQuestionsSearch.dossierDuGuide"); },
+  get preparation() { return tr("ui.libQuestionsSearch.preparationDuVoyage"); },
 };
 
 /** Le corpus : la ligne d'abord (si on en regarde une), puis le général, le guide, la préparation. */
@@ -56,7 +57,7 @@ export function buildCorpus({
       a: article.answer,
       source: "guide",
       href,
-      hrefLabel: "Lire le dossier",
+      hrefLabel: tr("ui.libQuestionsSearch.lireLeDossier"),
     });
     article.faq.forEach((item, index) =>
       push({
@@ -64,7 +65,7 @@ export function buildCorpus({
         ...item,
         source: "guide",
         href,
-        hrefLabel: "Lire le dossier",
+        hrefLabel: tr("ui.libQuestionsSearch.lireLeDossier"),
         from: article.title,
       }),
     );
@@ -76,7 +77,7 @@ export function buildCorpus({
       q: item.label,
       a: item.tip,
       source: "preparation",
-      ...(item.href ? { href: item.href, hrefLabel: item.linkLabel ?? "En savoir plus" } : {}),
+      ...(item.href ? { href: item.href, hrefLabel: item.linkLabel ?? tr("ui.libQuestionsSearch.enSavoirPlus") } : {}),
     });
   }
   return out;
@@ -235,9 +236,9 @@ export function highlightParts(text: string, query: string): { text: string; hit
 export function assistantPrompt(query: string, line?: string | null) {
   return [
     line
-      ? `Je prépare une traversée en ferry ${line} (entre l'Europe et l'Algérie).`
-      : "Je prépare une traversée en ferry entre l'Europe et l'Algérie.",
-    `Ma question : ${query.trim()}`,
-    "Réponds en français, simplement, et indique les sources officielles à vérifier (douane, compagnie, consulat).",
+      ? tr("ui.libQuestionsSearch.jePrepareUneTraverseeEn", { line })
+      : tr("ui.libQuestionsSearch.jePrepareUneTraverseeEn2"),
+    tr("ui.libQuestionsSearch.maQuestion", { v: query.trim() }),
+    tr("ui.libQuestionsSearch.repondsEnFrancaisSimplementEt"),
   ].join("\n");
 }

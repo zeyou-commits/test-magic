@@ -58,11 +58,11 @@ import { tr, lazyDateFormat } from "@/lib/i18n";
 export const Route = createFileRoute("/ma-preparation")({
   head: () => ({
     meta: [
-      { title: "Préparation du voyage au bled | BledWay" },
+      { title: tr("ui.pageMaPreparation.preparationDuVoyageAuBled2") },
       { name: "robots", content: "noindex, nofollow" },
       {
         name: "description",
-        content: "La préparation d'un voyage en Algérie : démarches, documents, à emporter, points d'attention.",
+        content: tr("ui.pageMaPreparation.laPreparationDUnVoyage"),
       },
     ],
   }),
@@ -111,7 +111,7 @@ function SharedPreparationPage() {
         text={tr("ui.pageMaPreparation.pourLaProtegerSeuleL")}
         cta={{
           href: `/auth?next=${encodeURIComponent(`/ma-preparation?s=${shareId}`)}`,
-          label: "Me connecter pour la voir",
+          label: tr("ui.pageMaPreparation.meConnecterPourLaVoir"),
         }}
         locked
       />
@@ -120,8 +120,8 @@ function SharedPreparationPage() {
     return (
       <Empty
         title={tr("ui.pageMaPreparation.cettePreparationNeVousEst")}
-        text={`Elle est réservée aux adresses invitées, et vous êtes connecté avec ${user?.email ?? "un autre compte"}. Demandez à la personne qui l'a partagée d'ajouter cette adresse, ou connectez-vous avec la bonne. Un partage expire aussi au bout de 4 mois.`}
-        cta={{ href: "/preparer-mon-voyage", label: "Préparer mon propre voyage" }}
+        text={tr("ui.pageMaPreparation.elleEstReserveeAuxAdresses", { v: user?.email ?? "un autre compte" })}
+        cta={{ href: "/preparer-mon-voyage", label: tr("ui.pageMaPreparation.preparerMonPropreVoyage") }}
         locked
       />
     );
@@ -131,7 +131,7 @@ function SharedPreparationPage() {
       <Empty
         title={tr("ui.pageMaPreparation.aucunePreparationAAfficher")}
         text={tr("ui.pageMaPreparation.laPreparationNAPas")}
-        cta={{ href: "/preparer-mon-voyage", label: "Préparer mon voyage" }}
+        cta={{ href: "/preparer-mon-voyage", label: tr("ui.pageMaPreparation.preparerMonVoyage") }}
       />
     );
   // Sa propre préparation : un code postal ajouté ici est retenu dans « Mes papiers ».
@@ -222,7 +222,7 @@ function SharePanel({ prep, title }: { prep: SharedPreparation; title: string })
     if (!url) return;
     try {
       if (navigator.share && matchMedia("(pointer: coarse)").matches) {
-        await navigator.share({ title, text: `${title} : préparé avec BledWay`, url });
+        await navigator.share({ title, text: tr("ui.pageMaPreparation.prepareAvecBledway", { title }), url });
         return;
       }
       await navigator.clipboard.writeText(url);
@@ -413,7 +413,7 @@ function OnePage({
   const fees = totalCost(tasks);
 
   const due = (when: When) =>
-    when === "first" ? "Dès maintenant" : (deadlines[when]?.label ?? whenLabels[when].title);
+    when === "first" ? tr("ui.pageMaPreparation.desMaintenant") : (deadlines[when]?.label ?? whenLabels[when].title);
 
   return (
     <div className="bw-onepage-wrap">
@@ -458,7 +458,7 @@ function OnePage({
       {mine ? (
         <SharePanel
           prep={prep}
-          title={named.length ? `Le voyage de ${joinNames(named)}` : tr("ui.pageMaPreparation.notreVoyageAuBled")}
+          title={named.length ? tr("ui.pageMaPreparation.leVoyageDe", { joinNames: joinNames(named) }) : tr("ui.pageMaPreparation.notreVoyageAuBled")}
         />
       ) : null}
 
@@ -467,7 +467,7 @@ function OnePage({
           <img src="/bledway-brand-entete.webp" alt={tr("ui.pageMaPreparation.bledway")} className="bw-onepage__logo" />
           <div className="min-w-0">
             <p className="bw-onepage__kicker">{tr("ui.pageMaPreparation.preparationDuVoyageAuBled")}</p>
-            <h1>{named.length ? `Le voyage de ${joinNames(named)}` : tr("ui.pageMaPreparation.notreVoyageEnAlgerie")}</h1>
+            <h1>{named.length ? tr("ui.pageMaPreparation.leVoyageDe", { joinNames: joinNames(named) }) : tr("ui.pageMaPreparation.notreVoyageEnAlgerie")}</h1>
           </div>
           <div className="bw-onepage__score">
             <b>{toDo}</b>
@@ -628,12 +628,12 @@ function Frise({
 }) {
   type Node = { key: string; lead: string; tag?: string; items: Task[]; milestone?: boolean };
   const nodes: Node[] = [];
-  const fixed: Partial<Record<When, string>> = { pack: "Le jour du départ", there: "Sur place", back: "Pour rentrer" };
+  const fixed: Partial<Record<When, string>> = { pack: tr("ui.pageMaPreparation.leJourDuDepart"), there: tr("ui.pageMaPreparation.surPlace"), back: tr("ui.pageMaPreparation.pourRentrer") };
   const goNode: Node | null = departure
     ? {
         key: "go",
         lead: departure,
-        tag: packCount ? `Départ · ${packCount} papier${packCount > 1 ? "s" : ""} dans la pochette` : "Départ",
+        tag: packCount ? tr("ui.pageMaPreparation.departPapierDansLaPochette", { packCount, v: packCount > 1 ? "s" : "" }) : tr("ui.pageMaPreparation.depart"),
         items: [],
         milestone: true,
       }
@@ -641,7 +641,7 @@ function Frise({
   for (const when of whenOrder) {
     if (when === "pack" && goNode) nodes.push(goNode);
     if (when === "back" && back)
-      nodes.push({ key: "ret", lead: back, tag: "Retour", items: [], milestone: true });
+      nodes.push({ key: "ret", lead: back, tag: tr("ui.pageMaPreparation.retour2"), items: [], milestone: true });
     const items = tasks.filter((t) => t.when === when);
     if (!items.length) continue;
     nodes.push({ key: when, lead: fixed[when] ?? due(when), tag: whenLabels[when].title, items });

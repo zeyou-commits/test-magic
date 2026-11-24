@@ -12,13 +12,13 @@ const emptyScenario = {
   other: "",
 };
 const fieldLabels: Record<keyof typeof emptyScenario, string> = {
-  ticket: "Billet total du groupe, véhicule et installation (€)",
-  km: "Kilomètres routiers totaux du scénario",
-  consumption: "Consommation (L/100 km)",
-  fuelPrice: "Prix moyen du carburant (€/L)",
-  tolls: "Péages totaux (€)",
-  lodging: "Hébergement total (€)",
-  other: "Autres dépenses (€)",
+  get ticket() { return tr("ui.travelBudget.billetTotalDuGroupeVehicule"); },
+  get km() { return tr("ui.travelBudget.kilometresRoutiersTotauxDuScenario"); },
+  get consumption() { return tr("ui.travelBudget.consommationL100Km"); },
+  get fuelPrice() { return tr("ui.travelBudget.prixMoyenDuCarburantL"); },
+  get tolls() { return tr("ui.travelBudget.peagesTotaux"); },
+  get lodging() { return tr("ui.travelBudget.hebergementTotal"); },
+  get other() { return tr("ui.travelBudget.autresDepenses"); },
 };
 function ScenarioFields({
   id,
@@ -185,7 +185,7 @@ export function TravelBudget() {
             <p className="mt-4 font-semibold">
               {resultA.total === resultB.total
                 ? tr("ui.travelBudget.lesDeuxScenariosOntLe")
-                : `Le scénario ${resultA.total < resultB.total ? "A" : "B"} coûte ${euros(Math.abs(resultA.total - resultB.total))} de moins pour le groupe.`}
+                : tr("ui.travelBudget.leScenarioCouteDeMoins", { v: resultA.total < resultB.total ? "A" : "B", euros: euros(Math.abs(resultA.total - resultB.total)) })}
             </p>
             <p className="mt-3 text-sm">
               {tr("ui.travelBudget.carburantKilometresConsommation100Prix")}

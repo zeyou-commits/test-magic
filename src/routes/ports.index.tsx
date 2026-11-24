@@ -67,25 +67,25 @@ function PortsPage() {
   const facts: Fact[] = [
     {
       icon: MapPin,
-      label: "Ports",
+      label: tr("ui.pagePortsIndex.ports"),
       value: String(connectedPorts.length),
       hint: closedHint(ports.filter((port) => port.status === "inactive").length),
     },
     {
       icon: Flag,
-      label: "Pays",
+      label: tr("ui.pagePortsIndex.pays"),
       value: String(countries.length),
       hint: countries.join(", "),
     },
     {
       icon: RouteIcon,
-      label: "Lignes",
+      label: tr("ui.pagePortsIndex.lignes"),
       value: String(routes.length),
-      hint: "Dans les deux sens",
+      hint: tr("ui.pagePortsIndex.dansLesDeuxSens"),
     },
     {
       icon: Building2,
-      label: "Compagnies",
+      label: tr("ui.pagePortsIndex.compagnies"),
       value: String(activeCompanies.length),
       hint: activeCompanies.map((company) => company.name).join(", "),
     },
@@ -97,11 +97,11 @@ function PortsPage() {
         path="/ports"
         name="Ports de ferry Europe ↔ Algérie"
         items={ports.map((port) => ({
-          name: `Port ${deName(port.name)}`,
+          name: tr("ui.pagePortsIndex.port", { deName: deName(port.name) }),
           path: `/ports/${port.slug}`,
         }))}
       />
-      <Breadcrumbs items={[{ name: "Ports", path: "/ports" }]} />
+      <Breadcrumbs items={[{ name: tr("ui.pagePortsIndex.ports"), path: "/ports" }]} />
       <ShowcaseHero
         overline={tr("ui.pagePortsIndex.ports")}
         title={tr("ui.pagePortsIndex.lesPortsDesTraverseesEntre")}
@@ -121,7 +121,7 @@ function PortsPage() {
         }
         actions={
           <Link to="/" className={heroPrimary}>
-            <MapIcon className="size-4" aria-hidden /> Voir les ports sur la carte
+            <MapIcon className="size-4" aria-hidden />{tr("ui.pagePortsIndex.voirLesPortsSurLa")}
           </Link>
         }
         visual={
@@ -133,7 +133,7 @@ function PortsPage() {
           />
         }
       />
-      <KeyFacts facts={facts} label="Les ports en chiffres" />
+      <KeyFacts facts={facts} label={tr("ui.pagePortsIndex.lesPortsEnChiffres")} />
 
       {countries.map((country) => {
         const list = ports
@@ -173,7 +173,7 @@ function PortsPage() {
                       ? tr("ui.pagePortsIndex.t1Ligne")
                       : `${count} lignes`,
                   next
-                    ? `prochain départ le ${formatDate(next.departure_at, portTimeZone(port))}`
+                    ? tr("ui.pagePortsIndex.prochainDepartLe", { formatDate: formatDate(next.departure_at, portTimeZone(port)) })
                     : null,
                   port.status === "inactive" ? tr("ui.pagePortsIndex.temporairementFerme") : null,
                 ]
@@ -191,17 +191,17 @@ function PortsPage() {
       })}
 
       <nav
-        aria-label="Pour aller plus loin"
+        aria-label={tr("ui.pagePortsIndex.pourAllerPlusLoin")}
         className="mt-12 grid grid-cols-1 gap-3 sm:grid-cols-3"
       >
         {[
-          { href: "/lignes", title: "Les lignes", text: "Durées, départs et prix repères" },
+          { href: "/lignes", title: tr("ui.pagePortsIndex.lesLignes"), text: tr("ui.pagePortsIndex.dureesDepartsEtPrixReperes") },
           {
             href: "/routes-du-bled",
-            title: "Routes du bled",
-            text: "La route jusqu'au port, avec les haltes",
+            title: tr("ui.pagePortsIndex.routesDuBled"),
+            text: tr("ui.pagePortsIndex.laRouteJusquAuPort"),
           },
-          { href: "/compagnies", title: "Les compagnies", text: "Lignes, flotte et contacts" },
+          { href: "/compagnies", title: tr("ui.pagePortsIndex.lesCompagnies"), text: tr("ui.pagePortsIndex.lignesFlotteEtContacts") },
         ].map((item) => (
           <a
             key={item.href}
@@ -231,4 +231,4 @@ const slugOf = (value: string) =>
     .replace(/[^a-z]+/g, "-");
 
 const closedHint = (closed: number) =>
-  closed === 0 ? "Tous ouverts" : `${closed} temporairement fermé${closed > 1 ? "s" : ""}`;
+  closed === 0 ? tr("ui.pagePortsIndex.tousOuverts") : tr("ui.pagePortsIndex.temporairementFerme2", { closed, v: closed > 1 ? "s" : "" });

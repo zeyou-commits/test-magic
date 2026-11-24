@@ -1,5 +1,6 @@
 // « Combien je change ? » : une estimation de séjour, à ajuster par le voyageur.
 // Les montants par défaut sont des repères BledWay modifiables, jamais des prix officiels.
+import { tr } from "@/lib/i18n/translate";
 
 export type PlanStyle = "econome" | "normal" | "large";
 export type StayPlan = {
@@ -16,9 +17,9 @@ export type StayPlan = {
 };
 
 export const PLAN_STYLES: { id: PlanStyle; label: string; factor: number }[] = [
-  { id: "econome", label: "Économe", factor: 0.7 },
-  { id: "normal", label: "Normal", factor: 1 },
-  { id: "large", label: "Large", factor: 1.5 },
+  { id: "econome", get label() { return tr("ui.libWalletPlan.econome"); }, factor: 0.7 },
+  { id: "normal", get label() { return tr("ui.libWalletPlan.normal"); }, factor: 1 },
+  { id: "large", get label() { return tr("ui.libWalletPlan.large"); }, factor: 1.5 },
 ];
 
 /** Repères par jour, en dinars, pour un adulte (un enfant compte pour moitié). */
@@ -69,11 +70,11 @@ export function planBudget(plan: StayPlan): { lines: PlanLine[]; total: number }
   // La route depuis le port se fait deux fois (arrivée et retour), plus les trajets du quotidien.
   const km = plan.car ? plan.km * 2 + LOCAL_KM_PER_DAY * plan.days : 0;
   const lines: PlanLine[] = [
-    { id: "courses", label: "Courses", dinars: daily(DAILY_PER_ADULT.courses) },
-    { id: "resto", label: "Resto, cafés", dinars: daily(DAILY_PER_ADULT.resto) },
-    { id: "sorties", label: "Sorties, imprévus", dinars: daily(DAILY_PER_ADULT.sorties) },
-    { id: "essence", label: "Essence", dinars: Math.round((km * LITRES_PER_100KM * plan.fuelPrice) / 100) },
-    { id: "cadeaux", label: "Cadeaux", dinars: plan.gifts },
+    { id: "courses", label: tr("ui.libWalletPlan.courses"), dinars: daily(DAILY_PER_ADULT.courses) },
+    { id: "resto", label: tr("ui.libWalletPlan.restoCafes"), dinars: daily(DAILY_PER_ADULT.resto) },
+    { id: "sorties", label: tr("ui.libWalletPlan.sortiesImprevus"), dinars: daily(DAILY_PER_ADULT.sorties) },
+    { id: "essence", label: tr("ui.libWalletPlan.essence"), dinars: Math.round((km * LITRES_PER_100KM * plan.fuelPrice) / 100) },
+    { id: "cadeaux", label: tr("ui.libWalletPlan.cadeaux"), dinars: plan.gifts },
   ];
   const kept = lines.filter((line) => line.dinars > 0);
   return { lines: kept, total: kept.reduce((sum, line) => sum + line.dinars, 0) };

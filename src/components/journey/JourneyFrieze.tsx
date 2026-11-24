@@ -50,7 +50,7 @@ export function JourneyFrieze({
   pinnedId,
   onHover,
   onPin,
-  hereLabel = "Vous êtes ici",
+  hereLabel = tr("ui.journeyFrieze.vousEtesIci"),
 }: {
   steps: FriezeStep[];
   shownId: JourneyStepId | null;
@@ -88,7 +88,7 @@ export function JourneyFrieze({
             <button
               type="button"
               aria-pressed={pinnedId === step.id}
-              aria-label={`${step.label} · ${step.sub}${step.state === "current" ? ` · ${hereLabel}` : ""}${pinnedId === step.id ? " · affichée" : ""}`}
+              aria-label={`${step.label} · ${step.sub}${step.state === "current" ? ` · ${hereLabel}` : ""}${pinnedId === step.id ? tr("ui.journeyFrieze.affichee") : ""}`}
               onPointerEnter={(event) => {
                 if (event.pointerType === "mouse") onHover(step.id);
               }}
@@ -108,7 +108,7 @@ export function JourneyFrieze({
                 {step.count ? (
                   <em
                     className="bw-frieze__count"
-                    title={`${step.count} voyageur${step.count > 1 ? "s" : ""} BledWay à cette étape`}
+                    title={tr("ui.journeyFrieze.voyageurBledwayACetteEtape", { count: step.count, v: step.count > 1 ? "s" : "" })}
                   >
                     <Users size={10} aria-hidden />
                     {step.count}

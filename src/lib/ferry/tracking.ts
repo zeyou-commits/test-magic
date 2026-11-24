@@ -1,6 +1,7 @@
 // Suivi en direct : position projetée, distance restante, heure d'arrivée estimée.
 import type { Departure, Port, RouteLine, Vessel } from "./types";
 import type { LngLat } from "./geo";
+import { lazyDateFormat } from "@/lib/i18n";
 
 export interface LivePosition {
   mmsi: number;
@@ -796,7 +797,7 @@ export function detectRotationDelay(args: {
   const speed = position.speedKnots ?? 0;
   const etaMs = speed >= 1.5 ? now + ((distanceKm * 1000) / (speed * KNOT_MS)) * 1000 : NaN;
   const etaLabel = Number.isFinite(etaMs)
-    ? new Intl.DateTimeFormat("fr-FR", { timeZone, hour: "2-digit", minute: "2-digit" }).format(
+    ? lazyDateFormat({ timeZone, hour: "2-digit", minute: "2-digit" }).format(
         new Date(etaMs),
       )
     : "à confirmer";

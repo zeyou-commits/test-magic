@@ -136,7 +136,7 @@ function AlertTickerBar() {
       version: `${i.id}:${i.updated_at}`,
       text: incidentHeadline(
         i,
-        vessels.find((v) => v.id === i.vessel_id)?.name ?? "Un navire",
+        vessels.find((v) => v.id === i.vessel_id)?.name ?? tr("ui.alertTicker.unNavire"),
         ports.find((p) => p.id === i.location_port_id)?.name,
       ),
     }));
@@ -244,7 +244,7 @@ function AlertTickerBar() {
     (alert) => !alert.id || alert.id === trip?.vessel?.id || followed.data?.includes(alert.id),
   );
   const tone = critical.length ? (concerned ? "critical" : "quiet") : "warning";
-  const label = critical.length ? "Alertes graves" : "Perturbations";
+  const label = critical.length ? tr("ui.alertTicker.alertesGraves") : tr("ui.alertTicker.perturbations");
   // Une seule information : fixe, centrée et avec ses actions. Le défilement sert quand il y en a plusieurs.
   const alertBlock = () => {
     if (alerts.length === 1) {
@@ -279,7 +279,7 @@ function AlertTickerBar() {
                         type: "follow",
                         kind: "vessel",
                         targetId: vesselId,
-                        label: vessels.find((v) => v.id === vesselId)?.name ?? "Ce navire",
+                        label: vessels.find((v) => v.id === vesselId)?.name ?? tr("ui.alertTicker.ceNavire"),
                         upgrade: true,
                       })
                     }

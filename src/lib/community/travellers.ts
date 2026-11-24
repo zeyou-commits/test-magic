@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
+import { tr } from "@/lib/i18n/translate";
 
 // Fonctions de la communauté pas encore présentes dans les types générés.
 const db = typedSupabase as unknown as SupabaseClient;
@@ -46,10 +47,10 @@ export const avatarColors = {
 export type AvatarColor = keyof typeof avatarColors;
 
 export const reactions = [
-  { code: "merci", label: "Merci" },
-  { code: "courage", label: "Courage" },
-  { code: "bon_voyage", label: "Bon voyage" },
-  { code: "bien_vu", label: "Bien vu" },
+  { code: "merci", get label() { return tr("ui.libCommunityTravellers.merci"); } },
+  { code: "courage", get label() { return tr("ui.libCommunityTravellers.courage"); } },
+  { code: "bon_voyage", get label() { return tr("ui.libCommunityTravellers.bonVoyage"); } },
+  { code: "bien_vu", get label() { return tr("ui.libCommunityTravellers.bienVu"); } },
 ] as const;
 export type ReactionCode = (typeof reactions)[number]["code"];
 export const reactionImage = (code: string) => `/cabas/reactions/${code}.webp`;
@@ -233,7 +234,7 @@ export const checkPseudo = (pseudo: string) => rpc<string>("bw_pseudo_check", { 
 
 /** Pseudo proposé à l'inscription, modifiable par le voyageur. */
 export function suggestPseudo() {
-  const names = ["Voyageur", "Yallah", "Traversée", "Bled", "Cabas", "Galerie", "Marin", "Escale"];
+  const names = [tr("ui.libCommunityTravellers.voyageur"), tr("ui.libCommunityTravellers.yallah"), tr("ui.libCommunityTravellers.traversee"), tr("ui.libCommunityTravellers.bled"), tr("ui.libCommunityTravellers.cabas"), tr("ui.libCommunityTravellers.galerie"), tr("ui.libCommunityTravellers.marin"), tr("ui.libCommunityTravellers.escale")];
   const name = names[Math.floor(Math.random() * names.length)]!;
   return `${name} ${1000 + Math.floor(Math.random() * 9000)}`;
 }
@@ -241,11 +242,11 @@ export function suggestPseudo() {
 /** Pseudo : 3 à 24 caractères, lettres, chiffres, espaces, point, tiret, apostrophe. */
 export function pseudoError(value: string) {
   const pseudo = value.trim().replace(/\s+/g, " ");
-  if (pseudo.length < 3) return "3 caractères minimum.";
-  if (pseudo.length > 24) return "24 caractères maximum.";
+  if (pseudo.length < 3) return tr("ui.libCommunityTravellers.t3CaracteresMinimum");
+  if (pseudo.length > 24) return tr("ui.libCommunityTravellers.t24CaracteresMaximum");
   if (!/^[\p{L}\p{N} ._'-]+$/u.test(pseudo))
-    return "Lettres, chiffres, espaces, . _ ' - uniquement.";
-  if (/@|https?:|www\./i.test(pseudo)) return "Pas d’adresse ni de lien dans le pseudo.";
+    return tr("ui.libCommunityTravellers.lettresChiffresEspacesUniquement");
+  if (/@|https?:|www\./i.test(pseudo)) return tr("ui.libCommunityTravellers.pasDAdresseNiDe");
   return null;
 }
 

@@ -94,7 +94,7 @@ export function MeTab({
           type="button"
           className={`${className} bw-me-tab`}
           onClick={() => setOpen((current) => !current)}
-          aria-label={`Mon profil${me.mood ? ` · humeur : ${me.mood.label}` : " · ajouter une humeur"}`}
+          aria-label={tr("ui.meTab.monProfil", { v: me.mood ? ` · humeur : ${me.mood.label}` : " · ajouter une humeur" })}
         >
           {/* L'avatar reste toujours le même ; l'humeur vit dans sa bulle (badge picto sur l'avatar). */}
           {me.mood ? null : (
@@ -126,7 +126,7 @@ function MeSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: b
     mutationFn: (code: string | null) => setMood(code),
     onSuccess: (_, code) => {
       void client.invalidateQueries({ queryKey: communityKey });
-      toast.success(code ? "Humeur partagée pour 24 h." : "Humeur retirée.");
+      toast.success(code ? tr("ui.meTab.humeurPartageePour24H") : tr("ui.meTab.humeurRetiree"));
     },
     onError: (error: Error) => toast.error(error.message),
   });

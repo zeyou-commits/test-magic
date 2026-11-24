@@ -48,7 +48,7 @@ export function ArticlePage({ article }: { article: Article }) {
       />
       <Breadcrumbs
         items={[
-          { name: "Guide", path: "/guide" },
+          { name: tr("ui.articlePage.guide"), path: "/guide" },
           { name: article.title, path: `/guide/${article.slug}` },
         ]}
       />

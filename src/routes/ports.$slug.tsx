@@ -42,7 +42,7 @@ import {
 import { portPhotoQuery } from "@/lib/ferry/vesselPhoto";
 import { weeklyPace } from "@/lib/ferry/showcase";
 import { portTimeZone, zoneLabel } from "@/lib/ferry/time";
-import { tr } from "@/lib/i18n";
+import { placeName, tr } from "@/lib/i18n";
 
 export const Route = createFileRoute("/ports/$slug")({
   loader: async ({ context, params }) => {
@@ -79,11 +79,11 @@ export const Route = createFileRoute("/ports/$slug")({
   head: ({ loaderData }) => {
     if (!loaderData) {
       return {
-        meta: [{ title: "Port indisponible — BledWay" }, { name: "robots", content: "noindex" }],
+        meta: [{ title: tr("ui.pagePortsSlug.portIndisponibleBledway") }, { name: "robots", content: "noindex" }],
       };
     }
-    const title = `Ferry ${loaderData.name} (${loaderData.country}) : lignes, départs, services | BledWay`;
-    const description = `Port ${deName(loaderData.name)} : ferries vers ${loaderData.connected.join(", ") || "les ports reliés"}, prochains départs datés, compagnies, durées et services du port.`;
+    const title = tr("ui.pagePortsSlug.ferryLignesDepartsServicesBledway", { name: loaderData.name, country: loaderData.country });
+    const description = tr("ui.pagePortsSlug.portFerriesVersProchainsDeparts", { deName: deName(loaderData.name), v: loaderData.connected.join(", ") || tr("ui.pagePortsSlug.lesPortsRelies") });
     return seoHead(title, description, `/ports/${loaderData.slug}`);
   },
   component: PortPage,
@@ -134,13 +134,13 @@ function PortPage() {
   const facts: Fact[] = [
     {
       icon: RouteIcon,
-      label: "Lignes",
+      label: tr("ui.pagePortsSlug.lignes"),
       value: String(portRoutes.length),
-      hint: `${outbound.length} au départ · ${inbound.length} à l'arrivée`,
+      hint: tr("ui.pagePortsSlug.auDepartALArrivee", { length: outbound.length, length2: inbound.length }),
     },
     {
       icon: Navigation,
-      label: "Ports reliés",
+      label: tr("ui.pagePortsSlug.portsRelies"),
       value: String(connectedIds.length),
       hint: connectedIds.map(portName).join(", "),
     },
@@ -148,17 +148,17 @@ function PortPage() {
   if (pace)
     facts.push({
       icon: CalendarDays,
-      label: pace.kind === "average" ? "Départs par semaine" : "Départs sous 7 jours",
+      label: pace.kind === "average" ? tr("ui.pagePortsSlug.departsParSemaine") : tr("ui.pagePortsSlug.departsSous7Jours"),
       value: pace.kind === "average" ? `≈ ${pace.value}` : String(pace.value),
       hint:
         pace.kind === "average"
-          ? `Au départ du port, moyenne des ${pace.weeks} prochaines semaines`
-          : "Au départ du port",
+          ? tr("ui.pagePortsSlug.auDepartDuPortMoyenne", { weeks: pace.weeks })
+          : tr("ui.pagePortsSlug.auDepartDuPort"),
     });
   if (operators.length)
     facts.push({
       icon: Building2,
-      label: operators.length > 1 ? "Compagnies" : "Compagnie",
+      label: operators.length > 1 ? tr("ui.pagePortsSlug.compagnies") : tr("ui.pagePortsSlug.compagnie"),
       value: (
         <span className="flex flex-wrap items-center gap-2">
           {operators.length}
@@ -207,11 +207,11 @@ function PortPage() {
           </span>
           <span className="mt-1 text-sm text-muted-foreground">
             {route.typical_duration_minutes
-              ? `Environ ${formatDuration(route.typical_duration_minutes)}`
-              : "Durée à confirmer"}
+              ? tr("ui.pagePortsSlug.environ", { formatDuration: formatDuration(route.typical_duration_minutes) })
+              : tr("ui.pagePortsSlug.dureeAConfirmer")}
             {next
-              ? ` · prochain départ le ${formatDate(next.departure_at, portTimeZone(fromPort))}`
-              : " · aucun départ publié"}
+              ? tr("ui.pagePortsSlug.prochainDepartLe", { formatDate: formatDate(next.departure_at, portTimeZone(fromPort)) })
+              : tr("ui.pagePortsSlug.aucunDepartPublie")}
           </span>
           {lineCompanies.length ? (
             <span className="mt-auto flex flex-wrap items-center gap-2 pt-3">
@@ -235,7 +235,7 @@ function PortPage() {
     "@type": "BoatTerminal",
     name: `Port ${deName(port.name)}`,
     url: absoluteUrl(`/ports/${port.slug}`),
-    description: `Gare maritime ${deName(port.name)} (${port.country_name}) : ${portRoutes.length} ligne${portRoutes.length > 1 ? "s" : ""} de ferry vers ${connectedIds.map(portName).join(", ")}.`,
+    description: tr("ui.pagePortsSlug.gareMaritimeLigneDeFerry", { deName: deName(port.name), countryname: port.country_name, length: portRoutes.length, v: portRoutes.length > 1 ? "s" : "", v2: connectedIds.map(portName).join(", ") }),
     address: {
       "@type": "PostalAddress",
       addressCountry: port.country_code,
@@ -255,27 +255,27 @@ function PortPage() {
       <StructuredData value={jsonLd} />
       <Breadcrumbs
         items={[
-          { name: "Ports", path: "/ports" },
+          { name: tr("ui.pagePortsSlug.ports"), path: "/ports" },
           { name: port.name, path: `/ports/${port.slug}` },
         ]}
       />
       <ShowcaseHero
-        overline={`Port · ${port.country_name}${port.city && port.city !== port.name ? ` · ${port.city}` : ""}`}
-        title={`Ferry au port ${deName(port.name)}`}
+        overline={tr("ui.pagePortsSlug.port", { countryname: port.country_name, v: port.city && port.city !== port.name ? ` · ${port.city}` : "" })}
+        title={tr("ui.pagePortsSlug.ferryAuPort", { deName: deName(port.name) })}
         intro={
           <p>
             {port.notes ??
-              `Lignes maritimes, prochains départs, compagnies et services du port ${deName(port.name)}.`}
+              tr("ui.pagePortsSlug.lignesMaritimesProchainsDepartsCompagnies", { deName: deName(port.name) })}
           </p>
         }
         chips={
           <>
             {connectedIds.slice(0, 6).map((id) => (
               <span key={id} className={heroChip}>
-                ⇄ {portName(id)}
+                ⇄ {placeName(portName(id))}
               </span>
             ))}
-            <span className={heroChip}>Heures en {zoneLabel(timeZone)}</span>
+            <span className={heroChip}>{tr("ui.pagePortsSlug.heuresEn")}{zoneLabel(timeZone)}</span>
           </>
         }
         actions={
@@ -299,15 +299,15 @@ function PortPage() {
         </p>
       ) : null}
 
-      <KeyFacts facts={facts} label={`Le port ${deName(port.name)} en chiffres`} />
+      <KeyFacts facts={facts} label={tr("ui.pagePortsSlug.lePortEnChiffres", { deName: deName(port.name) })} />
 
       <section className="mt-12" aria-labelledby="prochains-departs">
         <SectionTitle
           id="prochains-departs"
-          overline="Calendrier"
-          title={`Prochains départs ${deName(port.name)}`}
+          overline={tr("ui.pagePortsSlug.calendrier")}
+          title={tr("ui.pagePortsSlug.prochainsDeparts", { deName: deName(port.name) })}
         >
-          Toutes lignes confondues. Touchez un départ pour le voir sur la carte.
+          {tr("ui.pagePortsSlug.toutesLignesConfonduesTouchezUn")}
         </SectionTitle>
         <DepartureRows
           departures={nextDepartures}
@@ -322,11 +322,11 @@ function PortPage() {
       </section>
 
       <section className="mt-12" aria-labelledby="lignes">
-        <SectionTitle id="lignes" overline="Lignes" title={`Les lignes ${deName(port.name)}`} />
+        <SectionTitle id="lignes" overline={tr("ui.pagePortsSlug.lignes")} title={tr("ui.pagePortsSlug.lesLignes", { deName: deName(port.name) })} />
         {outbound.length ? (
           <>
             <h3 className="mt-5 text-sm font-bold uppercase tracking-wider text-muted-foreground">
-              Au départ
+              {tr("ui.pagePortsSlug.auDepart")}
             </h3>
             <ul className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {outbound.map(lineCard)}
@@ -336,7 +336,7 @@ function PortPage() {
         {inbound.length ? (
           <>
             <h3 className="mt-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">
-              À l'arrivée
+              {tr("ui.pagePortsSlug.aLArrivee")}
             </h3>
             <ul className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {inbound.map(lineCard)}
@@ -354,7 +354,7 @@ function PortPage() {
         <section className="mt-12" aria-labelledby="services">
           <SectionTitle
             id="services"
-            overline="Sur place"
+            overline={tr("ui.pagePortsSlug.surPlace")}
             title={tr("ui.pagePortsSlug.servicesDuPort")}
           />
           <div
@@ -364,7 +364,7 @@ function PortPage() {
               <figure className="overflow-hidden rounded-2xl border border-border bg-card">
                 <img
                   src={photo.url}
-                  alt={`Le port ${deName(port.name)}`}
+                  alt={tr("ui.pagePortsSlug.lePort", { deName: deName(port.name) })}
                   loading="lazy"
                   decoding="async"
                   referrerPolicy="no-referrer"
@@ -382,7 +382,7 @@ function PortPage() {
                           rel="noopener noreferrer"
                           className="underline"
                         >
-                          Source
+                          {tr("ui.pagePortsSlug.source")}
                         </a>
                       </>
                     ) : null}
@@ -410,10 +410,10 @@ function PortPage() {
         <section className="mt-12" aria-labelledby="compagnies">
           <SectionTitle
             id="compagnies"
-            overline="Réserver"
+            overline={tr("ui.pagePortsSlug.reserver")}
             title={tr("ui.pagePortsSlug.compagniesPresentes")}
           >
-            La réservation se fait directement auprès de la compagnie.
+            {tr("ui.pagePortsSlug.laReservationSeFaitDirectement")}
           </SectionTitle>
           <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {operators.map((company) => (
@@ -446,20 +446,20 @@ function PortPage() {
       />
 
       <nav
-        aria-label="Pour aller plus loin"
+        aria-label={tr("ui.pagePortsSlug.pourAllerPlusLoin")}
         className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-3"
       >
         {[
-          { href: "/ports", title: "Tous les ports", text: "Europe et Algérie, sur une carte" },
+          { href: "/ports", title: tr("ui.pagePortsSlug.tousLesPorts"), text: tr("ui.pagePortsSlug.europeEtAlgerieSurUne") },
           {
             href: "/routes-du-bled",
-            title: "Routes du bled",
-            text: "La route jusqu'au port, avec les haltes",
+            title: tr("ui.pagePortsSlug.routesDuBled"),
+            text: tr("ui.pagePortsSlug.laRouteJusquAuPort"),
           },
           {
             href: "/preparer-mon-voyage",
-            title: "Préparer mon voyage",
-            text: "Papiers, voiture, budget : pas à pas",
+            title: tr("ui.pagePortsSlug.preparerMonVoyage"),
+            text: tr("ui.pagePortsSlug.papiersVoitureBudgetPasA"),
           },
         ].map((item) => (
           <a

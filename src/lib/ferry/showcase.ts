@@ -7,6 +7,7 @@ import {
 import type { Departure, Port } from "./types";
 import type { Sailing } from "./trips";
 import type { TripProfileValue, VehicleKind } from "@/components/panel/TripProfile";
+import { tr } from "@/lib/i18n/translate";
 
 const WEEK = 7 * 24 * 3_600_000;
 
@@ -47,20 +48,20 @@ export function lineBenchmark(from: Pick<Port, "name">, to: Pick<Port, "name">) 
 /** Un jour représentatif de chaque saison tarifaire (seuls le mois et le jour comptent). */
 export const SEASON_DAYS: { season: PriceSeason; label: string; months: string; dayKey: string }[] =
   [
-    { season: "calme", label: "Période calme", months: "janv.–mars, nov.", dayKey: "2027-02-15" },
+    { season: "calme", get label() { return tr("ui.libFerryShowcase.periodeCalme"); }, get months() { return tr("ui.libFerryShowcase.janvMarsNov"); }, dayKey: "2027-02-15" },
     {
       season: "intermediaire",
-      label: "Intermédiaire",
-      months: "avr.–mi-juin, mi-sept.–oct., déc.",
+      get label() { return tr("ui.libFerryShowcase.intermediaire"); },
+      get months() { return tr("ui.libFerryShowcase.avrMiJuinMiSept"); },
       dayKey: "2027-05-15",
     },
     {
       season: "forte",
-      label: "Forte demande",
-      months: "mi-juin–mi-juil., début sept.",
+      get label() { return tr("ui.libFerryShowcase.forteDemande"); },
+      get months() { return tr("ui.libFerryShowcase.miJuinMiJuilDebut"); },
       dayKey: "2027-07-01",
     },
-    { season: "pointe", label: "Pointe estivale", months: "mi-juil.–août", dayKey: "2027-08-05" },
+    { season: "pointe", get label() { return tr("ui.libFerryShowcase.pointeEstivale"); }, get months() { return tr("ui.libFerryShowcase.miJuilAout"); }, dayKey: "2027-08-05" },
   ];
 
 const soloProfile = (vehicle: VehicleKind): TripProfileValue => ({

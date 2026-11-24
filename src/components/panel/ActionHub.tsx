@@ -67,7 +67,7 @@ export function ActionHub({ tiles, children }: { tiles: HubTile[]; children?: Re
             <span className="bw-hub__icon">
               <Icon size={30} aria-hidden />
               {tile.count ? (
-                <b aria-label={`${tile.count} en cours`}>{tile.count > 99 ? "99+" : tile.count}</b>
+                <b aria-label={tr("ui.actionHub.enCours", { count: tile.count })}>{tile.count > 99 ? "99+" : tile.count}</b>
               ) : null}
             </span>
             <strong>{tile.label}</strong>

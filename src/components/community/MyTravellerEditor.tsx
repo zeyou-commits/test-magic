@@ -44,7 +44,7 @@ export function MyTravellerEditor() {
     mutationFn: () => saveTraveller({ pseudo, avatar, color, showOnTrip: visible }),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: communityKey });
-      toast.success("Profil voyageur enregistré.");
+      toast.success(tr("ui.myTravellerEditor.profilVoyageurEnregistre"));
     },
     onError: (failure: Error) => toast.error(failure.message),
   });
@@ -159,7 +159,7 @@ export function MyTravellerEditor() {
             if (
               !renamed ||
               window.confirm(
-                `Changer votre pseudo pour « ${pseudo.trim()} » ? Ce changement est unique et définitif.`,
+                tr("ui.myTravellerEditor.changerVotrePseudoPourCe", { v: pseudo.trim() }),
               )
             )
               save.mutate();

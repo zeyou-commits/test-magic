@@ -66,7 +66,7 @@ export function CabasStack({
   );
 }
 
-const voyageurs = (n: number) => `${n} voyageur${n > 1 ? "s" : ""} BledWay`;
+const voyageurs = (n: number) => tr("ui.tripPresence.voyageurBledway", { n, v: n > 1 ? "s" : "" });
 
 /** Fiche port : combien de voyageurs BledWay y sont en ce moment, ou en route. */
 export function PortPresence({ portId }: { portId: string }) {

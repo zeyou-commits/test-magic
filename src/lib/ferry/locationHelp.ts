@@ -1,4 +1,5 @@
 /** Quoi dire au voyageur quand l'appareil ne donne pas sa position : une réponse par cause et par navigateur. */
+import { tr } from "@/lib/i18n/translate";
 
 /** Navigateur intégré à une appli (Facebook, Instagram, WhatsApp…) : la position y marche rarement. */
 export const isInAppBrowser = (agent: string) =>
@@ -19,53 +20,53 @@ export function deniedSteps(agent: string, installed: boolean) {
   // Application installée : il n'y a pas de barre d'adresse, tout passe par les réglages du téléphone.
   if (installed && isAndroid(agent))
     return [
-      "Restez appuyé sur l’icône BledWay de votre écran d’accueil, puis touchez « Infos sur l’application » (ⓘ).",
-      "Ouvrez « Autorisations », puis « Position », et choisissez « Autoriser ». Si vous ne la trouvez pas, faites de même pour votre navigateur (Chrome).",
-      "Vérifiez que la localisation du téléphone est activée, revenez ici et touchez « Réessayer ».",
+      tr("ui.libFerryLocationHelp.restezAppuyeSurLIcone"),
+      tr("ui.libFerryLocationHelp.ouvrezAutorisationsPuisPositionEt"),
+      tr("ui.libFerryLocationHelp.verifiezQueLaLocalisationDu"),
     ];
   if (installed && isIos(agent))
     return [
-      "Ouvrez Réglages › Confidentialité et sécurité › Service de localisation, et activez-le.",
-      "Dans la liste, ouvrez « Sites web Safari » et choisissez « Lorsque l’app est active ».",
-      "Revenez ici et touchez « Réessayer ». Si besoin, fermez puis rouvrez BledWay.",
+      tr("ui.libFerryLocationHelp.ouvrezReglagesConfidentialiteEtSecurite"),
+      tr("ui.libFerryLocationHelp.dansLaListeOuvrezSites"),
+      tr("ui.libFerryLocationHelp.revenezIciEtTouchezReessayer"),
     ];
   if (/CriOS|FxiOS|EdgiOS/.test(agent))
     return [
-      "Ouvrez Réglages › Confidentialité et sécurité › Service de localisation, et activez-le.",
-      "Dans la même liste, ouvrez votre navigateur et choisissez « Lorsque l’app est active ».",
-      "Revenez ici et touchez « Réessayer ».",
+      tr("ui.libFerryLocationHelp.ouvrezReglagesConfidentialiteEtSecurite"),
+      tr("ui.libFerryLocationHelp.dansLaMemeListeOuvrez"),
+      tr("ui.libFerryLocationHelp.revenezIciEtTouchezReessayer2"),
     ];
   if (isIos(agent))
     return [
-      "Dans la barre d’adresse de Safari, touchez l’icône « aA » ou ≡, puis « Réglages du site web ».",
-      "Touchez « Position » et choisissez « Autoriser ».",
-      "Si rien ne change : Réglages › Confidentialité et sécurité › Service de localisation. Activez-le, puis ouvrez « Sites web Safari » et choisissez « Lorsque l’app est active ».",
-      "Revenez ici et touchez « Réessayer ».",
+      tr("ui.libFerryLocationHelp.dansLaBarreDAdresse"),
+      tr("ui.libFerryLocationHelp.touchezPositionEtChoisissezAutoriser"),
+      tr("ui.libFerryLocationHelp.siRienNeChangeReglages"),
+      tr("ui.libFerryLocationHelp.revenezIciEtTouchezReessayer2"),
     ];
   if (/SamsungBrowser/.test(agent))
     return [
-      "Dans Samsung Internet, touchez le menu ≡, puis « Paramètres », et ouvrez les autorisations des sites.",
-      "Autorisez « Position » pour BledWay.",
-      "Si rien ne change : Paramètres du téléphone › Applications › Samsung Internet › Autorisations › Position › Autoriser.",
-      "Revenez ici et touchez « Réessayer ». Sinon, ouvrez BledWay dans Chrome.",
+      tr("ui.libFerryLocationHelp.dansSamsungInternetTouchezLe"),
+      tr("ui.libFerryLocationHelp.autorisezPositionPourBledway"),
+      tr("ui.libFerryLocationHelp.siRienNeChangeParametres"),
+      tr("ui.libFerryLocationHelp.revenezIciEtTouchezReessayer3"),
     ];
   if (/Firefox/.test(agent) && isAndroid(agent))
     return [
-      "Dans Firefox, touchez le cadenas à gauche de l’adresse et autorisez « Position ».",
-      "Si rien ne change : Paramètres du téléphone › Applications › Firefox › Autorisations › Position › Autoriser.",
-      "Revenez ici et touchez « Réessayer ». Sinon, ouvrez BledWay dans Chrome.",
+      tr("ui.libFerryLocationHelp.dansFirefoxTouchezLeCadenas"),
+      tr("ui.libFerryLocationHelp.siRienNeChangeParametres2"),
+      tr("ui.libFerryLocationHelp.revenezIciEtTouchezReessayer3"),
     ];
   if (isAndroid(agent))
     return [
-      "Dans la barre d’adresse, touchez l’icône à gauche de l’adresse, puis « Autorisations » ou « Paramètres du site ». Mettez « Position » sur « Autoriser », ou touchez « Réinitialiser les autorisations ».",
-      "Si rien ne change : menu ⋮ › « Paramètres » › « Paramètres des sites » › « Position ». Vérifiez que la position n’est pas bloquée pour tous les sites, et retirez BledWay de la liste « Bloqués ».",
-      "Si ça bloque encore : Paramètres du téléphone › Applications › Chrome › Autorisations › Position › Autoriser, et activez la localisation du téléphone.",
-      "Revenez ici et touchez « Réessayer ».",
+      tr("ui.libFerryLocationHelp.dansLaBarreDAdresse2"),
+      tr("ui.libFerryLocationHelp.siRienNeChangeMenu"),
+      tr("ui.libFerryLocationHelp.siCaBloqueEncoreParametres"),
+      tr("ui.libFerryLocationHelp.revenezIciEtTouchezReessayer2"),
     ];
   return [
-    "Cliquez sur l’icône à gauche de l’adresse, dans la barre du navigateur.",
-    "Autorisez « Position » pour ce site, puis rechargez la page si le navigateur le demande.",
-    "Revenez ici et cliquez sur « Réessayer ».",
+    tr("ui.libFerryLocationHelp.cliquezSurLIconeA"),
+    tr("ui.libFerryLocationHelp.autorisezPositionPourCeSite"),
+    tr("ui.libFerryLocationHelp.revenezIciEtCliquezSur"),
   ];
 }
 
@@ -73,19 +74,19 @@ export function deniedSteps(agent: string, installed: boolean) {
 export function unavailableSteps(agent: string) {
   if (isAndroid(agent))
     return [
-      "Faites glisser le haut de l’écran vers le bas et activez « Position » ou « Localisation ».",
-      "Activez aussi le Wi-Fi ou les données mobiles, et sortez si possible à l’extérieur.",
-      "Touchez « Réessayer ».",
+      tr("ui.libFerryLocationHelp.faitesGlisserLeHautDe"),
+      tr("ui.libFerryLocationHelp.activezAussiLeWiFi"),
+      tr("ui.libFerryLocationHelp.touchezReessayer"),
     ];
   if (isIos(agent))
     return [
-      "Ouvrez Réglages › Confidentialité et sécurité › Service de localisation, et activez-le.",
-      "Activez aussi le Wi-Fi ou les données mobiles, et sortez si possible à l’extérieur.",
-      "Revenez ici et touchez « Réessayer ».",
+      tr("ui.libFerryLocationHelp.ouvrezReglagesConfidentialiteEtSecurite"),
+      tr("ui.libFerryLocationHelp.activezAussiLeWiFi"),
+      tr("ui.libFerryLocationHelp.revenezIciEtTouchezReessayer2"),
     ];
   return [
-    "Activez la localisation de l’ordinateur : Paramètres › Confidentialité › Localisation.",
-    "Revenez ici et cliquez sur « Réessayer ».",
+    tr("ui.libFerryLocationHelp.activezLaLocalisationDeL"),
+    tr("ui.libFerryLocationHelp.revenezIciEtCliquezSur"),
   ];
 }
 
@@ -105,7 +106,7 @@ const kmFrom = (here: Here, place: Place) => distanceKm(here, [place.latitude, p
 const formatKm = (km: number) =>
   km < 10 ? `${km.toFixed(1).replace(".", ",")} km` : `${Math.round(km)} km`;
 const ofPort = (name: string) =>
-  `du port ${/^[aeiouyhàâéèêîïôöû]/i.test(name) ? "d’" : "de "}${name}`;
+  tr("ui.libFerryLocationHelp.duPort", { v: /^[aeiouyhàâéèêîïôöû]/i.test(name) ? "d’" : "de ", name });
 
 function nearestPort(here: Here, ports: Place[]) {
   return ports
@@ -116,7 +117,7 @@ function nearestPort(here: Here, ports: Place[]) {
 /** Une position réseau peut se tromper de plusieurs kilomètres : on le dit plutôt que d'accuser le voyageur. */
 function roughHint(accuracyM: number | null) {
   return accuracyM !== null && accuracyM > 1_000
-    ? ` Cette position est approximative, à environ ${formatKm(accuracyM / 1_000)} près : si elle est fausse, activez la position précise du téléphone, sortez à l’extérieur, puis réessayez.`
+    ? tr("ui.libFerryLocationHelp.cettePositionEstApproximativeA", { formatKm: formatKm(accuracyM / 1_000) })
     : "";
 }
 
@@ -133,9 +134,9 @@ export function offSitePortMessage(input: {
   const nearest = nearestPort(here, ports);
   const nearby =
     nearest && nearest.port.name !== port.name && nearest.km <= 30
-      ? `, près ${ofPort(nearest.port.name)}`
+      ? tr("ui.libFerryLocationHelp.pres", { ofPort: ofPort(nearest.port.name) })
       : "";
-  return `Pour ${action}, vous devez être à moins de ${limitKm} km ${ofPort(port.name)}. Votre position indique que vous êtes à ${formatKm(kmFrom(here, port))} de ce port${nearby}.${roughHint(accuracyM)}`;
+  return tr("ui.libFerryLocationHelp.pourVousDevezEtreA", { action, limitKm, ofPort: ofPort(port.name), formatKm: formatKm(kmFrom(here, port)), nearby, roughHint: roughHint(accuracyM) });
 }
 
 /** Refus sur un navire : la règle du serveur accepte le port de la phase, ou la dernière position du navire. */
@@ -150,19 +151,19 @@ export function offSiteVesselMessage(input: {
   const nearest = nearestPort(here, ports);
   const port =
     category === "boarding"
-      ? "du port de départ"
+      ? tr("ui.libFerryLocationHelp.duPortDeDepart")
       : category === "disembarking"
-        ? "du port d’arrivée"
-        : "du port de départ ou d’arrivée";
+        ? tr("ui.libFerryLocationHelp.duPortDArrivee")
+        : tr("ui.libFerryLocationHelp.duPortDeDepartOu");
   const where = nearest
-    ? ` Votre position indique que vous êtes à ${formatKm(nearest.km)} ${ofPort(nearest.port.name)}, le plus proche.`
+    ? tr("ui.libFerryLocationHelp.votrePositionIndiqueQueVous", { formatKm: formatKm(nearest.km), ofPort: ofPort(nearest.port.name) })
     : "";
-  return `Pour ${action}, vous devez être près de ce navire, ou à moins de 3 km ${port} de sa traversée.${where}${roughHint(accuracyM)}`;
+  return tr("ui.libFerryLocationHelp.pourVousDevezEtrePres", { action, port, where, roughHint: roughHint(accuracyM) });
 }
 
 /** « Me localiser » : prévient tout de suite si le port le plus proche est trop loin pour signaler. */
 export function farFromPortsNote(here: Here, ports: Place[], limitKm: number) {
   const nearest = nearestPort(here, ports);
   if (!nearest || nearest.km <= limitKm) return null;
-  return `Votre position indique que vous êtes à ${formatKm(nearest.km)} ${ofPort(nearest.port.name)}, le plus proche. Pour signaler une situation au port, vous devez être à moins de ${limitKm} km.`;
+  return tr("ui.libFerryLocationHelp.votrePositionIndiqueQueVous2", { formatKm: formatKm(nearest.km), ofPort: ofPort(nearest.port.name), limitKm });
 }

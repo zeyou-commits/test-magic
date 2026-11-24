@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { newsQuery, type NewsItem } from "./flash";
 import { incidentsQuery, isOpenIncident, type VesselIncident } from "./incidents";
+import { tr } from "@/lib/i18n/translate";
 
 export type VesselAlert = {
   vesselId: string;
@@ -18,9 +19,9 @@ export type VesselAlert = {
 };
 
 function labelsFromTitle(title: string) {
-  if (/immobilis/i.test(title)) return { label: "Navire immobilisé", short: "Immobilisé" };
-  if (/arr[êe]t/i.test(title)) return { label: "Navire arrêté", short: "Arrêté" };
-  return { label: "Alerte sur ce navire", short: "Alerte" };
+  if (/immobilis/i.test(title)) return { label: tr("ui.libFerryVesselAlerts.navireImmobilise"), short: tr("ui.libFerryVesselAlerts.immobilise") };
+  if (/arr[êe]t/i.test(title)) return { label: tr("ui.libFerryVesselAlerts.navireArrete"), short: tr("ui.libFerryVesselAlerts.arrete") };
+  return { label: tr("ui.libFerryVesselAlerts.alerteSurCeNavire"), short: tr("ui.libFerryVesselAlerts.alerte") };
 }
 
 /**
@@ -49,8 +50,8 @@ export function vesselAlerts(incidents: VesselIncident[], news: NewsItem[]) {
     alerts.set(incident.vessel_id, {
       vesselId: incident.vessel_id,
       level: confirmed ? "critical" : "possible",
-      label: confirmed ? "Navire immobilisé" : "Immobilisation possible",
-      short: confirmed ? "Immobilisé" : "À vérifier",
+      label: confirmed ? tr("ui.libFerryVesselAlerts.navireImmobilise") : tr("ui.libFerryVesselAlerts.immobilisationPossible"),
+      short: confirmed ? tr("ui.libFerryVesselAlerts.immobilise") : tr("ui.libFerryVesselAlerts.aVerifier"),
       title: "",
       note: incident.public_note,
       source: incident.source_name,

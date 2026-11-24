@@ -7,7 +7,7 @@ import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
 import type { Port, Selection, Vessel } from "@/lib/ferry/types";
 import { CompanyBadge } from "./CompanyBadge";
 import { MiniFerry } from "./MiniFerry";
-import { tr, intlLocale } from "@/lib/i18n";
+import { tr, intlLocale, placeName } from "@/lib/i18n";
 
 /** « 22 h » ou « 22 h à 30 h » : seulement des durées publiées. */
 export const durationRange = (min: number | null, max: number | null) =>
@@ -72,7 +72,7 @@ function PortDisc({ port, onSelect }: { port: Port; onSelect: (selection: Select
       type="button"
       className="bw-line-port"
       onClick={() => onSelect({ type: "port", id: port.id })}
-      aria-label={`Ouvrir la fiche du port de ${port.name}`}
+      aria-label={tr("ui.lineOverview.ouvrirLaFicheDuPort", { name: port.name })}
     >
       <span className="bw-line-port__disc" title={photo?.credit ?? undefined}>
         {photo?.url ? (
@@ -81,7 +81,7 @@ function PortDisc({ port, onSelect }: { port: Port; onSelect: (selection: Select
           <b aria-hidden>{port.name.slice(0, 1)}</b>
         )}
       </span>
-      <strong>{port.name}</strong>
+      <strong>{placeName(port.name)}</strong>
       <small>{port.country_name}</small>
     </button>
   );
@@ -138,7 +138,7 @@ export function LineFigures({ stats, timeZone }: { stats: LineStats; timeZone: s
       key: "upcoming",
       icon: <CalendarClock size={16} />,
       value: String(stats.upcoming),
-      label: stats.upcoming > 1 ? "traversées programmées" : "traversée programmée",
+      label: stats.upcoming > 1 ? tr("ui.lineOverview.traverseesProgrammees") : tr("ui.lineOverview.traverseeProgrammee"),
       extra: stats.lastAt ? (
         <small>
           {tr("ui.lineOverview.jusquAu")}{" "}
@@ -156,7 +156,7 @@ export function LineFigures({ stats, timeZone }: { stats: LineStats; timeZone: s
       key: "week",
       icon: <Clock3 size={16} />,
       value: String(stats.nextWeek),
-      label: stats.nextWeek > 1 ? "départs dans les 7 jours" : "départ dans les 7 jours",
+      label: stats.nextWeek > 1 ? tr("ui.lineOverview.departsDansLes7Jours") : tr("ui.lineOverview.departDansLes7Jours"),
     });
   if (stats.operators.length)
     tiles.push({

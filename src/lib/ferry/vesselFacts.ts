@@ -1,4 +1,6 @@
 import type { Vessel } from "./types";
+import { tr } from "@/lib/i18n/translate";
+import { intlLocale } from "@/lib/i18n";
 
 /** Nombre d'avis publiés à partir duquel une note a un sens. */
 export const MIN_REVIEWS = 5;
@@ -17,8 +19,8 @@ export type FactKey =
   | "intimate";
 
 const age = (year: number) => new Date().getFullYear() - year;
-const record = "Record de la flotte";
-const placed = (rank: number) => `${rank}ᵉ de la flotte`;
+const record = () => tr("ui.libFerryVesselFacts.recordDeLaFlotte");
+const placed = (rank: number) => tr("ui.libFerryVesselFacts.deLaFlotte", { rank });
 
 type Stats = { upcoming: number; rating: number | null };
 
@@ -34,102 +36,102 @@ const FACTS: {
 }[] = [
   {
     key: "rated",
-    podium: "Les mieux notés",
-    title: "Le mieux noté",
-    ranked: (r) => `${r}ᵉ mieux noté`,
+    get podium() { return tr("ui.libFerryVesselFacts.lesMieuxNotes"); },
+    get title() { return tr("ui.libFerryVesselFacts.leMieuxNote"); },
+    ranked: (r) => tr("ui.libFerryVesselFacts.mieuxNote", { r }),
     order: "desc",
     value: (_, s) => s.rating,
-    show: (n) => `${n.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} / 5`,
+    show: (n) => `${n.toLocaleString(intlLocale(), { maximumFractionDigits: 1 })} / 5`,
   },
   {
     key: "doyen",
-    podium: "Les doyens",
-    title: "Le doyen de la flotte",
-    ranked: (r) => `${r}ᵉ plus ancien`,
+    get podium() { return tr("ui.libFerryVesselFacts.lesDoyens"); },
+    get title() { return tr("ui.libFerryVesselFacts.leDoyenDeLaFlotte"); },
+    ranked: (r) => tr("ui.libFerryVesselFacts.plusAncien", { r }),
     order: "asc",
     value: (v) => v.build_year,
-    show: (n) => `${age(n)} ans`,
+    show: (n) => tr("ui.libFerryVesselFacts.ans", { v: age(n) }),
   },
   {
     key: "longest",
-    podium: "Les plus longs",
-    title: "Le plus long",
-    ranked: (r) => `${r}ᵉ plus long`,
+    get podium() { return tr("ui.libFerryVesselFacts.lesPlusLongs"); },
+    get title() { return tr("ui.libFerryVesselFacts.lePlusLong"); },
+    ranked: (r) => tr("ui.libFerryVesselFacts.plusLong", { r }),
     order: "desc",
     value: (v) => v.length_meters,
-    show: (n) => `${n.toLocaleString("fr-FR")} m`,
+    show: (n) => `${n.toLocaleString(intlLocale())} m`,
   },
   {
     key: "imposing",
-    podium: "Les plus imposants",
-    title: "Le plus imposant",
-    ranked: (r) => `${r}ᵉ plus imposant`,
+    get podium() { return tr("ui.libFerryVesselFacts.lesPlusImposants"); },
+    get title() { return tr("ui.libFerryVesselFacts.lePlusImposant"); },
+    ranked: (r) => tr("ui.libFerryVesselFacts.plusImposant", { r }),
     order: "desc",
     value: (v) => v.gross_tonnage,
-    show: (n) => `${n.toLocaleString("fr-FR")} t`,
+    show: (n) => `${n.toLocaleString(intlLocale())} t`,
   },
   {
     key: "cars",
-    podium: "Le plus de véhicules",
-    title: record,
+    get podium() { return tr("ui.libFerryVesselFacts.lePlusDeVehicules"); },
+    get title() { return record(); },
     ranked: placed,
     order: "desc",
     value: (v) => v.car_capacity,
-    show: (n) => `${n.toLocaleString("fr-FR")} véhicules`,
+    show: (n) => tr("ui.libFerryVesselFacts.vehicules", { v: n.toLocaleString(intlLocale()) }),
   },
   {
     key: "passengers",
-    podium: "Le plus de passagers",
-    title: record,
+    get podium() { return tr("ui.libFerryVesselFacts.lePlusDePassagers"); },
+    get title() { return record(); },
     ranked: placed,
     order: "desc",
     value: (v) => v.passenger_capacity,
-    show: (n) => `${n.toLocaleString("fr-FR")} passagers`,
+    show: (n) => tr("ui.libFerryVesselFacts.passagersN", { v: n.toLocaleString(intlLocale()) }),
   },
   {
     key: "cabins",
-    podium: "Le plus de cabines",
-    title: record,
+    get podium() { return tr("ui.libFerryVesselFacts.lePlusDeCabines"); },
+    get title() { return record(); },
     ranked: placed,
     order: "desc",
     value: (v) => v.cabin_capacity,
-    show: (n) => `${n.toLocaleString("fr-FR")} cabines`,
+    show: (n) => tr("ui.libFerryVesselFacts.cabinesN", { v: n.toLocaleString(intlLocale()) }),
   },
   {
     key: "youngest",
-    podium: "Les plus récents",
-    title: "Le plus récent",
-    ranked: (r) => `${r}ᵉ plus récent`,
+    get podium() { return tr("ui.libFerryVesselFacts.lesPlusRecents"); },
+    get title() { return tr("ui.libFerryVesselFacts.lePlusRecent"); },
+    ranked: (r) => tr("ui.libFerryVesselFacts.plusRecent", { r }),
     order: "desc",
     value: (v) => v.build_year,
-    show: (n) => `${age(n)} ans`,
+    show: (n) => tr("ui.libFerryVesselFacts.ans", { v: age(n) }),
   },
   {
     key: "regular",
-    podium: "Le plus de traversées à venir",
-    title: record,
+    get podium() { return tr("ui.libFerryVesselFacts.lePlusDeTraverseesA"); },
+    get title() { return record(); },
     ranked: placed,
     order: "desc",
     value: (_, s) => s.upcoming,
-    show: (n) => `${n} traversées à venir`,
+    show: (n) => tr("ui.libFerryVesselFacts.traverseesAVenir", { n }),
   },
   {
     key: "freight",
-    podium: "Le plus de fret",
-    title: record,
+    get podium() { return tr("ui.libFerryVesselFacts.lePlusDeFret"); },
+    get title() { return record(); },
     ranked: placed,
     order: "desc",
     value: (v) => v.freight_lane_meters,
-    show: (n) => `${n.toLocaleString("fr-FR")} m de fret`,
+    show: (n) => tr("ui.libFerryVesselFacts.mDeFret", { v: n.toLocaleString(intlLocale()) }),
   },
   {
     key: "intimate",
-    podium: "Les plus intimistes",
-    title: "Le plus intimiste",
-    ranked: (r) => `${r}ᵉ plus intimiste`,
+    get podium() { return tr("ui.libFerryVesselFacts.lesPlusIntimistes"); },
+    get title() { return tr("ui.libFerryVesselFacts.lePlusIntimiste"); },
+    ranked: (r) => tr("ui.libFerryVesselFacts.plusIntimiste", { r }),
     order: "asc",
     value: (v) => v.passenger_capacity,
-    show: (n) => `${n.toLocaleString("fr-FR")} passagers`,
+    show: (n) => tr("ui.libFerryVesselFacts.passagersN", { v: n.toLocaleString(intlLocale()) }),
   },
 ];
 

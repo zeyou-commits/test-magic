@@ -29,16 +29,16 @@ export function PushStatusLine({ withDisable = false }: { withDisable?: boolean 
     void refresh();
   }, [refresh]);
   if (!user || state === "checking") return null;
-  const device = isDesktopBrowser() ? "cet ordinateur" : "ce téléphone";
+  const device = isDesktopBrowser() ? tr("ui.pushStatusLine.cetOrdinateur") : tr("ui.pushStatusLine.ceTelephone");
   const activate = async () => {
     setBusy(true);
     setNote("");
     try {
       const result = await registerPush(user.id);
-      if (result === "denied") setNote("Le navigateur a refusé. Autorisez les notifications pour BledWay dans ses réglages.");
+      if (result === "denied") setNote(tr("ui.pushStatusLine.leNavigateurARefuseAutorisez"));
       await refresh();
     } catch {
-      setNote("L’activation n’a pas abouti. Réessayez.");
+      setNote(tr("ui.pushStatusLine.lActivationNAPas"));
     } finally {
       setBusy(false);
     }
@@ -50,7 +50,7 @@ export function PushStatusLine({ withDisable = false }: { withDisable?: boolean 
       await disableDevicePush(user.id);
       await refresh();
     } catch {
-      setNote("La désactivation n’a pas abouti. Réessayez.");
+      setNote(tr("ui.pushStatusLine.laDesactivationNAPas"));
     } finally {
       setBusy(false);
     }

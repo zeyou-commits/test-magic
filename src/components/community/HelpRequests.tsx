@@ -16,19 +16,19 @@ import { tr } from "@/lib/i18n";
 const db = typedSupabase as unknown as SupabaseClient;
 
 const NEEDS = {
-  medical: "SOS médical",
-  baby: "Couches, lait, bébé",
-  water: "Eau",
-  charger: "Chargeur",
-  luggage: "Aide pour les bagages",
-  elderly: "Aide pour une personne âgée",
+  get medical() { return tr("ui.helpRequests.sosMedical"); },
+  get baby() { return tr("ui.helpRequests.couchesLaitBebe"); },
+  get water() { return tr("ui.helpRequests.eau"); },
+  get charger() { return tr("ui.helpRequests.chargeur"); },
+  get luggage() { return tr("ui.helpRequests.aidePourLesBagages"); },
+  get elderly() { return tr("ui.helpRequests.aidePourUnePersonneAgee"); },
 } as const;
 const POINTS = {
-  checkin: "Point d'enregistrement",
-  boarding_control: "Contrôle des cartes d'embarquement",
-  port_entrance: "Entrée du port",
-  vehicle_queue: "File des véhicules",
-  ship_reception: "Réception du navire",
+  get checkin() { return tr("ui.helpRequests.pointDEnregistrement"); },
+  get boarding_control() { return tr("ui.helpRequests.controleDesCartesDEmbarquement"); },
+  get port_entrance() { return tr("ui.helpRequests.entreeDuPort"); },
+  get vehicle_queue() { return tr("ui.helpRequests.fileDesVehicules"); },
+  get ship_reception() { return tr("ui.helpRequests.receptionDuNavire"); },
 } as const;
 // Lien d'une notification : lu à l'ouverture, avant que l'adresse ne change.
 const linkedHelp =
@@ -103,7 +103,7 @@ export function PortHelpRequests({
             return (
               <option key={item.id} value={item.id}>
                 {item.label}
-                {open ? ` · ${open} demande${open > 1 ? "s" : ""}` : ""}
+                {open ? tr("ui.helpRequests.demande", { open, v: open > 1 ? "s" : "" }) : ""}
               </option>
             );
           })}
@@ -170,7 +170,7 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
         p_lat: position[0],
         p_lng: position[1],
       });
-      if (error) throw new Error(await explain(error.message, "proposer votre aide", position));
+      if (error) throw new Error(await explain(error.message, tr("ui.helpRequests.proposerVotreAide"), position));
     },
     onSuccess: refresh,
     onError: (error: Error) => toast.error(error.message, { duration: 12_000 }),
@@ -191,7 +191,7 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
         p_lat: position[0],
         p_lng: position[1],
       });
-      if (error) throw new Error(await explain(error.message, "demander de l’aide", position));
+      if (error) throw new Error(await explain(error.message, tr("ui.helpRequests.demanderDeLAide2"), position));
     },
     onSuccess: () => {
       setFormOpen(false);
@@ -251,7 +251,7 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
               <div className="mt-1.5 flex flex-wrap items-center gap-2">
                 <span className="flex-1 text-muted-foreground">
                   {request.responders
-                    ? `${request.responders} personne(s) en route`
+                    ? tr("ui.helpRequests.personneSEnRoute", { responders: request.responders })
                     : tr("ui.helpRequests.personneNAEncoreRepondu")}
                 </span>
                 {request.mine ? (

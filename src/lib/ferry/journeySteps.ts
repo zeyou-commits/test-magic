@@ -8,6 +8,8 @@ import {
   type TripDirection,
   type TripProfile,
 } from "./preparation";
+import { tr } from "@/lib/i18n/translate";
+import { intlLocale } from "@/lib/i18n";
 
 /**
  * La route du bled en 8 étapes : du départ jusqu'au bled (et jusqu'à destination au retour).
@@ -32,14 +34,14 @@ export const RELATIVE_STEPS: JourneyStepId[] = ["sea", "arrival", "last", "home"
 export type JourneyAudience = "traveller" | "relative" | "simulation";
 
 const LABELS: Record<JourneyStepId, string> = {
-  papers: "Papiers",
-  vehicle: "Véhicule et bagages",
-  road: "Route vers le port",
+  get papers() { return tr("ui.libFerryJourneySteps.papiers"); },
+  get vehicle() { return tr("ui.libFerryJourneySteps.vehiculeEtBagages"); },
+  get road() { return tr("ui.libFerryJourneySteps.routeVersLePort"); },
   port: "Au port",
-  sea: "En mer",
-  arrival: "Arrivée au port",
-  last: "Route au bled",
-  home: "Au bled",
+  get sea() { return tr("ui.libFerryJourneySteps.enMer"); },
+  get arrival() { return tr("ui.libFerryJourneySteps.arriveeAuPort"); },
+  get last() { return tr("ui.libFerryJourneySteps.routeAuBled"); },
+  get home() { return tr("ui.libFerryJourneySteps.auBled"); },
 };
 
 export function stepLabel(
@@ -48,13 +50,13 @@ export function stepLabel(
   audience: JourneyAudience = "traveller",
 ) {
   if (audience === "relative") {
-    if (step === "last") return "Sur la route";
-    if (step === "home") return "Bien arrivé·e";
+    if (step === "last") return tr("ui.libFerryJourneySteps.surLaRoute");
+    if (step === "home") return tr("ui.libFerryJourneySteps.bienArriveE");
   }
   if (direction === "return") {
     // « Destination » plutôt que « maison » : chacun ne rentre pas chez soi.
-    if (step === "last") return "Route vers la destination";
-    if (step === "home") return "À destination";
+    if (step === "last") return tr("ui.libFerryJourneySteps.routeVersLaDestination");
+    if (step === "home") return tr("ui.libFerryJourneySteps.aDestination");
   }
   return LABELS[step];
 }
@@ -247,8 +249,8 @@ export const stepState = (
 export function stepMoment(ms: number, timeZone: string) {
   if (!Number.isFinite(ms)) return "";
   const date = new Date(ms);
-  const day = date.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", timeZone });
-  const time = date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone });
+  const day = date.toLocaleDateString(intlLocale(), { weekday: "short", day: "numeric", timeZone });
+  const time = date.toLocaleTimeString(intlLocale(), { hour: "2-digit", minute: "2-digit", timeZone });
   return `${day} · ${time}`;
 }
 
@@ -295,16 +297,16 @@ export function stepGuide({
   lastMin?: number | null;
   destination?: string | null;
 }): { lead: string; links: StepLink[] } {
-  const ship = vesselName ? `du ${vesselName}` : "du navire";
+  const ship = vesselName ? `du ${vesselName}` : tr("ui.libFerryJourneySteps.duNavire");
   const hasTime = departureMs !== undefined && Number.isFinite(departureMs);
   const callMs = hasTime ? departureMs - leadMinutesFor(presentationMinutes, false) * 60_000 : NaN;
   const footMs = hasTime ? departureMs - leadMinutesFor(presentationMinutes, true) * 60_000 : NaN;
   const consigne =
     presentationMinutes != null
-      ? "consigne de la compagnie"
-      : "repère indicatif : 4 h avant en véhicule, 3 h à pied";
+      ? tr("ui.libFerryJourneySteps.consigneDeLaCompagnie")
+      : tr("ui.libFerryJourneySteps.repereIndicatif4HAvant");
   const time = (ms: number, zone: string) =>
-    new Date(ms).toLocaleTimeString("fr-FR", {
+    new Date(ms).toLocaleTimeString(intlLocale(), {
       hour: "2-digit",
       minute: "2-digit",
       timeZone: zone,
@@ -313,14 +315,14 @@ export function stepGuide({
     const eta =
       endMs !== undefined && Number.isFinite(endMs) ? ` vers ${time(endMs, arrivalTimeZone)}` : "";
     const leads: Partial<Record<JourneyStepId, string>> = {
-      sea: `Suivez la traversée ${ship} en direct sur la carte. Arrivée prévue à ${to}${eta}, signalements et alertes compris.`,
-      arrival: `Après l'arrivée ${ship}, le débarquement, les contrôles et la sortie du port prennent du temps : l'heure d'accostage n'est pas l'heure de sortie.`,
-      last: `Votre proche a quitté le port ${deName(to)} : la route continue jusqu'à destination.`,
-      home: "Bien arrivé·e ! Le voyage est terminé.",
+      sea: tr("ui.libFerryJourneySteps.suivezLaTraverseeEnDirect", { ship, to, eta }),
+      arrival: tr("ui.libFerryJourneySteps.apresLArriveeLeDebarquement", { ship }),
+      last: tr("ui.libFerryJourneySteps.votreProcheAQuitteLe", { deName: deName(to) }),
+      home: tr("ui.libFerryJourneySteps.bienArriveELeVoyage"),
     };
     return {
       lead: leads[step] ?? "",
-      links: step === "arrival" ? [{ href: "#port", label: `Le port ${deName(to)}` }] : [],
+      links: step === "arrival" ? [{ href: "#port", label: tr("ui.libFerryJourneySteps.lePort", { deName: deName(to) }) }] : [],
     };
   }
   const simulation = audience === "simulation";
@@ -356,7 +358,7 @@ export function stepGuide({
       const rule = presentationMinutes != null ? "consigne" : vehicle ? "4 h avant" : "3 h avant";
       const custom =
         roadMin && hasTime
-          ? ` ${durationLabel(roadMin)} de route avec pauses : partir ${new Date(callAt - roadMin * 60_000).toLocaleString("fr-FR", { weekday: "short", hour: "2-digit", minute: "2-digit", timeZone })}.`
+          ? ` ${durationLabel(roadMin)} de route avec pauses : partir ${new Date(callAt - roadMin * 60_000).toLocaleString(intlLocale(), { weekday: "short", hour: "2-digit", minute: "2-digit", timeZone })}.`
           : roadMin
             ? ` ${durationLabel(roadMin)} de route avec pauses.`
             : " Une pause toutes les 2 h.";

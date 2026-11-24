@@ -95,7 +95,7 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
         type="button"
         className="bw-messages-fab"
         data-tour="salons"
-        aria-label={count ? `Salons, ${count} messages` : tr("ui.messagesFab.salons")}
+        aria-label={count ? tr("ui.messagesFab.salonsMessages", { count }) : tr("ui.messagesFab.salons")}
         onClick={() => openMine()}
       >
         <MessagesSquare size={22} aria-hidden />
@@ -224,7 +224,7 @@ function SoloCrossingRoom({
       onOpenChange={onOpenChange}
       kind="crossing"
       room={departure.id}
-      title={from && to ? `Salon · ${from.name} → ${to.name}` : "Salon de la traversée"}
+      title={from && to ? tr("ui.messagesFab.salon", { name: from.name, name2: to.name }) : tr("ui.messagesFab.salonDeLaTraversee")}
       moment={roomMoment(departure.departure_at, departure.arrival_at ?? null, Date.now())}
       starterContext={{
         depart: from?.name,

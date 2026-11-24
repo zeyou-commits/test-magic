@@ -1,3 +1,4 @@
+import { mapLocale } from "@/lib/i18n/mapLocale";
 import { useEffect, useRef } from "react";
 import {
   LngLatBounds,
@@ -91,6 +92,7 @@ export default function BoardMap({
     if (!box.current) return;
     const map = new MapLibreMap({
       container: box.current,
+      locale: mapLocale(),
       style: MAP_STYLE,
       center: [3, 39],
       zoom: 4.4,

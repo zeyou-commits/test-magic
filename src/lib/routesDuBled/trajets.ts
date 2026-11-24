@@ -1,5 +1,6 @@
 import { PAUSE_EVERY_MIN, PAUSE_MIN } from "@/lib/ferry/itinerary";
 import { locateOnRoute, type BledRoute, type Stop } from "./data";
+import { tr } from "@/lib/i18n/translate";
 
 /**
  * Un trajet, c'est ce que le voyageur a en tête : « je pars de Lyon, j'embarque à Alicante ».
@@ -52,23 +53,23 @@ export const DEPARTS: Depart[] = ["paris", "lyon", "montpellier", "barcelone", "
 export const PORTS: Port[] = ["marseille", "sete", "barcelone", "valence", "alicante", "almeria"];
 
 export const PLACE_NAME: Record<Depart | Port | PortDz, string> = {
-  paris: "Paris",
-  lyon: "Lyon",
-  montpellier: "Montpellier",
-  barcelone: "Barcelone",
-  madrid: "Madrid",
-  marseille: "Marseille",
-  sete: "Sète",
-  valence: "Valence",
-  alicante: "Alicante",
-  almeria: "Almería",
-  alger: "Alger",
-  oran: "Oran",
-  bejaia: "Béjaïa",
-  skikda: "Skikda",
-  annaba: "Annaba",
-  mostaganem: "Mostaganem",
-  ghazaouet: "Ghazaouet",
+  get paris() { return tr("ui.libRoutesDuBledTrajets.paris"); },
+  get lyon() { return tr("ui.libRoutesDuBledTrajets.lyon"); },
+  get montpellier() { return tr("ui.libRoutesDuBledTrajets.montpellier"); },
+  get barcelone() { return tr("ui.libRoutesDuBledTrajets.barcelone"); },
+  get madrid() { return tr("ui.libRoutesDuBledTrajets.madrid"); },
+  get marseille() { return tr("ui.libRoutesDuBledTrajets.marseille"); },
+  get sete() { return tr("ui.libRoutesDuBledTrajets.sete"); },
+  get valence() { return tr("ui.libRoutesDuBledTrajets.valence"); },
+  get alicante() { return tr("ui.libRoutesDuBledTrajets.alicante"); },
+  get almeria() { return tr("ui.libRoutesDuBledTrajets.almeria"); },
+  get alger() { return tr("ui.libRoutesDuBledTrajets.alger"); },
+  get oran() { return tr("ui.libRoutesDuBledTrajets.oran"); },
+  get bejaia() { return tr("ui.libRoutesDuBledTrajets.bejaia"); },
+  get skikda() { return tr("ui.libRoutesDuBledTrajets.skikda"); },
+  get annaba() { return tr("ui.libRoutesDuBledTrajets.annaba"); },
+  get mostaganem() { return tr("ui.libRoutesDuBledTrajets.mostaganem"); },
+  get ghazaouet() { return tr("ui.libRoutesDuBledTrajets.ghazaouet"); },
 };
 
 /** Lignes vers l'Algérie confirmées en 2026 (recherche du 18/11/2026), par port d'embarquement. */

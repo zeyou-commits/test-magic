@@ -274,7 +274,7 @@ function RatingForm({
             await submitPhoto(withPhotos, data, user.id, photo);
             sent += 1;
           } catch (cause) {
-            failed = cause instanceof Error ? cause.message : "Photo non envoyée.";
+            failed = cause instanceof Error ? cause.message : tr("ui.entityReviews.photoNonEnvoyee");
           }
         }
       return { sent, failed };
@@ -283,8 +283,8 @@ function RatingForm({
       window.sessionStorage.removeItem(draftKey);
       toast.success(
         sent
-          ? `Votre note et ${sent > 1 ? `vos ${sent} photos ont été envoyées` : "votre photo ont été envoyées"} pour vérification.`
-          : "Votre note a été envoyée pour vérification.",
+          ? tr("ui.entityReviews.votreNoteEtPourVerification", { v: sent > 1 ? `vos ${sent} photos ont été envoyées` : "votre photo ont été envoyées" })
+          : tr("ui.entityReviews.votreNoteAEteEnvoyee"),
       );
       if (failed) toast.error(failed);
       photos.forEach((photo) => URL.revokeObjectURL(photo.url));
@@ -372,8 +372,8 @@ function RatingForm({
             ? tr("ui.entityReviews.envoi")
             : score !== null
               ? photos.length
-                ? `Envoyer ma note et ${photos.length > 1 ? "ces photos" : "cette photo"}`
-                : `Envoyer ma note · ${reviewNumber(score)}/5`
+                ? tr("ui.entityReviews.envoyerMaNoteEt", { v: photos.length > 1 ? "ces photos" : "cette photo" })
+                : tr("ui.entityReviews.envoyerMaNote5", { reviewNumber: reviewNumber(score) })
               : tr("ui.entityReviews.notezAuMoins3Criteres")}
         </Button>
       )}

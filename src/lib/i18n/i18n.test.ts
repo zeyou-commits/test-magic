@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { pickLocale, dirOf } from "./config";
-import { loadCatalog, translate } from "./translate";
+import { lazyConst, loadCatalog, setCurrentLocale, translate, tr } from "./translate";
 import { fr } from "./messages/fr";
 
 describe("pickLocale", () => {
@@ -46,5 +46,37 @@ describe("dictionnaire français", () => {
     const walk = (node: unknown): string[] =>
       typeof node === "string" ? [node] : Object.values(node as object).flatMap(walk);
     expect(walk(fr).every((text) => text.trim().length > 0)).toBe(true);
+  });
+});
+
+describe("lazyConst", () => {
+  it("relit une liste déclarée une fois dans la langue affichée", async () => {
+    await loadCatalog("ar");
+    const labels = lazyConst(() => [tr("nav.map"), tr("nav.news")]);
+    setCurrentLocale("fr");
+    expect(labels.map((x) => x)).toEqual(["Carte", "Actualités"]);
+    expect(Array.isArray(labels)).toBe(true);
+    setCurrentLocale("ar");
+    expect(labels[0]).toBe("الخريطة");
+    expect([...labels]).toHaveLength(2);
+    setCurrentLocale("fr");
+  });
+});
+
+describe("pluriel français", () => {
+  it("garde « s » en français et le retire dans les autres langues", async () => {
+    await loadCatalog("ar");
+    expect(translate("fr", "footer.disclaimer", { year: "s" })).toMatch(/^© s BledWay/);
+    expect(translate("ar", "footer.disclaimer", { year: "s" })).not.toMatch(/\bs\b/);
+  });
+});
+
+describe("noms de lieux", () => {
+  it("traduit un port passé en variable et retourne la flèche en arabe", async () => {
+    const { localizePlace } = await import("./places");
+    expect(localizePlace("ar", "Béjaïa")).toBe("بجاية");
+    expect(localizePlace("ar", "Marseille → Alger")).toBe("مرسيليا ← الجزائر العاصمة");
+    expect(localizePlace("fr", "Marseille")).toBe("Marseille");
+    expect(localizePlace("ar", "Inconnu")).toBe("Inconnu");
   });
 });

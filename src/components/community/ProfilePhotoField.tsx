@@ -37,7 +37,7 @@ export function ProfilePhotoField() {
       setPhotos([]);
       setConsent(false);
       refresh();
-      toast.success("Photo publiée : elle remplace votre avatar.");
+      toast.success(tr("ui.profilePhotoField.photoPublieeElleRemplaceVotre"));
     },
     onError: (failure: Error) => toast.error(failure.message),
   });
@@ -45,7 +45,7 @@ export function ProfilePhotoField() {
     mutationFn: (photo: { id: string; path: string }) => deletePhoto(photo),
     onSuccess: () => {
       refresh();
-      toast.success("Photo retirée : votre avatar reprend sa place.");
+      toast.success(tr("ui.profilePhotoField.photoRetireeVotreAvatarReprend"));
     },
     onError: (failure: Error) => toast.error(failure.message),
   });
@@ -74,7 +74,7 @@ export function ProfilePhotoField() {
             disabled={remove.isPending}
             onClick={() => {
               if (
-                window.confirm("Retirer votre photo de profil ? Votre avatar reprendra sa place.")
+                window.confirm(tr("ui.profilePhotoField.retirerVotrePhotoDeProfil"))
               )
                 remove.mutate(approved);
             }}

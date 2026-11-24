@@ -16,21 +16,20 @@ import { tr } from "@/lib/i18n";
 const options = [
   {
     key: "reminders",
-    label: "Mon départ et ses rappels",
-    description:
-      "Changements d’horaire ou de navire, rappels à 7 jours, 48 h et 24 h, préparatifs et heure au port.",
+    get label() { return tr("ui.notificationSettings.monDepartEtSesRappels"); },
+    get description() { return tr("ui.notificationSettings.changementsDHoraireOuDe"); },
     icon: CalendarClock,
   },
   {
     key: "community",
-    label: "Actualités de mes navires",
-    description: "Signalements et nouveaux avis des voyageurs sur les navires suivis.",
+    get label() { return tr("ui.notificationSettings.actualitesDeMesNavires"); },
+    get description() { return tr("ui.notificationSettings.signalementsEtNouveauxAvisDes"); },
     icon: MessageSquare,
   },
   {
     key: "openings",
-    label: "Ouverture des traversées",
-    description: "Les lignes et périodes que vous suivez, et l’ouverture des ventes des compagnies pour vos dates.",
+    get label() { return tr("ui.notificationSettings.ouvertureDesTraversees"); },
+    get description() { return tr("ui.notificationSettings.lesLignesEtPeriodesQue"); },
     icon: BellRing,
   },
 ] as const;

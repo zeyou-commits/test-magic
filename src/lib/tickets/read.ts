@@ -6,6 +6,7 @@
  *     sinon ZXing (iPhone et autres).
  * Le moteur est interchangeable (une application native pourrait utiliser ML Kit à la place).
  */
+import { tr } from "@/lib/i18n/translate";
 export type ReadProgress = { step: string; ratio: number };
 export type ReadResult = { text: string; codes: string[]; pages: number };
 
@@ -124,11 +125,11 @@ async function ocr(canvases: HTMLCanvasElement[], progress: (p: ReadProgress) =>
     logger: (m: { status: string; progress: number }) => {
       if (m.status === "recognizing text")
         progress({
-          step: "Lecture du texte…",
+          step: tr("ui.libTicketsRead.lectureDuTexte"),
           ratio: 0.35 + (0.6 * (page + m.progress)) / canvases.length,
         });
       else if (/loading|initializ/.test(m.status))
-        progress({ step: "Préparation de la lecture…", ratio: 0.2 });
+        progress({ step: tr("ui.libTicketsRead.preparationDeLaLecture"), ratio: 0.2 });
     },
   })) as unknown as OcrWorker;
   try {
@@ -174,7 +175,7 @@ async function readPdf(file: Blob, progress: (p: ReadProgress) => void) {
   const texts: string[] = [];
   const canvases: HTMLCanvasElement[] = [];
   for (let n = 1; n <= pages; n += 1) {
-    progress({ step: "Lecture du PDF…", ratio: 0.1 + (0.3 * n) / pages });
+    progress({ step: tr("ui.libTicketsRead.lectureDuPdf"), ratio: 0.1 + (0.3 * n) / pages });
     const page = await pdf.getPage(n);
     const content = await page.getTextContent();
     // Lignes rétablies : un saut à chaque changement de hauteur dans la page.
@@ -208,7 +209,7 @@ export async function readTicket(
   file: Blob,
   progress: (p: ReadProgress) => void,
 ): Promise<ReadResult> {
-  progress({ step: "Ouverture du billet…", ratio: 0.05 });
+  progress({ step: tr("ui.libTicketsRead.ouvertureDuBillet"), ratio: 0.05 });
   let text = "";
   let canvases: HTMLCanvasElement[];
   let pages = 1;
@@ -220,10 +221,10 @@ export async function readTicket(
   } else {
     canvases = [await imageCanvas(file)];
   }
-  progress({ step: "Recherche des QR codes…", ratio: 0.3 });
+  progress({ step: tr("ui.libTicketsRead.rechercheDesQrCodes"), ratio: 0.3 });
   const codes = [...new Set((await Promise.all(canvases.map(readCodes))).flat())];
   // PDF sans texte (scanné) ou photo : OCR.
   if (text.replace(/\s/g, "").length < 40) text = await ocr(canvases, progress);
-  progress({ step: "Analyse des informations…", ratio: 0.97 });
+  progress({ step: tr("ui.libTicketsRead.analyseDesInformations"), ratio: 0.97 });
   return { text, codes, pages };
 }

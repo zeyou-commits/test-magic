@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { GuideHub } from "@/components/editorial/GuideHub";
 import { seoHead } from "@/lib/seo/site";
+import { tr } from "@/lib/i18n";
 export const Route = createFileRoute("/guide/")({
   head: () =>
     seoHead(
-      "Guide ferry Algérie, véhicules et préparation du voyage | BledWay",
-      "Dossiers sourcés pour voyager en Algérie : véhicule de moins de trois ans, budget, navires, cabines, embarquement et covoiturage.",
+      tr("ui.pageGuideIndex.guideFerryAlgerieVehiculesEt"),
+      tr("ui.pageGuideIndex.dossiersSourcesPourVoyagerEn"),
       "/guide",
     ),
   component: () => <GuideHub />,

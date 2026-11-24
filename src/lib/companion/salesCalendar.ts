@@ -1,4 +1,5 @@
 import type { Company, Departure, RouteLine as Route } from "@/lib/ferry/types";
+import { intlLocale } from "@/lib/i18n";
 
 /**
  * Un départ « estimé » vient d'un calendrier récurrent (rotation habituelle du navire) et n'a pas
@@ -69,7 +70,7 @@ export function companyCalendars(input: {
 }
 
 export function longDay(key: string) {
-  return new Date(`${key}T00:00:00Z`).toLocaleDateString("fr-FR", {
+  return new Date(`${key}T00:00:00Z`).toLocaleDateString(intlLocale(), {
     day: "numeric",
     month: "long",
     year: "numeric",

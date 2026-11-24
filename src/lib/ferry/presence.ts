@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
+import { tr } from "@/lib/i18n/translate";
 
 // Statuts de voyage (script du 01/11/2026), absents des types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -8,12 +9,12 @@ const supabase = typedSupabase as unknown as SupabaseClient;
 export type TripStatus = "en_route" | "port" | "onboard" | "landing" | "controls" | "arrived";
 /** Les étapes de « Ma traversée », chacune avec son cabas, jusqu'à la sortie du port. */
 export const tripSteps: { id: TripStatus; label: string; short: string; image: string }[] = [
-  { id: "en_route", label: "En route vers le port", short: "En route", image: "/cabas/statut-en-route.webp" },
-  { id: "port", label: "Au port", short: "Au port", image: "/cabas/statut-au-port.webp" },
-  { id: "onboard", label: "À bord", short: "À bord", image: "/cabas/statut-a-bord.webp" },
-  { id: "landing", label: "Débarquement", short: "Débarquement", image: "/cabas/humeurs/27_debarquement.webp" },
-  { id: "controls", label: "Police et douane", short: "Contrôles", image: "/cabas/humeurs/14_controle.webp" },
-  { id: "arrived", label: "Sorti du port", short: "Débarqué", image: "/cabas/statut-arrive.webp" },
+  { id: "en_route", get label() { return tr("ui.libFerryPresence.enRouteVersLePort"); }, get short() { return tr("ui.libFerryPresence.enRoute"); }, image: "/cabas/statut-en-route.webp" },
+  { id: "port", get label() { return tr("ui.libFerryPresence.auPort"); }, get short() { return tr("ui.libFerryPresence.auPort"); }, image: "/cabas/statut-au-port.webp" },
+  { id: "onboard", get label() { return tr("ui.libFerryPresence.aBord"); }, get short() { return tr("ui.libFerryPresence.aBord"); }, image: "/cabas/statut-a-bord.webp" },
+  { id: "landing", get label() { return tr("ui.libFerryPresence.debarquement"); }, get short() { return tr("ui.libFerryPresence.debarquement"); }, image: "/cabas/humeurs/27_debarquement.webp" },
+  { id: "controls", get label() { return tr("ui.libFerryPresence.policeEtDouane"); }, get short() { return tr("ui.libFerryPresence.controles"); }, image: "/cabas/humeurs/14_controle.webp" },
+  { id: "arrived", get label() { return tr("ui.libFerryPresence.sortiDuPort"); }, get short() { return tr("ui.libFerryPresence.debarque"); }, image: "/cabas/statut-arrive.webp" },
 ];
 export const presenceKey = ["bw-trip-presence"] as const;
 

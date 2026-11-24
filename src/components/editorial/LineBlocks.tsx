@@ -52,7 +52,7 @@ export function LineMapCard({ line }: { line: LineGlance }) {
   const fallback = <div className="h-full animate-pulse bg-secondary" />;
   return (
     <section
-      aria-label={`La ligne ${line.from} → ${line.to}`}
+      aria-label={tr("ui.lineBlocks.laLigne", { from: line.from, to: line.to })}
       className="mt-8 overflow-hidden rounded-2xl border bg-card"
     >
       <div className="relative h-64 md:h-80">

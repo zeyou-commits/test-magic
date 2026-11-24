@@ -1,5 +1,6 @@
 import { personas, reactions } from "@/lib/community/travellers";
 import { cabasImages } from "@/lib/ferry/presence";
+import { tr } from "@/lib/i18n/translate";
 
 export type IllustrationCategory =
   "avatars" | "statuts" | "persos" | "humeurs" | "pictos" | "reactions";
@@ -18,12 +19,12 @@ export type IllustrationSlot = {
 };
 
 export const categories: Record<IllustrationCategory, { label: string; hint: string }> = {
-  avatars: { label: "Avatars", hint: "Voyageurs sur la carte et dans les panneaux." },
-  statuts: { label: "Statuts", hint: "En route, au port, à bord, arrivé." },
-  persos: { label: "Personnages", hint: "Le cabas que chacun choisit dans son profil." },
-  humeurs: { label: "Humeurs", hint: "La bulle posée sur le cabas et le choix de l'humeur." },
-  pictos: { label: "Icônes d'humeur", hint: "La petite pastille posée sur l'avatar." },
-  reactions: { label: "Réactions", hint: "Prêtes, mais pas encore affichées dans l'app." },
+  avatars: { get label() { return tr("ui.libIllustrationsCatalog.avatars"); }, get hint() { return tr("ui.libIllustrationsCatalog.voyageursSurLaCarteEt"); } },
+  statuts: { get label() { return tr("ui.libIllustrationsCatalog.statuts"); }, get hint() { return tr("ui.libIllustrationsCatalog.enRouteAuPortA"); } },
+  persos: { get label() { return tr("ui.libIllustrationsCatalog.personnages"); }, get hint() { return tr("ui.libIllustrationsCatalog.leCabasQueChacunChoisit"); } },
+  humeurs: { get label() { return tr("ui.libIllustrationsCatalog.humeurs"); }, get hint() { return tr("ui.libIllustrationsCatalog.laBullePoseeSurLe"); } },
+  pictos: { get label() { return tr("ui.libIllustrationsCatalog.iconesDHumeur"); }, get hint() { return tr("ui.libIllustrationsCatalog.laPetitePastillePoseeSur"); } },
+  reactions: { get label() { return tr("ui.libIllustrationsCatalog.reactions"); }, get hint() { return tr("ui.libIllustrationsCatalog.pretesMaisPasEncoreAffichees"); } },
 };
 
 const FORMATS: Record<
@@ -40,24 +41,24 @@ const FORMATS: Record<
 };
 
 const PICTOS = {
-  bouchon: "Bouchon",
-  chaleur: "Chaleur",
-  controle: "Contrôle",
-  file: "File d'attente",
-  msemen: "Msemen",
-  route_longue: "Route longue",
-  surpoids: "Surpoids",
-  valise_pleine: "Valise pleine",
-  viva_algerie: "Viva l'Algérie",
-  yallah: "Yallah",
-  zen: "Zen",
+  get bouchon() { return tr("ui.libIllustrationsCatalog.bouchon"); },
+  get chaleur() { return tr("ui.libIllustrationsCatalog.chaleur"); },
+  get controle() { return tr("ui.libIllustrationsCatalog.controle"); },
+  get file() { return tr("ui.libIllustrationsCatalog.fileDAttente"); },
+  get msemen() { return tr("ui.libIllustrationsCatalog.msemen"); },
+  get route_longue() { return tr("ui.libIllustrationsCatalog.routeLongue"); },
+  get surpoids() { return tr("ui.libIllustrationsCatalog.surpoids"); },
+  get valise_pleine() { return tr("ui.libIllustrationsCatalog.valisePleine"); },
+  get viva_algerie() { return tr("ui.libIllustrationsCatalog.vivaLAlgerie"); },
+  get yallah() { return tr("ui.libIllustrationsCatalog.yallah"); },
+  get zen() { return tr("ui.libIllustrationsCatalog.zen"); },
 };
 
 const STATUTS = {
-  "statut-en-route": "En route",
-  "statut-au-port": "Au port",
-  "statut-a-bord": "À bord",
-  "statut-arrive": "Arrivé",
+  get "statut-en-route"() { return tr("ui.libIllustrationsCatalog.enRoute"); },
+  get "statut-au-port"() { return tr("ui.libIllustrationsCatalog.auPort"); },
+  get "statut-a-bord"() { return tr("ui.libIllustrationsCatalog.aBord"); },
+  get "statut-arrive"() { return tr("ui.libIllustrationsCatalog.arrive"); },
 };
 
 function slot(category: IllustrationCategory, path: string, name: string): IllustrationSlot {
@@ -72,7 +73,7 @@ function readable(file: string) {
 }
 
 export const illustrationSlots: IllustrationSlot[] = [
-  ...[1, 2, 3, 4, 5, 6].map((n) => slot("avatars", `avatar-${n}`, `Avatar ${n}`)),
+  ...[1, 2, 3, 4, 5, 6].map((n) => slot("avatars", `avatar-${n}`, tr("ui.libIllustrationsCatalog.avatar", { n }))),
   ...Object.entries(STATUTS).map(([file, name]) => slot("statuts", file, name)),
   // La voiture 504 (mascotte, image du trajet porte à porte) n'est plus dans « personas » : elle
   // ne se remplace pas ici.

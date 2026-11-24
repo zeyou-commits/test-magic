@@ -72,11 +72,11 @@ export function SeaIcon({ peak, size = 24 }: { peak: number; size?: number }) {
 
 /** L'échelle affichée dans le détail (échelle de Douglas, hauteur des vagues). */
 const SEA_SCALE = [
-  { id: "calm", label: "Belle", range: "moins de 0,5 m" },
-  { id: "slight", label: "Peu agitée", range: "0,5 à 1,25 m" },
-  { id: "moderate", label: "Agitée", range: "1,25 à 2,5 m" },
-  { id: "rough", label: "Forte", range: "2,5 à 4 m" },
-  { id: "high", label: "Très forte", range: "4 m et plus" },
+  { id: "calm", get label() { return tr("ui.seaForecast.belle"); }, get range() { return tr("ui.seaForecast.moinsDe05M"); } },
+  { id: "slight", get label() { return tr("ui.seaForecast.peuAgitee"); }, range: "0,5 à 1,25 m" },
+  { id: "moderate", get label() { return tr("ui.seaForecast.agitee"); }, range: "1,25 à 2,5 m" },
+  { id: "rough", get label() { return tr("ui.seaForecast.forte"); }, range: "2,5 à 4 m" },
+  { id: "high", get label() { return tr("ui.seaForecast.tresForte"); }, get range() { return tr("ui.seaForecast.t4MEtPlus"); } },
 ] as const;
 
 /**
@@ -100,15 +100,15 @@ export function SeaDetails({ peak, children }: { peak: number; children: ReactNo
       >
         <p className="bw-sea-pop__title">
           <SeaIcon peak={peak} size={22} />
-          {level.label} prévue sur le trajet
+          {level.label}{tr("ui.seaForecast.prevueSurLeTrajet")}
         </p>
         <p className="bw-sea-pop__lead">
-          Vagues jusqu'à <b>{seaHeight(peak)}</b>, au plus fort de ce qu'il reste de la traversée.
+          {tr("ui.seaForecast.vaguesJusquAB")}<b>{seaHeight(peak)}</b>{tr("ui.seaForecast.auPlusFortDeCe")}
         </p>
         {isLivelySea(peak) ? (
           <p className="bw-sea-pop__advice">{tr("ui.seaForecast.siVousEtesSensibleAu")}</p>
         ) : null}
-        <ol className="bw-sea-pop__scale" aria-label="Échelle de la mer">
+        <ol className="bw-sea-pop__scale" aria-label={tr("ui.seaForecast.echelleDeLaMer")}>
           {SEA_SCALE.map((step) => (
             <li key={step.id} data-level={step.id} aria-current={step.id === level.id || undefined}>
               <span>{step.label}</span>
@@ -117,8 +117,7 @@ export function SeaDetails({ peak, children }: { peak: number; children: ReactNo
           ))}
         </ol>
         <p className="bw-sea-pop__source">
-          Prévision Open-Meteo, relue toutes les 30 min. Une information de confort : seule la
-          compagnie confirme le départ.
+          {tr("ui.seaForecast.previsionOpenMeteoRelueToutes")}
         </p>
       </PopoverContent>
     </Popover>
@@ -148,7 +147,7 @@ export function SeaChip({
         type="button"
         className="bw-sea-chip"
         data-level={level.id}
-        aria-label={`${level.label}, vagues jusqu'à ${seaHeight(peak)} : voir le détail`}
+        aria-label={tr("ui.seaForecast.vaguesJusquAVoirLe", { label: level.label, seaHeight: seaHeight(peak) })}
       >
         <SeaIcon peak={peak} size={16} />
         {level.short} · {seaHeight(peak)}
@@ -167,7 +166,7 @@ export function SeaPhotoBadge({ peak }: { peak: number }) {
         type="button"
         className="bw-sea-badge"
         data-level={level.id}
-        aria-label={`${level.label} prévue sur le trajet : voir le détail`}
+        aria-label={tr("ui.seaForecast.prevueSurLeTrajetVoir", { label: level.label })}
       >
         <SeaIcon peak={peak} size={16} />
       </button>
@@ -198,7 +197,7 @@ export function VesselSeaBadge({
         type="button"
         className="bw-sea-pill"
         data-level={level.id}
-        aria-label={`${level.label}, vagues jusqu'à ${seaHeight(peak)} : voir le détail`}
+        aria-label={tr("ui.seaForecast.vaguesJusquAVoirLe", { label: level.label, seaHeight: seaHeight(peak) })}
       >
         <SeaIcon peak={peak} size={24} />
         {level.label} · {seaHeight(peak)}

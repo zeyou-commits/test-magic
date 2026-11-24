@@ -62,7 +62,7 @@ export function SalesCalendarNote({
       email: user.email,
       from_label: fromLabel ?? null,
       to_label: toLabel ?? null,
-      period_label: `Ouverture des ventes : ${chosen.map((item) => item.name).join(", ")}`,
+      period_label: tr("ui.salesCalendarNote.ouvertureDesVentes", { v: chosen.map((item) => item.name).join(", ") }),
       period_start: date,
       period_end: returnDate ?? date,
       consent: true,
@@ -133,9 +133,9 @@ export function SalesCalendarNote({
               <b>{item.name}</b>
               <small>
                 {item.commercialUntil
-                  ? `En vente jusqu'au ${shortDay(item.commercialUntil)}`
+                  ? tr("ui.salesCalendarNote.enVenteJusquAu", { shortDay: shortDay(item.commercialUntil) })
                   : tr("ui.salesCalendarNote.rienEnVenteSurCes")}
-                {item.estimatedUntil ? ` · estimé jusqu'au ${shortDay(item.estimatedUntil)}` : ""}
+                {item.estimatedUntil ? tr("ui.salesCalendarNote.estimeJusquAu", { shortDay: shortDay(item.estimatedUntil) }) : ""}
               </small>
             </span>
             <em>{item.coversDates ? tr("ui.salesCalendarNote.enVente") : tr("ui.salesCalendarNote.pasEncore")}</em>

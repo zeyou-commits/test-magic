@@ -69,20 +69,20 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
         const chat = pendingChat();
         try {
           if (await flushPendingChat()) {
-            setChatNote("Votre message est publié.");
+            setChatNote(tr("ui.travelActionProvider.votreMessageEstPublie"));
             // Retour à l'intention de départ : on referme cette fenêtre et on rouvre le salon.
             if (chat && (chat.kind === "crossing" || chat.kind === "port")) {
               setOpen(false);
-              toast.success("Vous êtes connecté : votre message est publié.");
+              toast.success(tr("ui.travelActionProvider.vousEtesConnecteVotreMessage"));
               enterRoom(chat.kind, chat.room);
             } else if (chat?.kind === "general") {
               setOpen(false);
-              toast.success("Vous êtes connecté : votre message est publié.");
+              toast.success(tr("ui.travelActionProvider.vousEtesConnecteVotreMessage"));
               openGeneralRoom();
             }
           }
         } catch (cause) {
-          setChatNote(cause instanceof Error ? cause.message : "Message non envoyé.");
+          setChatNote(cause instanceof Error ? cause.message : tr("ui.travelActionProvider.messageNonEnvoye"));
         }
         setSaved(true);
         await Promise.all(
@@ -103,14 +103,14 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
           try {
             const status = await registerPush(userId, false);
             caughtUp = status === "enabled";
-            if (status === "enabled") setPushMessage("Notifications activées sur cet appareil.");
+            if (status === "enabled") setPushMessage(tr("ui.travelActionProvider.notificationsActiveesSurCetAppareil"));
           } catch {
-            setPushMessage("Votre suivi est enregistré. Réessayez l’activation des notifications.");
+            setPushMessage(tr("ui.travelActionProvider.votreSuiviEstEnregistreReessayez"));
           }
         }
         if (!caughtUp) void requestCatchUp();
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "Enregistrement impossible.");
+        setError(cause instanceof Error ? cause.message : tr("ui.travelActionProvider.enregistrementImpossible"));
       } finally {
         savingRef.current = false;
         setSaving(false);
@@ -159,10 +159,10 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
     const result = await push;
     setPushMessage(
       result === "enabled"
-        ? "Notifications activées sur cet appareil."
+        ? tr("ui.travelActionProvider.notificationsActiveesSurCetAppareil")
         : result === "denied"
-          ? "Le suivi est actif. Autorisez les notifications dans les réglages du navigateur pour les recevoir ici."
-          : "Retrouvez les notifications dans votre espace voyageur. Sur iPhone, ouvrez BledWay depuis l’écran d’accueil pour activer le push.",
+          ? tr("ui.travelActionProvider.leSuiviEstActifAutorisez")
+          : tr("ui.travelActionProvider.retrouvezLesNotificationsDansVotre"),
     );
   }
 
@@ -265,7 +265,7 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
             !saved ? null : !user ? (
               <AccountAccessForm
                 onAwaitingConfirmation={() => setAwaitingConfirmation(true)}
-                {...(draft ? { signupLabel: "Créer mon compte et envoyer" } : {})}
+                {...(draft ? { signupLabel: tr("ui.travelActionProvider.creerMonCompteEtEnvoyer") } : {})}
               />
             ) : (
               <>
@@ -392,12 +392,12 @@ function DeviceAlertState() {
   }, []);
   if (!state) return null;
   const text = {
-    on: "Notifications activées sur cet appareil.",
-    ask: "Notifications pas encore activées sur cet appareil : elles vous seront proposées en validant.",
+    on: tr("ui.travelActionProvider.notificationsActiveesSurCetAppareil"),
+    ask: tr("ui.travelActionProvider.notificationsPasEncoreActiveesSur"),
     blocked:
-      "Notifications bloquées sur cet appareil : vous retrouverez les changements dans la cloche et votre espace.",
-    ios: "Sur iPhone, les notifications demandent d’ouvrir BledWay depuis l’écran d’accueil. En attendant, les changements arrivent dans la cloche.",
-    none: "Ce navigateur ne reçoit pas de notifications : les changements arrivent dans la cloche et votre espace.",
+      tr("ui.travelActionProvider.notificationsBloqueesSurCetAppareil"),
+    ios: tr("ui.travelActionProvider.surIphoneLesNotificationsDemandent"),
+    none: tr("ui.travelActionProvider.ceNavigateurNeRecoitPas"),
   }[state];
   return (
     <small className="bw-travel-perks__device" data-state={state}>

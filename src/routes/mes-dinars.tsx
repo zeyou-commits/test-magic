@@ -18,7 +18,7 @@ const supabase = typedSupabase as unknown as import("@supabase/supabase-js").Sup
 const LOCAL_KEY = "bledway:bezass:v1";
 const money = (value: number, currency: Currency | "DZD", digits = 0) => currency === "DZD" ? `${lazyNumberFormat({ maximumFractionDigits: digits }).format(value)} DA` : lazyNumberFormat({ style: "currency", currency, maximumFractionDigits: digits }).format(value);
 const parseAmount = (value: string) => Number(value.replace(/\s/g, "").replace(",", "."));
-const sourceDay = (date: string | null | undefined, today: string) => !date ? "Date inconnue" : date.slice(0, 10) === today ? "Aujourd’hui" : new Date(date).toLocaleDateString(intlLocale(), { day: "numeric", month: "short" });
+const sourceDay = (date: string | null | undefined, today: string) => !date ? tr("ui.pageMesDinars.dateInconnue") : date.slice(0, 10) === today ? tr("ui.pageMesDinars.aujourdHui") : new Date(date).toLocaleDateString(intlLocale(), { day: "numeric", month: "short" });
 
 function NoteVisual({ image, fallback, variant, value, kind, empty }: { image: string | null; fallback?: string | null; variant?: string | null; value: number; kind: string; empty: boolean }) {
   const [attempt, setAttempt] = useState(0);
@@ -26,7 +26,7 @@ function NoteVisual({ image, fallback, variant, value, kind, empty }: { image: s
   useEffect(() => { setAttempt(0); setVariantFailed(false); }, [image, fallback, variant]);
   const sources = [image, fallback].filter((source, index, list): source is string => !!source && list.indexOf(source) === index);
   const portrait = value === 2000 && sources[attempt]?.includes("2000_01_12.png");
-  return <div data-value={value} className={`bw-wallet-note ${kind === "coin" ? "bw-wallet-note--coin" : ""} ${empty ? "bw-wallet-note--empty" : ""} ${portrait ? "bw-wallet-note--portrait" : ""}`} aria-label={`${kind === "note" ? "Billet" : "Pièce"} de ${value} dinars`}>
+  return <div data-value={value} className={`bw-wallet-note ${kind === "coin" ? "bw-wallet-note--coin" : ""} ${empty ? "bw-wallet-note--empty" : ""} ${portrait ? "bw-wallet-note--portrait" : ""}`} aria-label={tr("ui.pageMesDinars.deDinars", { v: kind === "note" ? "Billet" : "Pièce", value })}>
     {sources[attempt] ? <img src={sources[attempt]} alt="" loading="eager" onError={() => setAttempt((current) => current + 1)} /> : <span className="bw-wallet-note__fallback">{tr("ui.pageMesDinars.photoIndisponible")}</span>}
     {variant && !variantFailed ? <img className="bw-wallet-note__variant" src={variant} alt="" loading="eager" onError={() => setVariantFailed(true)} /> : null}
     <span>{value.toLocaleString(intlLocale())}</span>
@@ -34,7 +34,7 @@ function NoteVisual({ image, fallback, variant, value, kind, empty }: { image: s
 }
 
 export const Route = createFileRoute("/mes-dinars")({
-  head: () => seoHead("Convertir euros et dinars algériens : Mes dinars | BledWay", "Convertissez un prix entre dinars algériens et euros, et suivez ce qu'il vous reste pendant votre voyage en Algérie.", "/mes-dinars"),
+  head: () => seoHead(tr("ui.pageMesDinars.convertirEurosEtDinarsAlgeriens"), tr("ui.pageMesDinars.convertissezUnPrixEntreDinars"), "/mes-dinars"),
   component: WalletPage,
 });
 
@@ -125,7 +125,7 @@ function WalletPage() {
   useEffect(() => { if (personalRate) setMode("personal"); }, [personalRate?.rate, personalRate?.day]);
   const published = rates.rates[currency];
   const rate = mode === "personal" && personalRate ? personalRate.rate : mode === "parallel" ? published?.parallel ?? null : published?.official ?? null;
-  const basis = mode === "personal" && personalRate ? "à votre taux" : mode === "parallel" ? "au taux parallèle indicatif" : "au taux officiel";
+  const basis = mode === "personal" && personalRate ? tr("ui.pageMesDinars.aVotreTaux") : mode === "parallel" ? tr("ui.pageMesDinars.auTauxParalleleIndicatif") : tr("ui.pageMesDinars.auTauxOfficiel");
 
   const update = (next: WalletState | null) => {
     if (next) setWallet({ ...next, updatedAt: new Date().toISOString() });
@@ -154,7 +154,7 @@ function WalletPage() {
   const percentLeft = entered > 0 ? Math.round((left / entered) * 100) : 0;
   const movements = [
     ...wallet.expenses.map((item) => ({ key: item.id, day: item.day, label: item.category, value: `− ${money(item.amount, "DZD")}`, remove: () => update({ ...wallet, expenses: wallet.expenses.filter((entry) => entry.id !== item.id) }) })),
-    ...wallet.exchanges.map((item) => ({ key: item.id, day: item.day, label: `Change · ${money(item.spent, item.currency)}`, value: `+ ${money(item.received, "DZD")}`, remove: () => update(removeExchange(wallet, item.id)) })),
+    ...wallet.exchanges.map((item) => ({ key: item.id, day: item.day, label: tr("ui.pageMesDinars.change", { money: money(item.spent, item.currency) }), value: `+ ${money(item.received, "DZD")}`, remove: () => update(removeExchange(wallet, item.id)) })),
   ].sort((a, b) => b.day.localeCompare(a.day)).slice(0, 12);
 
   const saveExchange = () => {
@@ -170,7 +170,7 @@ function WalletPage() {
     setCash(""); setAction(null);
   };
   const reset = () => {
-    if (window.confirm("Effacer le budget de ce voyage : changes, dépenses et dinars enregistrés ?")) update({ ...emptyWallet(), currency });
+    if (window.confirm(tr("ui.pageMesDinars.effacerLeBudgetDeCe"))) update({ ...emptyWallet(), currency });
   };
   const today = new Date().toLocaleDateString("en-CA");
   const notes = DENOMINATIONS.filter((denom) => denom.value >= 100);
@@ -203,7 +203,7 @@ function WalletPage() {
               ? <input value={heard} onChange={(event) => { setHeard(event.target.value); const found = parseSpoken(event.target.value); fromDinars(found ? String(found) : ""); }} placeholder={tr("ui.pageMesDinars.t3Melyoun")} aria-label={tr("ui.pageMesDinars.lePrixEntendu")} autoComplete="off" />
               : entry === "dinars"
                 ? <input inputMode="decimal" value={dinars} onChange={(event) => fromDinars(event.target.value)} placeholder="0" aria-label={tr("ui.pageMesDinars.montantEnDinars")} />
-                : <input inputMode="decimal" value={foreign} onChange={(event) => fromForeign(event.target.value)} placeholder="0" aria-label={`Montant en ${currency}`} />}
+                : <input inputMode="decimal" value={foreign} onChange={(event) => fromForeign(event.target.value)} placeholder="0" aria-label={tr("ui.pageMesDinars.montantEn", { currency })} />}
             {entry === "heard" ? null : <b>{entry === "dinars" ? "DA" : currency}</b>}
             {dinars || heard ? <button type="button" aria-label={tr("ui.pageMesDinars.effacer")} onClick={() => { setHeard(""); fromDinars(""); }}><Delete size={20} aria-hidden /></button> : null}
           </div>
@@ -213,14 +213,14 @@ function WalletPage() {
               {entry === "heard" ? <span>{money(parseAmount(dinars), "DZD")}</span> : null}
               {spoken ? <span className="bw-dz-said">
                 {tr("ui.pageMesDinars.caSeDit")}{spoken} »
-                {spokenVoice ? <button type="button" aria-label={`Écouter : ${spoken}`} onClick={() => playVoice(spokenVoice.storage_path)}><Volume2 size={18} aria-hidden /></button> : null}
+                {spokenVoice ? <button type="button" aria-label={tr("ui.pageMesDinars.ecouter", { spoken })} onClick={() => playVoice(spokenVoice.storage_path)}><Volume2 size={18} aria-hidden /></button> : null}
               </span> : null}
             </> : heard ? <span className="bw-dz-unknown">{tr("ui.pageMesDinars.essayez2MelyounOuCent")}</span> : <span>{tr("ui.pageMesDinars.touchezUnBilletOuSaisissez")}</span>}
           </div>
           <div className="bw-dz-notes" role="group" aria-label={tr("ui.pageMesDinars.ajouterUnBilletOuUne")}>
             {notes.map((denom) => {
               const front = mediaRows.find((row) => row.value === denom.value && row.slot === "front");
-              return <button key={denom.value} type="button" data-kind={denom.kind} aria-label={`Ajouter ${denom.value} dinars`} onClick={() => { setEntry("dinars"); setHeard(""); addNote(denom.value); }}>
+              return <button key={denom.value} type="button" data-kind={denom.kind} aria-label={tr("ui.pageMesDinars.ajouterDinars", { value: denom.value })} onClick={() => { setEntry("dinars"); setHeard(""); addNote(denom.value); }}>
                 {denom.kind === "coin" ? <span className="bw-dz-coin">{denom.value}{tr("ui.pageMesDinars.da")}</span> : <NoteVisual image={front ? walletMediaUrl(front.storage_path) : denom.image} fallback={front ? denom.image : null} variant={null} value={denom.value} kind={denom.kind} empty={false} />}
               </button>;
             })}
@@ -251,7 +251,7 @@ function WalletPage() {
               return <li key={item.said}>
                 <span>{item.said}</span>
                 <b>{money(item.dinars, "DZD")}</b>
-                {voice ? <button type="button" aria-label={`Écouter : ${item.said}`} onClick={() => playVoice(voice.storage_path)}><Volume2 size={18} aria-hidden /></button> : <i />}
+                {voice ? <button type="button" aria-label={tr("ui.pageMesDinars.ecouter2", { said: item.said })} onClick={() => playVoice(voice.storage_path)}><Volume2 size={18} aria-hidden /></button> : <i />}
               </li>;
             })}
           </ul>
@@ -265,8 +265,8 @@ function WalletPage() {
         <section className="bw-dz-budget" aria-labelledby="dz-budget-title">
           <h2 id="dz-budget-title"><Wallet size={19} aria-hidden />{tr("ui.pageMesDinars.monBudgetDuVoyage")}</h2>
           {started ? <>
-            <p className="bw-dz-left"><small>{tr("ui.pageMesDinars.ilVousReste")}</small><strong>{money(left, "DZD")}</strong><span>{rate ? `soit environ ${money(left / rate, currency)}, ${basis}` : tr("ui.pageMesDinars.conversionIndisponible")}</span></p>
-            <div className="bw-dz-meter" role="img" aria-label={`${percentLeft} % restant`}><i style={{ width: `${percentLeft}%` }} /></div>
+            <p className="bw-dz-left"><small>{tr("ui.pageMesDinars.ilVousReste")}</small><strong>{money(left, "DZD")}</strong><span>{rate ? tr("ui.pageMesDinars.soitEnviron", { money: money(left / rate, currency), basis }) : tr("ui.pageMesDinars.conversionIndisponible")}</span></p>
+            <div className="bw-dz-meter" role="img" aria-label={tr("ui.pageMesDinars.restant", { percentLeft })}><i style={{ width: `${percentLeft}%` }} /></div>
             <p className="bw-dz-sums"><span>{tr("ui.pageMesDinars.recu")}{money(entered, "DZD")}</span><span>{tr("ui.pageMesDinars.depense")}{money(totalSpent, "DZD")}</span></p>
           </> : <p className="bw-dz-empty">{tr("ui.pageMesDinars.vousAvezChangeDeL")}</p>}
           <div className="bw-dz-actions">
@@ -295,7 +295,7 @@ function WalletPage() {
             {movements.map((item) => <li key={item.key}>
               <span>{item.label}<small>{item.day === today ? tr("ui.pageMesDinars.aujourdHui") : new Date(`${item.day}T12:00:00`).toLocaleDateString(intlLocale(), { day: "numeric", month: "short" })}</small></span>
               <b>{item.value}</b>
-              <button type="button" aria-label={`Supprimer : ${item.label}`} onClick={item.remove}><Trash2 size={15} aria-hidden /></button>
+              <button type="button" aria-label={tr("ui.pageMesDinars.supprimer", { label: item.label })} onClick={item.remove}><Trash2 size={15} aria-hidden /></button>
             </li>)}
           </ul> : null}
         </section>

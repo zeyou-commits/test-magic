@@ -196,9 +196,9 @@ export function TripQuestion({
       <div className="bw-trip-one__purpose" role="radiogroup" aria-label={tr("ui.tripQuestion.pourquoiSuivre")}>
         {(
           [
-            ["voyageur", "Je voyage"],
-            ["proche", "Un proche"],
-            ["curieux", "Par curiosité"],
+            ["voyageur", tr("ui.tripQuestion.jeVoyage")],
+            ["proche", tr("ui.tripQuestion.unProche")],
+            ["curieux", tr("ui.tripQuestion.parCuriosite")],
           ] as const
         ).map(([id, text]) => (
           <button
@@ -272,7 +272,7 @@ export function TripQuestion({
           {picked ? (
             <p className="bw-trip-one__detail">
               {[company, vessel].filter(Boolean).join(" · ") || tr("ui.tripQuestion.compagnieAConfirmer")}
-              {arrival ? ` · arrivée ${arrival.day} à ${arrival.time}` : ""}
+              {arrival ? tr("ui.tripQuestion.arriveeA", { day: arrival.day, time: arrival.time }) : ""}
             </p>
           ) : null}
         </section>

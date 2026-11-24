@@ -2,6 +2,8 @@ import type { Sailing } from "./trips";
 import type { Port, RouteLine } from "./types";
 import { portTimeZone } from "./time";
 import { compareRecommended, type TravelerType } from "./trips";
+import { tr } from "@/lib/i18n/translate";
+import { lazyDateFormat } from "@/lib/i18n";
 
 export interface RoadLeg {
   portId: string;
@@ -86,12 +88,12 @@ export function legWithPauses(driveMin: number) {
 export function pauseNote(driveMin: number) {
   const pauses = drivingPauses(driveMin);
   if (!pauses) return "";
-  return ` · ${pauses} pause${pauses > 1 ? "s" : ""} de ${PAUSE_MIN} min comprise${pauses > 1 ? "s" : ""}`;
+  return tr("ui.libFerryItinerary.pauseDeMinComprise", { pauses, v: pauses > 1 ? "s" : "", PAUSEMIN: PAUSE_MIN, v2: pauses > 1 ? "s" : "" });
 }
 
 /** « mer. 4 nov. à 07:30 », dans le fuseau du lieu. */
 export function formatDayTime(ms: number, timeZone: string) {
-  const parts = new Intl.DateTimeFormat("fr-FR", {
+  const parts = lazyDateFormat({
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -201,7 +203,7 @@ export function sortItineraries(options: ItineraryOption[], priority: ItineraryP
 export const TIE_MIN = 60;
 
 export function gapLabel(gapMin: number) {
-  if (gapMin < TIE_MIN) return "À égalité";
+  if (gapMin < TIE_MIN) return tr("ui.libFerryItinerary.aEgalite");
   if (gapMin >= 2880) return `+${Math.round(gapMin / 1440)} j`;
   const rounded = Math.round(gapMin / 30) * 30;
   const hours = Math.floor(rounded / 60);

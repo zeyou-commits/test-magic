@@ -3,6 +3,7 @@ import { articles } from "@/content/articles";
 import { ArticlePage } from "@/components/editorial/ArticlePage";
 import { seoHead } from "@/lib/seo/site";
 import { lineQueries } from "@/components/editorial/LineBlocks";
+import { tr } from "@/lib/i18n";
 export const Route = createFileRoute("/guide/$slug")({
   loader: async ({ context, params }) => {
     const article = articles.find((a) => a.slug === params.slug);
@@ -25,7 +26,7 @@ export const Route = createFileRoute("/guide/$slug")({
             : undefined,
         )
       : {
-          meta: [{ title: "Dossier introuvable | BledWay" }, { name: "robots", content: "noindex" }],
+          meta: [{ title: tr("ui.pageGuideSlug.dossierIntrouvableBledway") }, { name: "robots", content: "noindex" }],
         },
   component: ArticleRoute,
 });

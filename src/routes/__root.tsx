@@ -1,6 +1,6 @@
 import { absoluteUrl, jsonLdString } from "@/lib/seo/site";
 import { PITCH, PROMISE } from "@/lib/seo/pitch";
-import { I18nProvider } from "@/lib/i18n";
+import { I18nProvider, tr } from "@/lib/i18n";
 import seoConfig from "../../seo.config.json";
 import { ProfileHost } from "@/components/community/ProfileHost";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -26,33 +26,32 @@ import { AppUpdates } from "@/components/layout/AppUpdates";
 import { LocationHelp } from "@/components/layout/LocationHelp";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import { SiteHeader } from "@/components/layout/SiteLayout";
-import { TravelActionProvider } from "@/components/auth/TravelActionProvider";
-import { tr } from "@/lib/i18n";
+import { TravelActionProvider } from "@/components/auth/TravelActionProvider";
 import { Bw504Button, Bw504Note } from "@/components/companion/Bw504Note";
 
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Erreur 404</p>
+        <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{tr("ui.pageRoot.erreur404")}</p>
         <h1 className="mt-1 text-2xl font-semibold text-foreground">{tr("ui.pageRoot.pageIntrouvable")}</h1>
         {/* La raison est sûre : l'adresse ne mène à aucune page. La 504 propose deux sorties. */}
         <Bw504Note
           tone="stuck"
           className="mt-5 text-start"
-          title="J'ai pris la mauvaise sortie"
+          title={tr("ui.pageRoot.jAiPrisLaMauvaise")}
           actions={
             <>
               <Bw504Button primary onClick={() => window.location.assign("/")}>
                 {tr("ui.pageRoot.retourALaCarte")}
               </Bw504Button>
               <Bw504Button onClick={() => window.location.assign("/preparer-mon-voyage")}>
-                Préparer mon voyage
+                {tr("ui.pageRoot.preparerMonVoyage")}
               </Bw504Button>
             </>
           }
         >
-          Cette page n'existe pas, ou elle a changé d'adresse. On repart d'un endroit connu ?
+          {tr("ui.pageRoot.cettePageNExistePas")}
         </Bw504Note>
       </div>
     </div>
@@ -93,7 +92,7 @@ function ErrorComponent({ error }: ErrorComponentProps) {
         <Bw504Note
           tone="stuck"
           className="mt-5 text-start"
-          title={assetLoadError ? "Le site vient d'être mis à jour" : "J'ai calé sur cette page"}
+          title={assetLoadError ? tr("ui.pageRoot.leSiteVientDEtre") : tr("ui.pageRoot.jAiCaleSurCette")}
           actions={
             <>
               <Bw504Button primary onClick={() => window.location.reload()}>
@@ -106,8 +105,8 @@ function ErrorComponent({ error }: ErrorComponentProps) {
           }
         >
           {assetLoadError
-            ? "Recharge la page : tu auras la dernière version."
-            : "Je ne sais pas encore pourquoi, l'équipe est prévenue. Réessaie, ou repars de la carte."}
+            ? tr("ui.pageRoot.rechargeLaPageTuAuras")
+            : tr("ui.pageRoot.jeNeSaisPasEncore")}
         </Bw504Note>
       </div>
     </div>
@@ -123,7 +122,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
-      { title: "BledWay — le Waze du ferry Europe ↔ Maghreb" },
+      { title: tr("ui.pageRoot.bledwayLeWazeDuFerry") },
       {
         name: "description",
         content:
@@ -168,24 +167,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               "@type": "WebApplication",
               "@id": absoluteUrl("/#app"),
               name: "BledWay",
-              alternateName: "Le Waze du ferry Europe–Maghreb",
+              alternateName: tr("ui.pageRoot.leWazeDuFerryEurope"),
               url: absoluteUrl("/"),
               inLanguage: "fr",
               applicationCategory: "TravelApplication",
-              operatingSystem: "Web, Android, iOS",
+              operatingSystem: tr("ui.pageRoot.webAndroidIos"),
               isAccessibleForFree: true,
               offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
               publisher: { "@id": absoluteUrl("/#organisation") },
               description:
                 PITCH,
               featureList: [
-                "Signalements des voyageurs en direct au port et à bord, façon Waze",
-                "Suivi des navires en mer et arrivée estimée",
-                "Alertes de retard, de report et d'annulation pour la traversée suivie",
-                "Comparaison des départs de toutes les compagnies, en heure locale",
-                "Salons de discussion par traversée et par port",
-                "Préparation du voyage de porte à porte : itinéraire, carburant, péages",
-                "Billets rangés et consultables sans réseau",
+                tr("ui.pageRoot.signalementsDesVoyageursEnDirect"),
+                tr("ui.pageRoot.suiviDesNaviresEnMer"),
+                tr("ui.pageRoot.alertesDeRetardDeReport"),
+                tr("ui.pageRoot.comparaisonDesDepartsDeToutes"),
+                tr("ui.pageRoot.salonsDeDiscussionParTraversee"),
+                tr("ui.pageRoot.preparationDuVoyageDePorte"),
+                tr("ui.pageRoot.billetsRangesEtConsultablesSans"),
               ],
             },
           ],

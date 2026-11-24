@@ -8,7 +8,7 @@ import { BrandMark } from "@/components/layout/BrandMark";
 import { Input } from "@/components/ui/input";
 import type { Filters, Port, RouteLine } from "@/lib/ferry/types";
 import { Button } from "@/components/ui/button";
-import { useT } from "@/lib/i18n";
+import { useT, tr, placeName } from "@/lib/i18n";
 import {
   algerianRegion,
   countryShortcutLabel,
@@ -43,10 +43,10 @@ export function MobileMapControls({
   // Trajets fréquents, dans les deux sens, proposés seulement s'ils existent dans les données.
   const frequentTrips = useMemo(() => {
     const requested = [
-      ["Marseille", "Alger"],
-      ["Alger", "Marseille"],
-      ["Alicante", "Oran"],
-      ["Oran", "Alicante"],
+      [tr("ui.mobileMapControls.marseille"), tr("ui.mobileMapControls.alger")],
+      [tr("ui.mobileMapControls.alger"), tr("ui.mobileMapControls.marseille")],
+      [tr("ui.mobileMapControls.alicante"), tr("ui.mobileMapControls.oran")],
+      [tr("ui.mobileMapControls.oran"), tr("ui.mobileMapControls.alicante")],
     ] as const;
     return requested.flatMap(([fromName, toName]) => {
       const from = findPort(fromName);
@@ -98,7 +98,7 @@ export function MobileMapControls({
           ids: c.ports.map((p) => p.id),
         });
       if (c.code === "DZ") {
-        (["Ouest", "Centre", "Est"] as const).forEach((region) => {
+        ([tr("ui.mobileMapControls.ouest"), tr("ui.mobileMapControls.centre"), tr("ui.mobileMapControls.est")] as const).forEach((region) => {
           const ids = c.ports.filter((p) => algerianRegion(p) === region).map((p) => p.id);
           if (ids.length)
             out.push({
@@ -288,9 +288,9 @@ export function MobileMapControls({
                       onClick={() => chooseTrip(from, to)}
                       className="h-9 shrink-0 rounded-full px-3 text-xs font-semibold"
                     >
-                      {from.name}
+                      {placeName(from.name)}
                       <ArrowRight className="size-3.5" />
-                      {to.name}
+                      {placeName(to.name)}
                     </Button>
                   ))}
                 </div>
@@ -329,7 +329,7 @@ export function MobileMapControls({
                           {selected ? <Check className="size-4" /> : <MapPin className="size-4" />}
                         </span>
                         <span className="min-w-0 flex-1 text-start">
-                          <span className="block truncate text-sm font-semibold">{port.name}</span>
+                          <span className="block truncate text-sm font-semibold">{placeName(port.name)}</span>
                           {detail ? (
                             <span className="block truncate text-xs font-normal text-muted-foreground">
                               {detail}
@@ -349,20 +349,20 @@ export function MobileMapControls({
                   return (
                     <Bw504Note
                       tone="stuck"
-                      title={close.length ? `Tu voulais dire ${close[0]!.name} ?` : "Je ne connais pas ce port"}
+                      title={close.length ? tr("ui.mobileMapControls.tuVoulaisDire", { name: close[0]!.name }) : tr("ui.mobileMapControls.jeNeConnaisPasCe")}
                       actions={
                         close.length ? (
                           close.map((port) => (
                             <Bw504Button key={port.id} primary={port === close[0]} onClick={() => setQuery(port.name)}>
-                              {port.name}
+                              {placeName(port.name)}
                             </Bw504Button>
                           ))
                         ) : (
-                          <Bw504Button onClick={() => setQuery("")}>Voir tous les ports</Bw504Button>
+                          <Bw504Button onClick={() => setQuery("")}>{tr("ui.mobileMapControls.voirTousLesPorts")}</Bw504Button>
                         )
                       }
                     >
-                      {close.length ? null : "Essaie le nom de la ville."}
+                      {close.length ? null : tr("ui.mobileMapControls.essaieLeNomDeLa")}
                     </Bw504Note>
                   );
                 })()}

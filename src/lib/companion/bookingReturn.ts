@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { tr } from "@/lib/i18n/translate";
 
 /**
  * « T'as pris ton billet ? » : le visiteur part réserver chez une compagnie (nouvel onglet) ;
@@ -14,7 +15,7 @@ export type BookingLeave = { site: string; at: number };
 
 export function markBookingLeave(site: string | null | undefined) {
   try {
-    sessionStorage.setItem(KEY, JSON.stringify({ site: site || "la compagnie", at: Date.now() }));
+    sessionStorage.setItem(KEY, JSON.stringify({ site: site || tr("ui.libCompanionBookingReturn.laCompagnie"), at: Date.now() }));
   } catch {
     // Stockage bloqué : la question ne sera simplement pas posée.
   }

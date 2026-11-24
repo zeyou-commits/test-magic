@@ -9,6 +9,7 @@ import { arcGap, dockSpread, shipShiftY, vesselScreenHeight } from "./shipIcons"
 import { avatarFor, presenceQuery } from "@/lib/ferry/presence";
 import { illustrationUrl } from "@/lib/illustrations/store";
 import type { Port, Selection } from "@/lib/ferry/types";
+import { tr } from "@/lib/i18n";
 
 /**
  * Présence des voyageurs BledWay sur la carte : quelques cabas et un nombre, sous le bateau
@@ -98,7 +99,7 @@ export function usePresenceMarkers(
       if (!ship || !point) continue;
       const shift: [number, number] = [ship.dx, ship.dy];
       const marker = new Marker({
-        element: pin(count, vesselId, `À bord · ${ship.name}`, { type: "vessel", id: vesselId }),
+        element: pin(count, vesselId, tr("ui.usePresenceMarkers.aBord", { name: ship.name }), { type: "vessel", id: vesselId }),
         anchor: "top-left",
         offset: [shift[0] + 6, shift[1] + 10],
       })
@@ -112,7 +113,7 @@ export function usePresenceMarkers(
       if (!port) continue;
       markers.push(
         new Marker({
-          element: pin(count, portId, `Au port · ${port.name}`, { type: "port", id: portId }),
+          element: pin(count, portId, tr("ui.usePresenceMarkers.auPort", { name: port.name }), { type: "port", id: portId }),
           anchor: "top-right",
           offset: [-6, 10],
         })

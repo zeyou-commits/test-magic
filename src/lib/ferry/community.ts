@@ -3,6 +3,7 @@ import { queryOptions, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
+import { tr } from "@/lib/i18n/translate";
 
 // Tables communautaires pas encore présentes dans les types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -59,14 +60,14 @@ export type ServiceDef = {
 };
 /** Services du port signalés ouverts ou fermés (précision `service_<code>_<open|closed>`). */
 const builtinServices: ServiceDef[] = [
-  { code: "snack", label: "Snack, restauration", open: "ouvert", closed: "fermé", icon: "utensils" },
-  { code: "prayer", label: "Salle de prière", open: "disponible", closed: "indisponible", icon: "moon-star" },
-  { code: "toilets", label: "Toilettes", open: "ouvertes", closed: "fermées", icon: "toilet" },
-  { code: "water", label: "Eau potable", open: "disponible", closed: "indisponible", icon: "glass-water" },
-  { code: "atm", label: "Distributeur", open: "en service", closed: "hors service", icon: "banknote" },
-  { code: "exchange", label: "Bureau de change", open: "ouvert", closed: "fermé", icon: "coins" },
-  { code: "fuel", label: "Station-service", open: "ouverte", closed: "fermée", icon: "fuel" },
-  { code: "kids", label: "Espace enfants", open: "ouvert", closed: "fermé", icon: "baby" },
+  { code: "snack", get label() { return tr("ui.libFerryCommunity.snackRestauration"); }, open: "ouvert", get closed() { return tr("ui.libFerryCommunity.ferme"); }, icon: "utensils" },
+  { code: "prayer", get label() { return tr("ui.libFerryCommunity.salleDePriere"); }, open: "disponible", closed: "indisponible", icon: "moon-star" },
+  { code: "toilets", get label() { return tr("ui.libFerryCommunity.toilettes"); }, open: "ouvertes", get closed() { return tr("ui.libFerryCommunity.fermees"); }, icon: "toilet" },
+  { code: "water", get label() { return tr("ui.libFerryCommunity.eauPotable"); }, open: "disponible", closed: "indisponible", icon: "glass-water" },
+  { code: "atm", get label() { return tr("ui.libFerryCommunity.distributeur"); }, get open() { return tr("ui.libFerryCommunity.enService"); }, get closed() { return tr("ui.libFerryCommunity.horsService"); }, icon: "banknote" },
+  { code: "exchange", get label() { return tr("ui.libFerryCommunity.bureauDeChange"); }, open: "ouvert", get closed() { return tr("ui.libFerryCommunity.ferme"); }, icon: "coins" },
+  { code: "fuel", label: "Station-service", open: "ouverte", get closed() { return tr("ui.libFerryCommunity.fermee"); }, icon: "fuel" },
+  { code: "kids", get label() { return tr("ui.libFerryCommunity.espaceEnfants"); }, open: "ouvert", get closed() { return tr("ui.libFerryCommunity.ferme"); }, icon: "baby" },
 ];
 
 /**
@@ -75,97 +76,97 @@ const builtinServices: ServiceDef[] = [
  */
 const builtinSituations: Record<string, Situation> = {
   access: {
-    label: "Accès au port",
+    get label() { return tr("ui.libFerryCommunity.accesAuPort"); },
     where: "port",
     color: "#dc4c1d",
     icon: "traffic-cone",
     lifetime: 120,
     level: 0,
-    question: "Comment ça se passe ?",
+    get question() { return tr("ui.libFerryCommunity.commentCaSePasse"); },
     options: [
-      { code: "access_ok", label: "Ça roule", icon: "circle-check", level: 3 },
-      { code: "access_traffic", label: "Bouchon pour entrer", icon: "car" },
-      { code: "access_closed", label: "Accès fermé ou dévié", icon: "ban", onSite: true, level: 2 },
-      { code: "access_moved", label: "L’entrée habituelle a changé", icon: "door-open", onSite: true, level: 2 },
-      { code: "access_works", label: "Travaux", icon: "construction" },
+      { code: "access_ok", get label() { return tr("ui.libFerryCommunity.caRoule"); }, icon: "circle-check", level: 3 },
+      { code: "access_traffic", get label() { return tr("ui.libFerryCommunity.bouchonPourEntrer"); }, icon: "car" },
+      { code: "access_closed", get label() { return tr("ui.libFerryCommunity.accesFermeOuDevie"); }, icon: "ban", onSite: true, level: 2 },
+      { code: "access_moved", get label() { return tr("ui.libFerryCommunity.lEntreeHabituelleAChange"); }, icon: "door-open", onSite: true, level: 2 },
+      { code: "access_works", get label() { return tr("ui.libFerryCommunity.travaux"); }, icon: "construction" },
     ],
   },
   checkin: {
-    label: "Enregistrement",
+    get label() { return tr("ui.libFerryCommunity.enregistrement"); },
     where: "port",
     color: "#2563eb",
     icon: "ticket",
     lifetime: 120,
     level: 3,
     required: true,
-    question: "Aux guichets de la compagnie",
+    get question() { return tr("ui.libFerryCommunity.auxGuichetsDeLaCompagnie"); },
     options: [
-      { code: "checkin_open", label: "Ouvert", icon: "door-open" },
-      { code: "checkin_notyet", label: "Pas encore ouvert", icon: "clock" },
-      { code: "checkin_queue", label: "Longue file au guichet", icon: "users" },
+      { code: "checkin_open", get label() { return tr("ui.libFerryCommunity.ouvert"); }, icon: "door-open" },
+      { code: "checkin_notyet", get label() { return tr("ui.libFerryCommunity.pasEncoreOuvert"); }, icon: "clock" },
+      { code: "checkin_queue", get label() { return tr("ui.libFerryCommunity.longueFileAuGuichet"); }, icon: "users" },
     ],
   },
   queue: {
-    label: "File d’attente",
+    get label() { return tr("ui.libFerryCommunity.fileDAttente"); },
     where: "port",
     color: "#e0a100",
     icon: "users",
     lifetime: 90,
     level: 0,
-    question: "Comment avance la file ?",
+    get question() { return tr("ui.libFerryCommunity.commentAvanceLaFile"); },
     options: [
-      { code: "queue_moving", label: "La file avance", icon: "chevrons-right", level: 3 },
-      { code: "queue_stopped", label: "File à l’arrêt", icon: "pause", level: 3 },
-      { code: "queue_long", label: "File très longue", icon: "list-ordered", level: 3 },
-      { code: "queue_30", label: "Moins de 30 min", icon: "timer", upTo: 2 },
-      { code: "queue_60", label: "Environ 1 h", icon: "hourglass", upTo: 2 },
-      { code: "queue_120", label: "2 h et plus", icon: "hourglass", upTo: 2 },
+      { code: "queue_moving", get label() { return tr("ui.libFerryCommunity.laFileAvance"); }, icon: "chevrons-right", level: 3 },
+      { code: "queue_stopped", get label() { return tr("ui.libFerryCommunity.fileALArret"); }, icon: "pause", level: 3 },
+      { code: "queue_long", get label() { return tr("ui.libFerryCommunity.fileTresLongue"); }, icon: "list-ordered", level: 3 },
+      { code: "queue_30", get label() { return tr("ui.libFerryCommunity.moinsDe30Min"); }, icon: "timer", upTo: 2 },
+      { code: "queue_60", get label() { return tr("ui.libFerryCommunity.environ1H"); }, icon: "hourglass", upTo: 2 },
+      { code: "queue_120", get label() { return tr("ui.libFerryCommunity.t2HEtPlus"); }, icon: "hourglass", upTo: 2 },
     ],
   },
   formalities: {
-    label: "Formalités (police, douane)",
+    get label() { return tr("ui.libFerryCommunity.formalitesPoliceDouane"); },
     where: "port",
     color: "#c2410c",
     icon: "stamp",
     lifetime: 90,
     level: 2,
-    question: "Aux contrôles",
+    get question() { return tr("ui.libFerryCommunity.auxControles"); },
     options: [
-      { code: "formalities_open", label: "Ouvertes", icon: "door-open", level: 3 },
-      { code: "formalities_short", label: "Attente courte", icon: "timer", level: 3 },
-      { code: "formalities_long", label: "Longue attente", icon: "hourglass", level: 3 },
-      { code: "formalities_notyet", label: "Pas encore ouvertes", icon: "clock", level: 3 },
-      { code: "formalities_30", label: "Moins de 30 min", icon: "timer", upTo: 2 },
-      { code: "formalities_60", label: "Environ 1 h", icon: "hourglass", upTo: 2 },
-      { code: "formalities_120", label: "2 h et plus", icon: "hourglass", upTo: 2 },
+      { code: "formalities_open", get label() { return tr("ui.libFerryCommunity.ouvertes"); }, icon: "door-open", level: 3 },
+      { code: "formalities_short", get label() { return tr("ui.libFerryCommunity.attenteCourte"); }, icon: "timer", level: 3 },
+      { code: "formalities_long", get label() { return tr("ui.libFerryCommunity.longueAttente"); }, icon: "hourglass", level: 3 },
+      { code: "formalities_notyet", get label() { return tr("ui.libFerryCommunity.pasEncoreOuvertes"); }, icon: "clock", level: 3 },
+      { code: "formalities_30", get label() { return tr("ui.libFerryCommunity.moinsDe30Min"); }, icon: "timer", upTo: 2 },
+      { code: "formalities_60", get label() { return tr("ui.libFerryCommunity.environ1H"); }, icon: "hourglass", upTo: 2 },
+      { code: "formalities_120", get label() { return tr("ui.libFerryCommunity.t2HEtPlus"); }, icon: "hourglass", upTo: 2 },
     ],
   },
   call: {
-    label: "Appel à l’embarquement",
+    get label() { return tr("ui.libFerryCommunity.appelALEmbarquement"); },
     where: "port",
     color: "#9333ea",
     icon: "bell-ring",
     lifetime: 60,
     level: 3,
     required: true,
-    question: "Avant de monter à bord",
+    get question() { return tr("ui.libFerryCommunity.avantDeMonterABord"); },
     options: [
-      { code: "call_called", label: "Embarquement appelé", icon: "bell-ring" },
-      { code: "call_waiting", label: "Pas encore appelé, on patiente", icon: "hourglass" },
+      { code: "call_called", get label() { return tr("ui.libFerryCommunity.embarquementAppele"); }, icon: "bell-ring" },
+      { code: "call_waiting", get label() { return tr("ui.libFerryCommunity.pasEncoreAppeleOnPatiente"); }, icon: "hourglass" },
     ],
   },
   service: {
-    label: "Services du port",
+    get label() { return tr("ui.libFerryCommunity.servicesDuPort"); },
     where: "port",
     color: "#0f766e",
     icon: "store",
     lifetime: 120,
     level: 3,
     required: true,
-    question: "Quel service ?",
+    get question() { return tr("ui.libFerryCommunity.quelService"); },
   },
   parking: {
-    label: "Parking complet",
+    get label() { return tr("ui.libFerryCommunity.parkingComplet"); },
     where: "port",
     color: "#2f6fd6",
     icon: "parking-circle",
@@ -173,12 +174,12 @@ const builtinSituations: Record<string, Situation> = {
     level: 1,
     retired: true,
     options: [
-      { code: "parking_boarding", label: "Parking d’embarquement", icon: "parking-circle" },
-      { code: "parking_visitors", label: "Parking accompagnants", icon: "parking-circle" },
+      { code: "parking_boarding", get label() { return tr("ui.libFerryCommunity.parkingDEmbarquement"); }, icon: "parking-circle" },
+      { code: "parking_visitors", get label() { return tr("ui.libFerryCommunity.parkingAccompagnants"); }, icon: "parking-circle" },
     ],
   },
   fluid: {
-    label: "Ça passe bien",
+    get label() { return tr("ui.libFerryCommunity.caPasseBien"); },
     where: "port",
     color: "#2e9d6a",
     icon: "circle-check",
@@ -188,59 +189,59 @@ const builtinSituations: Record<string, Situation> = {
     retiredFrom: 3,
   },
   delay: {
-    label: "Retard",
+    get label() { return tr("ui.libFerryCommunity.retard"); },
     where: "vessel",
     color: "#d6336c",
     icon: "clock",
     lifetime: 180,
     level: 0,
-    question: "Retard annoncé sur place",
+    get question() { return tr("ui.libFerryCommunity.retardAnnonceSurPlace"); },
     required: true,
     options: [
-      { code: "delay_30", label: "≈ 30 min", icon: "timer", delay: 30 },
+      { code: "delay_30", get label() { return tr("ui.libFerryCommunity.t30Min"); }, icon: "timer", delay: 30 },
       { code: "delay_60", label: "≈ 1 h", icon: "hourglass", delay: 60 },
-      { code: "delay_120", label: "2 h et plus", icon: "hourglass", delay: 120 },
-      { code: "delay_postponed", label: "Reporté ou annulé", icon: "calendar-x", onSite: true, level: 2 },
+      { code: "delay_120", get label() { return tr("ui.libFerryCommunity.t2HEtPlus"); }, icon: "hourglass", delay: 120 },
+      { code: "delay_postponed", get label() { return tr("ui.libFerryCommunity.reporteOuAnnule"); }, icon: "calendar-x", onSite: true, level: 2 },
     ],
   },
   state: {
-    label: "État du navire",
+    get label() { return tr("ui.libFerryCommunity.etatDuNavire"); },
     where: "vessel",
     color: "#d97706",
     icon: "ship",
     lifetime: 120,
     level: 0,
-    question: "Où en est le navire ?",
+    get question() { return tr("ui.libFerryCommunity.ouEnEstLeNavire"); },
     required: true,
     options: [
-      { code: "state_quay", label: "Encore à quai", icon: "anchor" },
-      { code: "state_departed", label: "Il est parti", icon: "ship" },
+      { code: "state_quay", get label() { return tr("ui.libFerryCommunity.encoreAQuai"); }, icon: "anchor" },
+      { code: "state_departed", get label() { return tr("ui.libFerryCommunity.ilEstParti"); }, icon: "ship" },
     ],
   },
   boarding: {
-    label: "Embarquement commencé",
+    get label() { return tr("ui.libFerryCommunity.embarquementCommence"); },
     where: "vessel",
     color: "#0c8599",
     icon: "log-in",
     lifetime: 60,
     level: 0,
-    question: "Pour qui ?",
+    get question() { return tr("ui.libFerryCommunity.pourQui"); },
     options: [
-      { code: "boarding_vehicles", label: "Véhicules", icon: "car" },
-      { code: "boarding_foot", label: "Passagers à pied", icon: "footprints" },
+      { code: "boarding_vehicles", get label() { return tr("ui.libFerryCommunity.vehicules"); }, icon: "car" },
+      { code: "boarding_foot", get label() { return tr("ui.libFerryCommunity.passagersAPied"); }, icon: "footprints" },
     ],
   },
   disembarking: {
-    label: "Débarquement commencé",
+    get label() { return tr("ui.libFerryCommunity.debarquementCommence"); },
     where: "vessel",
     color: "#6741d9",
     icon: "log-out",
     lifetime: 60,
     level: 1,
-    question: "Pour qui ?",
+    get question() { return tr("ui.libFerryCommunity.pourQui"); },
     options: [
-      { code: "disembarking_vehicles", label: "Véhicules", icon: "car" },
-      { code: "disembarking_foot", label: "Passagers à pied", icon: "footprints" },
+      { code: "disembarking_vehicles", get label() { return tr("ui.libFerryCommunity.vehicules"); }, icon: "car" },
+      { code: "disembarking_foot", get label() { return tr("ui.libFerryCommunity.passagersAPied"); }, icon: "footprints" },
     ],
   },
 };
@@ -392,7 +393,7 @@ export function useSignalCatalog() {
 /** Code d'une situation : défini dans le catalogue (et, à partir du 31/10, depuis l'admin). */
 export type AlertCategory = string;
 const unknownSituation: Situation = {
-  label: "Information voyageurs",
+  get label() { return tr("ui.libFerryCommunity.informationVoyageurs"); },
   where: "port",
   color: "#64748b",
   icon: "flag",
@@ -631,7 +632,7 @@ export function explainOffSite(input: {
   ports: Place[];
 }) {
   const { category, kind, portId, here, ports } = input;
-  const action = `signaler « ${situationOf(category).label} »`;
+  const action = tr("ui.libFerryCommunity.signaler", { label: situationOf(category).label });
   const accuracyM = lastPositionAccuracy();
   const port = kind === "port" ? ports.find((item) => item.id === portId) : undefined;
   return port
@@ -647,7 +648,7 @@ export async function reportFromHere(
   const here = await requirePosition();
   if (!here)
     return {
-      error: { message: "Ce signalement doit être fait sur place : autorisez la localisation puis réessayez." },
+      error: { message: tr("ui.libFerryCommunity.ceSignalementDoitEtreFait") },
       onSite: false,
       pendingReview: false,
     };
@@ -745,7 +746,7 @@ export async function reportAsStaff(input: {
     p_departure: input.kind === "vessel" ? (input.departureId ?? null) : null,
   });
   if (result.error?.code === "PGRST202")
-    return { error: { message: "Signalement d’équipe indisponible : exécutez le script « signalement_equipe »." } };
+    return { error: { message: tr("ui.libFerryCommunity.signalementDEquipeIndisponibleExecutez") } };
   return { error: result.error };
 }
 
@@ -772,7 +773,7 @@ export async function reportWithoutPosition(input: {
   if (result.error?.code === "PGRST202")
     return {
       error: {
-        message: "Votre position n’a pas pu être obtenue. Activez la localisation, puis réessayez.",
+        message: tr("ui.libFerryCommunity.votrePositionNAPas"),
       },
     };
   return { error: result.error };

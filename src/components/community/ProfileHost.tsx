@@ -82,7 +82,7 @@ export function ProfileHost() {
   };
   const back = (
     <button type="button" className="bw-profile__back" onClick={() => setView("profile")}>
-      <ArrowLeft size={16} aria-hidden /> Retour à la fiche
+      <ArrowLeft size={16} aria-hidden />{tr("ui.profileHost.retourALaFiche")}
     </button>
   );
   return (
@@ -101,17 +101,17 @@ export function ProfileHost() {
         ) : view === "edit" && data.me ? (
           <div className="bw-profile__panel">
             {back}
-            <DialogTitle className="bw-profile__name">Mon profil voyageur</DialogTitle>
+            <DialogTitle className="bw-profile__name">{tr("ui.profileHost.monProfilVoyageur")}</DialogTitle>
             <DialogDescription className="sr-only">
-              Avatar, couleur, pseudo et visibilité sur vos traversées.
+              {tr("ui.profileHost.avatarCouleurPseudoEtVisibilite")}
             </DialogDescription>
             <MyTravellerEditor />
           </div>
         ) : view === "dm-request" && departureId ? (
           <div className="bw-profile__panel bw-profile__panel--dm">
-            <DialogTitle className="sr-only">Message privé à {data.pseudo}</DialogTitle>
+            <DialogTitle className="sr-only">{tr("ui.profileHost.messagePriveA")}{data.pseudo}</DialogTitle>
             <DialogDescription className="sr-only">
-              Une demande à accepter, puis trois messages chacun.
+              {tr("ui.profileHost.uneDemandeAAccepterPuis")}
             </DialogDescription>
             <DmRequest
               departureId={departureId}
@@ -122,9 +122,9 @@ export function ProfileHost() {
           </div>
         ) : view === "dm" ? (
           <div className="bw-profile__panel bw-profile__panel--dm">
-            <DialogTitle className="sr-only">Messages privés</DialogTitle>
+            <DialogTitle className="sr-only">{tr("ui.profileHost.messagesPrives")}</DialogTitle>
             <DialogDescription className="sr-only">
-              Vos conversations privées entre passagers.
+              {tr("ui.profileHost.vosConversationsPriveesEntrePassagers")}
             </DialogDescription>
             <PrivateMessages
               key={thread?.id ?? "liste"}
@@ -157,27 +157,26 @@ export function ProfileHost() {
               {data.me ? (
                 <div className="bw-profile__actions">
                   <button type="button" data-primary onClick={() => setView("edit")}>
-                    <Pencil size={15} aria-hidden /> Modifier mon profil
+                    <Pencil size={15} aria-hidden />{tr("ui.profileHost.modifierMonProfil")}
                   </button>
                   <a href="/compte" onClick={close}>
-                    Mon espace
+                    {tr("ui.profileHost.monEspace")}
                   </a>
                 </div>
               ) : other ? (
                 <div className="bw-profile__actions">
                   {thread ? (
                     <button type="button" data-primary onClick={() => setView("dm")}>
-                      <Mail size={15} aria-hidden /> Ouvrir la conversation
+                      <Mail size={15} aria-hidden />{tr("ui.profileHost.ouvrirLaConversation")}
                       {thread.unread ? <b>{thread.unread}</b> : null}
                     </button>
                   ) : departureId ? (
                     <button type="button" data-primary onClick={() => setView("dm-request")}>
-                      <Mail size={15} aria-hidden /> Message privé
+                      <Mail size={15} aria-hidden />{tr("ui.profileHost.messagePrive")}
                     </button>
                   ) : (
                     <p className="bw-profile__hint">
-                      <Lock size={13} aria-hidden /> Les messages privés s'ouvrent entre passagers
-                      d'une même traversée.
+                      <Lock size={13} aria-hidden />{tr("ui.profileHost.lesMessagesPrivesSOuvrent")}
                     </p>
                   )}
                 </div>

@@ -62,7 +62,7 @@ export function MoodBubble({ mood, placement }: { mood: Mood | null; placement: 
       <button
         type="button"
         className="bw-mood-bubble__badge"
-        aria-label={`Mon humeur : ${mood.label}`}
+        aria-label={tr("ui.moodBubble.monHumeur", { label: mood.label })}
         aria-expanded={isOpen}
         title={mood.label}
         onClick={(event) => {

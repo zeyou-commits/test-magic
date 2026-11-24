@@ -28,7 +28,7 @@ export function OfflineBanner() {
       <img src="/cabas/persos/voiture_504.webp" alt="" width={26} height={26} className="shrink-0" />
       <span>
         <b>{tr("ui.offlineBanner.pasDeReseauPasDe")}</b>{" "}
-        {time ? `Ton voyage est là, tel qu’enregistré à ${time}. ` : tr("ui.offlineBanner.tonVoyageEstGardeSur")}
+        {time ? tr("ui.offlineBanner.tonVoyageEstLaTel", { time }) : tr("ui.offlineBanner.tonVoyageEstGardeSur")}
         {tr("ui.offlineBanner.caSeRemetAJour")}
       </span>
     </div>

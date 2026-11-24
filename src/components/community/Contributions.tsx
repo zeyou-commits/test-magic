@@ -25,7 +25,7 @@ export function useContributions(kind: ContributionKind, ids: string[]) {
 /** « Par Lina 4821 » avec son cabas : un toucher ouvre son profil. */
 export function ContributionAuthor({
   card,
-  prefix = "Par",
+  prefix = tr("ui.contributions.par"),
 }: {
   card?: TravellerCard | undefined;
   prefix?: string;
@@ -70,7 +70,7 @@ export function LikeButton({
       className="bw-like"
       aria-pressed={Boolean(value?.mine)}
       disabled={toggle.isPending || own}
-      aria-label={`${value?.mine ? "Retirer mon merci" : "Merci pour l’info"}${n ? ` (${n})` : ""}`}
+      aria-label={`${value?.mine ? tr("ui.contributions.retirerMonMerci") : tr("ui.contributions.merciPourLInfo2")}${n ? ` (${n})` : ""}`}
       title={own ? tr("ui.contributions.mercisRecus") : tr("ui.contributions.merciPourLInfo")}
       onClick={() => {
         if (!user) {

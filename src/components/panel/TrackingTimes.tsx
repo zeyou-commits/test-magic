@@ -16,26 +16,26 @@ function Time({ time, label, zone }: { time: TrackingTime; label: string; zone: 
       <p className="text-[10px] font-medium text-muted-foreground">
         {label}{" "}
         {time.updated
-          ? label === "Arrivée"
+          ? label === tr("ui.trackingTimes.arrivee")
             ? time.kind === "observed"
               ? tr("ui.trackingTimes.constatee")
               : tr("ui.trackingTimes.estimee")
             : tr("ui.trackingTimes.constate")
           : time.kind === "observed" && time.reported
-          ? label === "Arrivée"
+          ? label === tr("ui.trackingTimes.arrivee")
             ? tr("ui.trackingTimes.signalee")
             : tr("ui.trackingTimes.signale")
           : time.kind === "observed"
-          ? label === "Arrivée"
-            ? `constatée${isAdmin ? " (AIS)" : ""}`
-            : `constaté${isAdmin ? " (AIS)" : ""}`
+          ? label === tr("ui.trackingTimes.arrivee")
+            ? tr("ui.trackingTimes.constatee2", { v: isAdmin ? " (AIS)" : "" })
+            : tr("ui.trackingTimes.constate2", { v: isAdmin ? " (AIS)" : "" })
           : time.notBefore
             ? tr("ui.trackingTimes.pasAvant")
             : time.kind === "estimated"
-              ? label === "Arrivée"
-                ? `estimée${isAdmin && !time.reported ? " (AIS)" : ""}`
-                : `estimé${isAdmin && !time.reported ? " (AIS)" : ""}`
-              : label === "Arrivée"
+              ? label === tr("ui.trackingTimes.arrivee")
+                ? tr("ui.trackingTimes.estimee2", { v: isAdmin && !time.reported ? " (AIS)" : "" })
+                : tr("ui.trackingTimes.estime", { v: isAdmin && !time.reported ? " (AIS)" : "" })
+              : label === tr("ui.trackingTimes.arrivee")
                 ? tr("ui.trackingTimes.prevue")
                 : tr("ui.trackingTimes.prevu")}
       </p>

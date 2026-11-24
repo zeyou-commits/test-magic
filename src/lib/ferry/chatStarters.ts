@@ -2,6 +2,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
+import { tr } from "@/lib/i18n/translate";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 
@@ -23,12 +24,12 @@ export type StarterContext = {
 };
 
 export const STARTER_MOMENTS: { id: StarterMoment; label: string }[] = [
-  { id: "before", label: "Avant le départ" },
-  { id: "boarding", label: "Jour J, avant d'embarquer" },
-  { id: "sea", label: "En mer" },
-  { id: "arrival", label: "À l'arrivée" },
-  { id: "port", label: "Direct du port" },
-  { id: "questions", label: "Questions sur la ligne" },
+  { id: "before", get label() { return tr("ui.libFerryChatStarters.avantLeDepart"); } },
+  { id: "boarding", get label() { return tr("ui.libFerryChatStarters.jourJAvantDEmbarquer"); } },
+  { id: "sea", get label() { return tr("ui.libFerryChatStarters.enMer"); } },
+  { id: "arrival", get label() { return tr("ui.libFerryChatStarters.aLArrivee"); } },
+  { id: "port", get label() { return tr("ui.libFerryChatStarters.directDuPort"); } },
+  { id: "questions", get label() { return tr("ui.libFerryChatStarters.questionsSurLaLigne"); } },
 ];
 export const STARTER_WORDS = ["depart", "arrivee", "navire", "compagnie", "port"] as const;
 

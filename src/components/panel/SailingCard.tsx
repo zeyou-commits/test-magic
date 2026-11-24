@@ -37,7 +37,7 @@ import {
   useFareProfile,
 } from "@/lib/ferry/pricing";
 import { RECOMMENDED_RULE } from "@/lib/ferry/trips";
-import { tr, lazyDateFormat, intlLocale } from "@/lib/i18n";
+import { tr, lazyDateFormat, intlLocale, placeName } from "@/lib/i18n";
 
 const dayFormatter = lazyDateFormat({
   weekday: "short",
@@ -128,9 +128,9 @@ export function SailingCard({
             {estimated ? (
               <span
                 className="shrink-0 rounded-full bg-warning/15 px-1.5 text-[10px] font-semibold text-warning-foreground"
-                title="Calendrier théorique : la rotation habituelle du navire, pas encore mise en vente par la compagnie."
+                title={tr("ui.sailingCard.calendrierTheoriqueLaRotationHabituelle")}
               >
-                Estimé
+                {tr("ui.sailingCard.estime")}
               </span>
             ) : null}
             {recommended ? (
@@ -161,7 +161,7 @@ export function SailingCard({
                 {sailing.depTime}
               </div>
               <div className="mt-0.5 max-w-[88px] truncate text-[11px] font-medium text-muted-foreground">
-                {sailing.from.name}
+                {placeName(sailing.from.name)}
               </div>
             </div>
             <div className="flex min-w-0 flex-col items-center" aria-hidden>
@@ -182,7 +182,7 @@ export function SailingCard({
                 ) : null}
               </div>
               <div className="ms-auto mt-0.5 max-w-[88px] truncate text-[11px] font-medium text-muted-foreground">
-                {sailing.to.name}
+                {placeName(sailing.to.name)}
               </div>
             </div>
           </div>
@@ -203,13 +203,13 @@ export function SailingCard({
                 markBookingLeave(liveTotal != null ? AGGREGATOR.name : bookingSite(sailing));
               }}
               className="inline-flex h-9 items-center gap-1 rounded-full bg-cta px-3 text-sm font-bold text-cta-foreground shadow-sm transition-[filter,transform] hover:brightness-110 active:scale-95 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-              title={`Voir l’offre sur ${bookingSite(sailing)} · budget estimé ${formatEuro(fare.amount)} (${formatFareRange(fare)})`}
+              title={tr("ui.sailingCard.voirLOffreSurBudget", { bookingSite: bookingSite(sailing), formatEuro: formatEuro(fare.amount), formatFareRange: formatFareRange(fare) })}
             >
               <span className="tabular-nums">
                 {liveTotal != null ? `${liveTotal.toLocaleString(intlLocale())} €` : formatEuro(fare.amount)}
               </span>
               {liveTotal != null ? (
-                <span className="sr-only"> : réserver ce départ</span>
+                <span className="sr-only">{tr("ui.sailingCard.reserverCeDepart")}</span>
               ) : (
                 <>
                   <ArrowUpRight className="size-3.5" aria-hidden />
@@ -372,7 +372,7 @@ export function SailingDetail({
         />
         <ShareButtons
           title={`${sailing.from.name} → ${sailing.to.name}`}
-          text={`⛴️ ${sailing.from.name} → ${sailing.to.name} · ${formatShortDay(departure.departure_at, sailing.fromZone)} · départ ${sailing.depTime}${sailing.arrTime ? `, arrivée ${sailing.arrTime}${sailing.arrDayOffset > 0 ? ` (+${sailing.arrDayOffset} j)` : ""}` : ""} (heures locales)${sailing.company ? ` · ${sailing.company.name}` : ""}\nVérifiez auprès de la compagnie. Via BledWay`}
+          text={tr("ui.sailingCard.departHeuresLocalesVerifiezAupres", { name: sailing.from.name, name2: sailing.to.name, formatShortDay: formatShortDay(departure.departure_at, sailing.fromZone), depTime: sailing.depTime, v: sailing.arrTime ? `, arrivée ${sailing.arrTime}${sailing.arrDayOffset > 0 ? ` (+${sailing.arrDayOffset} j)` : ""}` : "", v2: sailing.company ? ` · ${sailing.company.name}` : "" })}
         />
         {bookingHref ? (
           <a
@@ -417,7 +417,7 @@ export function DayStrip({
   days,
   value,
   onChange,
-  allLabel = "Tous",
+  allLabel = tr("ui.sailingCard.tous"),
   range = null,
 }: {
   days: { day: string; count: number }[];
@@ -548,9 +548,9 @@ export function DayStrip({
               type="button"
               role="option"
               aria-selected={active}
-              aria-label={`${fullDayFmt.format(date)}, ${count} départ${count > 1 ? "s" : ""}`}
+              aria-label={tr("ui.sailingCard.depart", { v: fullDayFmt.format(date), count, v2: count > 1 ? "s" : "" })}
               onClick={() => onChange(active ? null : day)}
-              title={`${count} départ${count > 1 ? "s" : ""}`}
+              title={tr("ui.sailingCard.depart2", { count, v: count > 1 ? "s" : "" })}
               className={`relative flex h-12 min-w-14 shrink-0 flex-col items-center justify-center rounded-xl border px-0.5 leading-none transition ${active ? "border-primary bg-primary text-primary-foreground" : inRange ? "border-primary/50 bg-primary/10" : "border-border bg-card hover:bg-secondary"}`}
             >
               {/* Plusieurs départs ce jour-là : un compteur en coin, qui ne pousse pas le jour. */}
@@ -619,7 +619,7 @@ export function LiveStrip({ live, arrivalZone }: { live: LiveShip; arrivalZone: 
               : tr("ui.sailingCard.enMerEstime")
             : tr("ui.sailingCard.auPort")}
           {fresh && live.position.speedKnots
-            ? ` · ${Math.round(live.position.speedKnots)} nœuds`
+            ? tr("ui.sailingCard.nUds", { v: Math.round(live.position.speedKnots) })
             : ""}
         </span>
       </span>

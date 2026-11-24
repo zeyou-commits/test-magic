@@ -10,7 +10,7 @@ import { ShareButtons } from "./ShareButtons";
 import { tr } from "@/lib/i18n";
 
 const primaryLabel: Record<Selection["type"], string> = {
-  departure: "La traversée reste ouverte",
+  get departure() { return tr("ui.companionPanel.laTraverseeResteOuverte"); },
   vessel: "Le navire reste ouvert",
   port: "Le port reste ouvert",
   route: "La ligne reste ouverte",

@@ -40,18 +40,18 @@ export function VesselStateAsk({
     onSuccess: async (result) => {
       setMessage(
         !result.error
-          ? "Merci, votre réponse aide les autres voyageurs."
+          ? tr("ui.vesselStateAsk.merciVotreReponseAideLes")
           : /sur place|position/.test(result.error.message)
             ? result.error.message
-            : "Votre réponse n'a pas pu être enregistrée, ou vous avez déjà répondu.",
+            : tr("ui.vesselStateAsk.votreReponseNAPas"),
       );
       await client.invalidateQueries({ queryKey: communityKey });
     },
-    onError: () => setMessage("Votre réponse n'a pas pu être enregistrée. Réessayez."),
+    onError: () => setMessage(tr("ui.vesselStateAsk.votreReponseNAPas2")),
   });
   const options = [
-    { detail: "state_quay", label: "Encore à quai", icon: Anchor },
-    { detail: "state_departed", label: "Il est parti", icon: Ship },
+    { detail: "state_quay", label: tr("ui.vesselStateAsk.encoreAQuai"), icon: Anchor },
+    { detail: "state_departed", label: tr("ui.vesselStateAsk.ilEstParti"), icon: Ship },
   ];
   return (
     <div className="bw-state-ask">
@@ -73,7 +73,7 @@ export function VesselStateAsk({
       ) : (
         <p className="bw-state-ask__hint">
           {answers.length
-            ? `Voyageurs : ${count("state_quay")} encore à quai, ${count("state_departed")} parti. `
+            ? tr("ui.vesselStateAsk.voyageursEncoreAQuaiParti", { count: count("state_quay"), count2: count("state_departed") })
             : ""}
           <a href="/auth">{tr("ui.vesselStateAsk.connectezVousPourRepondre")}</a>
         </p>

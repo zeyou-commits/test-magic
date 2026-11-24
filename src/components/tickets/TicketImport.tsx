@@ -46,8 +46,9 @@ import {
   type TicketDetails,
 } from "@/lib/tickets/tickets";
 import { TicketCamera } from "./TicketCamera";
-import { tr, lazyDateFormat, intlLocale } from "@/lib/i18n";
+import { tr, lazyDateFormat, intlLocale, placeName } from "@/lib/i18n";
 import { useDraftGuard } from "@/components/layout/DraftGuard";
+import { lazyConst } from "@/lib/i18n/translate";
 
 type Step = "choose" | "camera" | "reading" | "review" | "saved";
 
@@ -65,7 +66,7 @@ const emptyDraft = (): TicketDraft => ({
   codes: [],
 });
 
-const LEG_LABEL = ["Aller", "Retour"];
+const LEG_LABEL = lazyConst(() => ([tr("ui.ticketImport.aller"), tr("ui.ticketImport.retour")]));
 
 /**
  * Ajouter un billet : photo guidée, photo ou PDF importé, ou saisie à la main. Le billet est lu sur
@@ -166,7 +167,7 @@ export function TicketImport({
     } catch {
       // Lecture impossible : la saisie reste ouverte, le document est gardé.
       setProblem(
-        "Le billet n’a pas pu être lu automatiquement. Complétez les informations ci-dessous.",
+        tr("ui.ticketImport.leBilletNAPas"),
       );
     }
     setStep("review");
@@ -281,7 +282,7 @@ export function TicketImport({
           type: "follow",
           kind: "departure",
           targetId: (outId ?? inId)!,
-          label: label || "Ma traversée",
+          label: label || tr("ui.ticketImport.maTraversee"),
           traveller: true,
           purpose: "voyageur",
           journeyLeg: outId ? "outbound" : "inbound",
@@ -305,7 +306,7 @@ export function TicketImport({
       track("billet-ajoute");
       setStep("saved");
     } catch (cause) {
-      setProblem(cause instanceof Error ? cause.message : "Enregistrement impossible. Réessayez.");
+      setProblem(cause instanceof Error ? cause.message : tr("ui.ticketImport.enregistrementImpossibleReessayez"));
     }
     setSaving(false);
   };
@@ -332,7 +333,7 @@ export function TicketImport({
       <AlertDialogContent>
         <AlertDialogTitle>{tr("ui.ticketImport.ceBilletEstPourUne")}</AlertDialogTitle>
         <AlertDialogDescription>
-          {pastDay ? `Date lue sur le billet : ${pastDay}. ` : ""}{tr("ui.ticketImport.bledwayNePeutLuiRattacher")}
+          {pastDay ? tr("ui.ticketImport.dateLueSurLeBillet", { pastDay }) : ""}{tr("ui.ticketImport.bledwayNePeutLuiRattacher")}
         </AlertDialogDescription>
         <AlertDialogFooter>
           <AlertDialogCancel
@@ -523,7 +524,7 @@ export function TicketImport({
                         <option value="">—</option>
                         {portOptions.map((p) => (
                           <option key={p.id} value={p.id}>
-                            {p.name}
+                            {placeName(p.name)}
                           </option>
                         ))}
                       </select>
@@ -537,7 +538,7 @@ export function TicketImport({
                         <option value="">—</option>
                         {portOptions.map((p) => (
                           <option key={p.id} value={p.id}>
-                            {p.name}
+                            {placeName(p.name)}
                           </option>
                         ))}
                       </select>
@@ -624,7 +625,7 @@ export function TicketImport({
                 <div key={i} className="bw-ticket-row">
                   <input
                     value={name}
-                    aria-label={`Passager ${i + 1}`}
+                    aria-label={tr("ui.ticketImport.passager", { v: i + 1 })}
                     onChange={(e) =>
                       setDraft((d) => ({
                         ...d,
@@ -634,7 +635,7 @@ export function TicketImport({
                   />
                   <button
                     type="button"
-                    aria-label={`Retirer le passager ${i + 1}`}
+                    aria-label={tr("ui.ticketImport.retirerLePassager", { v: i + 1 })}
                     onClick={() =>
                       setDraft((d) => ({
                         ...d,

@@ -94,8 +94,8 @@ export function StaffTools({ id, author }: { id: string; author: ChatAuthor }) {
         confirm ? (
           <span className="bw-staff-tools__confirm">
             {confirm === 1
-              ? `${author.pseudo} ne pourra plus écrire pendant 24 h.`
-              : `${author.pseudo} est exclu 7 jours et ses messages des dernières 24 h ici sont retirés.`}
+              ? tr("ui.staffChat.nePourraPlusEcrirePendant", { pseudo: author.pseudo })
+              : tr("ui.staffChat.estExclu7JoursEt", { pseudo: author.pseudo })}
             <button type="button" disabled={busy} onClick={() => sanction.mutate(confirm)}>
               {tr("ui.staffChat.confirmer")}
             </button>

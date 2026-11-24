@@ -7,6 +7,8 @@ import {
   type When,
 } from "@/content/formalites";
 import { earliestDay, type CompanionPlan } from "./companion";
+import { tr } from "@/lib/i18n/translate";
+import { lazyDateFormat } from "@/lib/i18n";
 
 /**
  * Le calendrier à rebours du voyage : à partir du jour de départ le plus tôt, ce qu'il faut lancer
@@ -68,32 +70,32 @@ export function papersMargin(day: string) {
 export function papersWhy(when: When, day: string, visa: boolean): { short: string; more: string } {
   const { weeks, highSeason } = papersMargin(day);
   const margin = highSeason
-    ? `BledWay conseille ${weeks} semaines de marge, car vous partez en haute saison, quand beaucoup de voyageurs font leurs démarches en même temps.`
-    : `BledWay conseille ${weeks} semaines de marge.`;
+    ? tr("ui.libFerryRetroPlan.bledwayConseilleSemainesDeMarge", { weeks })
+    : tr("ui.libFerryRetroPlan.bledwayConseilleSemainesDeMarge2", { weeks });
   if (when === "first")
     return {
-      short: "Aucun délai n'est publié : plus tôt c'est lancé, plus tôt vous réservez.",
-      more: "Un passeport algérien est fabriqué en Algérie et le consulat ne publie aucun délai. Lancez ces démarches avant d'acheter un billet non remboursable.",
+      short: tr("ui.libFerryRetroPlan.aucunDelaiNEstPublie"),
+      more: tr("ui.libFerryRetroPlan.unPasseportAlgerienEstFabrique"),
     };
   if (when === "months3")
     return {
-      short: "Ce papier ne vaut que 3 mois : pas avant cette date.",
-      more: "Fait plus tôt, il ne serait plus valable au moment du retour.",
+      short: tr("ui.libFerryRetroPlan.cePapierNeVautQue"),
+      more: tr("ui.libFerryRetroPlan.faitPlusTotIlNe"),
     };
   if (when === "lastweek")
     return {
-      short: "Quelques minutes en ligne, une fois vos dates connues.",
+      short: tr("ui.libFerryRetroPlan.quelquesMinutesEnLigneUne"),
       more: "",
     };
   if (when !== "weeks") return { short: "", more: "" };
   return visa
     ? {
-        short: "Un visa prend jusqu'à 14 jours après le dépôt, plus l'attente du rendez-vous.",
-        more: `Délai annoncé par l'ambassade d'Algérie : 1 à 14 jours après le dépôt du dossier. L'attente d'un rendez-vous au consulat n'est publiée nulle part. ${margin} C'est un conseil de prudence, pas un délai officiel.`,
+        short: tr("ui.libFerryRetroPlan.unVisaPrendJusquA"),
+        more: tr("ui.libFerryRetroPlan.delaiAnnonceParLAmbassade", { margin }),
       }
     : {
-        short: "Aucun délai n'est publié : gardez le temps d'un rendez-vous.",
-        more: `${margin} C'est un conseil de prudence, pas un délai officiel.`,
+        short: tr("ui.libFerryRetroPlan.aucunDelaiNEstPublie2"),
+        more: tr("ui.libFerryRetroPlan.cEstUnConseilDe", { margin }),
       };
 }
 
@@ -101,7 +103,7 @@ export function papersWhy(when: When, day: string, visa: boolean): { short: stri
 export const PAPERS_LAST_DAYS = 21;
 
 const deadlineDate = (key: string) =>
-  new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" })
+  lazyDateFormat({ weekday: "long", day: "numeric", month: "long" })
     .format(new Date(`${key}T12:00:00`))
     .replace(/ 1 /, " 1er ");
 
@@ -120,22 +122,22 @@ export function papersDeadlines(
   const months3 = minus(90);
   const lastweek = minus(7);
   return {
-    first: { label: "Dès maintenant", why: papersWhy("first", day, visa).short },
+    first: { label: tr("ui.libFerryRetroPlan.desMaintenant"), why: papersWhy("first", day, visa).short },
     weeks: {
       label:
         minus(PAPERS_LAST_DAYS) < today
-          ? "Aujourd'hui (délai très court)"
+          ? tr("ui.libFerryRetroPlan.aujourdHuiDelaiTresCourt")
           : weeks < today
-            ? "Cette semaine (marge réduite)"
-            : `Avant le ${deadlineDate(weeks)}`,
+            ? tr("ui.libFerryRetroPlan.cetteSemaineMargeReduite")
+            : tr("ui.libFerryRetroPlan.avantLe", { deadlineDate: deadlineDate(weeks) }),
       why: papersWhy("weeks", day, visa).short,
     },
     months3: {
-      label: months3 <= today ? "Dès maintenant" : `À partir du ${deadlineDate(months3)}`,
+      label: months3 <= today ? tr("ui.libFerryRetroPlan.desMaintenant") : tr("ui.libFerryRetroPlan.aPartirDu", { deadlineDate: deadlineDate(months3) }),
       why: papersWhy("months3", day, visa).short,
     },
     lastweek: {
-      label: lastweek <= today ? "Dès maintenant" : `À partir du ${deadlineDate(lastweek)}`,
+      label: lastweek <= today ? tr("ui.libFerryRetroPlan.desMaintenant") : tr("ui.libFerryRetroPlan.aPartirDu", { deadlineDate: deadlineDate(lastweek) }),
       why: papersWhy("lastweek", day, visa).short,
     },
   };
@@ -166,7 +168,7 @@ export function retroPlan(
         rows.push({
           id: "visas",
           ids: visas.map((v) => v.id),
-          title: visas.length > 1 ? "Demander les visas" : "Demander le visa",
+          title: visas.length > 1 ? tr("ui.libFerryRetroPlan.demanderLesVisas") : tr("ui.libFerryRetroPlan.demanderLeVisa"),
           who: [...new Set(visas.flatMap((v) => v.who))],
         });
       } else rows.push({ id: t.id, ids: [t.id], title: t.title, who: t.who });
@@ -183,9 +185,9 @@ export function retroPlan(
       id: "papers",
       date: today,
       lead: "now",
-      title: "Faire la liste des papiers",
+      title: tr("ui.libFerryRetroPlan.faireLaListeDesPapiers"),
       detail:
-        "Dites qui part, avec quelle nationalité : les papiers de chacun s'ajoutent à ce calendrier, avec leurs dates.",
+        tr("ui.libFerryRetroPlan.ditesQuiPartAvecQuelle"),
       tasks: [],
     });
   const first = of("first");
@@ -198,10 +200,10 @@ export function retroPlan(
       title: (() => {
         const checks = first.filter((t) => /^(Regarder|Vérifier|Avoir)/.test(t.title)).length;
         return checks === first.length
-          ? "Les papiers à vérifier"
+          ? tr("ui.libFerryRetroPlan.lesPapiersAVerifier")
           : checks
-            ? "Les papiers à vérifier ou à lancer"
-            : "Les papiers à lancer";
+            ? tr("ui.libFerryRetroPlan.lesPapiersAVerifierOu")
+            : tr("ui.libFerryRetroPlan.lesPapiersALancer");
       })(),
       detail: papersWhy("first", day, visa).short,
       more: papersWhy("first", day, visa).more,
@@ -217,7 +219,7 @@ export function retroPlan(
       id: "weeks",
       date: deadline,
       lead: "before",
-      title: "Les démarches longues",
+      title: tr("ui.libFerryRetroPlan.lesDemarchesLongues"),
       detail: papersWhy("weeks", day, visa).short,
       more: papersWhy("weeks", day, visa).more,
       tasks: weeks,
@@ -232,14 +234,14 @@ export function retroPlan(
     id: "book",
     date: weeks.length ? deadline : today,
     lead: weeks.length ? "after" : "from",
-    title: "Réserver la traversée",
+    title: tr("ui.libFerryRetroPlan.reserverLaTraversee"),
     detail: !papers.finished
-      ? "Après la liste des papiers : un visa refusé ne rembourse pas un billet non remboursable."
+      ? tr("ui.libFerryRetroPlan.apresLaListeDesPapiers")
       : weeks.length
         ? visa
-          ? "Dès que les démarches longues sont lancées : un visa refusé ne rembourse pas un billet non remboursable."
-          : "Dès que les démarches longues sont lancées : un papier qui manque ne rembourse pas un billet non remboursable."
-        : "Vos papiers ne demandent pas de délai particulier : vous pouvez réserver dès que la période est fixée.",
+          ? tr("ui.libFerryRetroPlan.desQueLesDemarchesLongues")
+          : tr("ui.libFerryRetroPlan.desQueLesDemarchesLongues2")
+        : tr("ui.libFerryRetroPlan.vosPapiersNeDemandentPas"),
     tasks: [],
     done: Boolean(plan.ticket),
   });
@@ -250,7 +252,7 @@ export function retroPlan(
       id: "months3",
       date: later(today, addDays(day, -90)),
       lead: "from",
-      title: "Les papiers de courte durée",
+      title: tr("ui.libFerryRetroPlan.lesPapiersDeCourteDuree"),
       detail: papersWhy("months3", day, visa).short,
       more: papersWhy("months3", day, visa).more,
       tasks: months3,
@@ -261,25 +263,25 @@ export function retroPlan(
     id: "bags",
     date: later(today, addDays(day, -7)),
     lead: "from",
-    title: "Budget, valises et pochette",
-    detail: `Dinars et devises, sac de traversée${plan.vehicle !== "none" ? ", révision de la voiture" : ""} ; tous les papiers à présenter au port dans une pochette.`,
+    title: tr("ui.libFerryRetroPlan.budgetValisesEtPochette"),
+    detail: tr("ui.libFerryRetroPlan.dinarsEtDevisesSacDe", { v: plan.vehicle !== "none" ? ", révision de la voiture" : "" }),
     tasks: [...of("lastweek"), ...of("pack")],
   });
   list.push({
     id: "eve",
     date: later(today, addDays(day, -2)),
     lead: "from",
-    title: "48 h avant",
+    title: tr("ui.libFerryRetroPlan.t48HAvant"),
     detail:
-      "Enregistrement si la compagnie le propose, billet et documents téléchargés : le réseau manque souvent au port.",
+      tr("ui.libFerryRetroPlan.enregistrementSiLaCompagnieLe"),
     tasks: [],
   });
   list.push({
     id: "day",
     date: day,
     lead: "on",
-    title: "Le départ",
-    detail: "Carte d'embarquement, contrôles, puis votre navire en direct sur la carte.",
+    title: tr("ui.libFerryRetroPlan.leDepart"),
+    detail: tr("ui.libFerryRetroPlan.carteDEmbarquementControlesPuis"),
     tasks: [],
   });
 
@@ -289,8 +291,8 @@ export function retroPlan(
       id: "binationaux",
       date: BINATIONAL_MEASURE_END_DAY,
       lead: "on",
-      title: "Fin de la mesure pour les binationaux",
-      detail: `La mesure qui permet d'entrer avec un passeport étranger s'arrête le ${BINATIONAL_MEASURE_END}, avant votre départ : revérifiez les règles auprès du consulat avant d'acheter le billet.`,
+      title: tr("ui.libFerryRetroPlan.finDeLaMesurePour"),
+      detail: tr("ui.libFerryRetroPlan.laMesureQuiPermetD", { BINATIONALMEASUREEND: BINATIONAL_MEASURE_END }),
       tasks: [],
       tone: "warning",
       sources: ["cons-binationaux"],

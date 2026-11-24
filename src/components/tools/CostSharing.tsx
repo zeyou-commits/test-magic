@@ -4,12 +4,12 @@ import { CalculatorForm, InvalidResult, NumberField, ResultPanel } from "./Field
 import { tr } from "@/lib/i18n";
 const empty = { km: "", consumption: "", fuelPrice: "", tolls: "", parking: "", occupants: "" };
 const labels = {
-  km: "Kilomètres totaux à partager",
-  consumption: "Consommation (L/100 km)",
-  fuelPrice: "Carburant (€/L)",
-  tolls: "Péages (€)",
-  parking: "Parking (€)",
-  occupants: "Occupants, conducteur compris",
+  get km() { return tr("ui.costSharing.kilometresTotauxAPartager"); },
+  get consumption() { return tr("ui.costSharing.consommationL100Km"); },
+  get fuelPrice() { return tr("ui.costSharing.carburantL"); },
+  get tolls() { return tr("ui.costSharing.peages"); },
+  get parking() { return tr("ui.costSharing.parking"); },
+  get occupants() { return tr("ui.costSharing.occupantsConducteurCompris"); },
 };
 export function CostSharing() {
   const [values, setValues] = useState(empty),

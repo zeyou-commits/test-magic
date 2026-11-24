@@ -8,8 +8,8 @@ import { tr } from "@/lib/i18n";
 
 export const Route = createFileRoute("/barometre-prix")({
   head: () => seoHead(
-    "Prix du ferry pour l'Algérie avec voiture : repères | BledWay",
-    "Repères de prix par ligne, saison et véhicule pour préparer une traversée Europe–Algérie. Sources, méthode et périodes à privilégier.",
+    tr("ui.pageBarometrePrix.prixDuFerryPourL2"),
+    tr("ui.pageBarometrePrix.reperesDePrixParLigne"),
     "/barometre-prix",
   ),
   component: PriceBarometer,
@@ -28,31 +28,31 @@ const routes = [
 const carPrices = routes.map(([, , key]) => PRICE_BENCHMARKS[key]!.withCar);
 const faq = [
   {
-    q: "Combien coûte un ferry pour l'Algérie avec une voiture ?",
+    get q() { return tr("ui.pageBarometrePrix.combienCouteUnFerryPour"); },
     a: `Les repères d'aller simple avec voiture relevés en septembre–octobre 2026 vont d'environ ${Math.min(...carPrices)} € à ${Math.max(...carPrices)} € sur les lignes de ce tableau. Ce sont des estimations : le devis de la compagnie fait foi.`,
   },
   {
-    q: "Ces prix sont-ils ceux de la voiture seule ?",
-    a: "Non. La colonne « avec voiture » désigne un billet qui inclut un véhicule, pas le prix du véhicule seul.",
+    get q() { return tr("ui.pageBarometrePrix.cesPrixSontIlsCeux"); },
+    get a() { return tr("ui.pageBarometrePrix.nonLaColonneAvecVoiture"); },
   },
   {
-    q: "Quelle est la période la plus demandée ?",
-    a: "La pointe estivale va de la mi-juillet à la fin août. Cette échelle est indicative et ne constitue pas un historique de prix mesurés.",
+    get q() { return tr("ui.pageBarometrePrix.quelleEstLaPeriodeLa"); },
+    get a() { return tr("ui.pageBarometrePrix.laPointeEstivaleVaDe"); },
   },
 ];
 
 const seasons = [
-  { label: "Janvier–mars, novembre", level: "Période calme", width: "w-[42%]", tone: "bg-emerald-600", hint: "Souvent plus souple côté prix ; l'offre de traversées peut être réduite." },
-  { label: "Avril–mi-juin, mi-septembre–octobre, décembre", level: "Intermédiaire", width: "w-[58%]", tone: "bg-teal-500", hint: "Bon compromis entre choix de départs et budget, selon les lignes." },
-  { label: "Mi-juin–mi-juillet, début septembre", level: "Forte demande", width: "w-[78%]", tone: "bg-amber-500", hint: "Les places voiture et les cabines se raréfient." },
-  { label: "Mi-juillet–août", level: "Pointe estivale", width: "w-full", tone: "bg-orange-600", hint: "Prévoyez une marge de budget et comparez plusieurs dates." },
+  { get label() { return tr("ui.pageBarometrePrix.janvierMarsNovembre"); }, get level() { return tr("ui.pageBarometrePrix.periodeCalme"); }, width: "w-[42%]", tone: "bg-emerald-600", get hint() { return tr("ui.pageBarometrePrix.souventPlusSoupleCotePrix"); } },
+  { get label() { return tr("ui.pageBarometrePrix.avrilMiJuinMiSeptembre"); }, get level() { return tr("ui.pageBarometrePrix.intermediaire"); }, width: "w-[58%]", tone: "bg-teal-500", get hint() { return tr("ui.pageBarometrePrix.bonCompromisEntreChoixDe"); } },
+  { get label() { return tr("ui.pageBarometrePrix.miJuinMiJuilletDebut"); }, get level() { return tr("ui.pageBarometrePrix.forteDemande"); }, width: "w-[78%]", tone: "bg-amber-500", get hint() { return tr("ui.pageBarometrePrix.lesPlacesVoitureEtLes"); } },
+  { get label() { return tr("ui.pageBarometrePrix.miJuilletAout"); }, get level() { return tr("ui.pageBarometrePrix.pointeEstivale"); }, width: "w-full", tone: "bg-orange-600", get hint() { return tr("ui.pageBarometrePrix.prevoyezUneMargeDeBudget"); } },
 ] as const;
 
 function PriceBarometer() {
   return <>
     <SiteHeader />
     <main className="mx-auto max-w-6xl px-4 pb-20 pt-8 sm:px-6 sm:pt-14">
-      <Breadcrumbs items={[{ name: "Baromètre des prix", path: "/barometre-prix" }]} />
+      <Breadcrumbs items={[{ name: tr("ui.pageBarometrePrix.barometreDesPrix"), path: "/barometre-prix" }]} />
       <p className="mt-6 text-xs font-bold uppercase tracking-[.18em] text-primary">{tr("ui.pageBarometrePrix.leBarometreBledwayOctobre2026")}</p>
       <div className="mt-3 grid gap-8 lg:grid-cols-[1.2fr_.8fr] lg:items-end">
         <div>
@@ -69,7 +69,7 @@ function PriceBarometer() {
       </section>
 
       <section className="mt-14 grid gap-8 lg:grid-cols-[1fr_.8fr]" aria-labelledby="season-title">
-        <div><p className="text-xs font-bold uppercase tracking-[.14em] text-primary">{tr("ui.pageBarometrePrix.quandPartir")}</p><h2 id="season-title" className="mt-1 font-display text-2xl font-bold sm:text-3xl">{tr("ui.pageBarometrePrix.laSaisonCompteAutantQue")}</h2><div className="mt-6 space-y-5">{seasons.map((season) => <div key={season.level}><div className="flex flex-wrap justify-between gap-1 text-sm"><strong>{season.label}</strong><span className="text-muted-foreground">{season.level}</span></div><div className="mt-2 h-2 rounded-full bg-secondary"><div className={`h-2 rounded-full ${season.width} ${season.tone}`} /></div><p className="mt-1 text-xs text-muted-foreground">{season.hint}</p></div>)}</div><p className="mt-5 text-xs leading-5 text-muted-foreground">{tr("ui.pageBarometrePrix.echelleIndicativeDePressionTarifaire")}<a className="font-semibold text-primary underline" href="https://www.corsicalinea.com/informations/legal/cgu-tarifs-generiques/" target="_blank" rel="noopener noreferrer">{tr("ui.pageBarometrePrix.corsicaLineaConfirmeLaVariation")}</a> ; <a className="font-semibold text-primary underline" href="https://www.aferry.com/fr-fr/ferry-deals/746afm/ferry-algerie-ete-2026-reservations-ouvertes/" target="_blank" rel="noopener noreferrer">{tr("ui.pageBarometrePrix.aferryDecritLaPointeDe")}</a>.</p></div>
+        <div><p className="text-xs font-bold uppercase tracking-[.14em] text-primary">{tr("ui.pageBarometrePrix.quandPartir")}</p><h2 id="season-title" className="mt-1 font-display text-2xl font-bold sm:text-3xl">{tr("ui.pageBarometrePrix.laSaisonCompteAutantQue")}</h2><div className="mt-6 space-y-5">{seasons.map((season) => <div key={season.width}><div className="flex flex-wrap justify-between gap-1 text-sm"><strong>{season.label}</strong><span className="text-muted-foreground">{season.level}</span></div><div className="mt-2 h-2 rounded-full bg-secondary"><div className={`h-2 rounded-full ${season.width} ${season.tone}`} /></div><p className="mt-1 text-xs text-muted-foreground">{season.hint}</p></div>)}</div><p className="mt-5 text-xs leading-5 text-muted-foreground">{tr("ui.pageBarometrePrix.echelleIndicativeDePressionTarifaire")}<a className="font-semibold text-primary underline" href="https://www.corsicalinea.com/informations/legal/cgu-tarifs-generiques/" target="_blank" rel="noopener noreferrer">{tr("ui.pageBarometrePrix.corsicaLineaConfirmeLaVariation")}</a> ; <a className="font-semibold text-primary underline" href="https://www.aferry.com/fr-fr/ferry-deals/746afm/ferry-algerie-ete-2026-reservations-ouvertes/" target="_blank" rel="noopener noreferrer">{tr("ui.pageBarometrePrix.aferryDecritLaPointeDe")}</a>.</p></div>
         <aside className="rounded-3xl bg-[#e9f3ef] p-6 sm:p-8"><TrendingUp className="size-7 text-primary" /><h3 className="mt-4 font-display text-xl font-bold">{tr("ui.pageBarometrePrix.commentLireLEstimationBledway")}</h3><ol className="mt-4 space-y-4 text-sm leading-6"><li className="flex gap-3"><span className="font-bold text-primary">01</span><span>{tr("ui.pageBarometrePrix.unRepereDeLaLigne")}<CarFront className="inline size-4" />{tr("ui.pageBarometrePrix.vehiculeLorsqueVousEnChoisissez")}</span></li><li className="flex gap-3"><span className="font-bold text-primary">02</span><span>{tr("ui.pageBarometrePrix.uneModulationSelonLaPeriode")}</span></li><li className="flex gap-3"><span className="font-bold text-primary">03</span><span>{tr("ui.pageBarometrePrix.uneFourchetteElargiePourRefleter")}</span></li></ol><p className="mt-5 border-t border-primary/15 pt-4 text-xs leading-5 text-muted-foreground">{tr("ui.pageBarometrePrix.sansTarifTempsReelNous")}</p></aside>
       </section>
 

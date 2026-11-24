@@ -32,7 +32,7 @@ import {
   ShowcaseMap,
   type Fact,
 } from "@/components/editorial/Showcase";
-import { CONFIRM_NOTE, lineFaq, lineSummary } from "@/lib/seo/answers";
+import { confirmNote, lineFaq, lineSummary } from "@/lib/seo/answers";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import {
   companiesQuery,
@@ -80,17 +80,17 @@ export const Route = createFileRoute("/lignes/$slug")({
   head: ({ loaderData }) => {
     if (!loaderData) {
       return {
-        meta: [{ title: "Ligne indisponible — BledWay" }, { name: "robots", content: "noindex" }],
+        meta: [{ title: tr("ui.pageLignesSlug.ligneIndisponibleBledway") }, { name: "robots", content: "noindex" }],
       };
     }
     const { from, to, duration, operators, price } = loaderData;
-    const title = `Ferry ${from} — ${to} : horaires, durée, prix, compagnies | BledWay`;
+    const title = tr("ui.pageLignesSlug.ferryHorairesDureePrixCompagnies", { from, to });
     const description = [
-      `Ferry ${from} → ${to}`,
-      duration ? `environ ${duration} de traversée` : null,
+      tr("ui.pageLignesSlug.ferry", { from, to }),
+      duration ? tr("ui.pageLignesSlug.environDeTraversee", { duration }) : null,
       operators.length ? operators.join(", ") : null,
-      price ? `repère dès ${price.foot} € à pied, ${price.car} € avec voiture` : null,
-      "prochains départs datés",
+      price ? tr("ui.pageLignesSlug.repereDesAPiedAvec", { foot: price.foot, car: price.car }) : null,
+      tr("ui.pageLignesSlug.prochainsDepartsDates"),
     ]
       .filter(Boolean)
       .join(" · ");
@@ -166,31 +166,31 @@ function LignePage() {
   if (range || route.typical_duration_minutes)
     facts.push({
       icon: Clock3,
-      label: "Durée",
+      label: tr("ui.pageLignesSlug.duree"),
       value: range ?? formatDuration(route.typical_duration_minutes),
-      hint: range ? "Selon le départ et le navire" : "Durée typique, estimation",
+      hint: range ? tr("ui.pageLignesSlug.selonLeDepartEtLe") : tr("ui.pageLignesSlug.dureeTypiqueEstimation"),
     });
   if (pace)
     facts.push({
       icon: CalendarDays,
-      label: pace.kind === "average" ? "Départs par semaine" : "Départs sous 7 jours",
+      label: pace.kind === "average" ? tr("ui.pageLignesSlug.departsParSemaine") : tr("ui.pageLignesSlug.departsSous7Jours"),
       value: pace.kind === "average" ? `≈ ${pace.value}` : String(pace.value),
       hint:
         pace.kind === "average"
-          ? `Moyenne des ${pace.weeks} prochaines semaines`
-          : "Calendrier publié à court terme",
+          ? tr("ui.pageLignesSlug.moyenneDesProchainesSemaines", { weeks: pace.weeks })
+          : tr("ui.pageLignesSlug.calendrierPublieACourtTerme"),
     });
   if (benchmark)
     facts.push({
       icon: Wallet,
-      label: "Prix repère",
+      label: tr("ui.pageLignesSlug.prixRepere"),
       value: `${benchmark.withCar} €`,
-      hint: `Aller simple avec voiture · ${benchmark.foot} € à pied (relevé sept.–oct. 2026)`,
+      hint: tr("ui.pageLignesSlug.allerSimpleAvecVoitureA", { foot: benchmark.foot }),
     });
   if (operators.length)
     facts.push({
       icon: Building2,
-      label: operators.length > 1 ? "Compagnies" : "Compagnie",
+      label: operators.length > 1 ? tr("ui.pageLignesSlug.compagnies") : tr("ui.pageLignesSlug.compagnie"),
       value: (
         <span className="flex flex-wrap items-center gap-2">
           {operators.length}
@@ -249,7 +249,7 @@ function LignePage() {
       provider,
       ...(route.typical_duration_minutes
         ? {
-            description: `Durée typique estimée : ${formatDuration(route.typical_duration_minutes)}.`,
+            description: tr("ui.pageLignesSlug.dureeTypiqueEstimee", { formatDuration: formatDuration(route.typical_duration_minutes) }),
           }
         : {}),
     },
@@ -287,14 +287,14 @@ function LignePage() {
       <StructuredData value={jsonLd} />
       <Breadcrumbs
         items={[
-          { name: "Lignes", path: "/lignes" },
+          { name: tr("ui.pageLignesSlug.lignes"), path: "/lignes" },
           { name: `${fromName} → ${toName}`, path: `/lignes/${route.slug}` },
         ]}
       />
 
       <ShowcaseHero
-        overline={`Ligne maritime · ${from?.country_name ?? ""} → ${to?.country_name ?? ""}`}
-        title={`Ferry ${fromName} → ${toName}`}
+        overline={tr("ui.pageLignesSlug.ligneMaritime", { v: from?.country_name ?? "", v2: to?.country_name ?? "" })}
+        title={tr("ui.pageLignesSlug.ferry2", { fromName, toName })}
         intro={<p>{summary}</p>}
         chips={
           <>
@@ -336,7 +336,7 @@ function LignePage() {
         }
       />
 
-      <KeyFacts facts={facts} label={`La ligne ${fromName} → ${toName} en chiffres`} />
+      <KeyFacts facts={facts} label={tr("ui.pageLignesSlug.laLigneEnChiffres", { fromName, toName })} />
 
       <div className="mt-4 empty:hidden">
         <LineAlertNotice departures={lineDepartures} vessels={vessels} />
@@ -348,7 +348,7 @@ function LignePage() {
           overline={tr("ui.pageLignesSlug.calendrier")}
           title={tr("ui.pageLignesSlug.prochainsDeparts")}
           aside={
-            stats.lastAt ? `Publiés jusqu'au ${formatDate(stats.lastAt, timeZone)}` : undefined
+            stats.lastAt ? tr("ui.pageLignesSlug.publiesJusquAu", { date: formatDate(stats.lastAt, timeZone) }) : undefined
           }
         >
           {tr("ui.pageLignesSlug.touchezUnDepartPourLe")}
@@ -367,7 +367,7 @@ function LignePage() {
       {operators.length ? (
         <section className="mt-12" aria-labelledby="compagnies">
           <SectionTitle id="compagnies" overline={tr("ui.pageLignesSlug.reserver")} title={tr("ui.pageLignesSlug.lesCompagniesDeLaLigne")}>
-            {tr("ui.pageLignesSlug.laReservationSeFaitDirectement")}{CONFIRM_NOTE}
+            {tr("ui.pageLignesSlug.laReservationSeFaitDirectement")}{confirmNote()}
           </SectionTitle>
           <div
             className={`mt-5 grid grid-cols-1 gap-4 ${operators.length > 1 ? "md:grid-cols-2" : ""} ${operators.length === 3 || operators.length > 4 ? "lg:grid-cols-3" : ""}`}
@@ -573,18 +573,18 @@ function LignePage() {
         {[
           {
             href: "/preparer-mon-voyage",
-            title: "Préparer mon voyage",
-            text: "Papiers, voiture, budget : pas à pas",
+            title: tr("ui.pageLignesSlug.preparerMonVoyage"),
+            text: tr("ui.pageLignesSlug.papiersVoitureBudgetPasA"),
           },
           {
             href: "/barometre-prix",
-            title: "Baromètre des prix",
-            text: "Repères par ligne et par saison",
+            title: tr("ui.pageLignesSlug.barometreDesPrix"),
+            text: tr("ui.pageLignesSlug.reperesParLigneEtPar"),
           },
           {
             href: "/questions-frequentes",
-            title: "Questions fréquentes",
-            text: "Les réponses courtes et sourcées",
+            title: tr("ui.pageLignesSlug.questionsFrequentes"),
+            text: tr("ui.pageLignesSlug.lesReponsesCourtesEtSourcees"),
           },
         ].map((item) => (
           <a

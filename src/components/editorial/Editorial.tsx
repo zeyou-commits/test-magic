@@ -141,7 +141,7 @@ function FaqAnswer({ text }: { text: string }) {
 export function FaqSection({
   faq,
   path,
-  title = "Questions fréquentes",
+  title = tr("ui.editorial.questionsFrequentes"),
 }: {
   faq: { q: string; a: string; note?: string }[];
   path: string;

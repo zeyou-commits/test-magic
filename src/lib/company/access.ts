@@ -1,4 +1,5 @@
 import { adminRequest } from "@/lib/admin/request";
+import { tr } from "@/lib/i18n/translate";
 
 /** Niveaux d'accès d'un collaborateur de compagnie (séparés des rôles d'équipe BledWay). */
 export const COMPANY_LEVELS = ["read", "operations"] as const;
@@ -6,13 +7,12 @@ export type CompanyLevel = (typeof COMPANY_LEVELS)[number];
 
 export const LEVEL_CATALOG: Record<CompanyLevel, { label: string; summary: string }> = {
   read: {
-    label: "Lecture",
-    summary: "Consulte les traversées, la flotte, les avis et les signalements de la compagnie.",
+    get label() { return tr("ui.libCompanyAccess.lecture"); },
+    get summary() { return tr("ui.libCompanyAccess.consulteLesTraverseesLaFlotte"); },
   },
   operations: {
-    label: "Opérations",
-    summary:
-      "Lecture, plus les changements de traversée et les annonces aux passagers, publiés tout de suite.",
+    get label() { return tr("ui.libCompanyAccess.operations"); },
+    get summary() { return tr("ui.libCompanyAccess.lecturePlusLesChangementsDe"); },
   },
 };
 
@@ -111,16 +111,16 @@ export const companyAccessKeys = {
 };
 
 export const LOG_LABELS: Record<string, string> = {
-  company_invite_created: "Invitation créée",
-  company_invite_revoked: "Invitation annulée",
-  company_invite_accepted: "Invitation acceptée",
-  company_invite_wrong_account: "Lien ouvert depuis un autre compte (refusé)",
-  company_member_level: "Niveau modifié",
-  company_member_suspend: "Accès suspendu",
-  company_member_resume: "Accès réactivé",
-  company_member_revoke: "Accès retiré",
-  company_space_suspended: "Espace suspendu",
-  company_space_active: "Espace réactivé",
+  get company_invite_created() { return tr("ui.libCompanyAccess.invitationCreee"); },
+  get company_invite_revoked() { return tr("ui.libCompanyAccess.invitationAnnulee"); },
+  get company_invite_accepted() { return tr("ui.libCompanyAccess.invitationAcceptee"); },
+  get company_invite_wrong_account() { return tr("ui.libCompanyAccess.lienOuvertDepuisUnAutre"); },
+  get company_member_level() { return tr("ui.libCompanyAccess.niveauModifie"); },
+  get company_member_suspend() { return tr("ui.libCompanyAccess.accesSuspendu"); },
+  get company_member_resume() { return tr("ui.libCompanyAccess.accesReactive"); },
+  get company_member_revoke() { return tr("ui.libCompanyAccess.accesRetire"); },
+  get company_space_suspended() { return tr("ui.libCompanyAccess.espaceSuspendu"); },
+  get company_space_active() { return tr("ui.libCompanyAccess.espaceReactive"); },
 };
 
 // ─── Lot 2 : changements de traversée et annonces, publiés par la compagnie ────────────────────────
@@ -133,48 +133,48 @@ export type AnnouncementStatus =
 
 export const REQUEST_KINDS: Record<RequestKind, { label: string; hint: string }> = {
   delay: {
-    label: "Retard",
-    hint: "Le départ et l'arrivée sont décalés du même nombre de minutes.",
+    get label() { return tr("ui.libCompanyAccess.retard"); },
+    get hint() { return tr("ui.libCompanyAccess.leDepartEtLArrivee"); },
   },
   time: {
-    label: "Nouvel horaire",
-    hint: "Nouvelle heure de départ, et d'arrivée si vous la connaissez.",
+    get label() { return tr("ui.libCompanyAccess.nouvelHoraire"); },
+    get hint() { return tr("ui.libCompanyAccess.nouvelleHeureDeDepartEt"); },
   },
   vessel: {
-    label: "Changement de navire",
-    hint: "Un autre navire de votre flotte assure la traversée.",
+    get label() { return tr("ui.libCompanyAccess.changementDeNavire"); },
+    get hint() { return tr("ui.libCompanyAccess.unAutreNavireDeVotre"); },
   },
-  cancel: { label: "Annulation", hint: "La traversée n'aura pas lieu." },
+  cancel: { get label() { return tr("ui.libCompanyAccess.annulation"); }, get hint() { return tr("ui.libCompanyAccess.laTraverseeNAuraPas"); } },
 };
 export const REQUEST_STATUS: Record<RequestStatus, { label: string; tone?: string }> = {
-  draft: { label: "Brouillon", tone: "mute" },
-  submitted: { label: "En attente", tone: "warn" },
-  applied: { label: "Appliquée" },
-  refused: { label: "Refusée", tone: "bad" },
-  stale: { label: "Dépassée", tone: "mute" },
-  withdrawn: { label: "Retirée", tone: "mute" },
+  draft: { get label() { return tr("ui.libCompanyAccess.brouillon"); }, tone: "mute" },
+  submitted: { get label() { return tr("ui.libCompanyAccess.enAttente"); }, tone: "warn" },
+  applied: { get label() { return tr("ui.libCompanyAccess.appliquee"); } },
+  refused: { get label() { return tr("ui.libCompanyAccess.refusee"); }, tone: "bad" },
+  stale: { get label() { return tr("ui.libCompanyAccess.depassee"); }, tone: "mute" },
+  withdrawn: { get label() { return tr("ui.libCompanyAccess.retiree"); }, tone: "mute" },
 };
 export const ANNOUNCEMENT_REASONS: Record<AnnouncementReason, string> = {
-  delay: "Retard",
-  vessel_change: "Changement de navire",
-  boarding: "Consigne d'embarquement",
-  other: "Autre information",
+  get delay() { return tr("ui.libCompanyAccess.retard"); },
+  get vessel_change() { return tr("ui.libCompanyAccess.changementDeNavire"); },
+  get boarding() { return tr("ui.libCompanyAccess.consigneDEmbarquement"); },
+  get other() { return tr("ui.libCompanyAccess.autreInformation"); },
 };
 export const ANNOUNCEMENT_STATUS: Record<AnnouncementStatus, { label: string; tone?: string }> = {
-  draft: { label: "Brouillon", tone: "mute" },
-  submitted: { label: "En attente", tone: "warn" },
-  approved: { label: "Envoyée" },
-  refused: { label: "Refusée", tone: "bad" },
-  stale: { label: "Dépassée", tone: "mute" },
-  withdrawn: { label: "Retirée", tone: "mute" },
+  draft: { get label() { return tr("ui.libCompanyAccess.brouillon"); }, tone: "mute" },
+  submitted: { get label() { return tr("ui.libCompanyAccess.enAttente"); }, tone: "warn" },
+  approved: { get label() { return tr("ui.libCompanyAccess.envoyee"); } },
+  refused: { get label() { return tr("ui.libCompanyAccess.refusee"); }, tone: "bad" },
+  stale: { get label() { return tr("ui.libCompanyAccess.depassee"); }, tone: "mute" },
+  withdrawn: { get label() { return tr("ui.libCompanyAccess.retiree"); }, tone: "mute" },
 };
 /** État d'envoi d'une annonce validée (statut du message de l'équipe). */
 export const DELIVERY_LABEL: Record<string, string> = {
-  scheduled: "Envoi en préparation",
-  sending: "Envoi en cours",
-  sent: "Envoyée",
-  failed: "Envoi en échec",
-  cancelled: "Envoi annulé",
+  get scheduled() { return tr("ui.libCompanyAccess.envoiEnPreparation"); },
+  get sending() { return tr("ui.libCompanyAccess.envoiEnCours"); },
+  get sent() { return tr("ui.libCompanyAccess.envoyee"); },
+  get failed() { return tr("ui.libCompanyAccess.envoiEnEchec"); },
+  get cancelled() { return tr("ui.libCompanyAccess.envoiAnnule"); },
 };
 
 export interface RequestProposal {
@@ -286,17 +286,17 @@ export interface CompanyQueue {
 }
 
 export const EVENT_LABELS: Record<string, string> = {
-  created: "Créée",
-  edited: "Modifiée",
-  submitted: "Envoyée à BledWay",
-  withdrawn: "Retirée",
+  get created() { return tr("ui.libCompanyAccess.creee"); },
+  get edited() { return tr("ui.libCompanyAccess.modifiee"); },
+  get submitted() { return tr("ui.libCompanyAccess.envoyeeABledway"); },
+  get withdrawn() { return tr("ui.libCompanyAccess.retiree"); },
   // Depuis le 22/11/2026, « applied » et « sent » sont faits par la compagnie elle-même.
-  applied: "Appliquée",
-  sent: "Envoyée aux voyageurs",
-  published: "Publiée",
-  approved: "Validée par BledWay",
-  refused: "Refusée par BledWay",
-  stale: "Dépassée",
+  get applied() { return tr("ui.libCompanyAccess.appliquee"); },
+  get sent() { return tr("ui.libCompanyAccess.envoyeeAuxVoyageurs"); },
+  get published() { return tr("ui.libCompanyAccess.publiee"); },
+  get approved() { return tr("ui.libCompanyAccess.valideeParBledway"); },
+  get refused() { return tr("ui.libCompanyAccess.refuseeParBledway"); },
+  get stale() { return tr("ui.libCompanyAccess.depassee"); },
 };
 
 /**
@@ -313,7 +313,7 @@ export interface CompanyAudience {
 
 /** Signature montrée aux voyageurs ; la base la calcule de la même façon. */
 export const announcementTitle = (companyName: string) =>
-  `Information de ${companyName}`.slice(0, 80);
+  tr("ui.libCompanyAccess.informationDe", { companyName }).slice(0, 80);
 
 export function formatMinutes(minutes: number) {
   const hours = Math.floor(minutes / 60);
@@ -329,10 +329,10 @@ export function describeRequest(
   vesselName: (id: string | null) => string,
   timeLabel: (iso: string) => string,
 ): string {
-  if (kind === "delay") return `Retard de ${formatMinutes(proposed.minutes ?? 0)}`;
-  if (kind === "cancel") return "Annulation";
-  if (kind === "vessel") return `Navire : ${vesselName(proposed.vessel_id ?? null)}`;
+  if (kind === "delay") return tr("ui.libCompanyAccess.retardDe", { formatMinutes: formatMinutes(proposed.minutes ?? 0) });
+  if (kind === "cancel") return tr("ui.libCompanyAccess.annulation");
+  if (kind === "vessel") return tr("ui.libCompanyAccess.navire", { vesselName: vesselName(proposed.vessel_id ?? null) });
   const start = proposed.departure_at ? timeLabel(proposed.departure_at) : "—";
-  const end = proposed.arrival_at ? `, arrivée ${timeLabel(proposed.arrival_at)}` : "";
-  return `Départ ${start}${end}`;
+  const end = proposed.arrival_at ? tr("ui.libCompanyAccess.arrivee", { timeLabel: timeLabel(proposed.arrival_at) }) : "";
+  return tr("ui.libCompanyAccess.depart", { start, end });
 }

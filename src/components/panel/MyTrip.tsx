@@ -191,7 +191,7 @@ function MyTripsList({
               <span className="min-w-0 flex-1">
                 <small>
                   <CalendarClock size={12} aria-hidden />{tr("ui.myTrip.autreVoyage")}{" "}
-                  {days <= 0 ? "aujourd’hui" : days === 1 ? "demain" : `J-${days}`}
+                  {days <= 0 ? tr("ui.myTrip.aujourdHui") : days === 1 ? "demain" : `J-${days}`}
                 </small>
                 <strong>{trip.label}</strong>
               </span>

@@ -7,11 +7,11 @@ import { VesselAlertTag } from "./VesselAlert";
 import { tr } from "@/lib/i18n";
 
 const WEEKS = [
-  { label: "Tous", days: 0 },
-  { label: "1 sem", days: 7 },
-  { label: "2 sem", days: 14 },
-  { label: "3 sem", days: 21 },
-  { label: "1 mois", days: 30 },
+  { get label() { return tr("ui.returnDepartureSearch.tous"); }, days: 0 },
+  { get label() { return tr("ui.returnDepartureSearch.t1Sem"); }, days: 7 },
+  { get label() { return tr("ui.returnDepartureSearch.t2Sem"); }, days: 14 },
+  { get label() { return tr("ui.returnDepartureSearch.t3Sem"); }, days: 21 },
+  { get label() { return tr("ui.returnDepartureSearch.t1Mois"); }, days: 30 },
 ];
 const dayKey = (iso: string, days: number) => new Date(Date.parse(iso) + days * 86_400_000).toISOString().slice(0, 10);
 

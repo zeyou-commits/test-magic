@@ -21,7 +21,7 @@ import { LineFigures, LineHero, VesselThumb, durationRange } from "./LineOvervie
 import { lineStats } from "@/lib/ferry/lineStats";
 import { CompanyBadge } from "./CompanyBadge";
 import { ReportButton } from "./ReportButton";
-import { tr } from "@/lib/i18n";
+import { tr, placeName } from "@/lib/i18n";
 
 export function RouteView({
   routeId,
@@ -72,7 +72,7 @@ export function RouteView({
               {route.is_demo ? <DemoBadge /> : null}
             </div>
             <h1 className="font-display text-2xl font-bold leading-tight tracking-tight text-foreground">
-              {from.name} → {to.name}
+              {placeName(from.name)} → {placeName(to.name)}
             </h1>
           </header>
           <LineHero
@@ -120,11 +120,11 @@ export function RouteView({
             className="h-11 w-full rounded-xl text-sm font-semibold"
           >
             <ArrowLeftRight className="size-4" />
-            {tr("ui.routeView.voirLeSensInverse")}{to?.name} → {from?.name}
+            {tr("ui.routeView.voirLeSensInverse")}{placeName(to?.name)} → {placeName(from?.name)}
           </Button>
         ) : (
           <p className="text-xs text-muted-foreground">
-            {tr("ui.routeView.aucuneLigneConnueDansLe")}{to?.name} → {from?.name}).
+            {tr("ui.routeView.aucuneLigneConnueDansLe")}{placeName(to?.name)} → {placeName(from?.name)}).
           </p>
         )}
       </div>
@@ -133,7 +133,7 @@ export function RouteView({
         <LineFigures stats={stats} timeZone={timeZone} />
       </div>
 
-      <Section title={`Prochains départs · ${zoneLabel(timeZone)}`}>
+      <Section title={tr("ui.routeView.prochainsDeparts", { zoneLabel: zoneLabel(timeZone) })}>
         {routeDepartures.length === 0 ? (
           <EmptyNote>{tr("ui.routeView.aucunDepartProgrammePourLe")}</EmptyNote>
         ) : (
@@ -204,8 +204,8 @@ export function RouteView({
                       <strong className="block truncate text-sm">{company.name}</strong>
                       {own ? (
                         <small className="block text-xs text-muted-foreground">
-                          {own.count} {own.count > 1 ? "départs à venir" : "départ à venir"}
-                          {duration ? ` · ${duration} de traversée` : ""}
+                          {own.count} {own.count > 1 ? tr("ui.routeView.departsAVenir") : tr("ui.routeView.departAVenir")}
+                          {duration ? tr("ui.routeView.deTraversee", { duration }) : ""}
                         </small>
                       ) : null}
                     </span>
@@ -250,7 +250,7 @@ export function RouteView({
               >
                 <div>
                   <span className="font-medium text-foreground">
-                    {index === 0 ? tr("ui.routeView.depart") : tr("ui.routeView.arrivee")} · {port.name}
+                    {index === 0 ? tr("ui.routeView.depart") : tr("ui.routeView.arrivee")} · {placeName(port.name)}
                   </span>
                   <span className="block text-sm text-muted-foreground">{port.country_name}</span>
                 </div>

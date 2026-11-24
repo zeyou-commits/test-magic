@@ -67,10 +67,10 @@ export function VehicleAge() {
               </p>
               <p className="mt-2">
                 {result.remainingDays > 0
-                  ? `La déclaration saisie se situe ${result.remainingDays} jours avant cette date.`
+                  ? tr("ui.vehicleAge.laDeclarationSaisieSeSitue", { remainingDays: result.remainingDays })
                   : result.remainingDays === 0
                     ? tr("ui.vehicleAge.laDateSaisieCoincideAvec")
-                    : `La date saisie se situe ${Math.abs(result.remainingDays)} jours après cette date.`}
+                    : tr("ui.vehicleAge.laDateSaisieSeSitue", { v: Math.abs(result.remainingDays) })}
               </p>
               {result.leapConvention ? (
                 <p className="mt-3 text-sm">

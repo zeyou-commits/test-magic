@@ -6,6 +6,7 @@
 // Ce fichier est lu tel quel par Node (types effacés) : imports de types seulement, sans alias.
 import type { HolidayCalendar, HolidayKind } from "../../content/vacancesScolaires";
 import type { EuropeCountryPosts, EuropePost } from "../../content/consulatsEurope";
+import { tr } from "@/lib/i18n/translate";
 
 export type Log = (message: string) => void;
 
@@ -54,27 +55,27 @@ function season(kind: HolidayKind, start: string): HolidayKind {
 /** Les noms que l'API ne donne qu'en anglais. */
 const FRENCH_NAMES: Record<string, string> = {
   "Baden-Württemberg": "Bade-Wurtemberg",
-  Bavaria: "Bavière",
-  Brandenburg: "Brandebourg",
-  Bremen: "Brême",
-  Hamburg: "Hambourg",
-  Hesse: "Hesse",
+  get Bavaria() { return tr("ui.libReferenceSources.baviere"); },
+  get Brandenburg() { return tr("ui.libReferenceSources.brandebourg"); },
+  get Bremen() { return tr("ui.libReferenceSources.breme"); },
+  get Hamburg() { return tr("ui.libReferenceSources.hambourg"); },
+  get Hesse() { return tr("ui.libReferenceSources.hesse"); },
   "Lower Saxony": "Basse-Saxe",
-  "Mecklenburg-Western Pomerania": "Mecklembourg-Poméranie-Occidentale",
-  "North Rhine-Westphalia": "Rhénanie-du-Nord-Westphalie",
-  "Rhineland-Palatinate": "Rhénanie-Palatinat",
-  Saxony: "Saxe",
+  get "Mecklenburg-Western Pomerania"() { return tr("ui.libReferenceSources.mecklembourgPomeranieOccidentale"); },
+  get "North Rhine-Westphalia"() { return tr("ui.libReferenceSources.rhenanieDuNordWestphalie"); },
+  get "Rhineland-Palatinate"() { return tr("ui.libReferenceSources.rhenaniePalatinat"); },
+  get Saxony() { return tr("ui.libReferenceSources.saxe"); },
   "Saxony-Anhalt": "Saxe-Anhalt",
-  Thuringia: "Thuringe",
-  "Central Region": "Centre",
-  "North Region": "Nord",
-  "South Region": "Sud",
-  Carinthia: "Carinthie",
+  get Thuringia() { return tr("ui.libReferenceSources.thuringe"); },
+  get "Central Region"() { return tr("ui.libReferenceSources.centre"); },
+  get "North Region"() { return tr("ui.libReferenceSources.nord"); },
+  get "South Region"() { return tr("ui.libReferenceSources.sud"); },
+  get Carinthia() { return tr("ui.libReferenceSources.carinthie"); },
   "Lower Austria": "Basse-Autriche",
   "Upper Austria": "Haute-Autriche",
-  Styria: "Styrie",
-  Tyrol: "Tyrol",
-  Vienna: "Vienne",
+  get Styria() { return tr("ui.libReferenceSources.styrie"); },
+  get Tyrol() { return tr("ui.libReferenceSources.tyrol"); },
+  get Vienna() { return tr("ui.libReferenceSources.vienne"); },
 };
 
 type Row = { area: string; kind: HolidayKind; start: string; end: string | null };
@@ -105,7 +106,7 @@ const toCalendar = (c: Omit<HolidayCalendar, "periods"> & { periods: Row[] }): H
 
 async function france(today: string, until: string): Promise<HolidayCalendar> {
   const agent = "bledway-calendar/1.0";
-  const zones = ["Zone A", "Zone B", "Zone C", "Corse"];
+  const zones = [tr("ui.libReferenceSources.zoneA"), tr("ui.libReferenceSources.zoneB"), tr("ui.libReferenceSources.zoneC"), tr("ui.libReferenceSources.corse")];
   const base =
     "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-calendrier-scolaire/records";
   const rows: Row[] = [];
@@ -244,13 +245,13 @@ export async function fetchHolidayCalendars(
   const today = now.toISOString().slice(0, 10);
   const until = `${now.getFullYear() + 2}-08-31`;
   const others: [string, string, string | null, "groups" | "subdivisions" | "national"][] = [
-    ["BE", "Belgique", "communauté", "groups"],
-    ["LU", "Luxembourg", null, "national"],
-    ["CH", "Suisse", "canton", "subdivisions"],
-    ["DE", "Allemagne", "Land", "subdivisions"],
-    ["NL", "Pays-Bas", "région", "groups"],
-    ["AT", "Autriche", "Land", "subdivisions"],
-    ["PT", "Portugal", null, "national"],
+    ["BE", tr("ui.libReferenceSources.belgique"), tr("ui.libReferenceSources.communaute"), "groups"],
+    ["LU", tr("ui.libReferenceSources.luxembourg"), null, "national"],
+    ["CH", tr("ui.libReferenceSources.suisse"), "canton", "subdivisions"],
+    ["DE", tr("ui.libReferenceSources.allemagne"), tr("ui.libReferenceSources.land"), "subdivisions"],
+    ["NL", "Pays-Bas", tr("ui.libReferenceSources.region"), "groups"],
+    ["AT", tr("ui.libReferenceSources.autriche"), tr("ui.libReferenceSources.land"), "subdivisions"],
+    ["PT", tr("ui.libReferenceSources.portugal"), null, "national"],
   ];
   const results = await Promise.allSettled([
     france(today, until),
@@ -260,7 +261,7 @@ export async function fetchHolidayCalendars(
   ]);
   const calendars: HolidayCalendar[] = [];
   results.forEach((result, i) => {
-    const name = i === 0 ? "France" : others[i - 1]![1];
+    const name = i === 0 ? tr("ui.libReferenceSources.france") : others[i - 1]![1];
     if (result.status === "fulfilled") calendars.push(result.value);
     else log(`${name} : source indisponible (${String(result.reason?.message ?? result.reason)})`);
   });
@@ -270,20 +271,20 @@ export async function fetchHolidayCalendars(
 /* ------------------------------------------------------------------ Consulats en Europe */
 
 export const EUROPE_COUNTRIES: Record<string, string> = {
-  BE: "Belgique",
-  ES: "Espagne",
-  IT: "Italie",
-  DE: "Allemagne",
-  CH: "Suisse",
+  get BE() { return tr("ui.libReferenceSources.belgique"); },
+  get ES() { return tr("ui.libReferenceSources.espagne"); },
+  get IT() { return tr("ui.libReferenceSources.italie"); },
+  get DE() { return tr("ui.libReferenceSources.allemagne"); },
+  get CH() { return tr("ui.libReferenceSources.suisse"); },
   NL: "Pays-Bas",
   GB: "Royaume-Uni",
-  LU: "Luxembourg",
-  AT: "Autriche",
-  PT: "Portugal",
-  SE: "Suède",
-  DK: "Danemark",
-  NO: "Norvège",
-  IE: "Irlande",
+  get LU() { return tr("ui.libReferenceSources.luxembourg"); },
+  get AT() { return tr("ui.libReferenceSources.autriche"); },
+  get PT() { return tr("ui.libReferenceSources.portugal"); },
+  get SE() { return tr("ui.libReferenceSources.suede"); },
+  get DK() { return tr("ui.libReferenceSources.danemark"); },
+  get NO() { return tr("ui.libReferenceSources.norvege"); },
+  get IE() { return tr("ui.libReferenceSources.irlande"); },
 };
 
 const ENTITIES: Record<string, string> = {
@@ -390,10 +391,10 @@ async function geocode(address: string, cc: string): Promise<[number, number] | 
 }
 
 const LOCAL_CITY: Record<string, string> = {
-  Barcelone: "Barcelona",
-  Naples: "Napoli",
-  Berne: "Bern",
-  Lisbonne: "Lisboa",
+  get Barcelone() { return tr("ui.libReferenceSources.barcelona"); },
+  get Naples() { return tr("ui.libReferenceSources.napoli"); },
+  get Berne() { return tr("ui.libReferenceSources.bern"); },
+  get Lisbonne() { return tr("ui.libReferenceSources.lisboa"); },
 };
 
 /**
@@ -480,8 +481,8 @@ export function compareHolidays(
       label: cal.name,
       detail:
         (added || removed
-          ? `${added} période${added > 1 ? "s" : ""} ajoutée${added > 1 ? "s" : ""}, ${removed} retirée${removed > 1 ? "s" : ""}`
-          : "aucun changement") + (last ? ` · jusqu'en ${last.slice(0, 4)}` : ""),
+          ? tr("ui.libReferenceSources.periodeAjouteeRetiree", { added, v: added > 1 ? "s" : "", v2: added > 1 ? "s" : "", removed, v3: removed > 1 ? "s" : "" })
+          : tr("ui.libReferenceSources.aucunChangement")) + (last ? tr("ui.libReferenceSources.jusquEn", { v: last.slice(0, 4) }) : ""),
       changed: added + removed > 0 || !old,
     });
   }
@@ -507,7 +508,7 @@ export function compareConsulates(
         const fields = (["address", "phone", "email", "site"] as const).filter(
           (f) => prev[f] !== post[f],
         );
-        const names = { address: "adresse", phone: "téléphone", email: "e-mail", site: "site" };
+        const names = { address: "adresse", phone: tr("ui.libReferenceSources.telephone"), email: "e-mail", site: "site" };
         if (fields.length) parts.push(`${post.name} : ${fields.map((f) => names[f]).join(", ")}`);
       }
     }
@@ -517,7 +518,7 @@ export function compareConsulates(
       warnings.push(`${country.name} : plus aucun poste dans le nouveau relevé.`);
     lines.push({
       label: country.name,
-      detail: parts.length ? parts.join(" · ") : "aucun changement",
+      detail: parts.length ? parts.join(" · ") : tr("ui.libReferenceSources.aucunChangement"),
       changed: parts.length > 0,
     });
   }
@@ -541,12 +542,12 @@ export function referenceDue(
   calendars: HolidayCalendar[] = [],
 ): string | null {
   const age = Math.round((Date.parse(today) - Date.parse(checked)) / DAY);
-  if (age > REFERENCE_MAX_AGE_DAYS) return `Dernier relevé il y a ${Math.round(age / 30)} mois.`;
+  if (age > REFERENCE_MAX_AGE_DAYS) return tr("ui.libReferenceSources.dernierReleveIlYA", { v: Math.round(age / 30) });
   if (key === "vacances") {
     const fr = calendars.find((c) => c.id === "FR");
     const last = fr?.periods.reduce((m, p) => ((p[2] ?? p[1]) > m ? (p[2] ?? p[1]) : m), "") ?? "";
     const horizon = new Date(Date.parse(today) + 270 * DAY).toISOString().slice(0, 10);
-    if (last < horizon) return "Le calendrier français ne couvre plus les 9 prochains mois.";
+    if (last < horizon) return tr("ui.libReferenceSources.leCalendrierFrancaisNeCouvre");
   }
   return null;
 }

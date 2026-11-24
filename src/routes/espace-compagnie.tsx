@@ -82,105 +82,101 @@ export const Route = createFileRoute("/espace-compagnie")({
     ...(typeof search["vessel"] === "string" ? { vessel: search["vessel"] } : {}),
   }),
   head: () => ({
-    meta: [{ title: "Espace compagnie — BledWay" }, { name: "robots", content: "noindex" }],
+    meta: [{ title: tr("ui.pageEspaceCompagnie.espaceCompagnieBledway") }, { name: "robots", content: "noindex" }],
   }),
   component: CompanySpacePage,
 });
 
 const SPACES: ShellSpace[] = [
-  { id: "Pilotage", label: "Pilotage", tagline: "Votre activité en un coup d'œil", icon: Gauge },
-  { id: "Traversées", label: "Traversées", tagline: "Départs et lignes", icon: CalendarDays },
-  { id: "Flotte", label: "Flotte", tagline: "Vos navires", icon: Ship },
-  { id: "Voyageurs", label: "Voyageurs", tagline: "Avis et signalements", icon: Users },
-  { id: "Communication", label: "Communication", tagline: "Annonces et fiche", icon: PenSquare },
+  { id: "Pilotage", get label() { return tr("ui.pageEspaceCompagnie.pilotage"); }, get tagline() { return tr("ui.pageEspaceCompagnie.votreActiviteEnUnCoup"); }, icon: Gauge },
+  { id: "Traversées", get label() { return tr("ui.pageEspaceCompagnie.traversees"); }, get tagline() { return tr("ui.pageEspaceCompagnie.departsEtLignes"); }, icon: CalendarDays },
+  { id: "Flotte", get label() { return tr("ui.pageEspaceCompagnie.flotte"); }, get tagline() { return tr("ui.pageEspaceCompagnie.vosNavires"); }, icon: Ship },
+  { id: "Voyageurs", get label() { return tr("ui.pageEspaceCompagnie.voyageurs"); }, get tagline() { return tr("ui.pageEspaceCompagnie.avisEtSignalements"); }, icon: Users },
+  { id: "Communication", get label() { return tr("ui.pageEspaceCompagnie.communication"); }, get tagline() { return tr("ui.pageEspaceCompagnie.annoncesEtFiche"); }, icon: PenSquare },
 ];
 const SECTIONS: ShellSection[] = [
   {
     id: "home",
-    label: "Tableau de bord",
-    description:
-      "Ce qui demande votre attention, vos prochaines traversées et ce que disent les voyageurs.",
-    group: "Pilotage",
+    get label() { return tr("ui.pageEspaceCompagnie.tableauDeBord"); },
+    get description() { return tr("ui.pageEspaceCompagnie.ceQuiDemandeVotreAttention"); },
+    get group() { return tr("ui.pageEspaceCompagnie.pilotage"); },
     icon: Gauge,
   },
   {
     id: "team",
-    label: "Mon équipe",
-    short: "Équipe",
-    description: "Les personnes de votre compagnie qui ont accès à cet espace, et leur niveau.",
-    group: "Pilotage",
+    get label() { return tr("ui.pageEspaceCompagnie.monEquipe"); },
+    get short() { return tr("ui.pageEspaceCompagnie.equipe"); },
+    get description() { return tr("ui.pageEspaceCompagnie.lesPersonnesDeVotreCompagnie"); },
+    get group() { return tr("ui.pageEspaceCompagnie.pilotage"); },
     icon: UserRound,
   },
   {
     id: "crossings",
-    label: "Mes traversées",
-    short: "Traversées",
-    description: "Tous vos départs à venir publiés sur BledWay, avec leur navire et leur statut.",
-    group: "Traversées",
+    get label() { return tr("ui.pageEspaceCompagnie.mesTraversees2"); },
+    get short() { return tr("ui.pageEspaceCompagnie.traversees"); },
+    get description() { return tr("ui.pageEspaceCompagnie.tousVosDepartsAVenir"); },
+    get group() { return tr("ui.pageEspaceCompagnie.traversees"); },
     icon: CalendarDays,
   },
   {
     id: "lines",
-    label: "Mes lignes",
-    short: "Lignes",
-    description: "Vos liaisons, leur fréquence sur 8 semaines et le prochain départ.",
-    group: "Traversées",
+    get label() { return tr("ui.pageEspaceCompagnie.mesLignes"); },
+    get short() { return tr("ui.pageEspaceCompagnie.lignes"); },
+    get description() { return tr("ui.pageEspaceCompagnie.vosLiaisonsLeurFrequenceSur"); },
+    get group() { return tr("ui.pageEspaceCompagnie.traversees"); },
     icon: RouteIcon,
   },
   {
     id: "requests",
-    label: "Historique des changements",
-    short: "Changements",
-    description:
-      "Retards, nouveaux horaires, changements de navire et annulations appliqués, et leur historique.",
-    group: "Traversées",
+    get label() { return tr("ui.pageEspaceCompagnie.historiqueDesChangements"); },
+    get short() { return tr("ui.pageEspaceCompagnie.changements"); },
+    get description() { return tr("ui.pageEspaceCompagnie.retardsNouveauxHorairesChangementsDe"); },
+    get group() { return tr("ui.pageEspaceCompagnie.traversees"); },
     icon: ClipboardList,
   },
   {
     id: "fleet",
-    label: "Ma flotte",
-    description: "Vos navires en service, leurs capacités et leur note voyageurs.",
-    group: "Flotte",
+    get label() { return tr("ui.pageEspaceCompagnie.maFlotte"); },
+    get description() { return tr("ui.pageEspaceCompagnie.vosNaviresEnServiceLeurs"); },
+    get group() { return tr("ui.pageEspaceCompagnie.flotte"); },
     icon: Ship,
   },
   {
     id: "photos",
-    label: "Photos des navires",
-    short: "Photos",
-    description:
-      "Extérieur, ponts, cabines, restauration… Ce que vous publiez apparaît tout de suite sur la fiche du navire.",
-    group: "Flotte",
+    get label() { return tr("ui.pageEspaceCompagnie.photosDesNavires"); },
+    get short() { return tr("ui.pageEspaceCompagnie.photos"); },
+    get description() { return tr("ui.pageEspaceCompagnie.exterieurPontsCabinesRestaurationCe"); },
+    get group() { return tr("ui.pageEspaceCompagnie.flotte"); },
     icon: Camera,
   },
   {
     id: "reviews",
-    label: "Avis des voyageurs",
-    short: "Avis",
-    description: "Les avis publiés sur votre compagnie et vos navires, et vos réponses.",
-    group: "Voyageurs",
+    get label() { return tr("ui.pageEspaceCompagnie.avisDesVoyageurs"); },
+    get short() { return tr("ui.pageEspaceCompagnie.avis"); },
+    get description() { return tr("ui.pageEspaceCompagnie.lesAvisPubliesSurVotre"); },
+    get group() { return tr("ui.pageEspaceCompagnie.voyageurs"); },
     icon: Star,
   },
   {
     id: "signals",
-    label: "Signalements en direct",
-    short: "En direct",
-    description: "Ce que les voyageurs signalent sur vos navires : répondre ou contester.",
-    group: "Voyageurs",
+    get label() { return tr("ui.pageEspaceCompagnie.signalementsEnDirect"); },
+    get short() { return tr("ui.pageEspaceCompagnie.enDirect"); },
+    get description() { return tr("ui.pageEspaceCompagnie.ceQueLesVoyageursSignalent"); },
+    get group() { return tr("ui.pageEspaceCompagnie.voyageurs"); },
     icon: Radio,
   },
   {
     id: "announce",
-    label: "Annonces",
-    description:
-      "Prévenir les voyageurs d'une traversée : retard, changement de navire, consigne. Envoyé tout de suite.",
-    group: "Communication",
+    get label() { return tr("ui.pageEspaceCompagnie.annonces"); },
+    get description() { return tr("ui.pageEspaceCompagnie.prevenirLesVoyageursDUne"); },
+    get group() { return tr("ui.pageEspaceCompagnie.communication"); },
     icon: Megaphone,
   },
   {
     id: "profile",
-    label: "Ma fiche",
-    description: "Ce que les voyageurs voient de votre compagnie : contacts et présentation.",
-    group: "Communication",
+    get label() { return tr("ui.pageEspaceCompagnie.maFiche"); },
+    get description() { return tr("ui.pageEspaceCompagnie.ceQueLesVoyageursVoient"); },
+    get group() { return tr("ui.pageEspaceCompagnie.communication"); },
     icon: Building2,
   },
 ];
@@ -201,9 +197,9 @@ const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n > 1 ? man
 const SOON_MS = 48 * 3_600_000;
 
 const STATUS: Record<Departure["status"], { label: string; tone?: string }> = {
-  scheduled: { label: "Prévue" },
-  modified: { label: "Modifiée", tone: "warn" },
-  cancelled: { label: "Annulée", tone: "bad" },
+  scheduled: { get label() { return tr("ui.pageEspaceCompagnie.prevue"); } },
+  modified: { get label() { return tr("ui.pageEspaceCompagnie.modifiee"); }, tone: "warn" },
+  cancelled: { get label() { return tr("ui.pageEspaceCompagnie.annulee"); }, tone: "bad" },
 };
 
 /**
@@ -211,7 +207,7 @@ const STATUS: Record<Departure["status"], { label: string; tone?: string }> = {
  * se passe, une suite possible. `tone` : « error » (service coupé), « locked » (accès suspendu).
  */
 function Gate({
-  title = "Espace compagnie",
+  title = tr("ui.pageEspaceCompagnie.espaceCompagnie2"),
   children,
   action,
   tone = "locked",
@@ -410,7 +406,7 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
     return `${portName(route?.departure_port_id)} → ${portName(route?.arrival_port_id)}`;
   };
   const vesselName = (id: string | null) =>
-    vessels.find((vessel) => vessel.id === id)?.name ?? "Navire à confirmer";
+    vessels.find((vessel) => vessel.id === id)?.name ?? tr("ui.pageEspaceCompagnie.navireAConfirmer");
   const go = (next: string) =>
     void navigate({ search: { ...(company ? { c: company.id } : {}), tab: next } });
   // Niveau Opérations confirmé par le serveur ; l'aperçu de l'équipe BledWay ne soumet rien.
@@ -469,10 +465,10 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
       ? {
           key: "reviews",
           icon: Star,
-          label: `${plural(unanswered, "avis", "avis")} sans réponse`,
+          label: tr("ui.pageEspaceCompagnie.sansReponse", { plural: plural(unanswered, "avis", "avis") }),
           hint: canAct
-            ? "Votre réponse s'affiche tout de suite sous l'avis."
-            : "Le niveau Opérations permet de répondre.",
+            ? tr("ui.pageEspaceCompagnie.votreReponseSAfficheTout")
+            : tr("ui.pageEspaceCompagnie.leNiveauOperationsPermetDe"),
           action: canAct ? "Répondre" : "Voir",
           tab: "reviews",
         }
@@ -481,8 +477,8 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
       ? {
           key: "signals",
           icon: Radio,
-          label: `${plural(alerts.length, "signalement")} en cours sur vos navires`,
-          hint: "Ce que les voyageurs voient en ce moment : répondre ou contester.",
+          label: tr("ui.pageEspaceCompagnie.enCoursSurVosNavires", { plural: plural(alerts.length, "signalement") }),
+          hint: tr("ui.pageEspaceCompagnie.ceQueLesVoyageursVoient2"),
           action: "Voir",
           tab: "signals",
         }
@@ -491,8 +487,8 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
       ? {
           key: "announce",
           icon: Megaphone,
-          label: `${plural(drafts.announcements, "annonce")} en brouillon`,
-          hint: "Pas encore envoyée aux voyageurs.",
+          label: tr("ui.pageEspaceCompagnie.enBrouillon", { plural: plural(drafts.announcements, "annonce") }),
+          hint: tr("ui.pageEspaceCompagnie.pasEncoreEnvoyeeAuxVoyageurs"),
           action: "Reprendre",
           tab: "announce",
         }
@@ -501,8 +497,8 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
       ? {
           key: "requests",
           icon: ClipboardList,
-          label: `${plural(drafts.requests, "changement")} en brouillon`,
-          hint: "Pas encore appliqué sur la traversée.",
+          label: tr("ui.pageEspaceCompagnie.enBrouillon", { plural: plural(drafts.requests, "changement") }),
+          hint: tr("ui.pageEspaceCompagnie.pasEncoreAppliqueSurLa"),
           action: "Reprendre",
           tab: "requests",
         }
@@ -539,7 +535,7 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
               <small>
                 {vesselName(item.vessel_id)}
                 {audience.data && followers(item.id)
-                  ? ` · ${followers(item.id)} ${followers(item.id) > 1 ? "personnes suivent" : "personne suit"}`
+                  ? ` · ${followers(item.id)} ${followers(item.id) > 1 ? tr("ui.pageEspaceCompagnie.personnesSuivent") : tr("ui.pageEspaceCompagnie.personneSuit")}`
                   : ""}
               </small>
             </span>
@@ -551,7 +547,7 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
                 type="button"
                 className="bo-link min-h-10"
                 aria-expanded={changing === item.id}
-                aria-label={`Modifier ou prévenir : ${lineOf(item.route_id)}, ${dayFmt.format(new Date(item.departure_at))} à ${hourFmt.format(new Date(item.departure_at))}`}
+                aria-label={tr("ui.pageEspaceCompagnie.modifierOuPrevenirA", { lineOf: lineOf(item.route_id), v: dayFmt.format(new Date(item.departure_at)), v2: hourFmt.format(new Date(item.departure_at)) })}
                 onClick={() => setChanging(changing === item.id ? null : item.id)}
               >
                 {tr("ui.pageEspaceCompagnie.modifierOuPrevenir")}
@@ -729,7 +725,7 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
             <CalendarDays aria-hidden /> {mine.length}{tr("ui.pageEspaceCompagnie.traversee")}{mine.length > 1 ? "s" : ""}{tr("ui.pageEspaceCompagnie.aVenir")}
             <small>
               <button type="button" className="bo-link" onClick={() => go("requests")}>
-                {tr("ui.pageEspaceCompagnie.historiqueDesChangements")}{inReview ? ` (${inReview} en attente)` : ""}
+                {tr("ui.pageEspaceCompagnie.historiqueDesChangements")}{inReview ? tr("ui.pageEspaceCompagnie.enAttente", { inReview }) : ""}
               </button>
             </small>
           </h2>
@@ -757,7 +753,7 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
                     <strong>{lineOf(line.route.id)}</strong>
                     <small>
                       {line.next
-                        ? `Prochain départ ${dayFmt.format(new Date(line.next))}`
+                        ? tr("ui.pageEspaceCompagnie.prochainDepart", { v: dayFmt.format(new Date(line.next)) })
                         : tr("ui.pageEspaceCompagnie.aucunDepartPublie")}
                     </small>
                   </span>
@@ -867,7 +863,7 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
                 <h2>{company.name}</h2>
                 <p>
                   {overview.next
-                    ? `Prochain départ ${dayFmt.format(new Date(overview.next.departure_at))} à ${hourFmt.format(new Date(overview.next.departure_at))}`
+                    ? tr("ui.pageEspaceCompagnie.prochainDepartA", { v: dayFmt.format(new Date(overview.next.departure_at)), v2: hourFmt.format(new Date(overview.next.departure_at)) })
                     : tr("ui.pageEspaceCompagnie.aucunDepartPublieAVenir")}
                 </p>
               </div>
@@ -913,7 +909,7 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
             <h3 className="mt-3 text-sm font-semibold">
               {tr("ui.pageEspaceCompagnie.dansLes48Heures")}{" "}
               <span className="font-normal text-[var(--bo-muted)]">
-                · {plural(soon.length, "traversée")}
+                · {plural(soon.length, tr("ui.pageEspaceCompagnie.traversee2"))}
               </span>
             </h3>
             {soon.length ? (
@@ -945,7 +941,7 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
                   : !audience.data
                     ? tr("ui.pageEspaceCompagnie.calculEnCours")
                     : audience.data.total
-                      ? `vos traversées à venir, dont ${audience.data.travellers} qui voyage${audience.data.travellers > 1 ? "nt" : ""}`
+                      ? tr("ui.pageEspaceCompagnie.vosTraverseesAVenirDont", { travellers: audience.data.travellers, v: audience.data.travellers > 1 ? "nt" : "" })
                       : tr("ui.pageEspaceCompagnie.personneNeSuitEncoreVos")}
               </small>
             </button>
@@ -959,7 +955,7 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
               </strong>
               <small>
                 {reviews.data?.count
-                  ? `${reviews.data.count} avis publié${reviews.data.count > 1 ? "s" : ""}`
+                  ? tr("ui.pageEspaceCompagnie.avisPublie", { count: reviews.data.count, v: reviews.data.count > 1 ? "s" : "" })
                   : tr("ui.pageEspaceCompagnie.pasEncoreDAvisPublie")}
               </small>
             </button>

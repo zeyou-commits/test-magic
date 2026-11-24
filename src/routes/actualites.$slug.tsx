@@ -93,7 +93,7 @@ function NewsArticlePage() {
       />
       <Breadcrumbs
         items={[
-          { name: "Actualités", path: "/actualites" },
+          { name: tr("ui.pageActualitesSlug.actualites"), path: "/actualites" },
           { name: item.title, path },
         ]}
       />
@@ -258,17 +258,17 @@ function OverNotice({ item }: { item: NewsItem }) {
   const end = newsEndsAt(item, last);
   return (
     <p className="bw-news-overnote" role="note">
-      <b>Cette annonce est terminée.</b>{" "}
-      {end ? `Elle ne concerne plus de traversée à venir depuis le ${newsDay(new Date(end).toISOString())}.` : ""}{" "}
-      <Link to="/actualites">Voir les actualités récentes</Link>
+      <b>{tr("ui.pageActualitesSlug.cetteAnnonceEstTerminee")}</b>{" "}
+      {end ? tr("ui.pageActualitesSlug.elleNeConcernePlusDe", { newsDay: newsDay(new Date(end).toISOString()) }) : ""}{" "}
+      <Link to="/actualites">{tr("ui.pageActualitesSlug.voirLesActualitesRecentes")}</Link>
     </p>
   );
 }
 
 const STATUS: Record<string, string> = {
-  scheduled: "Prévue",
-  modified: "Modifiée",
-  cancelled: "Annulée",
+  get scheduled() { return tr("ui.pageActualitesSlug.prevue"); },
+  get modified() { return tr("ui.pageActualitesSlug.modifiee"); },
+  get cancelled() { return tr("ui.pageActualitesSlug.annulee"); },
 };
 
 /** Les traversées concernées, chacune ouverte sur BledWay (suivi, horaires à jour, salon). */
@@ -282,7 +282,7 @@ function NewsImpact({ ids }: { ids: string[] }) {
     <section className="bw-news-impact" aria-label={tr("ui.pageActualitesSlug.traverseesConcernees")}>
       <h2>
         {departures.length > 1
-          ? `${departures.length} traversées concernées`
+          ? tr("ui.pageActualitesSlug.traverseesConcernees2", { length: departures.length })
           : tr("ui.pageActualitesSlug.laTraverseeConcernee")}
       </h2>
       <p>{tr("ui.pageActualitesSlug.ouvrezLaVotrePourVoir")}</p>
@@ -306,7 +306,7 @@ function NewsImpact({ ids }: { ids: string[] }) {
                   </strong>
                   <small>
                     {parts.weekday} {parts.shortDate} · {parts.time}
-                    {from ? ` (heure de ${from.name})` : ""}
+                    {from ? tr("ui.pageActualitesSlug.heureDe", { name: from.name }) : ""}
                     {vessel ? ` · ${vessel.name}` : ""}
                   </small>
                 </span>

@@ -71,7 +71,7 @@ export function SourceNote({
   const href = safeExternalUrl(sourceUrl);
   return (
     <div className="mt-2 text-xs text-muted-foreground">
-      {"Source : "}
+      {tr("ui.shared.source")}
       {href ? (
         <a
           href={href}
@@ -137,7 +137,7 @@ export function Stars({ value }: { value: number }) {
   return (
     <div
       className="flex items-center gap-1.5"
-      aria-label={`${value.toFixed(1)} sur 5`}
+      aria-label={tr("ui.shared.sur5", { v: value.toFixed(1) })}
       title={`${value.toFixed(1)} / 5`}
     >
       <div className="flex">

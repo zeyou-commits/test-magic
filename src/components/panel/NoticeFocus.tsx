@@ -11,11 +11,11 @@ import { tr } from "@/lib/i18n";
 const supabase = typedSupabase as unknown as SupabaseClient;
 
 export const noticeLook: Record<NoticeKind, { icon: LucideIcon; tone: string; label: string }> = {
-  alert: { icon: TriangleAlert, tone: "critical", label: "Alerte" },
-  warning: { icon: TriangleAlert, tone: "warning", label: "À vérifier" },
-  trip: { icon: Ship, tone: "brand", label: "Votre traversée" },
-  community: { icon: Megaphone, tone: "community", label: "Voyageurs" },
-  info: { icon: Bell, tone: "official", label: "Information" },
+  alert: { icon: TriangleAlert, tone: "critical", get label() { return tr("ui.noticeFocus.alerte"); } },
+  warning: { icon: TriangleAlert, tone: "warning", get label() { return tr("ui.noticeFocus.aVerifier"); } },
+  trip: { icon: Ship, tone: "brand", get label() { return tr("ui.noticeFocus.votreTraversee"); } },
+  community: { icon: Megaphone, tone: "community", get label() { return tr("ui.noticeFocus.voyageurs"); } },
+  info: { icon: Bell, tone: "official", get label() { return tr("ui.noticeFocus.information"); } },
 };
 
 /** Le message reçu, en tête de la fiche ouverte depuis une notification : rien n'est à rechercher. */

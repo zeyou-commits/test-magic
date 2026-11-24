@@ -1,3 +1,4 @@
+import { mapLocale } from "@/lib/i18n/mapLocale";
 import { useVesselAlerts } from "@/lib/ferry/vesselAlerts";
 import { useTravelMarkers } from "./useTravelMarkers";
 import { bringTooltipToFront } from "./tooltipStack";
@@ -47,6 +48,7 @@ import { portTimeZone, wallTimeInZone } from "@/lib/ferry/time";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ITINERARY_CHOOSE_EVENT, type ItineraryMapPreview } from "@/lib/ferry/itinerary";
 import { JOURNEY_REFRAME_EVENT } from "@/lib/ferry/journeyFilm";
+import { tr } from "@/lib/i18n";
 
 type FleetFrame = {
   type: "FeatureCollection";
@@ -562,9 +564,10 @@ export default function FerryMap({
       fadeDuration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 180,
       cooperativeGestures: false,
       locale: {
-        "CooperativeGesturesHandler.WindowsHelpText": "Ctrl + molette pour zoomer sur la carte",
-        "CooperativeGesturesHandler.MacHelpText": "⌘ + molette pour zoomer sur la carte",
-        "CooperativeGesturesHandler.MobileHelpText": "Deux doigts pour déplacer la carte",
+        ...mapLocale(),
+        "CooperativeGesturesHandler.WindowsHelpText": tr("ui.ferryMap.ctrlMolettePourZoomerSur"),
+        "CooperativeGesturesHandler.MacHelpText": tr("ui.ferryMap.molettePourZoomerSurLa"),
+        "CooperativeGesturesHandler.MobileHelpText": tr("ui.ferryMap.deuxDoigtsPourDeplacerLa"),
       },
       dragPan: true,
       touchPitch: false,
@@ -681,7 +684,7 @@ export default function FerryMap({
         // Seuls les pays qui bordent la mer restent nommés : la carte est celle des traversées.
         const hide = [
           "all",
-          ["!", ["in", ["get", "name"], ["literal", ["España", "Andorra"]]]],
+          ["!", ["in", ["get", "name"], ["literal", [tr("ui.ferryMap.espana"), tr("ui.ferryMap.andorra")]]]],
           ["!", ["in", ["get", "iso_a2"], ["literal", INLAND_COUNTRIES]]],
           // Certaines tuiles n'ont pas le code pays : on reconnaît aussi le nom anglais.
           ["!", ["in", ["get", "name:en"], ["literal", INLAND_COUNTRY_NAMES]]],
@@ -702,7 +705,7 @@ export default function FerryMap({
         type: "symbol",
         source: "bw-country-spain",
         layout: {
-          "text-field": "Espagne",
+          "text-field": tr("ui.ferryMap.espagne"),
           "text-size": narrowScreen ? 11.5 : 15,
           "text-letter-spacing": 0.05,
           ...(countryFont ? { "text-font": countryFont as string[] } : {}),
@@ -1242,12 +1245,12 @@ export default function FerryMap({
           card.setAttribute("role", "tooltip");
           card.className = "bw-alert-tip";
           const title = document.createElement("strong");
-          title.textContent = `${String(alertHit!.properties?.["name"] ?? "Navire")} · ${alert.label}`;
+          title.textContent = `${String(alertHit!.properties?.["name"] ?? tr("ui.ferryMap.navire"))} · ${alert.label}`;
           const note = document.createElement("p");
           const text = (alert.note || alert.title).trim();
           note.textContent = text.length > 170 ? `${text.slice(0, 167).trimEnd()}…` : text;
           const foot = document.createElement("small");
-          foot.textContent = `${alert.source ? `Source : ${alert.source} · ` : ""}cliquez pour le détail`;
+          foot.textContent = tr("ui.ferryMap.cliquezPourLeDetail", { v: alert.source ? tr("ui.ferryMap.source", { source: alert.source }) : "" });
           card.append(title, ...(text ? [note] : []), foot);
           hoverTip.setLngLat(coordinates).setDOMContent(card).addTo(map);
         } else if (!alert && cardKey !== shownCard) {
@@ -1260,8 +1263,8 @@ export default function FerryMap({
           const members = membersOf(feature.properties["groupId"]);
           name.textContent =
             members.length > 1
-              ? `${members.length} navires à proximité`
-              : String(feature.properties["name"] ?? "Navire");
+              ? tr("ui.ferryMap.naviresAProximite", { length: members.length })
+              : String(feature.properties["name"] ?? tr("ui.ferryMap.navire"));
           status.textContent =
             members.length > 1
               ? members.map((f) => f.properties["name"]).join(" · ")
@@ -1332,10 +1335,10 @@ export default function FerryMap({
         fleetPickerRef.current?.remove();
         const card = document.createElement("div");
         card.setAttribute("role", "dialog");
-        card.setAttribute("aria-label", "Choisir un navire");
+        card.setAttribute("aria-label", tr("ui.ferryMap.choisirUnNavire"));
         card.className = "min-w-48 space-y-1 p-1";
         const heading = document.createElement("strong");
-        heading.textContent = `${members.length} navires à proximité`;
+        heading.textContent = tr("ui.ferryMap.naviresAProximite", { length: members.length });
         heading.className = "mb-2 block pe-4 text-sm";
         card.append(heading);
         for (const member of members) {
@@ -1581,7 +1584,7 @@ export default function FerryMap({
         id: "itinerary-ends",
         type: "circle",
         source: "itinerary-preview",
-        filter: ["==", ["geometry-type"], "Point"],
+        filter: ["==", ["geometry-type"], tr("ui.ferryMap.point")],
         paint: {
           "circle-radius": 8,
           "circle-color": "#0e7a43",
@@ -1593,7 +1596,7 @@ export default function FerryMap({
         id: "itinerary-end-labels",
         type: "symbol",
         source: "itinerary-preview",
-        filter: ["==", ["geometry-type"], "Point"],
+        filter: ["==", ["geometry-type"], tr("ui.ferryMap.point")],
         layout: {
           "text-field": ["get", "label"],
           "text-font": ["Noto Sans Bold"],
@@ -1620,7 +1623,7 @@ export default function FerryMap({
         element.type = "button";
         element.setAttribute(
           "aria-label",
-          `${choice.selected ? "Trajet choisi" : "Choisir ce trajet"} : ${choice.rank ? `n° ${choice.rank}, ` : ""}${choice.title}, ${choice.detail}`,
+          `${choice.selected ? tr("ui.ferryMap.trajetChoisi") : tr("ui.ferryMap.choisirCeTrajet")} : ${choice.rank ? `n° ${choice.rank}, ` : ""}${choice.title}, ${choice.detail}`,
         );
         element.className = "bw-route-pin in-data-[film=true]:hidden";
         element.dataset["selected"] = choice.selected ? "true" : "";
@@ -1714,12 +1717,12 @@ export default function FerryMap({
         },
         {
           type: "Feature",
-          properties: { label: "Départ" },
+          properties: { label: tr("ui.ferryMap.depart") },
           geometry: { type: "Point", coordinates: preview.origin },
         },
         {
           type: "Feature",
-          properties: { label: "Destination" },
+          properties: { label: tr("ui.ferryMap.destination") },
           geometry: { type: "Point", coordinates: preview.destination },
         },
       ],
@@ -1943,7 +1946,7 @@ export default function FerryMap({
         const dot = document.createElement("button");
         dot.type = "button";
         dot.className = "port-marker__dot";
-        dot.setAttribute("aria-label", `Port de ${port.name}`);
+        dot.setAttribute("aria-label", tr("ui.ferryMap.portDe", { name: port.name }));
         // Le phare se dresse côté terre : au nord des ports européens, au sud des ports algériens.
         // Le nom du port, lui, se place à côté sans le couvrir.
         el.dataset["land"] = port.country_code === "DZ" ? "down" : "up";
@@ -1959,7 +1962,7 @@ export default function FerryMap({
         const close = document.createElement("button");
         close.type = "button";
         close.className = "port-tip__close";
-        close.setAttribute("aria-label", "Fermer");
+        close.setAttribute("aria-label", tr("ui.ferryMap.fermer"));
         close.textContent = "×";
         close.addEventListener("click", (event) => {
           event.stopPropagation();
@@ -2071,9 +2074,9 @@ export default function FerryMap({
       header.append(title);
 
       const companyCount = meta?.companies?.length ?? 0;
-      const country = port.country_name ?? "Pays non renseigné";
-      const routeLabel = routeCount === 1 ? "1 ligne" : `${routeCount} lignes`;
-      const companyLabel = companyCount === 1 ? "1 compagnie" : `${companyCount} compagnies`;
+      const country = port.country_name ?? tr("ui.ferryMap.paysNonRenseigne");
+      const routeLabel = routeCount === 1 ? tr("ui.ferryMap.t1Ligne") : `${routeCount} lignes`;
+      const companyLabel = companyCount === 1 ? tr("ui.ferryMap.t1Compagnie") : `${companyCount} compagnies`;
 
       const metaLine = document.createElement("p");
       metaLine.className = "port-tip__country";
@@ -2084,14 +2087,14 @@ export default function FerryMap({
       if (port.status === "inactive") {
         const closed = document.createElement("p");
         closed.className = "port-tip__closed";
-        closed.textContent = "Temporairement fermé";
+        closed.textContent = tr("ui.ferryMap.temporairementFerme");
         tip.append(closed);
       }
 
       const tabBar = document.createElement("div");
       tabBar.className = "port-tip__tabs";
       tabBar.setAttribute("role", "group");
-      tabBar.setAttribute("aria-label", "Départs ou arrivées");
+      tabBar.setAttribute("aria-label", tr("ui.ferryMap.departsOuArrivees"));
       Object.assign(tabBar.style, {
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
@@ -2126,23 +2129,23 @@ export default function FerryMap({
         });
         return button;
       };
-      const departureTab = makeTab("↗ Départs", meta?.departureCount ?? 0, true);
-      const arrivalTab = makeTab("↙ Arrivées", meta?.arrivalCount ?? 0, false);
+      const departureTab = makeTab(tr("ui.ferryMap.departs"), meta?.departureCount ?? 0, true);
+      const arrivalTab = makeTab(tr("ui.ferryMap.arrivees"), meta?.arrivalCount ?? 0, false);
       tabBar.append(departureTab, arrivalTab);
       tip.append(tabBar);
       const scope = document.createElement("p");
       scope.className = "port-tip__scope";
-      scope.textContent = "Horaires connus à venir · heure locale";
+      scope.textContent = tr("ui.ferryMap.horairesConnusAVenirHeure");
       if (isMobile) scope.hidden = true;
       tip.append(scope);
       const departurePanel = document.createElement("div");
       departurePanel.className = "port-tip__schedule";
       departurePanel.setAttribute("role", "region");
-      departurePanel.setAttribute("aria-label", "Prochains départs");
+      departurePanel.setAttribute("aria-label", tr("ui.ferryMap.prochainsDeparts"));
       const arrivalPanel = document.createElement("div");
       arrivalPanel.className = "port-tip__schedule";
       arrivalPanel.setAttribute("role", "region");
-      arrivalPanel.setAttribute("aria-label", "Prochaines arrivées");
+      arrivalPanel.setAttribute("aria-label", tr("ui.ferryMap.prochainesArrivees"));
       arrivalPanel.hidden = true;
       const makeRows = (
         items: {
@@ -2233,7 +2236,7 @@ export default function FerryMap({
             companyName: item.companyName,
             logoUrl: item.logoUrl,
           })),
-          "Aucun départ programmé pour le moment.",
+          tr("ui.ferryMap.aucunDepartProgrammePourLe"),
         ),
       );
       arrivalPanel.append(
@@ -2246,7 +2249,7 @@ export default function FerryMap({
             companyName: item.companyName,
             logoUrl: item.logoUrl,
           })),
-          "Aucune arrivée prévue connue pour le moment.",
+          tr("ui.ferryMap.aucuneArriveePrevueConnuePour"),
         ),
       );
       // Le bouton suit ce que l'on regardait : la fiche s'ouvre sur les mêmes horaires.
@@ -2254,11 +2257,11 @@ export default function FerryMap({
       const moreLabel = () =>
         showing === "arrivals"
           ? meta?.upcomingArrivals.length
-            ? "Voir toutes les arrivées"
-            : "Voir la fiche du port"
+            ? tr("ui.ferryMap.voirToutesLesArrivees")
+            : tr("ui.ferryMap.voirLaFicheDuPort")
           : meta?.upcoming.length
-            ? "Voir tous les départs"
-            : "Voir la fiche du port";
+            ? tr("ui.ferryMap.voirTousLesDeparts")
+            : tr("ui.ferryMap.voirLaFicheDuPort");
       const activateTab = (arrivals: boolean) => {
         departurePanel.hidden = arrivals;
         arrivalPanel.hidden = !arrivals;
@@ -2746,16 +2749,16 @@ export default function FerryMap({
               : null;
           let allure: string;
           if (physical) {
-            const speedText = speed != null ? ` · ${Math.round(speed)} kts` : "";
+            const speedText = speed != null ? tr("ui.ferryMap.kts", { v: Math.round(speed) }) : "";
             const atdText = live?.position.atdAt
-              ? ` · parti à ${wallTimeInZone(live.position.atdAt, portTimeZone(fromPort))}`
+              ? tr("ui.ferryMap.partiA", { wallTimeInZone: wallTimeInZone(live.position.atdAt, portTimeZone(fromPort)) })
               : "";
-            allure = `${physical.label}${speedText}${physical.code === "approaching" && toName ? ` · vers ${toName}` : ""}${atdText}`;
+            allure = `${physical.label}${speedText}${physical.code === "approaching" && toName ? tr("ui.ferryMap.vers", { toName }) : ""}${atdText}`;
           } else if (ship.state === "sea") {
-            const head = live && speed != null ? `● ${Math.round(speed)} kts` : "● En navigation";
-            allure = toName ? `${head} · vers ${toName}` : head;
+            const head = live && speed != null ? tr("ui.ferryMap.kts2", { v: Math.round(speed) }) : tr("ui.ferryMap.enNavigation");
+            allure = toName ? tr("ui.ferryMap.vers2", { head, toName }) : head;
           } else {
-            allure = dockName ? `⚓ À quai · ${dockName}` : "⚓ À quai";
+            allure = dockName ? tr("ui.ferryMap.aQuai", { dockName }) : tr("ui.ferryMap.aQuai2");
           }
           const shipAlert = ship.vesselId ? vesselAlertsRef.current.get(ship.vesselId) : undefined;
           // Navire à rendu : rien tant que son image arrive (jamais l'ancien jeton rond en attendant) ;
@@ -2769,7 +2772,7 @@ export default function FerryMap({
             properties: {
               alert: shipAlert ? 1 : 0,
               // Navire en alerte : sa pastille prend la place du retard sous son nom.
-              late: ship.delay && !shipAlert ? `Retardé ${ship.delay}` : "",
+              late: ship.delay && !shipAlert ? tr("ui.ferryMap.retarde", { delay: ship.delay }) : "",
               state: ship.state,
               icon: shipIcon(wakeLevel(ship.state, live ? speed : null), course),
               course,

@@ -5,6 +5,7 @@
  * répondre tout de suite, il ne suffit pas à lui seul.
  */
 import { NSFW_REFUSAL, isDoubtful, isExplicit, nsfwScores, type NsfwScores } from "./nsfwVerdict";
+import { tr } from "@/lib/i18n/translate";
 
 type Classifier = {
   classify: (image: HTMLImageElement) => Promise<{ className: string; probability: number }[]>;
@@ -56,7 +57,7 @@ export async function checkChatPhoto(url: string): Promise<PhotoCheck> {
   try {
     scores = await scorePhoto(url);
   } catch {
-    return { ok: false, reason: "Vérification de la photo impossible pour le moment. Réessayez." };
+    return { ok: false, reason: tr("ui.libPhotosNsfw.verificationDeLaPhotoImpossible") };
   }
   return isExplicit(scores) ? { ok: false, reason: NSFW_REFUSAL } : { ok: true };
 }

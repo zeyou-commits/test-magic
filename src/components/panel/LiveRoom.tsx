@@ -83,6 +83,7 @@ import {
   type ReactionCode,
   type ReactionMap,
 } from "@/lib/ferry/chatReactions";
+import { lazyConst } from "@/lib/i18n/translate";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 export const MAX_MESSAGE = 200;
@@ -124,20 +125,20 @@ const BLEDWAY = {
   official: true,
 } as ChatAuthor;
 const PLACE = {
-  aboard: "à bord",
+  get aboard() { return tr("ui.liveRoom.aBord"); },
   port: "au port",
   trip: "passager",
-  staff: "équipe BledWay",
-  guest: "invité",
-  visitor: "invité · autre traversée",
+  get staff() { return tr("ui.liveRoom.equipeBledway"); },
+  get guest() { return tr("ui.liveRoom.invite"); },
+  get visitor() { return tr("ui.liveRoom.inviteAutreTraversee"); },
   member: "voyageur",
 } as const;
 /** Salon général : des amorces qui ne supposent pas de traversée. */
-const GENERAL_STARTERS = [
-  "Quelqu'un descend en voiture cet été ?",
-  "Vos bons plans pour l'attente au port ?",
-  "Quels papiers pour voyager avec un mineur ?",
-];
+const GENERAL_STARTERS = lazyConst(() => ([
+  tr("ui.liveRoom.quelquUnDescendEnVoiture"),
+  tr("ui.liveRoom.vosBonsPlansPourL"),
+  tr("ui.liveRoom.quelsPapiersPourVoyagerAvec"),
+]));
 const missing = (code?: string) => code === "PGRST202" || code === "42883";
 /** En dessous, on considère que la personne suit le direct : le fil descend tout seul. */
 const FOLLOW_BOTTOM_PX = 80;
@@ -261,7 +262,7 @@ export function RoomButton({ departureId, onOpen }: { departureId: string; onOpe
     >
       <MessagesSquare size={15} aria-hidden />
       {tr("ui.liveRoom.salon")}
-      {count ? ` · ${count === 80 ? "80+" : count} message${count > 1 ? "s" : ""}` : ""}
+      {count ? tr("ui.liveRoom.message2", { v: count === 80 ? "80+" : count, v2: count > 1 ? "s" : "" }) : ""}
     </button>
   );
 }
@@ -644,7 +645,7 @@ function LiveChat({
               type="button"
               className="bw-chat__mail"
               aria-label={
-                dmUnread ? `Messages privés, ${dmUnread} non lus` : tr("ui.liveRoom.messagesPrives")
+                dmUnread ? tr("ui.liveRoom.messagesPrivesNonLus", { dmUnread }) : tr("ui.liveRoom.messagesPrives")
               }
               onClick={() => setDmView("inbox")}
             >
@@ -688,7 +689,7 @@ function LiveChat({
               onClick={() => setShowPeople((value) => !value)}
             >
               <Users size={13} aria-hidden />{" "}
-              {online ? `${online} en ligne` : tr("ui.liveRoom.vousEtesIci")}
+              {online ? tr("ui.liveRoom.enLigne", { online }) : tr("ui.liveRoom.vousEtesIci")}
             </button>
           </DialogDescription>
           {kind === "crossing" || kind === "general" ? (
@@ -721,7 +722,7 @@ function LiveChat({
                     <button
                       type="button"
                       className="bw-chat__dm"
-                      aria-label={`Message privé à ${person.card!.pseudo}`}
+                      aria-label={tr("ui.liveRoom.messagePriveA", { pseudo: person.card!.pseudo })}
                       onClick={() => setDmTo(person.card)}
                     >
                       <Mail size={15} aria-hidden />
@@ -738,7 +739,7 @@ function LiveChat({
               {tr("ui.liveRoom.voyageur")}
               {met.total > 1 ? "s" : ""}
               {tr("ui.liveRoom.surBledway")}
-              {metHere.size ? `, dont ${metHere.size} sur cette traversée` : ""}.
+              {metHere.size ? tr("ui.liveRoom.dontSurCetteTraversee", { size: metHere.size }) : ""}.
             </p>
           ) : null}
           {online > named.length ? (
@@ -775,7 +776,7 @@ function LiveChat({
               {myPseudo ? ` ${myPseudo}` : ""}
               {tr("ui.liveRoom.bienvenueOnSEntraideEntre")}{" "}
               {kind === "general"
-                ? "ici, avec ou sans traversée prévue : la route, les papiers, les bons plans. Un message toutes les 30 secondes."
+                ? tr("ui.liveRoom.iciAvecOuSansTraversee")
                 : kind === "port"
                   ? tr("ui.liveRoom.laFileLeParkingL")
                   : tr("ui.liveRoom.laFileAuPortL")}
@@ -793,10 +794,10 @@ function LiveChat({
         </li>
         {lines.length ? null : (
           <li className="bw-chat__hello">
-            <Bw504Note tone="start" title="C'est calme ici pour l'instant">
+            <Bw504Note tone="start" title={tr("ui.liveRoom.cEstCalmeIciPour")}>
               {kind === "general"
-                ? "Lance la discussion : la route, les papiers, les bons plans."
-                : "Lance la discussion : file au port, embarquement, ambiance à bord."}
+                ? tr("ui.liveRoom.lanceLaDiscussionLaRoute")
+                : tr("ui.liveRoom.lanceLaDiscussionFileAu")}
             </Bw504Note>
           </li>
         )}
@@ -875,7 +876,7 @@ function LiveChat({
                   dateTime={message.created_at}
                   title={new Date(message.created_at).toLocaleString(intlLocale(), { timeZone: "Europe/Paris" })}
                 >
-                  {message.edited ? "modifié · " : ""}
+                  {message.edited ? tr("ui.liveRoom.modifie2") : ""}
                   {stamp(message.created_at)}
                 </time>
               </button>
@@ -898,8 +899,8 @@ function LiveChat({
                     type="button"
                     className="bw-chat__reacts-who"
                     aria-expanded={whoFor === message.id}
-                    aria-label="Voir qui a réagi"
-                    title="Voir qui a réagi"
+                    aria-label={tr("ui.liveRoom.voirQuiAReagi")}
+                    title={tr("ui.liveRoom.voirQuiAReagi")}
                     onClick={() => setWhoFor(whoFor === message.id ? null : message.id)}
                   >
                     <Users size={12} aria-hidden />
@@ -907,14 +908,14 @@ function LiveChat({
                 </p>
               ) : null}
               {whoFor === message.id ? (
-                <ul className="bw-chat__reactors" aria-label="Qui a réagi">
-                  {reactors.isPending ? <li role="status">Chargement…</li> : null}
-                  {reactors.isError ? <li role="alert">Liste indisponible.</li> : null}
+                <ul className="bw-chat__reactors" aria-label={tr("ui.liveRoom.quiAReagi")}>
+                  {reactors.isPending ? <li role="status">{tr("ui.liveRoom.chargement")}</li> : null}
+                  {reactors.isError ? <li role="alert">{tr("ui.liveRoom.listeIndisponible")}</li> : null}
                   {reactors.data?.map((person) => (
                     <li key={person.card.handle}>
                       <button type="button" onClick={() => showProfile(person.card.handle)}>
                         <TravellerAvatar card={person.card} size={22} mood={false} static />
-                        {person.me ? "Vous" : person.card.pseudo}
+                        {person.me ? tr("ui.liveRoom.vous") : person.card.pseudo}
                         <span aria-hidden>{reactionEmoji(person.emoji)}</span>
                       </button>
                     </li>
@@ -928,7 +929,7 @@ function LiveChat({
                       <span
                         className="bw-chat__reactbar"
                         role="group"
-                        aria-label="Réagir à ce message"
+                        aria-label={tr("ui.liveRoom.reagirACeMessage")}
                       >
                         {REACTIONS.map((item) => (
                           <button
@@ -973,7 +974,7 @@ function LiveChat({
                   {!message.author.official ? (
                     <button type="button" onClick={() => showProfile(message.author.handle)}>
                       <UserRound size={13} aria-hidden />
-                      {message.me ? "Mon profil" : "Voir le profil"}
+                      {message.me ? tr("ui.liveRoom.monProfil") : tr("ui.liveRoom.voirLeProfil")}
                     </button>
                   ) : null}
                   {canWrite && !closed && !message.me && !message.author.official ? (
@@ -1084,8 +1085,7 @@ function LiveChat({
         <p className="bw-chat__guest-note" role="status">
           <UserPlus size={15} aria-hidden />
           <span>
-            <b>{inviteInfo.inviter}</b> vous invite dans ce salon. Écrivez votre message : votre
-            compte gratuit se crée à l'envoi.
+            <b>{inviteInfo.inviter}</b>{tr("ui.liveRoom.vousInviteDansCeSalon")}
           </span>
         </p>
       ) : null}
@@ -1155,7 +1155,7 @@ function LiveChat({
                   <button
                     key={emote}
                     type="button"
-                    aria-label={`Ajouter ${emote}`}
+                    aria-label={tr("ui.liveRoom.ajouter", { emote })}
                     onClick={() => setText((value) => `${value}${emote}`.slice(0, MAX_MESSAGE))}
                   >
                     {emote}
@@ -1407,7 +1407,7 @@ export function LiveRoom({
         <MessagesSquare size={17} aria-hidden />
         <h3>{title}</h3>
         <small className="bw-chat__live">
-          <i aria-hidden /> {online ? `${online} en ligne` : tr("ui.liveRoom.enDirect2")}
+          <i aria-hidden /> {online ? tr("ui.liveRoom.enLigne", { online }) : tr("ui.liveRoom.enDirect2")}
         </small>
       </header>
       {preview.length ? (

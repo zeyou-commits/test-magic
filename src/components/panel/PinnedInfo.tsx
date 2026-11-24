@@ -92,7 +92,7 @@ export function usePinnedNews(kind: RoomKind, room: string): NewsItem[] {
 
 const ago = (iso: string) => {
   const minutes = Math.max(1, Math.round((Date.now() - Date.parse(iso)) / 60_000));
-  if (minutes < 60) return `il y a ${minutes} min`;
+  if (minutes < 60) return tr("ui.pinnedInfo.ilYAMin", { minutes });
   const hours = Math.round(minutes / 60);
   if (hours < 48) return `il y a ${hours} h`;
   return `il y a ${Math.round(hours / 24)} j`;

@@ -6,7 +6,7 @@ import { legWithPauses } from "@/lib/ferry/itinerary";
 import { durationLabel } from "@/lib/ferry/journeySteps";
 import { thinLine, type JourneyPlaces } from "@/lib/ferry/journeyTrips";
 import type { Port } from "@/lib/ferry/types";
-import { tr } from "@/lib/i18n";
+import { tr, placeName } from "@/lib/i18n";
 
 /**
  * « D'où partez-vous ? Où allez-vous au bled ? » : facultatif. Les villes servent seulement au
@@ -43,8 +43,8 @@ export function JourneyPlacesForm({
     if (home.trim().length < 2 || bled.trim().length < 2) {
       setError(
         returning
-          ? "Indiquez votre ville de départ au bled et votre ville d'arrivée en Europe."
-          : "Indiquez une ville de départ et une ville au bled.",
+          ? tr("ui.journeyPlacesForm.indiquezVotreVilleDeDepart")
+          : tr("ui.journeyPlacesForm.indiquezUneVilleDeDepart"),
       );
       return;
     }
@@ -90,7 +90,7 @@ export function JourneyPlacesForm({
       setOpen(false);
     } catch (cause) {
       setError(
-        cause instanceof Error ? cause.message : "Calcul impossible pour le moment. Réessayez.",
+        cause instanceof Error ? cause.message : tr("ui.journeyPlacesForm.calculImpossiblePourLeMoment"),
       );
     } finally {
       setPending(false);
@@ -128,13 +128,13 @@ export function JourneyPlacesForm({
           <strong>{tr("ui.journeyPlacesForm.trajetSurMesure")}</strong>{" "}
           {returning ? (
             <>
-              {places.bled.split(",")[0]} → {algeriaPort.name} ≈ {durationLabel(places.algeriaMin)}{" "}
-              · {europePort.name} → {places.home.split(",")[0]} ≈ {durationLabel(places.europeMin)}
+              {places.bled.split(",")[0]} → {placeName(algeriaPort.name)} ≈ {durationLabel(places.algeriaMin)}{" "}
+              · {placeName(europePort.name)} → {places.home.split(",")[0]} ≈ {durationLabel(places.europeMin)}
             </>
           ) : (
             <>
-              {places.home.split(",")[0]} → {europePort.name} ≈ {durationLabel(places.europeMin)} ·{" "}
-              {algeriaPort.name} → {places.bled.split(",")[0]} ≈ {durationLabel(places.algeriaMin)}
+              {places.home.split(",")[0]} → {placeName(europePort.name)} ≈ {durationLabel(places.europeMin)} ·{" "}
+              {placeName(algeriaPort.name)} → {places.bled.split(",")[0]} ≈ {durationLabel(places.algeriaMin)}
             </>
           )}
         </p>
@@ -151,13 +151,13 @@ export function JourneyPlacesForm({
       <div>
         {returning ? (
           <>
-            {bledField("D'où partez-vous au bled ?")}
-            {homeField("Où arrivez-vous en Europe ?")}
+            {bledField(tr("ui.journeyPlacesForm.dOuPartezVousAu"))}
+            {homeField(tr("ui.journeyPlacesForm.ouArrivezVousEnEurope"))}
           </>
         ) : (
           <>
-            {homeField("D'où partez-vous ?")}
-            {bledField("Où allez-vous au bled ?")}
+            {homeField(tr("ui.journeyPlacesForm.dOuPartezVous"))}
+            {bledField(tr("ui.journeyPlacesForm.ouAllezVousAuBled"))}
           </>
         )}
       </div>
@@ -260,7 +260,7 @@ export function JourneyPlacesEntry({
           className="bw-round-button"
           data-filled={places ? "" : undefined}
           onClick={() => setOpen(true)}
-          aria-label={trip ? `Mon trajet : ${trip}, modifier` : tr("ui.journeyPlacesForm.personnaliserMonTrajet")}
+          aria-label={trip ? tr("ui.journeyPlacesForm.monTrajetModifier", { trip }) : tr("ui.journeyPlacesForm.personnaliserMonTrajet")}
           title={trip ?? tr("ui.journeyPlacesForm.personnaliserMonTrajet")}
         >
           <MapPin size={16} aria-hidden />

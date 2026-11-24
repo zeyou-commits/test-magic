@@ -26,7 +26,7 @@ function LegalPage() {
         sections={[
           {
             id: "editeur",
-            title: "Éditeur",
+            title: tr("ui.pageMentionsLegales.editeur"),
             body: (
               <p>
                 {tr("ui.pageMentionsLegales.bledwayEstEditeATitre")}<PageLink to="/contact">{tr("ui.pageMentionsLegales.contact")}</PageLink>.
@@ -35,7 +35,7 @@ function LegalPage() {
           },
           {
             id: "hebergement",
-            title: "Hébergement",
+            title: tr("ui.pageMentionsLegales.hebergement"),
             body: (
               <ul>
                 <li>
@@ -52,7 +52,7 @@ function LegalPage() {
           },
           {
             id: "sources",
-            title: "Sources des informations",
+            title: tr("ui.pageMentionsLegales.sourcesDesInformations"),
             body: (
               <p>
                 {tr("ui.pageMentionsLegales.horairesIssusDesProgrammesPublies")}{" "}
@@ -62,7 +62,7 @@ function LegalPage() {
           },
           {
             id: "responsabilite",
-            title: "Responsabilité",
+            title: tr("ui.pageMentionsLegales.responsabilite"),
             body: (
               <p>
                 {tr("ui.pageMentionsLegales.lesHorairesDureesEtDisponibilites")}<PageLink to="/conditions-utilisation">{tr("ui.pageMentionsLegales.conditionsDUtilisation")}</PageLink>.
@@ -71,7 +71,7 @@ function LegalPage() {
           },
           {
             id: "propriete",
-            title: "Propriété intellectuelle et crédits",
+            title: tr("ui.pageMentionsLegales.proprieteIntellectuelleEtCredits"),
             body: (
               <ul>
                 <li>
@@ -89,7 +89,7 @@ function LegalPage() {
           },
           {
             id: "donnees",
-            title: "Données personnelles",
+            title: tr("ui.pageMentionsLegales.donneesPersonnelles"),
             body: (
               <p>
                 {tr("ui.pageMentionsLegales.voirLa")}<PageLink to="/confidentialite">{tr("ui.pageMentionsLegales.politiqueDeConfidentialite")}</PageLink>.

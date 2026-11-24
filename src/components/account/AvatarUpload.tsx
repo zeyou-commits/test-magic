@@ -19,7 +19,7 @@ export function AvatarUpload({
       !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
       file.size > 2 * 1024 * 1024
     ) {
-      setError("Choisissez une photo JPG, PNG ou WebP de moins de 2 Mo.");
+      setError(tr("ui.avatarUpload.choisissezUnePhotoJpgPng"));
       return;
     }
     setBusy(true);
@@ -30,7 +30,7 @@ export function AvatarUpload({
     const result = await supabase.storage
       .from("bledway-avatars")
       .upload(path, file, { contentType: file.type, upsert: false });
-    if (result.error) setError("Import impossible. Vérifiez la connexion et réessayez.");
+    if (result.error) setError(tr("ui.avatarUpload.importImpossibleVerifiezLaConnexion"));
     else onUploaded(supabase.storage.from("bledway-avatars").getPublicUrl(path).data.publicUrl);
     setBusy(false);
   }

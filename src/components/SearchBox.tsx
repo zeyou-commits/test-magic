@@ -87,7 +87,7 @@ export function SearchBox({
         ) : null}
       </div>
       <p className="sr-only" aria-live="polite">
-        {busy ? tr("ui.searchBox.rechercheEnCours") : hits.length ? `${hits.length} lieux trouvés` : ""}
+        {busy ? tr("ui.searchBox.rechercheEnCours") : hits.length ? tr("ui.searchBox.lieuxTrouves", { length: hits.length }) : ""}
       </p>
       {hits.length ? (
         <ul id={listId} role="listbox" className="bw-searchbox__list">

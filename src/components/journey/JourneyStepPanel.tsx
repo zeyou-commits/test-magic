@@ -21,7 +21,7 @@ export function JourneyStepPanel({
   pinned = false,
   onClose,
   onAsk,
-  askLabel = "Une question sur cette étape ?",
+  askLabel = tr("ui.journeyStepPanel.uneQuestionSurCetteEtape"),
   before,
   after,
   onNavigate,
@@ -59,13 +59,13 @@ export function JourneyStepPanel({
   const longLead = clampLead && lead.length > 110;
   const badge =
     state === "current"
-      ? "Maintenant"
+      ? tr("ui.journeyStepPanel.maintenant")
       : state === "done"
-        ? "Passée"
-        : `Étape ${index + 1}/${count}`;
+        ? tr("ui.journeyStepPanel.passee")
+        : tr("ui.journeyStepPanel.etape", { v: index + 1, count });
   const finished = items.length > 0 && items.every((item) => done.includes(item.id));
   return (
-    <article className="bw-step-panel" data-state={state} aria-label={`Étape : ${title}`}>
+    <article className="bw-step-panel" data-state={state} aria-label={tr("ui.journeyStepPanel.etape2", { title })}>
       <header>
         <span className="bw-step-panel__badge" data-state={state}>
           {badge}

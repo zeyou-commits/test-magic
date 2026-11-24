@@ -2,6 +2,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
+import { tr } from "@/lib/i18n/translate";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 
@@ -55,31 +56,31 @@ export type RecentMessage = {
 /** Exemples « sur la route » : la bulle sort de l'autoroute, une petite voiture marque l'endroit. */
 export const ROAD_DEMOS: { pseudo: string; avatar: string; label: string; body: string; at: [number, number] }[] = [
   {
-    pseudo: "Mehdi",
+    get pseudo() { return tr("ui.libFerryChatDemo.mehdi"); },
     avatar: "papa",
-    label: "Sur l’A7 · vers Marseille",
-    body: "On est sur la route, on arrive !!! Un peu de bouchon vers Montélimar mais ça roule 🚗",
+    get label() { return tr("ui.libFerryChatDemo.surLA7VersMarseille"); },
+    get body() { return tr("ui.libFerryChatDemo.onEstSurLaRoute"); },
     at: [4.86, 44.6],
   },
   {
-    pseudo: "Sofia",
+    get pseudo() { return tr("ui.libFerryChatDemo.sofia"); },
     avatar: "fille_bled",
-    label: "Le Perthus · vers Barcelone",
-    body: "Frontière passée, pause café et on file au port 😄",
+    get label() { return tr("ui.libFerryChatDemo.lePerthusVersBarcelone"); },
+    get body() { return tr("ui.libFerryChatDemo.frontierePasseePauseCafeEt"); },
     at: [2.86, 42.46],
   },
   {
-    pseudo: "Amine",
+    get pseudo() { return tr("ui.libFerryChatDemo.amine"); },
     avatar: "jeune_degrade",
-    label: "Sur l’A-7 · vers Alicante",
-    body: "Plus qu’une heure jusqu’au port, les enfants demandent déjà la mer !",
+    get label() { return tr("ui.libFerryChatDemo.surLA7Vers"); },
+    get body() { return tr("ui.libFerryChatDemo.plusQuUneHeureJusqu"); },
     at: [-0.95, 38.92],
   },
   {
-    pseudo: "Houria",
+    get pseudo() { return tr("ui.libFerryChatDemo.houria"); },
     avatar: "tata_houria",
-    label: "Après Oran · vers le bled",
-    body: "Bien débarqués, la famille nous attend, on arrive 🥰",
+    get label() { return tr("ui.libFerryChatDemo.apresOranVersLeBled"); },
+    get body() { return tr("ui.libFerryChatDemo.bienDebarquesLaFamilleNous"); },
     at: [0.15, 35.4],
   },
 ];
@@ -99,34 +100,34 @@ export const recentChatQuery = queryOptions({
 /** Exemples intégrés, si la liste de l'admin n'est pas disponible. */
 export const BUILT_IN_DEMOS: Omit<DemoMessage, "id" | "sort" | "active">[] = [
   {
-    pseudo: "Nadia",
+    get pseudo() { return tr("ui.libFerryChatDemo.nadia"); },
     avatar: "maman",
-    label: "Port de Marseille",
-    body: "On est déjà dans la file, ça avance doucement mais ça avance !",
+    get label() { return tr("ui.libFerryChatDemo.portDeMarseille"); },
+    get body() { return tr("ui.libFerryChatDemo.onEstDejaDansLa"); },
   },
   {
-    pseudo: "Karim",
+    get pseudo() { return tr("ui.libFerryChatDemo.karim"); },
     avatar: "papa",
-    label: "Alicante → Oran",
-    body: "Quelqu'un sait si le restaurant à bord est ouvert ce soir ?",
+    get label() { return tr("ui.libFerryChatDemo.alicanteOran"); },
+    get body() { return tr("ui.libFerryChatDemo.quelquUnSaitSiLe"); },
   },
   {
-    pseudo: "Samia",
+    get pseudo() { return tr("ui.libFerryChatDemo.samia"); },
     avatar: "fille_bled",
-    label: "Port de Sète",
-    body: "Parking plein côté gare maritime, prévoyez de l'avance.",
+    get label() { return tr("ui.libFerryChatDemo.portDeSete"); },
+    get body() { return tr("ui.libFerryChatDemo.parkingPleinCoteGareMaritime"); },
   },
   {
-    pseudo: "Yacine",
+    get pseudo() { return tr("ui.libFerryChatDemo.yacine"); },
     avatar: "jeune_degrade",
-    label: "Valence → Alger",
-    body: "Mer calme pour l'instant, les enfants dorment enfin 😄",
+    get label() { return tr("ui.libFerryChatDemo.valenceAlger"); },
+    get body() { return tr("ui.libFerryChatDemo.merCalmePourLInstant"); },
   },
   {
-    pseudo: "Lina",
+    get pseudo() { return tr("ui.libFerryChatDemo.lina"); },
     avatar: "tata_houria",
-    label: "Port de Barcelone",
-    body: "Contrôles rapides ce matin, 20 minutes à peine.",
+    get label() { return tr("ui.libFerryChatDemo.portDeBarcelone"); },
+    get body() { return tr("ui.libFerryChatDemo.controlesRapidesCeMatin20"); },
   },
 ];
 

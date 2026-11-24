@@ -16,18 +16,18 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { name: "robots", content: "noindex, nofollow" },
-      { title: "Connexion — BledWay" },
-      { property: "og:title", content: "Connexion — BledWay" },
+      { title: tr("ui.pageAuth.connexionBledway") },
+      { property: "og:title", content: tr("ui.pageAuth.connexionBledway") },
       {
         property: "og:description",
-        content: "Connectez-vous à BledWay pour retrouver votre compte et vos contributions.",
+        content: tr("ui.pageAuth.connectezVousABledwayPour"),
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       {
         name: "description",
         content:
-          "Connectez-vous à BledWay pour noter les ports, laisser un avis et signaler une information inexacte.",
+          tr("ui.pageAuth.connectezVousABledwayPour2"),
       },
     ],
   }),
@@ -38,30 +38,30 @@ type Mode = "signin" | "signup" | "forgot" | "reset";
 
 function authErrorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message.toLowerCase() : "";
-  if (message.includes("invalid login credentials")) return "E-mail ou mot de passe incorrect.";
+  if (message.includes("invalid login credentials")) return tr("ui.pageAuth.eMailOuMotDe");
   if (message.includes("email not confirmed"))
-    return "Votre adresse e-mail n'est pas encore confirmée. Consultez votre boîte mail.";
+    return tr("ui.pageAuth.votreAdresseEMailN");
   if (message.includes("already registered") || message.includes("already been registered"))
-    return "Un compte existe déjà avec cette adresse e-mail.";
+    return tr("ui.pageAuth.unCompteExisteDejaAvec");
   if (
     message.includes("password") &&
     (message.includes("least") || message.includes("short") || message.includes("weak"))
   )
-    return "Le mot de passe est trop court ou trop faible (6 caractères minimum).";
+    return tr("ui.pageAuth.leMotDePasseEst");
   if (message.includes("same") && message.includes("password"))
-    return "Choisissez un mot de passe différent de l'ancien.";
+    return tr("ui.pageAuth.choisissezUnMotDePasse");
   if (message.includes("rate limit") || message.includes("too many"))
-    return "Trop de tentatives. Réessayez dans quelques minutes.";
+    return tr("ui.pageAuth.tropDeTentativesReessayezDans");
   if (message.includes("network") || message.includes("fetch"))
-    return "Connexion impossible. Vérifiez votre réseau et réessayez.";
-  return "Opération impossible pour le moment. Réessayez dans un instant.";
+    return tr("ui.pageAuth.connexionImpossibleVerifiezVotreReseau");
+  return tr("ui.pageAuth.operationImpossiblePourLeMoment");
 }
 
 const titles: Record<Mode, string> = {
-  signin: "Se connecter",
-  signup: "Créer un compte",
-  forgot: "Mot de passe oublié",
-  reset: "Nouveau mot de passe",
+  get signin() { return tr("ui.pageAuth.seConnecter"); },
+  get signup() { return tr("ui.pageAuth.creerUnCompte"); },
+  get forgot() { return tr("ui.pageAuth.motDePasseOublie2"); },
+  get reset() { return tr("ui.pageAuth.nouveauMotDePasse"); },
 };
 
 function AuthPage() {
@@ -207,7 +207,7 @@ function AuthPage() {
       } else {
         const { error } = await supabase.auth.updateUser({ password });
         if (error) throw error;
-        toast.success("Mot de passe modifié. Vous êtes connecté.");
+        toast.success(tr("ui.pageAuth.motDePasseModifieVous"));
         window.location.replace(next);
       }
     } catch (error) {
@@ -269,7 +269,7 @@ function AuthPage() {
               to={pro ? "/espace-compagnie" : "/"}
               className="inline-flex text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              {pro ? "← Espace compagnie" : tr("ui.pageAuth.backToMap")}
+              {pro ? tr("ui.pageAuth.espaceCompagnie") : tr("ui.pageAuth.backToMap")}
             </Link>
           </div>
           {(mode === "signin" || mode === "signup") && (!pro || proSignup) ? (
@@ -298,7 +298,7 @@ function AuthPage() {
               </button>
             </div>
           ) : null}
-          <h1 className="bw-auth-title mb-2 font-display text-3xl font-bold tracking-tight">{pro && mode === "signin" ? "Connexion à l'espace compagnie" : titles[mode]}</h1>
+          <h1 className="bw-auth-title mb-2 font-display text-3xl font-bold tracking-tight">{pro && mode === "signin" ? tr("ui.pageAuth.connexionALEspaceCompagnie") : titles[mode]}</h1>
           <p className="bw-auth-lead mb-5 text-sm leading-relaxed text-muted-foreground">
             {mode === "forgot"
               ? tr("ui.pageAuth.indiquezVotreEMailNous")
@@ -307,7 +307,7 @@ function AuthPage() {
                 : mode === "signup"
                   ? tr("ui.pageAuth.unProfilEnQuelquesInstants")
                   : pro
-                    ? "Utilisez le compte qui a reçu l'invitation de BledWay."
+                    ? tr("ui.pageAuth.utilisezLeCompteQuiA")
                     : tr("ui.pageAuth.heureuxDeVousRevoirReprenez")}
           </p>
 
@@ -320,28 +320,26 @@ function AuthPage() {
             >
               <strong className="block text-base">
                 {mode === "forgot" && linkIssue
-                  ? "Ce lien de réinitialisation n'est plus valable"
+                  ? tr("ui.pageAuth.ceLienDeReinitialisationN")
                   : linkIssue === "expired"
-                    ? "Ce lien de confirmation a expiré"
+                    ? tr("ui.pageAuth.ceLienDeConfirmationA")
                     : linkIssue
-                      ? "Ce lien n'est plus valable"
-                      : "Votre adresse e-mail n'est pas encore confirmée"}
+                      ? tr("ui.pageAuth.ceLienNEstPlus")
+                      : tr("ui.pageAuth.votreAdresseEMailN2")}
               </strong>
               {mode === "forgot" && linkIssue ? (
                 <p className="mt-1">
-                  Pour votre sécurité, ces liens ne servent qu'une fois et pendant une heure.
-                  Indiquez votre e-mail ci-dessous pour en recevoir un nouveau.
+                  {tr("ui.pageAuth.pourVotreSecuriteCesLiens")}
                 </p>
               ) : resent ? (
                 <p className="mt-1">
-                  C'est envoyé : un nouveau lien vient de partir vers <strong>{email}</strong>.
-                  Ouvrez-le dans l'heure, puis connectez-vous. Pensez à regarder dans les spams.
+                  {tr("ui.pageAuth.cEstEnvoyeUnNouveau")}<strong>{email}</strong>{tr("ui.pageAuth.ouvrezLeDansLHeure")}
                 </p>
               ) : (
                 <p className="mt-1">
                   {linkIssue
-                    ? "Les liens de confirmation ne sont valables qu'une heure. Si vous avez déjà confirmé, connectez-vous simplement ; sinon, recevez un nouveau lien."
-                    : "Ouvrez le lien reçu par e-mail pour activer votre compte. Vous ne le trouvez plus, ou il a expiré ?"}
+                    ? tr("ui.pageAuth.lesLiensDeConfirmationNe")
+                    : tr("ui.pageAuth.ouvrezLeLienRecuPar")}
                 </p>
               )}
               {!(mode === "forgot" && linkIssue) ? (
@@ -351,8 +349,8 @@ function AuthPage() {
                       type="email"
                       inputMode="email"
                       autoComplete="email"
-                      placeholder="Votre e-mail"
-                      aria-label="Votre e-mail"
+                      placeholder={tr("ui.pageAuth.votreEMail")}
+                      aria-label={tr("ui.pageAuth.votreEMail")}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="batogo-control bg-white"
@@ -365,12 +363,12 @@ function AuthPage() {
                     className="h-11 w-full rounded-xl text-sm font-semibold"
                   >
                     {resending
-                      ? "Envoi…"
+                      ? tr("ui.pageAuth.envoi")
                       : resendWait > 0
-                        ? `Nouvel envoi possible dans ${resendWait} s`
+                        ? tr("ui.pageAuth.nouvelEnvoiPossibleDansS", { resendWait })
                         : resent
-                          ? "Renvoyer encore"
-                          : "Recevoir un nouveau lien"}
+                          ? tr("ui.pageAuth.renvoyerEncore")
+                          : tr("ui.pageAuth.recevoirUnNouveauLien")}
                   </Button>
                 </div>
               ) : null}
@@ -408,8 +406,8 @@ function AuthPage() {
               <strong className="block text-base text-primary">{tr("ui.pageAuth.encoreUneEtape")}</strong>
               {tr("ui.pageAuth.consultezLEMailEnvoye")}<strong>{email}</strong>{tr("ui.pageAuth.etConfirmezVotreAdresseSi")}
               <span className="mt-2 block text-muted-foreground">
-                Le lien est valable une heure.{" "}
-                {resent ? "Un nouveau lien vient d'être envoyé." : "Rien reçu ?"}
+                {tr("ui.pageAuth.leLienEstValableUne")}{" "}
+                {resent ? tr("ui.pageAuth.unNouveauLienVientD") : tr("ui.pageAuth.rienRecu")}
               </span>
               <button
                 type="button"
@@ -418,10 +416,10 @@ function AuthPage() {
                 className="mt-2 block font-semibold text-primary underline underline-offset-2 disabled:no-underline disabled:opacity-60"
               >
                 {resending
-                  ? "Envoi…"
+                  ? tr("ui.pageAuth.envoi")
                   : resendWait > 0
-                    ? `Nouvel envoi possible dans ${resendWait} s`
-                    : "Renvoyer l'e-mail"}
+                    ? tr("ui.pageAuth.nouvelEnvoiPossibleDansS", { resendWait })
+                    : tr("ui.pageAuth.renvoyerLEMail")}
               </button>
               <button
                 type="button"
@@ -590,7 +588,7 @@ function AuthPage() {
               href="/espace-compagnie#demande"
               className="bw-auth-switch mt-6 block w-full text-center text-sm font-medium text-muted-foreground hover:text-primary hover:underline"
             >
-              Pas encore d'accès ? Demander un accès pour votre compagnie
+              {tr("ui.pageAuth.pasEncoreDAccesDemander")}
             </a>
           ) : (
           <button
@@ -633,22 +631,22 @@ function ProStory() {
           className="size-10 flex-none rounded-xl shadow-[0_0_0_1px_rgb(255_255_255/0.22),0_4px_14px_rgb(0_0_0/0.25)]"
         />
         <span className="grid leading-tight">
-          <strong className="text-base font-extrabold">BledWay</strong>
+          <strong className="text-base font-extrabold">{tr("ui.pageAuth.bledway")}</strong>
           <span className="text-[10.5px] font-extrabold uppercase tracking-[.09em] text-[#f6c445]">
-            Espace compagnie
+            {tr("ui.pageAuth.espaceCompagnieB")}
           </span>
         </span>
       </div>
       {/* Sur téléphone, le panneau est réduit à un bandeau : seul le logo y tient. */}
       <div className="relative z-10 hidden lg:block">
         <h2 className="font-display text-2xl font-bold leading-tight">
-          Votre compagnie, au plus près de ses passagers.
+          {tr("ui.pageAuth.votreCompagnieAuPlusPres")}
         </h2>
         <ul className="mt-4 grid gap-2 text-sm text-white/85">
           {[
-            "Horaires, annonces et réponses publiés en votre nom",
-            "Un compte nominatif par collaborateur",
-            "Accès sur invitation uniquement",
+            tr("ui.pageAuth.horairesAnnoncesEtReponsesPublies"),
+            tr("ui.pageAuth.unCompteNominatifParCollaborateur"),
+            tr("ui.pageAuth.accesSurInvitationUniquement"),
           ].map((item) => (
             <li key={item} className="flex items-start gap-2">
               <ShieldCheck size={17} className="mt-0.5 flex-none text-[#f6c445]" aria-hidden />

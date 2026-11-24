@@ -5,11 +5,11 @@ import { tr, lazyDateFormat } from "@/lib/i18n";
 import { euros, type Cout, type Reglages } from "@/lib/routesDuBled/budget";
 
 const VEHICULES: { id: Reglages["vehicule"]; label: string }[] = [
-  { id: "city", label: "Citadine" },
-  { id: "sedan", label: "Berline" },
+  { id: "city", get label() { return tr("ui.costView.citadine"); } },
+  { id: "sedan", get label() { return tr("ui.costView.berline"); } },
   { id: "suv", label: "4x4 / SUV" },
-  { id: "van", label: "Ludospace" },
-  { id: "utility", label: "Utilitaire" },
+  { id: "van", get label() { return tr("ui.costView.ludospace"); } },
+  { id: "utility", get label() { return tr("ui.costView.utilitaire"); } },
 ];
 const nomMois = (m: number) =>
   lazyDateFormat({ month: "long" }).format(new Date(2026, m - 1, 10));

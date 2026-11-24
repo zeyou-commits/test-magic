@@ -40,70 +40,70 @@ const PASSENGERS: { icon: LucideIcon; title: string; text: string; image: string
   [
     {
       icon: ClipboardList,
-      title: "Préparer",
-      text: "Un guide pas à pas : papiers voyageur par voyageur, calendrier à rebours, budget et rappels.",
+      get title() { return tr("ui.companyShowcase.preparer"); },
+      get text() { return tr("ui.companyShowcase.unGuidePasAPas"); },
       image: "/images/espace-compagnie/preparer.webp",
-      alt: "Écran « Préparer mon voyage » de BledWay sur téléphone",
+      get alt() { return tr("ui.companyShowcase.ecranPreparerMonVoyageDe"); },
     },
     {
       icon: Ticket,
-      title: "Réserver",
-      text: "Les départs de toutes les compagnies au même endroit, puis la réservation chez la compagnie ou le distributeur indiqué.",
+      get title() { return tr("ui.companyShowcase.reserver"); },
+      get text() { return tr("ui.companyShowcase.lesDepartsDeToutesLes"); },
       image: "/images/espace-compagnie/horaires.webp",
-      alt: "Liste des départs et arrivées des ferries sur BledWay",
+      get alt() { return tr("ui.companyShowcase.listeDesDepartsEtArrivees"); },
     },
     {
       icon: MapIcon,
-      title: "Suivre",
-      text: "La carte des navires et des ports, les changements d'horaire et les alertes sur la traversée suivie.",
+      get title() { return tr("ui.companyShowcase.suivre"); },
+      get text() { return tr("ui.companyShowcase.laCarteDesNaviresEt"); },
       image: "/images/espace-compagnie/suivre.webp",
-      alt: "Carte BledWay avec les navires en Méditerranée",
+      get alt() { return tr("ui.companyShowcase.carteBledwayAvecLesNavires"); },
     },
     {
       icon: MessagesSquare,
-      title: "Échanger",
-      text: "Un salon par traversée, des signalements faits sur place et des avis sur les navires.",
+      get title() { return tr("ui.companyShowcase.echanger"); },
+      get text() { return tr("ui.companyShowcase.unSalonParTraverseeDes"); },
       image: "/images/espace-compagnie/salons.webp",
-      alt: "Choix du salon de discussion d'une traversée sur BledWay",
+      get alt() { return tr("ui.companyShowcase.choixDuSalonDeDiscussion"); },
     },
   ];
 
 const PLACE: { icon: LucideIcon; title: string; text: string }[] = [
   {
     icon: CalendarClock,
-    title: "Un bouton par traversée",
-    text: "Retard, nouvel horaire, autre navire, annulation ou simple consigne : tout part tout de suite, signé de votre compagnie, et les passagers qui suivent la traversée sont prévenus.",
+    get title() { return tr("ui.companyShowcase.unBoutonParTraversee"); },
+    get text() { return tr("ui.companyShowcase.retardNouvelHoraireAutreNavire"); },
   },
   {
     icon: Users,
-    title: "Qui vous écoute",
-    text: "Vous voyez combien de personnes suivent chacune de vos traversées, et ce qui attend une réponse de votre part.",
+    get title() { return tr("ui.companyShowcase.quiVousEcoute"); },
+    get text() { return tr("ui.companyShowcase.vousVoyezCombienDePersonnes"); },
   },
   {
     icon: MessageSquareReply,
-    title: "Votre réponse, à côté de l'avis",
-    text: "Répondez aux avis et aux signalements : votre réponse s'affiche juste en dessous, là où les voyageurs la lisent.",
+    get title() { return tr("ui.companyShowcase.votreReponseACoteDe"); },
+    get text() { return tr("ui.companyShowcase.repondezAuxAvisEtAux"); },
   },
   {
     icon: Images,
-    title: "Votre fiche et vos photos",
-    text: "Modifiez vous-même votre fiche et publiez des photos informatives de vos navires.",
+    get title() { return tr("ui.companyShowcase.votreFicheEtVosPhotos"); },
+    get text() { return tr("ui.companyShowcase.modifiezVousMemeVotreFiche"); },
   },
 ];
 
 const RULES: { icon: LucideIcon; text: string }[] = [
   {
     icon: BadgeCheck,
-    text: "Publié sous votre nom, tout de suite. BledWay peut retirer après coup ce qui enfreint les règles communes.",
+    get text() { return tr("ui.companyShowcase.publieSousVotreNomTout"); },
   },
-  { icon: Scale, text: "Aucun avis n'est masqué, noté ni effacé par une compagnie." },
+  { icon: Scale, get text() { return tr("ui.companyShowcase.aucunAvisNEstMasque"); } },
   {
     icon: UserCheck,
-    text: "Des comptes nominatifs : chaque action est attribuée à une personne de votre équipe.",
+    get text() { return tr("ui.companyShowcase.desComptesNominatifsChaqueAction"); },
   },
   {
     icon: ShieldCheck,
-    text: "Vous voyez combien de personnes suivent vos traversées ou recevront une annonce, jamais qui elles sont.",
+    get text() { return tr("ui.companyShowcase.vousVoyezCombienDePersonnes2"); },
   },
 ];
 
@@ -320,9 +320,9 @@ export function CompanyShowcase({
               </p>
               <ul className="mt-5 grid gap-2 text-[15px] font-semibold">
                 {[
-                  "Prévenez vos passagers en direct",
-                  "Répondez là où ils lisent les avis",
-                  "Corrigez votre fiche vous-même",
+                  tr("ui.companyShowcase.prevenezVosPassagersEnDirect"),
+                  tr("ui.companyShowcase.repondezLaOuIlsLisent"),
+                  tr("ui.companyShowcase.corrigezVotreFicheVousMeme"),
                 ].map((gain) => (
                   <li key={gain} className="flex items-center gap-2">
                     <Check className="size-4 flex-none text-[#f6c445]" aria-hidden />

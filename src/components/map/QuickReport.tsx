@@ -50,7 +50,7 @@ import {
 import { OptionIcon, SituationBadge } from "@/components/panel/SituationIcon";
 import { PhotoPicker } from "@/components/photos/Photos";
 import { photosKey, submitPhoto, type PreparedPhoto } from "@/lib/photos/photos";
-import { tr, intlLocale } from "@/lib/i18n";
+import { tr, intlLocale, placeName } from "@/lib/i18n";
 
 // Suivis du compte (table bw_follows), absente des types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -107,7 +107,7 @@ const failure = (message?: string) =>
     message,
   )
     ? message
-    : "L’envoi n’a pas abouti. Réessayez dans quelques instants.";
+    : tr("ui.quickReport.lEnvoiNAPas");
 
 /**
  * Signaler une situation, façon Waze : « Que voyez-vous ? », une précision, envoyer.
@@ -491,11 +491,11 @@ export function QuickReport({
       if (photos.length && user && input.portId && situationOf(input.category!).where === "port") {
         if (result.withoutPosition)
           setPhotoResult(
-            "La photo n’a pas été jointe : le signalement attend d’abord la vérification de l’équipe.",
+            tr("ui.quickReport.laPhotoNAPas"),
           );
         else
           await submitPhoto("report", input.portId, user.id, photos[0]!)
-            .then(() => setPhotoResult("Votre photo sera visible après validation par l’équipe."))
+            .then(() => setPhotoResult(tr("ui.quickReport.votrePhotoSeraVisibleApres")))
             .catch((error: Error) => setPhotoResult(error.message));
         void queryClient.invalidateQueries({ queryKey: photosKey });
       }
@@ -571,7 +571,7 @@ export function QuickReport({
       </div>
     </section>
   );
-  const groups = [group("port", "Au port"), group("vessel", "Le navire")];
+  const groups = [group("port", tr("ui.quickReport.auPort")), group("vessel", tr("ui.quickReport.leNavire"))];
   if (draft.focus === "vessel") groups.reverse();
 
   let body: ReactNode;
@@ -594,10 +594,10 @@ export function QuickReport({
               ? tr("ui.quickReport.votrePositionNAPas")
               : sentForReview
                 ? tr("ui.quickReport.lHoraireOuLaPosition")
-                : `${draft.category ? `Visible environ ${lifetimeLabel(draft.category)}. ` : ""}${
+                : `${draft.category ? tr("ui.quickReport.visibleEnviron", { lifetimeLabel: lifetimeLabel(draft.category) }) : ""}${
                     impact
-                      ? "Il apparaîtra sur la carte dès qu’un autre voyageur le confirme."
-                      : "Les autres voyageurs peuvent le confirmer ou dire que ce n’est plus le cas."
+                      ? tr("ui.quickReport.ilApparaitraSurLaCarte")
+                      : tr("ui.quickReport.lesAutresVoyageursPeuventLe")
                   }`}
         </p>
         {photoResult ? <p className="bw-report-photo-note">{photoResult}</p> : null}
@@ -672,7 +672,7 @@ export function QuickReport({
                   .sort((a, b) => a.name.localeCompare(b.name, intlLocale()))
                   .map((port) => (
                     <option key={port.id} value={port.id}>
-                      {port.name} ({port.country_name})
+                      {placeName(port.name)} ({port.country_name})
                     </option>
                   ))}
               </select>
@@ -696,7 +696,7 @@ export function QuickReport({
             >
               <option value="">{tr("ui.quickReport.choisirLeNavire")}</option>
               {draft.portId ? (
-                <optgroup label={`À quai à ${portName(draft.portId) ?? "ce port"}`}>
+                <optgroup label={tr("ui.quickReport.aQuaiA", { v: portName(draft.portId) ?? "ce port" })}>
                   {vessels
                     .filter((s) => s.state === "docked" && s.portId === draft.portId)
                     .map((s) => (
@@ -714,7 +714,7 @@ export function QuickReport({
                       {s.name} ·{" "}
                       {s.state === "sea"
                         ? tr("ui.quickReport.enMer")
-                        : `à quai${s.portId ? ` à ${portName(s.portId) ?? ""}` : ""}`}
+                        : tr("ui.quickReport.aQuai", { v: s.portId ? ` à ${portName(s.portId) ?? ""}` : "" })}
                     </option>
                   ))}
               </optgroup>
@@ -761,7 +761,7 @@ export function QuickReport({
                 <small>
                   {wide
                     ? tr("ui.quickReport.aucuneTraverseeProgrammeeAuDepart")
-                    : `Aucune traversée programmée au départ de ce port dans les ${REPORT_WINDOW_DAYS} prochains jours.`}
+                    : tr("ui.quickReport.aucuneTraverseeProgrammeeAuDepart2", { REPORTWINDOWDAYS: REPORT_WINDOW_DAYS })}
                 </small>
               )}
               {staff ? (
@@ -775,8 +775,8 @@ export function QuickReport({
                   }}
                 >
                   {beyond
-                    ? `Revenir aux ${REPORT_WINDOW_DAYS} prochains jours`
-                    : `Voir au-delà de ${REPORT_WINDOW_DAYS} jours (équipe)`}
+                    ? tr("ui.quickReport.revenirAuxProchainsJours", { REPORTWINDOWDAYS: REPORT_WINDOW_DAYS })
+                    : tr("ui.quickReport.voirAuDelaDeJours", { REPORTWINDOWDAYS: REPORT_WINDOW_DAYS })}
                 </button>
               ) : null}
             </div>
@@ -925,7 +925,7 @@ export function QuickReport({
       <span>{tr("ui.quickReport.signaler")}</span>
     </button>
   );
-  const title = step === "done" ? "Signalement envoyé" : "Que voyez-vous ?";
+  const title = step === "done" ? tr("ui.quickReport.signalementEnvoye") : tr("ui.quickReport.queVoyezVous");
 
   return (
     <div className="bw-report" ref={wrapRef}>
@@ -938,7 +938,7 @@ export function QuickReport({
             type="button"
             className="bw-report-fab bw-report-fab--mobile"
             aria-label={
-              nearPort ? `Signaler une situation à ${nearPort}` : tr("ui.quickReport.signalerUneSituation")
+              nearPort ? tr("ui.quickReport.signalerUneSituationA", { nearPort }) : tr("ui.quickReport.signalerUneSituation")
             }
             data-near={nearPort ? true : undefined}
             onClick={() => start()}

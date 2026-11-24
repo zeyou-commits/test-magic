@@ -73,8 +73,8 @@ export function GalleryUploader({
     if (images.length > taken.length)
       toast.message(
         room > 0
-          ? `${taken.length} photo${taken.length > 1 ? "s" : ""} gardée${taken.length > 1 ? "s" : ""} sur ${images.length} : ${max} au plus par envoi.`
-          : "Plus de place pour cet envoi.",
+          ? tr("ui.galleryUploader.photoGardeeSurAuPlus", { length: taken.length, v: taken.length > 1 ? "s" : "", v2: taken.length > 1 ? "s" : "", length2: images.length, max })
+          : tr("ui.galleryUploader.plusDePlacePourCet"),
       );
     const { preparePhoto } = await import("@/lib/photos/photos");
     for (const file of taken) {
@@ -136,10 +136,10 @@ export function GalleryUploader({
     }
     setSending(null);
     if (done === queue.length) {
-      toast.success(done > 1 ? `${done} photos publiées.` : "Photo publiée.");
+      toast.success(done > 1 ? tr("ui.galleryUploader.photosPubliees", { done }) : tr("ui.galleryUploader.photoPubliee"));
       onClose();
     } else if (done)
-      toast.message(`${done} photo${done > 1 ? "s" : ""} publiée${done > 1 ? "s" : ""}.`);
+      toast.message(tr("ui.galleryUploader.photoPubliee2", { done, v: done > 1 ? "s" : "", v2: done > 1 ? "s" : "" }));
   };
 
   const busy = Boolean(sending) || preparing > 0;
@@ -169,7 +169,7 @@ export function GalleryUploader({
         </div>
         <span className="text-xs text-muted-foreground">
           {category
-            ? `Par exemple : ${PHOTO_CATEGORY_FORM[category].hint.toLowerCase()}.`
+            ? tr("ui.galleryUploader.parExemple", { v: PHOTO_CATEGORY_FORM[category].hint.toLowerCase() })
             : tr("ui.galleryUploader.choisissezUneCategorieLesVoyageurs")}
         </span>
       </fieldset>
@@ -227,17 +227,17 @@ export function GalleryUploader({
               <li key={item.key} className="flex gap-2 rounded-lg border border-border p-1.5">
                 <img
                   src={item.url}
-                  alt={`Photo ${index + 1}, prête à partir`}
+                  alt={tr("ui.galleryUploader.photoPreteAPartir", { v: index + 1 })}
                   className="h-16 w-24 flex-none rounded-md object-cover"
                 />
                 <div className="grid min-w-0 flex-1 content-start gap-1">
                   <Input
                     value={item.caption}
                     maxLength={200}
-                    aria-label={`Légende de la photo ${index + 1}`}
+                    aria-label={tr("ui.galleryUploader.legendeDeLaPhoto", { v: index + 1 })}
                     placeholder={
                       category
-                        ? `Légende (sinon « ${PHOTO_CATEGORY_FORM[category].label} »)`
+                        ? tr("ui.galleryUploader.legendeSinon", { label: PHOTO_CATEGORY_FORM[category].label })
                         : tr("ui.galleryUploader.legendeFacultatif")
                     }
                     disabled={Boolean(sending)}
@@ -290,9 +290,9 @@ export function GalleryUploader({
         <Button type="button" size="sm" disabled={!ready} onClick={() => void send()}>
           <Send className="size-4" aria-hidden />{" "}
           {sending
-            ? `Envoi ${Math.min(sending.done + 1, sending.total)} sur ${sending.total}…`
+            ? tr("ui.galleryUploader.envoiSur", { v: Math.min(sending.done + 1, sending.total), total: sending.total })
             : items.length > 1
-              ? `Publier les ${items.length} photos`
+              ? tr("ui.galleryUploader.publierLesPhotos", { length: items.length })
               : tr("ui.galleryUploader.publierLaPhoto")}
         </Button>
         <Button

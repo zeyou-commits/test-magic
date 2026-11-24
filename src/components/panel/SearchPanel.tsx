@@ -653,7 +653,7 @@ export function SearchPanel({
   ]);
   const alternativesBlock = alternatives.length ? (
     <section className="bw-alts" aria-labelledby="alts-titre">
-      <h3 id="alts-titre">Autres possibilités sur ces jours-là</h3>
+      <h3 id="alts-titre">{tr("ui.searchPanel.autresPossibilitesSurCesJours")}</h3>
       <ul>
         {alternatives.map((item) => (
           <li key={`${item.kind}:${item.portId}`}>
@@ -669,7 +669,7 @@ export function SearchPanel({
             >
               <span className="bw-alts__line">{item.label}</span>
               <span className="bw-alts__meta">
-                {item.count} départ{item.count > 1 ? "s" : ""} · traversée dès ≈{" "}
+                {item.count}{tr("ui.searchPanel.departB")}{item.count > 1 ? "s" : ""}{tr("ui.searchPanel.traverseeDes")}{" "}
                 {formatEuro(item.fare).replace("~", "")}
               </span>
               {item.road && Math.abs(item.road.km) >= 30 ? (
@@ -794,7 +794,7 @@ export function SearchPanel({
       : filters.arrivalPortIds.length === 1
         ? { type: "port" as const, id: filters.arrivalPortIds[0]! }
         : null;
-  const reportContext = `Recherche sans départ affiché : ${fromName(filters.departurePortIds) || "tous ports"} → ${fromName(filters.arrivalPortIds) || "tous ports"}${filters.date ? `, le ${filters.date}` : ""}.`;
+  const reportContext = tr("ui.searchPanel.rechercheSansDepartAffiche", { v: fromName(filters.departurePortIds) || "tous ports", v2: fromName(filters.arrivalPortIds) || "tous ports", v3: filters.date ? `, le ${filters.date}` : "" });
 
   // Sans date de retour, un voyageur n'a pas encore d'aller-retour à comparer.
   const showTrips = filters.roundTrip && Boolean(filters.returnDate);
@@ -802,10 +802,10 @@ export function SearchPanel({
     ? roundTrips.main.length + roundTrips.alternatives.length
     : outList.length;
   const portsLabel = (ids: string[]) =>
-    ids.length === 0 ? "Tous ports" : ids.length === 1 ? fromName(ids) : `${ids.length} ports`;
+    ids.length === 0 ? tr("ui.searchPanel.tousPorts") : ids.length === 1 ? fromName(ids) : `${ids.length} ports`;
   const datesLabel = filters.date
-    ? `${shortDay(filters.date)}${filters.roundTrip ? ` → ${filters.returnDate ? shortDay(filters.returnDate) : "retour à définir"}` : ""}${filters.flexDays ? ` ±${filters.flexDays}j` : ""}`
-    : "Dates flexibles";
+    ? `${shortDay(filters.date)}${filters.roundTrip ? ` → ${filters.returnDate ? shortDay(filters.returnDate) : tr("ui.searchPanel.retourADefinir")}` : ""}${filters.flexDays ? ` ±${filters.flexDays}j` : ""}`
+    : tr("ui.searchPanel.datesFlexibles");
 
   // Grand écran : barre de recherche façon comparateur, sur toute la largeur de la carte.
   // Les résultats restent dans le volet de gauche ; la carte reste utilisable à droite.
@@ -815,7 +815,7 @@ export function SearchPanel({
       ? `${tripCount} aller${tripCount > 1 ? "s" : ""}-retour${tripCount > 1 ? "s" : ""}`
       : ""
     : outList.length
-      ? `${outList.length} départ${outList.length > 1 ? "s" : ""}`
+      ? tr("ui.searchPanel.depart2", { length: outList.length, v: outList.length > 1 ? "s" : "" })
       : "";
   // Accueil PC sans port choisi : les trois lignes qui ont le plus de départs à venir, dans le
   // sens de la recherche, en un geste. Calculé depuis les départs publiés, rien d'inventé.
@@ -853,7 +853,7 @@ export function SearchPanel({
             aria-label={tr("ui.searchPanel.trouverMaTraversee")}
             className="pointer-events-auto absolute inset-x-5 top-5 z-[45] rounded-3xl border border-white/70 bg-card px-5 pb-3.5 pt-3.5 shadow-[0_16px_48px_#16324a26]"
           >
-            <h2 className="sr-only">Réserver une traversée</h2>
+            <h2 className="sr-only">{tr("ui.searchPanel.reserverUneTraversee")}</h2>
             <div className="flex items-stretch gap-3">
               <div className="bw-wide-bar grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1.15fr)] gap-[2px] overflow-hidden rounded-2xl border border-border/70 bg-border/70">
                 <div className={`${wideSegment} relative pe-4`}>
@@ -877,7 +877,7 @@ export function SearchPanel({
                   <button
                     type="button"
                     title={tr("ui.searchPanel.inverserLeSens")}
-                    aria-label={`Inverser le sens : actuellement ${reversed ? "Algérie → Europe" : "Europe → Algérie"}`}
+                    aria-label={tr("ui.searchPanel.inverserLeSensActuellement", { v: reversed ? "Algérie → Europe" : "Europe → Algérie" })}
                     onClick={() => {
                       setSwapTurns((turns) => turns + 1);
                       onFiltersChange(swapDirection(filters));
@@ -934,8 +934,8 @@ export function SearchPanel({
                                 {value
                                   ? `${shortDay(value)}${leg === "out" && filters.flexDays ? ` ±${filters.flexDays} j` : ""}`
                                   : leg === "out"
-                                    ? "Choisir"
-                                    : "+ Ajouter"}
+                                    ? tr("ui.searchPanel.choisir")
+                                    : tr("ui.searchPanel.ajouter")}
                               </span>
                             </button>
                           );
@@ -972,12 +972,12 @@ export function SearchPanel({
                         <Users className="size-5 shrink-0 text-muted-foreground" aria-hidden />
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                            Voyageurs
+                            {tr("ui.searchPanel.voyageurs")}
                           </span>
                           <span className="block truncate text-sm font-semibold text-foreground">
                             {summarizePassengers(profile.passengers)}
                             {profile.vehicle === "none"
-                              ? " · sans véhicule"
+                              ? tr("ui.searchPanel.sansVehicule")
                               : ` · ${profile.car ? `${profile.car.make} ${profile.car.model}` : summarizeVehicle(profile)}`}
                           </span>
                         </span>
@@ -995,7 +995,7 @@ export function SearchPanel({
                         onClick={() => setTravellersOpen(false)}
                         className="mt-3 h-10 w-full rounded-full bg-primary text-sm font-bold text-primary-foreground hover:brightness-110"
                       >
-                        Valider
+                        {tr("ui.searchPanel.valider")}
                       </button>
                     </PopoverContent>
                   </Popover>
@@ -1018,7 +1018,7 @@ export function SearchPanel({
                 }}
                 className="bw-wide-cta"
               >
-                {wideCount ? `Afficher ${wideCount}` : "Afficher les départs"}
+                {wideCount ? tr("ui.searchPanel.afficher", { wideCount }) : tr("ui.searchPanel.afficherLesDeparts")}
                 <span className="bw-wide-cta__go" aria-hidden>
                   <img src="/504-cta.webp" alt="" width={152} height={96} className="bw-wide-cta__car" />
                 </span>
@@ -1057,7 +1057,7 @@ export function SearchPanel({
                 label={tr("ui.searchPanel.navire")}
                 all={
                   filters.companyId
-                    ? (() => { const n = companies.find((company) => company.id === filters.companyId)?.name; return n ? `Tous les navires ${/^[aeiouyhàâéèêîôûAEIOUYHÀÂÉÈÊÎÔÛ]/.test(n) ? "d'" : "de "}${n}` : "Tous les navires de la compagnie"; })()
+                    ? (() => { const n = companies.find((company) => company.id === filters.companyId)?.name; return n ? tr("ui.searchPanel.tousLesNavires", { v: /^[aeiouyhàâéèêîôûAEIOUYHÀÂÉÈÊÎÔÛ]/.test(n) ? "d'" : "de ", n }) : tr("ui.searchPanel.tousLesNaviresDeLa"); })()
                     : "Tous les navires"
                 }
                 icon={<Ship className="size-4" aria-hidden />}
@@ -1106,9 +1106,9 @@ export function SearchPanel({
                 >
                   {(
                     [
-                      ["date", "Plus tôt"],
-                      ["price", "Moins cher"],
-                      ["duration", "Plus court"],
+                      ["date", tr("ui.searchPanel.plusTot")],
+                      ["price", tr("ui.searchPanel.moinsCher")],
+                      ["duration", tr("ui.searchPanel.plusCourt")],
                     ] as const
                   ).map(([key, label]) => (
                     <button
@@ -1124,8 +1124,8 @@ export function SearchPanel({
                 </div>
               ) : null}
               {busiestRoutes.length ? (
-                <div className="bw-wide-quick" role="group" aria-label="Trajets populaires">
-                  <span className="bw-wide-quick__label">Populaires</span>
+                <div className="bw-wide-quick" role="group" aria-label={tr("ui.searchPanel.trajetsPopulaires")}>
+                  <span className="bw-wide-quick__label">{tr("ui.searchPanel.populaires")}</span>
                   {busiestRoutes.map(({ route, from, to }) => (
                     <button
                       key={route.id}
@@ -1301,7 +1301,7 @@ export function SearchPanel({
             <button
               type="button"
               title={tr("ui.searchPanel.inverserLeSens")}
-              aria-label={`Inverser le sens : actuellement ${reversed ? "Algérie → Europe" : "Europe → Algérie"}`}
+              aria-label={tr("ui.searchPanel.inverserLeSensActuellement", { v: reversed ? "Algérie → Europe" : "Europe → Algérie" })}
               onClick={() => onFiltersChange(swapDirection(filters))}
               className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1.5 text-xs font-semibold text-primary shadow-sm transition hover:bg-primary hover:text-primary-foreground"
             >
@@ -1431,7 +1431,7 @@ export function SearchPanel({
           <StepLabel
             open={step === 3}
             onOpen={() => setStep(3)}
-            summary={`${summarizePassengers(profile.passengers)}${profile.vehicle !== "none" ? ` · ${summarizeVehicle(profile)}` : " · Sans véhicule"}`}
+            summary={`${summarizePassengers(profile.passengers)}${profile.vehicle !== "none" ? ` · ${summarizeVehicle(profile)}` : tr("ui.searchPanel.sansVehicule2")}`}
           >
             {tr("ui.searchPanel.quiVoyageAvecQuelVehicule")}
           </StepLabel>
@@ -1544,7 +1544,7 @@ export function SearchPanel({
                     {active && resultCount ? ` (${resultCount})` : ""}
                   </span>
                   <span className="max-md:hidden">
-                    Voir les traversées
+                    {tr("ui.searchPanel.voirLesTraversees")}
                     {active && resultCount ? ` (${resultCount})` : ""}
                   </span>
                 </button>
@@ -1631,7 +1631,7 @@ export function SearchPanel({
                     liveByDeparture={liveByDeparture}
                     title={
                       hasPair
-                        ? `Aller · ${fromName(filters.departurePortIds)} → ${fromName(filters.arrivalPortIds)}`
+                        ? tr("ui.searchPanel.aller2", { fromName: fromName(filters.departurePortIds), fromName2: fromName(filters.arrivalPortIds) })
                         : filters.departurePortIds.length || filters.arrivalPortIds.length
                           ? tr("ui.searchPanel.traversees")
                           : tr("ui.searchPanel.prochainsDeparts")
@@ -1706,11 +1706,11 @@ const roundEuros = (euros: number) =>
 /** « 1 010 km de route en plus depuis chez vous (≈ 190 €) », ou en moins. */
 function roadLabel(kind: "from" | "to", road: { km: number; euros: number }, byCar: boolean) {
   const more = road.km > 0;
-  const where = kind === "from" ? "depuis chez vous" : "jusqu'à votre destination";
+  const where = kind === "from" ? tr("ui.searchPanel.depuisChezVous") : tr("ui.searchPanel.jusquAVotreDestination");
   // Insécables : « + ≈ 80 € » et « + 420 km » ne se coupent pas en fin de ligne.
   const cost =
     kind === "from" && byCar ? ` (${more ? "+" : "−"} ≈ ${roundEuros(road.euros)} €)` : "";
-  return `${more ? "+" : "−"} ${roundKm(road.km)} km de route ${where}${cost}`;
+  return tr("ui.searchPanel.kmDeRoute", { v: more ? "+" : "−", roundKm: roundKm(road.km), where, cost });
 }
 
 const bySailing = (sortBy: SortBy, profile: TripProfileValue) => (a: Sailing, b: Sailing) =>
@@ -2075,8 +2075,8 @@ function RoundTripSection({
             tone="stuck"
             title={
               help.reason.kind === "unknown"
-                ? `Pas d'aller-retour par le même port à ces dates`
-                : `${help.leg === "aller" ? "Aller" : "Retour"} : ${reasonTitle(help.reason, help.leg === "aller" ? dateLabel.out : dateLabel.back).toLowerCase()}`
+                ? tr("ui.searchPanel.pasDAllerRetourPar")
+                : `${help.leg === "aller" ? tr("ui.searchPanel.aller") : tr("ui.searchPanel.retour")} : ${reasonTitle(help.reason, help.leg === "aller" ? dateLabel.out : dateLabel.back).toLowerCase()}`
             }
             actions={
               <>
@@ -2084,7 +2084,7 @@ function RoundTripSection({
                   ? [help.out.before, help.out.after].map((day) =>
                       day ? (
                         <Bw504Button key={`o${day}`} primary onClick={() => onDates({ date: day })}>
-                          Aller {fmtShort(day, true)}
+                          {tr("ui.searchPanel.allerB")}{fmtShort(day, true)}
                         </Bw504Button>
                       ) : null,
                     )
@@ -2096,12 +2096,12 @@ function RoundTripSection({
                       primary={help.leg === "retour"}
                       onClick={() => onDates({ returnDate: day })}
                     >
-                      Retour {fmtShort(day, true)}
+                      {tr("ui.searchPanel.retourB")}{fmtShort(day, true)}
                     </Bw504Button>
                   ) : null,
                 )}
                 {flexDays < 3 ? (
-                  <Bw504Button onClick={() => onDates({ flexDays: 3 })}>± 3 jours</Bw504Button>
+                  <Bw504Button onClick={() => onDates({ flexDays: 3 })}>{tr("ui.searchPanel.t3Jours")}</Bw504Button>
                 ) : null}
                 {help.reason.kind === "unknown" && reportTarget ? (
                   <span className="bw-504note__report">
@@ -2119,8 +2119,8 @@ function RoundTripSection({
           >
             {help.reason.kind === "unknown"
               ? otherPorts.length
-                ? "Des retours existent par un autre port : regarde juste en dessous, ou décale tes dates."
-                : "Aucun départ connu ne colle à ces deux dates. Décale un peu l'aller ou le retour, ça part souvent mieux."
+                ? tr("ui.searchPanel.desRetoursExistentParUn")
+                : tr("ui.searchPanel.aucunDepartConnuNeColle")
               : reasonBody(help.reason, "")}
           </Bw504Note>
         )}
@@ -2192,7 +2192,7 @@ function reasonTitle(reason: NoSailingReason, date: string | null) {
     case "notThatDay":
       return `Aucun navire le ${date ? weekdayName(date) : "jour choisi"} sur cette ligne`;
     default:
-      return "Je n'ai rien trouvé, et je ne sais pas pourquoi";
+      return tr("ui.searchPanel.jeNAiRienTrouve");
   }
 }
 
@@ -2212,7 +2212,7 @@ function reasonBody(reason: NoSailingReason, fallback: string) {
     case "notThatDay":
       return `Elle part le ${weekdayList(reason.weekdays)} : prends le jour le plus proche.`;
     default:
-      return `${fallback} Vérifie chez la compagnie, et dis-le-moi si tu trouves.`;
+      return tr("ui.searchPanel.verifieChezLaCompagnieEt", { fallback });
   }
 }
 

@@ -37,7 +37,7 @@ import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import { useVesselAlerts } from "@/lib/ferry/vesselAlerts";
 import { breadcrumbSchema, seoHead } from "@/lib/seo/site";
 import { Breadcrumbs } from "@/components/editorial/Editorial";
-import { tr, intlLocale } from "@/lib/i18n";
+import { tr, intlLocale, placeName } from "@/lib/i18n";
 
 const BoardMap = lazy(() => import("@/components/board/BoardMap"));
 
@@ -123,76 +123,74 @@ function EmptyBoard({
     return (
       <Bw504Note
         tone="stuck"
-        title={`Rien ne correspond à « ${term} »`}
+        title={tr("ui.pageHoraires.rienNeCorrespondA", { term })}
         actions={
           <Bw504Button primary onClick={onClearTerm}>
-            Effacer la recherche
+            {tr("ui.pageHoraires.effacerLaRecherche")}
           </Bw504Button>
         }
       >
-        Avec les autres filtres, il y a des départs : c'est le mot cherché qui les cache.
+        {tr("ui.pageHoraires.avecLesAutresFiltresIl")}
       </Bw504Note>
     );
   if (why.kind === "company")
     return (
       <Bw504Note
         tone="stuck"
-        title="Pas de départ pour ce choix"
+        title={tr("ui.pageHoraires.pasDeDepartPourCe")}
         actions={
           <Bw504Button primary onClick={onAllCompanies}>
-            Toutes les compagnies
+            {tr("ui.pageHoraires.toutesLesCompagnies")}
           </Bw504Button>
         }
       >
-        D'autres compagnies partent avec ces filtres.
+        {tr("ui.pageHoraires.dAutresCompagniesPartentAvec")}
       </Bw504Note>
     );
   if (why.kind === "notPublished")
     return (
       <Bw504Note
         tone="stuck"
-        title="Les horaires ne sont pas encore sortis"
+        title={tr("ui.pageHoraires.lesHorairesNeSontPas")}
         actions={
           <Bw504Button primary onClick={onClear}>
-            Tout effacer
+            {tr("ui.pageHoraires.toutEffacerB")}
           </Bw504Button>
         }
       >
-        Avec ces filtres, les départs publiés vont jusqu'au{" "}
+        {tr("ui.pageHoraires.avecCesFiltresLesDeparts")}{" "}
         {new Date(why.until)
           .toLocaleDateString(intlLocale(), { day: "numeric", month: "long", year: "numeric" })
           .replace(/^1 /, "1er ")}
-        . Reviens
-        plus tard pour cette date.
+        {tr("ui.pageHoraires.reviensPlusTardPourCette")}
       </Bw504Note>
     );
   if (why.kind === "otherDay")
     return (
       <Bw504Note
         tone="stuck"
-        title="Pas de départ à cette date"
+        title={tr("ui.pageHoraires.pasDeDepartACette")}
         actions={
           <Bw504Button primary onClick={() => onDay(why.next.dayKey)}>
             {capitalizeFirst(formatShortDay(why.next.at, why.next.zone))}
           </Bw504Button>
         }
       >
-        Avec les mêmes filtres, le prochain départ publié est le{" "}
+        {tr("ui.pageHoraires.avecLesMemesFiltresLe")}{" "}
         {formatShortDay(why.next.at, why.next.zone)}.
       </Bw504Note>
     );
   return (
     <Bw504Note
       tone="stuck"
-      title="Je n'ai rien trouvé, et je ne sais pas pourquoi"
+      title={tr("ui.pageHoraires.jeNAiRienTrouve")}
       actions={
         <Bw504Button primary onClick={onClear}>
-          Tout effacer
+          {tr("ui.pageHoraires.toutEffacerB")}
         </Bw504Button>
       }
     >
-      {tr("ui.pageHoraires.aucuneTraverseePublieePourCes")} Un horaire peut manquer : vérifie chez
-      la compagnie.
+      {tr("ui.pageHoraires.aucuneTraverseePublieePourCes")}{tr("ui.pageHoraires.unHorairePeutManquerVerifie")}
     </Bw504Note>
   );
 }
@@ -438,7 +436,7 @@ function BoardPage() {
         className="mx-auto w-full max-w-[1440px] px-4 pb-24 pt-5 sm:px-6 md:pb-16"
       >
         <div className="-mt-5 mb-3">
-          <Breadcrumbs items={[{ name: "Départs et arrivées", path: "/horaires" }]} />
+          <Breadcrumbs items={[{ name: tr("ui.pageHoraires.departsEtArrivees"), path: "/horaires" }]} />
         </div>
         <DataUnavailableNotice className="mb-3" />
         <div className="flex flex-wrap items-end justify-between gap-2">
@@ -471,8 +469,8 @@ function BoardPage() {
           >
             {(
               [
-                ["", "Départs"],
-                ["arrivals", "Arrivées"],
+                ["", tr("ui.pageHoraires.departs")],
+                ["arrivals", tr("ui.pageHoraires.arrivees")],
               ] as const
             ).map(([value, label]) => (
               <button
@@ -491,9 +489,9 @@ function BoardPage() {
         <div className="mt-2 flex gap-2 overflow-x-auto pb-1 sm:flex-wrap">
           {(
             [
-              ["today", "Aujourd'hui"],
-              ["tomorrow", "Demain"],
-              ["week", "7 jours"],
+              ["today", tr("ui.pageHoraires.aujourdHui")],
+              ["tomorrow", tr("ui.pageHoraires.demain")],
+              ["week", tr("ui.pageHoraires.t7Jours")],
             ] as const
           ).map(([value, label]) => (
             <Chip
@@ -517,8 +515,8 @@ function BoardPage() {
           </label>
           {(
             [
-              ["toAlgeria", "Vers l'Algérie"],
-              ["fromAlgeria", "Depuis l'Algérie"],
+              ["toAlgeria", tr("ui.pageHoraires.versLAlgerie")],
+              ["fromAlgeria", tr("ui.pageHoraires.depuisLAlgerie")],
             ] as const
           ).map(([value, label]) => (
             <Chip
@@ -569,7 +567,7 @@ function BoardPage() {
           <section
             key={company.id}
             className="bw-board-rise mt-3 flex flex-wrap gap-x-8 gap-y-4 rounded-2xl border border-border bg-card p-4"
-            aria-label={`Compagnie ${company.name}`}
+            aria-label={tr("ui.pageHoraires.compagnie", { name: company.name })}
           >
             <div className="min-w-[220px] flex-1">
               <div className="flex items-center gap-3">
@@ -618,7 +616,7 @@ function BoardPage() {
                       })
                     }
                   >
-                    {sailing.from.name} → {sailing.to.name}
+                    {placeName(sailing.from.name)} → {placeName(sailing.to.name)}
                   </Chip>
                 ))}
               </div>
@@ -724,10 +722,10 @@ function BoardPage() {
                       />
                       <span className="min-w-[140px] flex-1 sm:min-w-0">
                         <strong className="block truncate text-sm font-bold">
-                          {sailing.from.name} → {sailing.to.name}
+                          {placeName(sailing.from.name)} → {placeName(sailing.to.name)}
                         </strong>
                         <small className="block truncate text-xs text-muted-foreground">
-                          {[sailing.vessel?.name ?? "Navire à confirmer", sailing.company?.name]
+                          {[sailing.vessel?.name ?? tr("ui.pageHoraires.navireAConfirmer"), sailing.company?.name]
                             .filter(Boolean)
                             .join(" · ")}
                         </small>
@@ -793,7 +791,7 @@ function TripDetail({ row, arrivals, now }: { row: Row; arrivals: boolean; now: 
   const upcoming = Date.parse(departure.departure_at) > now;
   const share = async () => {
     const url = window.location.href;
-    const text = `${from.name} → ${to.name} sur BledWay`;
+    const text = tr("ui.pageHoraires.surBledway", { name: from.name, name2: to.name });
     try {
       if (navigator.share) await navigator.share({ title: text, url });
       else {
@@ -831,7 +829,7 @@ function TripDetail({ row, arrivals, now }: { row: Row; arrivals: boolean; now: 
         />
       </div>
       <h2 className="mt-2 text-lg font-extrabold">
-        {from.name} → {to.name}
+        {placeName(from.name)} → {placeName(to.name)}
       </h2>
       <p className="text-[13px] text-muted-foreground">
         {arrivals ? tr("ui.pageHoraires.arrivee2") : tr("ui.pageHoraires.depart2")} {capitalizeFirst(formatShortDay(row.at, row.zone))} à{" "}

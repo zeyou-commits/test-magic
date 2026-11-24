@@ -10,7 +10,7 @@ import {
 } from "@/components/editorial/Editorial";
 import { companiesQuery, portsQuery, routesQuery } from "@/lib/ferry/queries";
 import { formatDuration } from "@/lib/ferry/format";
-import { CONFIRM_NOTE, generalFaq } from "@/lib/seo/answers";
+import { confirmNote, generalFaq } from "@/lib/seo/answers";
 import { seoHead } from "@/lib/seo/site";
 import { tr, intlLocale } from "@/lib/i18n";
 
@@ -24,8 +24,8 @@ export const Route = createFileRoute("/questions-frequentes")({
   },
   head: () =>
     seoHead(
-      "Ferry Europe–Algérie : questions fréquentes | BledWay",
-      "Compagnies, ports, durées, prix repères, arrivée au port, voiture et TPD : les réponses directes aux questions des voyageurs entre l'Europe et l'Algérie.",
+      tr("ui.pageQuestionsFrequentes.ferryEuropeAlgerieQuestionsFrequentes"),
+      tr("ui.pageQuestionsFrequentes.compagniesPortsDureesPrixReperes"),
       "/questions-frequentes",
     ),
   component: FaqPage,
@@ -49,7 +49,7 @@ function FaqPage() {
 
   return (
     <SiteLayout>
-      <Breadcrumbs items={[{ name: "Questions fréquentes", path: "/questions-frequentes" }]} />
+      <Breadcrumbs items={[{ name: tr("ui.pageQuestionsFrequentes.questionsFrequentes"), path: "/questions-frequentes" }]} />
       <EditorialHero
         label="L'essentiel"
         title={tr("ui.pageQuestionsFrequentes.ferryEuropeAlgerieLesReponses")}
@@ -57,7 +57,7 @@ function FaqPage() {
       />
       <AnswerBox>
         {tr("ui.pageQuestionsFrequentes.lesDureesEtLesPrix")}{" "}
-        {CONFIRM_NOTE}
+        {confirmNote()}
       </AnswerBox>
       <FaqSection faq={generalFaq(ports, routes, companies)} path="/questions-frequentes" />
       <section className="mt-10">

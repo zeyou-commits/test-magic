@@ -25,7 +25,7 @@ export function VesselMiniCard({
         type="button"
         className="bw-vessel-mini__open"
         onClick={onOpen}
-        aria-label={`Voir le navire ${vessel.name}`}
+        aria-label={tr("ui.vesselMiniCard.voirLeNavire", { name: vessel.name })}
       >
         <span className="bw-vessel-mini__photo">
           <ShipPhoto key={photo?.url ?? vessel.id} url={photo?.url} name={vessel.name} />
@@ -42,7 +42,7 @@ export function VesselMiniCard({
           type="button"
           className="bw-vessel-mini__company"
           onClick={onCompanyOpen}
-          aria-label={`Voir la compagnie ${company.name}`}
+          aria-label={tr("ui.vesselMiniCard.voirLaCompagnie", { name: company.name })}
         >
           <CompanyBadge name={company.name} logoUrl={company.logo_url} size={18} />
           <span>{company.name}</span>

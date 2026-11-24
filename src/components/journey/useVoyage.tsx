@@ -386,11 +386,11 @@ export function useVoyage(
     );
     const after = (
       <>
-        {traveller && step === "port" ? rate("port", from.id, `Noter le port de ${from.name}`) : null}
+        {traveller && step === "port" ? rate("port", from.id, tr("ui.useVoyage.noterLePortDe", { name: from.name })) : null}
         {traveller && step === "arrival" ? (
           <>
-            {vessel ? rate("vessel", vessel.id, `Noter le ${vessel.name}`) : null}
-            {rate("port", to.id, `Noter le port de ${to.name}`)}
+            {vessel ? rate("vessel", vessel.id, tr("ui.useVoyage.noterLe", { name: vessel.name })) : null}
+            {rate("port", to.id, tr("ui.useVoyage.noterLePortDe", { name: to.name }))}
           </>
         ) : null}
         {step === "home" && traveller ? (
@@ -479,12 +479,12 @@ export function useVoyage(
      * sinon l'étape vient de l'heure et des actions cochées : « Prochaine étape » avant le départ.
      */
     hereLabel: !traveller
-      ? "En ce moment"
+      ? tr("ui.useVoyage.enCeMoment")
       : status
-        ? "Vous êtes ici"
+        ? tr("ui.useVoyage.vousEtesIci")
         : now < departureMs
-          ? "Prochaine étape"
-          : "En ce moment",
+          ? tr("ui.useVoyage.prochaineEtape")
+          : tr("ui.useVoyage.enCeMoment"),
     /**
      * En tête du voyage, la fiche « Ma traversée » de l'accueil : compte à rebours, puis le bateau
      * qui avance. Pour le voyage d'un proche, la carte « En navigation » de son navire.
@@ -535,9 +535,9 @@ export function useVoyage(
     /** Une info ou un signalement en cours : le bandeau « En direct » mérite sa place en tête. */
     liveAlert: info.official + info.travellers > 0,
     summary: {
-      heading: traveller ? (outbound ? "Mon voyage · aller" : "Mon voyage · retour") : "Le voyage d'un proche",
+      heading: traveller ? (outbound ? tr("ui.useVoyage.monVoyageAller") : tr("ui.useVoyage.monVoyageRetour")) : tr("ui.useVoyage.leVoyageDUnProche"),
       /** Le sens en un mot, pour l'en-tête du téléphone. */
-      short: traveller ? (outbound ? "Aller" : "Retour") : "Voyage d'un proche",
+      short: traveller ? (outbound ? tr("ui.useVoyage.aller") : tr("ui.useVoyage.retour")) : tr("ui.useVoyage.voyageDUnProche"),
       title: `${from.name} → ${to.name}`,
       vesselName: vessel?.name ?? null,
       countdown,
@@ -547,7 +547,7 @@ export function useVoyage(
     },
     salon: {
       room: departure.id,
-      title: `Salon ${from.name} → ${to.name}`,
+      title: tr("ui.useVoyage.salon", { name: from.name, name2: to.name }),
       moment: roomMoment(departure.departure_at, departure.arrival_at, now),
       starterContext: {
         depart: from.name,

@@ -44,7 +44,7 @@ import {
   TOLL_EURO_PER_KM,
   travelDays,
 } from "@/components/prepare/RouteTop3";
-import { tr, lazyDateFormat, intlLocale } from "@/lib/i18n";
+import { tr, lazyDateFormat, intlLocale, placeName } from "@/lib/i18n";
 
 const dayLabel = (key: string) =>
   lazyDateFormat({ weekday: "short", day: "numeric", month: "short" })
@@ -121,12 +121,12 @@ export const budgetSummary = (b: ReturnType<typeof tripBudget>) => {
     "bateau",
     b.road ? "route" : null,
     b.fees ? "papiers" : null,
-    b.own ? "vos dépenses" : null,
+    b.own ? tr("ui.tripOutlook.vosDepenses") : null,
   ]
     .filter(Boolean)
     .join(", ")
     .replace(/, ([^,]+)$/, " et $1");
-  return `Environ ${nice(b.total)}, ${parts}${b.back ? ", aller et retour" : ", aller"}`;
+  return tr("ui.tripOutlook.environ3", { nice: nice(b.total), parts, v: b.back ? ", aller et retour" : ", aller" });
 };
 
 type Slice = {
@@ -149,24 +149,24 @@ const EXTRA_FIELDS: {
 }[] = [
   {
     key: "hotel",
-    label: "Hôtel d'étape",
+    get label() { return tr("ui.tripOutlook.hotelDEtape"); },
     icon: BedDouble,
     color: "#e2725b",
-    hint: "Une nuit sur la route, à l'aller ou au retour.",
+    get hint() { return tr("ui.tripOutlook.uneNuitSurLaRoute"); },
   },
   {
     key: "food",
-    label: "Repas et pauses",
+    get label() { return tr("ui.tripOutlook.repasEtPauses"); },
     icon: UtensilsCrossed,
     color: "#c9579b",
-    hint: "Sur la route et à bord : le prix du bateau ne les compte pas.",
+    get hint() { return tr("ui.tripOutlook.surLaRouteEtA"); },
   },
   {
     key: "onsite",
-    label: "Au bled",
+    get label() { return tr("ui.tripOutlook.auBled"); },
     icon: Gift,
     color: "#3aa8a0",
-    hint: "Cadeaux, sorties, essence en Algérie…",
+    get hint() { return tr("ui.tripOutlook.cadeauxSortiesEssenceEnAlgerie"); },
   },
 ];
 
@@ -243,14 +243,14 @@ export function TripBudget({
     .filter(Boolean)
     .join(", ");
   const withWhat =
-    plan.vehicle === "none" ? "sans voiture" : `et la ${vehicle?.label.toLowerCase() ?? "voiture"}`;
+    plan.vehicle === "none" ? tr("ui.tripOutlook.sansVoiture") : `et la ${vehicle?.label.toLowerCase() ?? "voiture"}`;
   const outDay = planHasWhen(plan) ? dayMonth(planDay(plan)) : null;
   const km = Math.round(b.roadKm).toLocaleString(intlLocale());
   const extras = plan.extras ?? {};
   const slices: Slice[] = [
     {
       key: "boat",
-      label: "La traversée",
+      label: tr("ui.tripOutlook.laTraversee"),
       icon: Ship,
       color: "#1f6fb2",
       amount: b.out.amount + (b.back?.amount ?? 0),
@@ -282,7 +282,7 @@ export function TripBudget({
             amount: b.fuel,
             how: (
               <>
-                {plan.home?.name ?? tr("ui.tripOutlook.chezVous")} → {fromChoice.port.name}{tr("ui.tripOutlook.environ")}{km}{tr("ui.tripOutlook.km")}
+                {plan.home?.name ?? tr("ui.tripOutlook.chezVous")} → {placeName(fromChoice.port.name)}{tr("ui.tripOutlook.environ")}{km}{tr("ui.tripOutlook.km")}
                 {b.trips > 1 ? tr("ui.tripOutlook.aFaire2FoisAller") : ""}{tr("ui.tripOutlook.uneVoitureMoyenneConsomme")}{FUEL_L_PER_100}{tr("ui.tripOutlook.lAux100KmA")}{" "}
                 {FUEL_EURO_PER_L.toLocaleString(intlLocale())}{tr("ui.tripOutlook.leLitre")}
               </>
@@ -294,7 +294,7 @@ export function TripBudget({
       ? [
           {
             key: "tolls",
-            label: "Les péages",
+            label: tr("ui.tripOutlook.lesPeages"),
             icon: Coins,
             color: "#8a6bd1",
             amount: b.tolls,
@@ -311,7 +311,7 @@ export function TripBudget({
       ? [
           {
             key: "papers",
-            label: "Les papiers",
+            label: tr("ui.tripOutlook.lesPapiers"),
             icon: FileText,
             color: "#2e9e6a",
             amount: b.fees,
@@ -393,7 +393,7 @@ export function TripBudget({
           >
             <Plus size={15} aria-hidden />
             <span className="flex-1 text-start">
-              {b.own ? `Mes autres dépenses : ${nice(b.own)}` : tr("ui.tripOutlook.ajouterMesAutresDepenses")}
+              {b.own ? tr("ui.tripOutlook.mesAutresDepenses", { nice: nice(b.own) }) : tr("ui.tripOutlook.ajouterMesAutresDepenses")}
             </span>
             <ChevronDown size={14} className={editing ? "rotate-180" : ""} aria-hidden />
           </button>
@@ -410,7 +410,7 @@ export function TripBudget({
                       <b>{field.label}</b>
                       <small>
                         {field.key === "hotel" && driveHours >= 7
-                          ? `Environ ${Math.round(driveHours)} h de route jusqu'au port : une nuit d'étape peut être utile.`
+                          ? tr("ui.tripOutlook.environHDeRouteJusqu", { v: Math.round(driveHours) })
                           : field.hint}
                       </small>
                     </span>
@@ -426,7 +426,7 @@ export function TripBudget({
                           const value = Math.max(0, Math.round(Number(event.target.value) || 0));
                           onExtras({ ...extras, [field.key]: value || undefined });
                         }}
-                        aria-label={`${field.label}, en euros`}
+                        aria-label={tr("ui.tripOutlook.enEuros", { label: field.label })}
                       />
                       €
                     </span>
@@ -500,7 +500,7 @@ export function SailingsOutlook({
   // La recherche couvre le jour ± 3 : on le dit, plutôt qu'un seul jour.
   const period =
     plan.date && !plan.window
-      ? `autour du ${lazyDateFormat({ weekday: "long", day: "numeric", month: "long" }).format(new Date(`${plan.date}T12:00:00`))}`
+      ? tr("ui.tripOutlook.autourDu", { v: lazyDateFormat({ weekday: "long", day: "numeric", month: "long" }).format(new Date(`${plan.date}T12:00:00`)) })
       : planWhenLabel(plan);
   const see = (label: string) => (
     <button type="button" onClick={onSee} className="bw-outlook__see">
@@ -532,7 +532,7 @@ export function SailingsOutlook({
             <li key={d.day}>{dayLabel(d.day)}</li>
           ))}
         </ul>
-        {see("Voir les traversées et les prix")}
+        {see(tr("ui.tripOutlook.voirLesTraverseesEtLes"))}
       </>
     );
   } else if (!until || until < span.from)
@@ -570,7 +570,7 @@ export function SailingsOutlook({
             ))}
           </ul>
         ) : null}
-        {see("Voir les autres dates")}
+        {see(tr("ui.tripOutlook.voirLesAutresDates"))}
       </>
     );
   return (

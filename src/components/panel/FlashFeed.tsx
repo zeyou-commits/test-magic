@@ -72,17 +72,17 @@ const safeHttps = (value: string | null) => {
 };
 
 function tone(card: FlashCard) {
-  if (card.type === "signal") return { label: "Voyageurs", icon: null, tone: "community" as const };
+  if (card.type === "signal") return { label: tr("ui.flashFeed.voyageurs"), icon: null, tone: "community" as const };
   const item = card.item;
   if (item.kind === "alerte")
-    return { label: "Alerte", icon: AlertTriangle, tone: "critical" as const };
+    return { label: tr("ui.flashFeed.alerte"), icon: AlertTriangle, tone: "critical" as const };
   if (item.kind === "perturbation")
-    return { label: "Perturbation", icon: AlertTriangle, tone: "warning" as const };
+    return { label: tr("ui.flashFeed.perturbation"), icon: AlertTriangle, tone: "warning" as const };
   if (item.origin === "official")
-    return { label: "Compagnie / port", icon: Building2, tone: "official" as const };
+    return { label: tr("ui.flashFeed.compagniePort"), icon: Building2, tone: "official" as const };
   if (item.origin === "bledway")
     return { label: "BledWay", icon: Megaphone, tone: "brand" as const };
-  return { label: "Média", icon: Newspaper, tone: "media" as const };
+  return { label: tr("ui.flashFeed.media"), icon: Newspaper, tone: "media" as const };
 }
 
 export const isCriticalCard = (card: FlashCard) =>
@@ -133,7 +133,7 @@ function useNetwork() {
     const from = route ? portById.get(route.departure_port_id) : undefined;
     const date = formatDateParts(departure.departure_at, portTimeZone(from)).shortDate;
     return {
-      text: `Traversée du ${date}${route ? ` · ${routeLabel(route.id)}` : ""}`,
+      text: tr("ui.flashFeed.traverseeDu", { date, v: route ? ` · ${routeLabel(route.id)}` : "" }),
       routeId: departure.route_id,
     };
   };
@@ -200,7 +200,7 @@ export function useFlashCards({
  */
 export function FlashFeed({
   context,
-  title = "Flash info",
+  title = tr("ui.flashFeed.flashInfo"),
   limit = 4,
   withSignals = true,
   signalPortIds,
@@ -268,9 +268,9 @@ export function FlashFeed({
             headline = alertLabel(alert);
             place =
               alert.target_kind === "port"
-                ? `Port de ${network.portById.get(alert.target_id)?.name ?? "—"}`
+                ? tr("ui.flashFeed.portDe", { v: network.portById.get(alert.target_id)?.name ?? "—" })
                 : (network.vessels.find((vessel) => vessel.id === alert.target_id)?.name ??
-                  "Navire");
+                  tr("ui.flashFeed.navire"));
             preview =
               alert.target_kind === "port"
                 ? { portId: alert.target_id }
@@ -395,7 +395,7 @@ function FlashDetail({
   const hasSailings = routeId ? network.routesWithSailings.has(routeId) : false;
   const portId = !departure && !routeId ? item.port_ids[0] : undefined;
   const portName = portId ? network.portById.get(portId)?.name : undefined;
-  const chip = departure?.text ?? routeLabel ?? (portName ? `Port de ${portName}` : null);
+  const chip = departure?.text ?? routeLabel ?? (portName ? tr("ui.flashFeed.portDe2", { portName }) : null);
   return (
     <div className="bw-flash-row__body">
       {item.summary ? <p>{item.summary}</p> : null}
@@ -481,7 +481,7 @@ function AlertActions({
               type: "follow",
               kind: "vessel",
               targetId: vesselId,
-              label: vessels.find((v) => v.id === vesselId)?.name ?? "Ce navire",
+              label: vessels.find((v) => v.id === vesselId)?.name ?? tr("ui.flashFeed.ceNavire"),
               upgrade: true,
             })
           }

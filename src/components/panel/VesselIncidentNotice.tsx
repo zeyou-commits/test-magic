@@ -39,7 +39,7 @@ function SourceLine({ incident }: { incident: VesselIncident }) {
   const href = safeExternalUrl(incident.source_url);
   return (
     <p className="mt-1 text-xs">
-      {incident.verified_at ? `Dernière confirmation le ${day(incident.verified_at)}` : tr("ui.vesselIncidentNotice.pasEncoreVerifie")}
+      {incident.verified_at ? tr("ui.vesselIncidentNotice.derniereConfirmationLe", { day: day(incident.verified_at) }) : tr("ui.vesselIncidentNotice.pasEncoreVerifie")}
       {href ? (
         <>
           {" · "}
@@ -58,9 +58,9 @@ function SourceLine({ incident }: { incident: VesselIncident }) {
 }
 
 const impactText: Record<IncidentImpact, string> = {
-  confirmed: "Ce départ est touché selon la source. Attendez la confirmation de la compagnie.",
-  possible: "Ce départ pourrait être touché : aucune décision de la compagnie à ce stade.",
-  none: "Aucune conséquence connue sur ce départ à ce stade.",
+  get confirmed() { return tr("ui.vesselIncidentNotice.ceDepartEstToucheSelon"); },
+  get possible() { return tr("ui.vesselIncidentNotice.ceDepartPourraitEtreTouche"); },
+  get none() { return tr("ui.vesselIncidentNotice.aucuneConsequenceConnueSurCe"); },
 };
 
 /** Fiche du navire : l'information, sans considérer tous ses départs comme touchés. */
@@ -130,7 +130,7 @@ export function DepartureIncidentNotice({ departure }: { departure: Departure })
   const routeLabel = (id: string) => {
     const route = routes.find((r) => r.id === id);
     const name = (portId?: string) => ports.find((p) => p.id === portId)?.name ?? "?";
-    return route ? `${name(route.departure_port_id)} → ${name(route.arrival_port_id)}` : "Liaison";
+    return route ? `${name(route.departure_port_id)} → ${name(route.arrival_port_id)}` : tr("ui.vesselIncidentNotice.liaison");
   };
   const zoneOf = (routeId: string) =>
     portTimeZone(
@@ -146,7 +146,7 @@ export function DepartureIncidentNotice({ departure }: { departure: Departure })
           <CircleAlert size={16} aria-hidden />{" "}
           {incidentHeadline(
             incident,
-            vessel?.name ?? "Le navire",
+            vessel?.name ?? tr("ui.vesselIncidentNotice.leNavire"),
             ports.find((p) => p.id === incident.location_port_id)?.name,
           )}
         </p>

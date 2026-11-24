@@ -151,21 +151,21 @@ export function ChangeRequestForm({
     if (kind === "delay") {
       const value = Number(minutes);
       if (!Number.isInteger(value) || value < 5 || value > 1440)
-        return "Indiquez un retard entre 5 et 1 440 minutes (24 h).";
+        return tr("ui.companyDesk.indiquezUnRetardEntre5");
       return { minutes: value };
     }
-    if (kind === "vessel") return vesselId ? { vessel_id: vesselId } : "Choisissez le navire.";
+    if (kind === "vessel") return vesselId ? { vessel_id: vesselId } : tr("ui.companyDesk.choisissezLeNavire");
     if (kind === "time") {
-      if (!day || !hour) return "Indiquez la nouvelle date et l'heure de départ.";
+      if (!day || !hour) return tr("ui.companyDesk.indiquezLaNouvelleDateEt");
       const start = zonedTimeToUtc(day, hour, zones.departure);
       const end =
         arrivalDay && arrivalHour ? zonedTimeToUtc(arrivalDay, arrivalHour, zones.arrival) : null;
-      if (start.getTime() <= Date.now()) return "Le nouvel horaire doit être dans le futur.";
+      if (start.getTime() <= Date.now()) return tr("ui.companyDesk.leNouvelHoraireDoitEtre");
       if (start.toISOString() === new Date(departure.departure_at).toISOString())
-        return "Cet horaire est déjà celui publié.";
+        return tr("ui.companyDesk.cetHoraireEstDejaCelui");
       if (Math.abs(start.getTime() - new Date(departure.departure_at).getTime()) > 7 * 86_400_000)
-        return "Au-delà de 7 jours d'écart, signalez plutôt une annulation.";
-      if (end && end <= start) return "L'arrivée doit suivre le départ.";
+        return tr("ui.companyDesk.auDelaDe7Jours");
+      if (end && end <= start) return tr("ui.companyDesk.lArriveeDoitSuivreLe");
       return { departure_at: start.toISOString(), arrival_at: end ? end.toISOString() : null };
     }
     return {};
@@ -188,8 +188,8 @@ export function ChangeRequestForm({
     onSuccess: (data) => {
       toast.success(
         data.status === "applied"
-          ? "Traversée mise à jour. Les voyageurs qui la suivent sont prévenus."
-          : "Brouillon enregistré.",
+          ? tr("ui.companyDesk.traverseeMiseAJourLes")
+          : tr("ui.companyDesk.brouillonEnregistre"),
       );
       refresh();
       onClose();
@@ -209,7 +209,7 @@ export function ChangeRequestForm({
         if (
           kind === "cancel" &&
           !window.confirm(
-            "Annuler cette traversée ? Elle s'affiche « Annulée » tout de suite et les voyageurs qui la suivent sont prévenus. Pour revenir en arrière, il faudra écrire à BledWay.",
+            tr("ui.companyDesk.annulerCetteTraverseeElleS"),
           )
         )
           return;
@@ -283,7 +283,7 @@ export function ChangeRequestForm({
         )
       ) : kind === "time" ? (
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label={`Nouveau départ (${zoneLabel(zones.departure)})`}>
+          <Field label={tr("ui.companyDesk.nouveauDepart", { zoneLabel: zoneLabel(zones.departure) })}>
             <div className="flex gap-2">
               <Input type="date" value={day} onChange={(event) => setDay(event.target.value)} />
               <Input
@@ -295,7 +295,7 @@ export function ChangeRequestForm({
             </div>
           </Field>
           <Field
-            label={`Nouvelle arrivée (${zoneLabel(zones.arrival)})`}
+            label={tr("ui.companyDesk.nouvelleArrivee", { zoneLabel: zoneLabel(zones.arrival) })}
             hint={tr("ui.companyDesk.facultatifSansArriveeLaDuree")}
           >
             <div className="flex gap-2">
@@ -357,12 +357,12 @@ const CROSSING_ACTIONS: { id: CrossingAction; label: string; hint: string }[] = 
   ...(Object.keys(REQUEST_KINDS) as RequestKind[]).map((id) => ({
     id,
     label: REQUEST_KINDS[id].label,
-    hint: `${REQUEST_KINDS[id].hint} Les voyageurs qui la suivent sont prévenus.`,
+    hint: tr("ui.companyDesk.lesVoyageursQuiLaSuivent", { hint: REQUEST_KINDS[id].hint }),
   })),
   {
     id: "message",
-    label: "Message aux voyageurs",
-    hint: "Rien ne change sur la traversée : une consigne ou une information, envoyée à ceux qui la suivent.",
+    get label() { return tr("ui.companyDesk.messageAuxVoyageurs"); },
+    get hint() { return tr("ui.companyDesk.rienNeChangeSurLa"); },
   },
 ];
 
@@ -438,7 +438,7 @@ export function CompanyRequestsTab({ ctx }: { ctx: DeskContext }) {
     mutationFn: (requestId: string) =>
       companyAccessRequest({ action: "request_withdraw", requestId }),
     onSuccess: () => {
-      toast.success("Demande retirée.");
+      toast.success(tr("ui.companyDesk.demandeRetiree"));
       refresh();
     },
     onError: (error: Error) => {
@@ -456,7 +456,7 @@ export function CompanyRequestsTab({ ctx }: { ctx: DeskContext }) {
     <section className="bo-card">
       <h2>
         <ClipboardList aria-hidden />{tr("ui.companyDesk.changementsDeTraversee")}
-        <small>{waiting ? `${waiting} en attente` : tr("ui.companyDesk.appliquesALEnvoi")}</small>
+        <small>{waiting ? tr("ui.companyDesk.enAttente", { waiting }) : tr("ui.companyDesk.appliquesALEnvoi")}</small>
       </h2>
       {editing && editingDeparture ? (
         <ChangeRequestForm
@@ -485,7 +485,7 @@ export function CompanyRequestsTab({ ctx }: { ctx: DeskContext }) {
                       </strong>
                       <span className="block text-xs text-muted-foreground">
                         {item.routeId ? ctx.lineOf(item.routeId) : tr("ui.companyDesk.traverseeSupprimee")}
-                        {item.departureAt ? ` · départ publié ${ctx.when(item.departureAt)}` : ""}
+                        {item.departureAt ? tr("ui.companyDesk.departPublie", { v: ctx.when(item.departureAt) }) : ""}
                       </span>
                     </span>
                     <span className="flex flex-none items-center gap-1">
@@ -515,7 +515,7 @@ export function CompanyRequestsTab({ ctx }: { ctx: DeskContext }) {
                         variant="ghost"
                         disabled={withdraw.isPending}
                         onClick={() => {
-                          if (window.confirm("Retirer ce changement ? Il ne sera pas appliqué."))
+                          if (window.confirm(tr("ui.companyDesk.retirerCeChangementIlNe")))
                             withdraw.mutate(item.id);
                         }}
                       >
@@ -589,7 +589,7 @@ export function CompanyAnnouncementsTab({ ctx }: { ctx: DeskContext }) {
   const withdraw = useMutation({
     mutationFn: (id: string) => companyAccessRequest({ action: "announce_withdraw", id }),
     onSuccess: () => {
-      toast.success("Annonce retirée.");
+      toast.success(tr("ui.companyDesk.annonceRetiree"));
       refresh();
     },
     onError: (error: Error) => {
@@ -625,7 +625,7 @@ export function CompanyAnnouncementsTab({ ctx }: { ctx: DeskContext }) {
       <section className="bo-card">
         <h2>
           <Megaphone aria-hidden />{tr("ui.companyDesk.vosAnnonces")}
-          <small>{items.length ? `${items.length} au total` : null}</small>
+          <small>{items.length ? tr("ui.companyDesk.auTotal", { length: items.length }) : null}</small>
         </h2>
         <ActivityState query={activity}>
           {items.length ? (
@@ -653,13 +653,13 @@ export function CompanyAnnouncementsTab({ ctx }: { ctx: DeskContext }) {
                     <p>{item.body}</p>
                     <p className="text-xs text-muted-foreground">
                       {item.status === "approved"
-                        ? `${DELIVERY_LABEL[item.delivery ?? ""] ?? "Envoi"}${
+                        ? `${DELIVERY_LABEL[item.delivery ?? ""] ?? tr("ui.companyDesk.envoi")}${
                             item.recipients !== null && item.delivery === "sent"
-                              ? ` · ${item.recipients} personne${item.recipients > 1 ? "s" : ""} prévenue${item.recipients > 1 ? "s" : ""}`
+                              ? tr("ui.companyDesk.personnePrevenue", { recipients: item.recipients, v: item.recipients > 1 ? "s" : "", v2: item.recipients > 1 ? "s" : "" })
                               : ""
                           }`
                         : item.previewCount !== null
-                          ? `${item.previewCount} personne${item.previewCount > 1 ? "s" : ""} à prévenir`
+                          ? tr("ui.companyDesk.personneAPrevenir", { previewCount: item.previewCount, v: item.previewCount > 1 ? "s" : "" })
                           : null}
                     </p>
                     {item.decisionNote ? (
@@ -680,7 +680,7 @@ export function CompanyAnnouncementsTab({ ctx }: { ctx: DeskContext }) {
                           variant="ghost"
                           disabled={withdraw.isPending}
                           onClick={() => {
-                            if (window.confirm("Retirer cette annonce ? Elle ne sera pas envoyée."))
+                            if (window.confirm(tr("ui.companyDesk.retirerCetteAnnonceElleNe")))
                               withdraw.mutate(item.id);
                           }}
                         >
@@ -754,8 +754,8 @@ function AnnouncementForm({
     onSuccess: (data) => {
       toast.success(
         data.status === "approved"
-          ? "Annonce envoyée aux voyageurs qui suivent cette traversée."
-          : "Brouillon enregistré.",
+          ? tr("ui.companyDesk.annonceEnvoyeeAuxVoyageursQui")
+          : tr("ui.companyDesk.brouillonEnregistre"),
       );
       refresh();
       onDone();

@@ -3,6 +3,7 @@
  * Jours ISO (1 = lundi … 7 = dimanche), fréquence en semaines comptée depuis la semaine de début,
  * navire en alternance semaine de départ après semaine de départ.
  */
+import { tr } from "@/lib/i18n/translate";
 export type Recurrence = {
   weekdays: number[];
   valid_from: string;
@@ -63,5 +64,5 @@ export function recurrenceLabel(r: Recurrence) {
     .filter(Boolean)
     .join(", ");
   const n = every(r);
-  return `${days} · ${n === 1 ? "chaque semaine" : `toutes les ${n} semaines`}`;
+  return `${days} · ${n === 1 ? tr("ui.libFerryRecurrence.chaqueSemaine") : tr("ui.libFerryRecurrence.toutesLesSemaines", { n })}`;
 }

@@ -366,7 +366,7 @@ export function TripCalendar({
     const out = nearest(outDays, period.start, tolerance, tolerance + 2, today);
     if (!out) {
       setNote(
-        `Aucun départ connu autour du début des vacances de ${period.name} (± ${tolerance} j).`,
+        tr("ui.tripCalendar.aucunDepartConnuAutourDu", { name: period.name, tolerance }),
       );
       jumpToDay(period.start);
       return;
@@ -374,7 +374,7 @@ export function TripCalendar({
     if (!roundTrip) {
       onChange({ date: out, returnDate: null });
       jumpToDay(out);
-      setNote(`Aller le ${long(out)} pour les vacances de ${period.name}.`);
+      setNote(tr("ui.tripCalendar.allerLePourLesVacances", { long: long(out), name: period.name }));
       return;
     }
     const backPool = backDays.size > 0 ? backDays : outDays;
@@ -384,7 +384,7 @@ export function TripCalendar({
     setNote(
       back
         ? `${period.name} : aller le ${long(out)}, retour le ${long(back)} (${diffDays(out, back)} jours).`
-        : `${period.name} : aller le ${long(out)}. Aucun retour connu autour de la reprise, choisissez-le dans le calendrier.`,
+        : tr("ui.tripCalendar.allerLeAucunRetourConnu", { name: period.name, long: long(out) }),
     );
   };
 
@@ -429,7 +429,7 @@ export function TripCalendar({
               key={item}
               type="button"
               aria-pressed={on}
-              title={`Vacances zone ${item} · ${SCHOOL_ZONES[item].cities}`}
+              title={tr("ui.tripCalendar.vacancesZone", { item, cities: SCHOOL_ZONES[item].cities })}
               onClick={() =>
                 holidaysOn || !zones.includes(item) ? toggleZone(item) : onHolidaysChange(true)
               }
@@ -506,10 +506,10 @@ export function TripCalendar({
                   <p className="rounded-lg bg-secondary px-2.5 py-1.5 text-[11px] leading-relaxed">
                     <strong>{focusedPeriod.name} : </strong>
                     {coverage.state === "open"
-                      ? `${coverage.dayCount} jour(s) de départ publiés, à partir du ${short(coverage.firstDay!).replace(/\.$/, "")}.`
+                      ? tr("ui.tripCalendar.jourSDeDepartPublies", { dayCount: coverage.dayCount, v: short(coverage.firstDay!).replace(/\.$/, "") })
                       : tr("ui.tripCalendar.lesDatesNeSontPas")}
                     {coverage.pending.length
-                      ? ` ${coverage.pending.join(", ")} ${coverage.pending.length > 1 ? "n'ont" : "n'a"} pas encore publié ces dates : c'est normal, les programmes sortent au fil de la saison.`
+                      ? tr("ui.tripCalendar.pasEncorePublieCesDates", { v: coverage.pending.join(", "), v2: coverage.pending.length > 1 ? "n'ont" : "n'a" })
                       : ""}
                   </p>
                 );
@@ -617,8 +617,7 @@ export function TripCalendar({
       {estimatedDays?.size ? (
         <p className="flex items-center gap-2 rounded-xl bg-warning/10 px-3 py-2 text-[11px] leading-snug text-foreground/80">
           <span className="batogo-legend-estimated" aria-hidden />
-          Point creux : calendrier théorique (rotation habituelle du navire), pas encore en vente.
-          Plein : départ en vente.
+          {tr("ui.tripCalendar.pointCreuxCalendrierTheoriqueRotation")}
         </p>
       ) : null}
       {unpublishedPick ? (
@@ -737,7 +736,7 @@ export function TripCalendar({
                 key={item}
                 type="button"
                 aria-pressed={on}
-                title={`Vacances zone ${item} · ${SCHOOL_ZONES[item].cities}`}
+                title={tr("ui.tripCalendar.vacancesZone", { item, cities: SCHOOL_ZONES[item].cities })}
                 onClick={() =>
                   holidaysOn || !zones.includes(item) ? toggleZone(item) : onHolidaysChange(true)
                 }

@@ -1,4 +1,4 @@
-import { intlLocale } from "@/lib/i18n/translate";
+import { currentLocale, intlLocale, placeName, tr } from "@/lib/i18n/translate";
 /** Majuscule à la première lettre seulement (règle typographique française). */
 export function capitalizeFirst(value: string): string {
   return value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
@@ -6,6 +6,8 @@ export function capitalizeFirst(value: string): string {
 
 /** « de Marseille », « d'Alger » : pour un nom propre, en français. */
 export function deName(name: string): string {
+  // Dans les autres langues, la préposition est dans la phrase traduite : seul le nom reste.
+  if (currentLocale() !== "fr") return placeName(name);
   return /^[aeiouyàâäéèêëîïôöùûü]/i.test(name) ? `d'${name}` : `de ${name}`;
 }
 
@@ -13,8 +15,8 @@ export function formatDuration(minutes: number | null | undefined): string {
   if (!minutes || minutes <= 0) return "—";
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  if (m === 0) return `${h} h`;
-  return `${h} h ${String(m).padStart(2, "0")}`;
+  if (m === 0) return tr("ui.libFerryFormat.dureeH", { h });
+  return tr("ui.libFerryFormat.dureeHM", { h, m: String(m).padStart(2, "0") });
 }
 
 // Les fonctions ci-dessous acceptent un fuseau (celui du port concerné).
@@ -77,19 +79,19 @@ export function formatDateParts(iso: string, timeZone?: string) {
 }
 
 export const facilityLabels: Record<string, string> = {
-  priere: "Lieu de prière",
-  proprete: "Propreté",
-  salle_attente: "Salle d'attente",
-  douane: "Douane",
-  sanitaires: "Sanitaires",
-  parking: "Parking",
-  acces: "Accès",
-  transports: "Transports",
-  restauration: "Restauration",
-  pmr: "Accessibilité PMR",
+  get priere() { return tr("ui.libFerryFormat.lieuDePriere"); },
+  get proprete() { return tr("ui.libFerryFormat.proprete"); },
+  get salle_attente() { return tr("ui.libFerryFormat.salleDAttente"); },
+  get douane() { return tr("ui.libFerryFormat.douane"); },
+  get sanitaires() { return tr("ui.libFerryFormat.sanitaires"); },
+  get parking() { return tr("ui.libFerryFormat.parking"); },
+  get acces() { return tr("ui.libFerryFormat.acces"); },
+  get transports() { return tr("ui.libFerryFormat.transports"); },
+  get restauration() { return tr("ui.libFerryFormat.restauration"); },
+  get pmr() { return tr("ui.libFerryFormat.accessibilitePmr"); },
   wifi: "Wi-Fi",
-  boutique: "Boutique",
-  dedouanement_vehicule: "Dédouanement véhicules -3 ans",
+  get boutique() { return tr("ui.libFerryFormat.boutique"); },
+  get dedouanement_vehicule() { return tr("ui.libFerryFormat.dedouanementVehicules3Ans"); },
 };
 
 /** Critères qui relèvent d'une note des voyageurs et non d'un service du port. */

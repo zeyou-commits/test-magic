@@ -28,18 +28,18 @@ export const Route = createFileRoute("/compte")({
   head: () => ({
     meta: [
       { name: "robots", content: "noindex, nofollow" },
-      { title: "Mon espace voyageur — BledWay" },
+      { title: tr("ui.pageCompte.monEspaceVoyageurBledway") },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       {
         name: "description",
         content:
-          "Gérez votre profil BledWay : nom affiché, avis publiés et signalements envoyés.",
+          tr("ui.pageCompte.gerezVotreProfilBledwayNom"),
       },
-      { property: "og:title", content: "Mon compte — BledWay" },
+      { property: "og:title", content: tr("ui.pageCompte.monCompteBledway") },
       {
         property: "og:description",
-        content: "Profil, avis et signalements de votre compte BledWay.",
+        content: tr("ui.pageCompte.profilAvisEtSignalementsDe"),
       },
     ],
   }),
@@ -47,27 +47,27 @@ export const Route = createFileRoute("/compte")({
 });
 
 const reviewStatusLabels: Record<string, string> = {
-  pending: "En attente de modération",
-  approved: "Validé",
-  published: "Publié",
-  rejected: "Refusé",
-  hidden: "Masqué",
-  deleted: "Supprimé",
+  get pending() { return tr("ui.pageCompte.enAttenteDeModeration"); },
+  get approved() { return tr("ui.pageCompte.valide"); },
+  get published() { return tr("ui.pageCompte.publie"); },
+  get rejected() { return tr("ui.pageCompte.refuse"); },
+  get hidden() { return tr("ui.pageCompte.masque"); },
+  get deleted() { return tr("ui.pageCompte.supprime"); },
 };
 
 const reportReasonLabels: Record<string, string> = {
-  wrong_schedule: "Horaire inexact",
-  outdated_info: "Information obsolète",
-  missing_info: "Information manquante",
-  inappropriate: "Contenu inapproprié",
-  other: "Autre",
+  get wrong_schedule() { return tr("ui.pageCompte.horaireInexact"); },
+  get outdated_info() { return tr("ui.pageCompte.informationObsolete"); },
+  get missing_info() { return tr("ui.pageCompte.informationManquante"); },
+  get inappropriate() { return tr("ui.pageCompte.contenuInapproprie"); },
+  get other() { return tr("ui.pageCompte.autre"); },
 };
 
 const reportStatusLabels: Record<string, string> = {
-  new: "Reçu",
-  in_progress: "En cours",
-  resolved: "Traité",
-  rejected: "Écarté",
+  get new() { return tr("ui.pageCompte.recu"); },
+  get in_progress() { return tr("ui.pageCompte.enCours"); },
+  get resolved() { return tr("ui.pageCompte.traite"); },
+  get rejected() { return tr("ui.pageCompte.ecarte"); },
 };
 
 function AccountPage() {
@@ -171,7 +171,7 @@ function MyReviews({ userId }: { userId: string }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my", "reviews", userId] });
       queryClient.invalidateQueries({ queryKey: ["port_reviews"] });
-      toast.success("Avis supprimé.");
+      toast.success(tr("ui.pageCompte.avisSupprime"));
     },
     onError: (error: Error) => toast.error(error.message),
   });

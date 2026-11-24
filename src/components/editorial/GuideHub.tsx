@@ -9,26 +9,25 @@ const topics: { id: Topic; name: string; path: string; intro: string }[] = [
     id: "vehicules",
     name: "Véhicules et importation",
     path: "/vehicules-moins-3-ans",
-    intro: "Comprendre le régime, vérifier l'âge et construire le coût complet avant d'acheter.",
+    get intro() { return tr("ui.guideHub.comprendreLeRegimeVerifierL"); },
   },
   {
     id: "voyage",
     name: "Le voyage Europe ↔ Algérie",
     path: "/voyage-algerie",
-    intro:
-      "Choisir son billet, préparer la voiture et organiser la traversée jusqu'à la sortie du port.",
+    get intro() { return tr("ui.guideHub.choisirSonBilletPreparerLa"); },
   },
   {
     id: "route",
     name: "La route et les rendez-vous",
     path: "/covoiturage",
-    intro: "Choisir un point de regroupement et partager les frais avant de rejoindre le terminal.",
+    get intro() { return tr("ui.guideHub.choisirUnPointDeRegroupement"); },
   },
 ];
 export function GuideHub({ topic }: { topic?: Topic }) {
   const current = topics.find((t) => t.id === topic);
   const selected = articles.filter((a) => !topic || a.topic === topic);
-  const title = current?.name ?? "Guide du voyage en Algérie par ferry";
+  const title = current?.name ?? tr("ui.guideHub.guideDuVoyageEnAlgerie");
   const path = current?.path ?? "/guide";
   return (
     <SiteLayout>

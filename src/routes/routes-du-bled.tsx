@@ -5,6 +5,7 @@ import {
   ArrowRight,
   BedDouble,
   Fuel,
+  MapPinPlus,
   Maximize2,
   Minimize2,
   Navigation,
@@ -477,6 +478,8 @@ function RoutesDuBledPage() {
   }
 
   const startAdd = (routeId?: string, point?: LonLat | null) => {
+    // Le formulaire passe au-dessus de tout : on quitte le plein écran de la carte.
+    setGrand(false);
     setDraft((d) => ({
       ...d,
       route: routeId ?? sel?.eu.chain?.segs[0]?.route.id ?? d.route,
@@ -484,7 +487,21 @@ function RoutesDuBledPage() {
     }));
     setAdding(true);
   };
+  // Un endroit à ce point : la route du bled la plus proche est proposée, le voyageur peut la changer.
+  const ajouterIci = (lon: number, lat: number) => {
+    let best: { id: string; d: number } | null = null;
+    for (const r of routes) {
+      const d = surLigne(
+        r.line.map(([lo, la]) => [lo, la] as LonLat),
+        [lon, lat],
+      ).d;
+      if (!best || d < best.d) best = { id: r.id, d };
+    }
+    startAdd(best?.id, [lon, lat]);
+  };
+  const pickSeul = useRef(false);
   const startPick = () => {
+    pickSeul.current = false;
     setAdding(false);
     setPicking("halte");
     document.getElementById("rdb-planner")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -723,9 +740,23 @@ function RoutesDuBledPage() {
               data-picking={picking || undefined}
               data-grand={grand || undefined}
             >
+              {routes.length && !picking ? (
+                <button
+                  type="button"
+                  className="rdb-map__grand rdb-map__ajout"
+                  onClick={() => {
+                    pickSeul.current = true;
+                    setPicking("halte");
+                  }}
+                >
+                  <MapPinPlus className="size-4" aria-hidden />
+                  {tr("ui.pageRoutesDuBled.ajouterUneHalteQ")}
+                </button>
+              ) : null}
               <button
                 type="button"
                 className="rdb-map__grand"
+                hidden={Boolean(picking)}
                 aria-pressed={grand}
                 onClick={() => setGrand(!grand)}
               >
@@ -748,7 +779,9 @@ function RoutesDuBledPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      if (picking === "halte") setAdding(true);
+                      // Venu du formulaire : on y revient ; venu du bouton de la carte : on annule.
+                      if (picking === "halte" && !pickSeul.current) setAdding(true);
+                      pickSeul.current = false;
                       setPicking(null);
                     }}
                   >
@@ -803,7 +836,11 @@ function RoutesDuBledPage() {
                   focus={focus}
                   fitKey={fitKey}
                   onSelectPin={(id) => {
-                    if (!id.startsWith("s-")) focusPas(id);
+                    if (id.startsWith("s-")) return;
+                    // Un « + » (pause ou nuit sans lieu relevé) : on ajoute un endroit à ce point.
+                    const p = selCarnet?.pas.find((x) => x.id === id);
+                    if (p && (p.k === "vide" || p.k === "nuitvide")) ajouterIci(p.point[0], p.point[1]);
+                    else focusPas(id);
                   }}
                   onSelectLine={(id) => {
                     if (!list.some((c) => c.id === id)) return;
@@ -812,24 +849,11 @@ function RoutesDuBledPage() {
                     selectRoute(id);
                   }}
                   picking={Boolean(picking)}
-                  onAddHere={(lon, lat) => {
-                    // La route du bled la plus proche est proposée ; le voyageur peut la changer.
-                    let best: { id: string; d: number } | null = null;
-                    for (const r of routes) {
-                      const d = surLigne(
-                        r.line.map(([lo, la]) => [lo, la] as LonLat),
-                        [lon, lat],
-                      ).d;
-                      if (!best || d < best.d) best = { id: r.id, d };
-                    }
-                    startAdd(best?.id, [lon, lat]);
-                  }}
+                  onAddHere={ajouterIci}
                   onPick={(lon, lat) => {
                     const point: LonLat = [lon, lat];
-                    if (picking === "halte") {
-                      setDraft((d) => ({ ...d, coords: { lat, lon } }));
-                      setAdding(true);
-                    } else if (picking === "from")
+                    if (picking === "halte") ajouterIci(lon, lat);
+                    else if (picking === "from")
                       choose("from", { label: tr("ui.pageRoutesDuBled.pointChoisi"), point });
                     else if (picking === "to")
                       choose("to", { label: tr("ui.pageRoutesDuBled.monVillage"), point });

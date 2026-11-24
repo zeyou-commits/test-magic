@@ -657,3 +657,6 @@
 
 /* Plein écran : passe avant la hauteur de la carte collée (46/52/42svh), carnet ouvert ou non. */
 .rdb .rdb-map[data-grand] { position: fixed !important; inset: 0 !important; z-index: 1000 !important; height: 100dvh !important; max-height: none !important; min-height: 0 !important; margin: 0 !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; transition: none !important; }
+
+/* « Ajouter une halte ? » posé au-dessus de « Agrandir ». */
+.rdb-map__ajout { bottom: 3.6rem; color: var(--primary); }

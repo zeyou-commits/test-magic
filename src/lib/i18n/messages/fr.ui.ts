@@ -3147,6 +3147,7 @@ export const ui = {
     tonTrajet: "Votre trajet, étape par étape",
     trousTexte: "Pas encore de bon plan sur {km} km de votre chemin.",
     recadrer: "Recadrer sur le trajet",
+    ajouterUneHalteQ: "Ajouter une halte ?",
     quAvezVousTrouve: "Qu'avez-vous trouvé ?",
     detailsFacultatifs: "Photos et détails",
     etapeSur: "Étape {n} sur 2 · l'équipe vérifie avant de publier.",

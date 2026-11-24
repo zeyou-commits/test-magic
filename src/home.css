@@ -235,7 +235,7 @@ html {
 }
 .bw-lang-toggle span[lang="ar"],
 .bw-lang-toggle[lang="ar"] span {
-  font-family: "Noto Sans Arabic", system-ui, sans-serif;
+  font-family: "BW Arabic", system-ui, sans-serif;
 }
 .bw-account-link {
   min-height: 44px;

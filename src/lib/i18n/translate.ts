@@ -81,7 +81,8 @@ export function tr(key: MessageKey, vars?: TranslateVars): string {
 }
 
 /** Code Intl de la langue affichée : dates et nombres. L'arabe d'Algérie garde les chiffres 0-9. */
-const INTL: Record<Locale, string> = { fr: "fr-FR", ar: "ar-DZ", en: "en-GB" };
+// Arabe : heures sur 24 h (« -u-hc-h23 »), comme les horaires des compagnies, pas « 11:00 م ».
+const INTL: Record<Locale, string> = { fr: "fr-FR", ar: "ar-DZ-u-hc-h23", en: "en-GB" };
 export function intlLocale(): string {
   return INTL[current];
 }

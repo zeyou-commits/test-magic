@@ -17,9 +17,25 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Arabe : Noto Sans Arabic (licence libre OFL), servie par le site et réduite à 90 %. À taille
+ * égale, ses lettres sont plus grandes et plus hautes que celles d'Inter : sans réduction, les
+ * boutons et cartes passent à la ligne. La réduction ne touche que les lettres arabes ; les noms
+ * latins (navires, compagnies) gardent la taille d'Inter.
+ */
+@font-face {
+  font-family: "BW Arabic";
+  src: url("/fonts/noto-sans-arabic-var.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 90%;
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FEFC;
+}
+
 @theme inline {
-  --font-sans: "Inter", "Noto Sans Arabic", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-display: "Inter", "Noto Sans Arabic", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: "Inter", "BW Arabic", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "Inter", "BW Arabic", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

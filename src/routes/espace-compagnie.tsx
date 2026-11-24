@@ -72,7 +72,7 @@ import {
 import { reviewCriteria, reviewNumber } from "@/lib/ferry/reviewCriteria";
 import { routeArrivalTimeZone, routeDepartureTimeZone } from "@/lib/ferry/time";
 import type { Departure } from "@/lib/ferry/types";
-import { tr } from "@/lib/i18n";
+import { tr, lazyDateFormat } from "@/lib/i18n";
 
 type Search = { c?: string; tab?: string; vessel?: string };
 export const Route = createFileRoute("/espace-compagnie")({
@@ -185,13 +185,13 @@ const SECTIONS: ShellSection[] = [
   },
 ];
 
-const dayFmt = new Intl.DateTimeFormat("fr-FR", {
+const dayFmt = lazyDateFormat({
   weekday: "short",
   day: "numeric",
   month: "short",
   timeZone: "Europe/Paris",
 });
-const hourFmt = new Intl.DateTimeFormat("fr-FR", {
+const hourFmt = lazyDateFormat({
   hour: "2-digit",
   minute: "2-digit",
   timeZone: "Europe/Paris",

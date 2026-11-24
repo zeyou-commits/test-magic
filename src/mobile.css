@@ -79,7 +79,7 @@
     grid-template-columns: 104px minmax(0, 1fr) auto;
     align-items: center;
     gap: 12px;
-    text-align: left;
+    text-align: start;
   }
   .bw-fleet ol.bw-podium > li[data-rank] .bw-podium__photo {
     border-radius: 12px;
@@ -170,8 +170,8 @@
    Compacte (deux messages au plus) ; elle passe au-dessus de la colonne des filtres. */
 @media (max-width: 639px) {
   .bw-pin-sheet[class] {
-    left: 10px;
-    right: 10px;
+    inset-inline-start: 10px;
+    inset-inline-end: 10px;
     width: auto;
     bottom: calc(var(--bw-pin-sheet-inset, 0px) + 76px);
   }

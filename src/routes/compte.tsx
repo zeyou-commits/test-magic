@@ -194,7 +194,7 @@ function MyReviews({ userId }: { userId: string }) {
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">
                   {portName(review.port_id)}
-                  <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">
+                  <span className="ms-2 rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">
                     {reviewStatusLabels[review.status] ?? review.status}
                   </span>
                 </p>
@@ -243,7 +243,7 @@ function MyReports({ userId }: { userId: string }) {
             <li key={report.id} className="py-3">
               <p className="text-sm font-medium">
                 {reportReasonLabels[report.reason] ?? report.reason}
-                <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">
+                <span className="ms-2 rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">
                   {reportStatusLabels[report.status] ?? report.status}
                 </span>
               </p>

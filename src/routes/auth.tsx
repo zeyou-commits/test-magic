@@ -509,7 +509,7 @@ function AuthPage() {
                       required
                       minLength={6}
                       autoComplete={mode === "signin" ? "current-password" : "new-password"}
-                      className="batogo-control pr-10"
+                      className="batogo-control pe-10"
                     />
                     <button
                       type="button"
@@ -518,7 +518,7 @@ function AuthPage() {
                       }
                       aria-pressed={showPassword}
                       onClick={() => setShowPassword((v) => !v)}
-                      className="absolute right-1 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-md text-muted-foreground hover:text-foreground"
+                      className="absolute end-1 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-md text-muted-foreground hover:text-foreground"
                     >
                       {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                     </button>

@@ -15,7 +15,7 @@ import type { Company, Port, RouteLine } from "@/lib/ferry/types";
 import { newsDay, newsFeedQuery, newsSlug } from "@/lib/ferry/newsFeed";
 import { TICKETING } from "@/lib/seo/pitch";
 import { HomeTour } from "./HomeTour";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 
 const COMMUNITY = [
   {
@@ -138,7 +138,7 @@ export function HomeServices({
             {stats.map((stat) => (
               <div key={stat.label}>
                 <dt>{stat.label}</dt>
-                <dd>{stat.value.toLocaleString("fr-FR")}</dd>
+                <dd>{stat.value.toLocaleString(intlLocale())}</dd>
               </div>
             ))}
             <div>

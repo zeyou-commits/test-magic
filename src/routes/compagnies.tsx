@@ -41,7 +41,7 @@ import {
 } from "@/lib/ferry/companyOverview";
 import { useVesselAlerts } from "@/lib/ferry/vesselAlerts";
 import { formatDuration } from "@/lib/ferry/format";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 
 const title = "Compagnies de ferry Europe ↔ Algérie — BledWay";
 const description =
@@ -61,10 +61,10 @@ export const Route = createFileRoute("/compagnies")({
 });
 
 const thisYear = new Date().getFullYear();
-const number = (value: number) => value.toLocaleString("fr-FR");
-const decimal = (value: number) => value.toLocaleString("fr-FR", { maximumFractionDigits: 1 });
+const number = (value: number) => value.toLocaleString(intlLocale());
+const decimal = (value: number) => value.toLocaleString(intlLocale(), { maximumFractionDigits: 1 });
 const shortDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("fr-FR", {
+  new Date(iso).toLocaleDateString(intlLocale(), {
     day: "numeric",
     month: "short",
     timeZone: "Europe/Paris",
@@ -90,7 +90,7 @@ function CompagniesPage() {
     overviewOf(company).lines.filter((line) => !from || line.route.departure_port_id === from);
   const departurePorts = [...new Set(routes.map((route) => route.departure_port_id))]
     .map((id) => ({ id, name: portName(id) }))
-    .sort((a, b) => a.name.localeCompare(b.name, "fr"));
+    .sort((a, b) => a.name.localeCompare(b.name, intlLocale()));
   const shown = companies.filter((company) => !from || linesOf(company).length);
   // Le secteur en chiffres, en tête de page (même esprit que la page Navires).
   const allFleet = companies.flatMap((company) => overviewOf(company).fleet);
@@ -212,7 +212,7 @@ function CompagniesPage() {
                       <td data-label={tr("ui.pageCompagnies.navires")}>{overview.fleet.length}</td>
                       <td data-label={tr("ui.pageCompagnies.ageMoyen")}>{overview.averageAge != null ? `${overview.averageAge} ans` : "—"}</td>
                       <td data-label={tr("ui.pageCompagnies.navirePhare")}>{overview.flagship?.name ?? "—"}</td>
-                      <td data-label={tr("ui.pageCompagnies.passagers")}>{overview.passengersMax?.toLocaleString("fr-FR") ?? "—"}</td>
+                      <td data-label={tr("ui.pageCompagnies.passagers")}>{overview.passengersMax?.toLocaleString(intlLocale()) ?? "—"}</td>
                     </tr>
                   );
                 })}

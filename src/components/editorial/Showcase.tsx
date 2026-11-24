@@ -235,7 +235,7 @@ export function DepartureRows({
             <Link
               to="/"
               search={{ select: "departure", id: departure.id } as never}
-              className={`group flex items-center gap-3 rounded-2xl border bg-card p-3 pr-4 transition hover:-translate-y-0.5 hover:border-[#0e7a43]/35 hover:shadow-md sm:gap-4 ${cancelled ? "border-destructive/30 opacity-75" : "border-border"}`}
+              className={`group flex items-center gap-3 rounded-2xl border bg-card p-3 pe-4 transition hover:-translate-y-0.5 hover:border-[#0e7a43]/35 hover:shadow-md sm:gap-4 ${cancelled ? "border-destructive/30 opacity-75" : "border-border"}`}
               aria-label={`Départ du ${parts.weekday} ${parts.shortDate} à ${parts.time}${company ? `, ${company.name}` : ""} : voir sur la carte`}
             >
               <span className="flex w-14 shrink-0 flex-col items-center rounded-xl bg-[#0f2a3d] py-2 text-white">

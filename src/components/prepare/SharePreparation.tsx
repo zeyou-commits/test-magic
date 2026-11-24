@@ -19,7 +19,7 @@ export function SharePreparation({ compact = false }: { compact?: boolean }) {
   return (
     <Link
       to="/ma-preparation"
-      className="mt-4 flex items-center gap-3 rounded-2xl border border-primary/25 bg-white p-3.5 text-left shadow-sm transition hover:border-primary"
+      className="mt-4 flex items-center gap-3 rounded-2xl border border-primary/25 bg-white p-3.5 text-start shadow-sm transition hover:border-primary"
     >
       <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
         <Share2 size={18} aria-hidden />

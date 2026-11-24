@@ -8,7 +8,13 @@ export const DEFAULT_LOCALE: Locale = "fr";
  * Langues ouvertes au public. Tant qu'il n'y a que le français, rien ne change à l'écran :
  * pas de sélecteur, pas de détection. Ajouter "ar" ici le jour où sa traduction est prête.
  */
-export const ENABLED_LOCALES: readonly Locale[] = ["fr"];
+export const ENABLED_LOCALES: readonly Locale[] = ["fr", "ar"];
+
+/**
+ * Suivre la langue du téléphone. Désactivé tant que l'arabe a encore des textes en français
+ * (libellés construits dans src/lib, noms de ports) : la langue ne change que sur choix du visiteur.
+ */
+export const FOLLOW_DEVICE_LANGUAGE = false;
 
 /** Langues qui s'écrivent de droite à gauche. */
 const RTL_LOCALES: readonly Locale[] = ["ar"];

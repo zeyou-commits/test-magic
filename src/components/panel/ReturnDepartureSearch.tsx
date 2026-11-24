@@ -48,12 +48,12 @@ export function ReturnDepartureSearch({ departureId, selectedId, onChoose, disab
     <label className="flex min-h-10 items-center gap-2 rounded-lg border bg-background px-3 text-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/25">
       <CalendarDays size={16} className="shrink-0 text-primary" aria-hidden />
       <span className="text-xs text-muted-foreground">{outboundAt ? tr("ui.returnDepartureSearch.autreDate") : tr("ui.returnDepartureSearch.dateDuRetour")}</span>
-      <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="min-w-0 flex-1 bg-transparent py-2 text-right outline-none" />
+      <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="min-w-0 flex-1 bg-transparent py-2 text-end outline-none" />
     </label>
     <div className="grid max-h-56 gap-2 overflow-y-auto" aria-label={tr("ui.returnDepartureSearch.suggestionsDeRetours")}>
       {returns.isPending || search !== debounced ? <p className="py-2 text-xs text-muted-foreground">{tr("ui.returnDepartureSearch.rechercheDesRetours")}</p>
         : returns.isError ? <p role="alert" className="py-2 text-xs text-destructive">{tr("ui.returnDepartureSearch.lesRetoursSontIndisponiblesPour")}</p>
-        : shown?.length ? shown.map((item) => <button key={item.id} type="button" disabled={disabled} aria-pressed={selectedId === item.id} onClick={() => onChoose(item.id)} className="flex w-full items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2 text-left text-xs hover:border-primary aria-pressed:border-primary aria-pressed:bg-primary/5">
+        : shown?.length ? shown.map((item) => <button key={item.id} type="button" disabled={disabled} aria-pressed={selectedId === item.id} onClick={() => onChoose(item.id)} className="flex w-full items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2 text-start text-xs hover:border-primary aria-pressed:border-primary aria-pressed:bg-primary/5">
           <span className="min-w-0"><strong className="block truncate text-sm">{item.from_name} → {item.to_name}</strong>
             <span className="block text-muted-foreground">{formatDateTime(item.departure_at, portTimeZone({ country_code: item.from_country_code }))}</span>
             <span className="block truncate text-muted-foreground">{[item.company_name, item.vessel_name].filter(Boolean).join(" · ") || tr("ui.returnDepartureSearch.compagnieAConfirmer")} <VesselAlertTag vesselId={item.vessel_id} /></span>

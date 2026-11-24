@@ -18,8 +18,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-display: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: "Inter", "Noto Sans Arabic", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "Inter", "Noto Sans Arabic", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -290,7 +290,7 @@
 }
 .port-marker__dot {
   position: absolute;
-  left: -22px;
+  inset-inline-start: -22px;
   top: -22px;
   width: 44px;
   height: 44px;
@@ -464,7 +464,7 @@
 /* ---------- Infobulle de port (Popover Carte) ---------- */
 .port-tip {
   position: absolute;
-  left: 16px;
+  inset-inline-start: 16px;
   top: -12px;
   z-index: 5;
   width: 272px;
@@ -489,7 +489,7 @@
 .port-tip__close {
   position: absolute;
   top: 13px;
-  right: 13px;
+  inset-inline-end: 13px;
   z-index: 5;
   width: 28px;
   height: 28px;
@@ -525,7 +525,7 @@
   pointer-events: auto;
 }
 .port-tip__header {
-  padding-right: 34px;
+  padding-inline-end: 34px;
 }
 .port-tip__title {
   margin: 0;
@@ -589,7 +589,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-align: right;
+  text-align: end;
 }
 .port-tip__next {
   margin: 0;
@@ -750,7 +750,7 @@
   left: 50%;
   width: 4.5px;
   height: 4.5px;
-  margin-left: -2.25px;
+  margin-inline-start: -2.25px;
   border-radius: 999px;
   background: var(--color-primary);
 }
@@ -874,8 +874,8 @@
 .bw-journey-guide__track {
   position: absolute;
   top: 1.68rem;
-  right: 12%;
-  left: 12%;
+  inset-inline-end: 12%;
+  inset-inline-start: 12%;
   height: 2px;
   background: color-mix(in oklab, var(--primary) 28%, white);
 }
@@ -923,9 +923,9 @@
   background: white;
   color: var(--primary);
 }
-@keyframes bw-journey-car-first { 0% { left: 12.5%; opacity: 0; } 3%, 28% { opacity: 1; } 32% { left: 37.5%; opacity: 0; } 33%, 100% { left: 37.5%; opacity: 0; } }
-@keyframes bw-journey-ship { 0%, 32% { left: 37.5%; opacity: 0; } 36%, 61% { opacity: 1; } 65% { left: 62.5%; opacity: 0; } 66%, 100% { left: 62.5%; opacity: 0; } }
-@keyframes bw-journey-car-last { 0%, 65% { left: 62.5%; opacity: 0; } 69%, 95% { opacity: 1; } 99%, 100% { left: 87.5%; opacity: 0; } }
+@keyframes bw-journey-car-first { 0% { inset-inline-start: 12.5%; opacity: 0; } 3%, 28% { opacity: 1; } 32% { inset-inline-start: 37.5%; opacity: 0; } 33%, 100% { inset-inline-start: 37.5%; opacity: 0; } }
+@keyframes bw-journey-ship { 0%, 32% { inset-inline-start: 37.5%; opacity: 0; } 36%, 61% { opacity: 1; } 65% { inset-inline-start: 62.5%; opacity: 0; } 66%, 100% { inset-inline-start: 62.5%; opacity: 0; } }
+@keyframes bw-journey-car-last { 0%, 65% { inset-inline-start: 62.5%; opacity: 0; } 69%, 95% { opacity: 1; } 99%, 100% { inset-inline-start: 87.5%; opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .bw-journey-guide__vehicle { display: none; } }
 
 /* Fanion de compagnie : petit drapeau planté sur le bord du jeton du navire (taille fixe). */
@@ -970,7 +970,7 @@
 .bw-pennant-mast {
   width: 3px;
   height: 22px;
-  margin-left: 0;
+  margin-inline-start: 0;
   background: #16324a;
   border-radius: 1px;
 }
@@ -1060,7 +1060,7 @@
   left: calc(50% + 7px);
 }
 .port-marker[data-land="left"] .port-marker__lighthouse {
-  left: auto;
+  inset-inline-start: auto;
   right: calc(50% + 7px);
 }
 
@@ -1084,4 +1084,14 @@
     transparent 0 2px,
     rgba(138, 90, 0, 0.45) 2px 3px
   );
+}
+
+/* Arabe (droite à gauche) : les flèches de direction pointent vers la suite de la lecture. */
+[dir="rtl"] :is(.lucide-chevron-right, .lucide-chevron-left, .lucide-arrow-right, .lucide-arrow-left,
+  .lucide-chevrons-right, .lucide-chevrons-left, .lucide-arrow-up-right, .lucide-move-right) {
+  transform: scaleX(-1);
+}
+/* L'arabe a besoin d'un peu plus d'interligne que le latin. */
+[lang="ar"] body {
+  line-height: 1.7;
 }

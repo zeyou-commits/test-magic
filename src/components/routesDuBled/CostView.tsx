@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ChevronDown, Coins, Fuel, Ship, SlidersHorizontal } from "lucide-react";
-import { tr } from "@/lib/i18n";
+import { tr, lazyDateFormat } from "@/lib/i18n";
 import { euros, type Cout, type Reglages } from "@/lib/routesDuBled/budget";
 
 const VEHICULES: { id: Reglages["vehicule"]; label: string }[] = [
@@ -12,7 +12,7 @@ const VEHICULES: { id: Reglages["vehicule"]; label: string }[] = [
   { id: "utility", label: "Utilitaire" },
 ];
 const nomMois = (m: number) =>
-  new Intl.DateTimeFormat("fr-FR", { month: "long" }).format(new Date(2026, m - 1, 10));
+  lazyDateFormat({ month: "long" }).format(new Date(2026, m - 1, 10));
 
 /** Le prix d'une route, affiché seulement quand le voyageur le demande. */
 export function CostView({

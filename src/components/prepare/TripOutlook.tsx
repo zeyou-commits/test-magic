@@ -44,23 +44,23 @@ import {
   TOLL_EURO_PER_KM,
   travelDays,
 } from "@/components/prepare/RouteTop3";
-import { tr } from "@/lib/i18n";
+import { tr, lazyDateFormat, intlLocale } from "@/lib/i18n";
 
 const dayLabel = (key: string) =>
-  new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short" })
+  lazyDateFormat({ weekday: "short", day: "numeric", month: "short" })
     .format(new Date(`${key}T12:00:00`))
     .replace(/\./g, "")
     .replace(/^./, (c) => c.toUpperCase());
 const longDay = (key: string) =>
-  new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric" })
+  lazyDateFormat({ day: "numeric", month: "long", year: "numeric" })
     .format(new Date(`${key}T12:00:00`))
     .replace(/^1 /, "1er ");
 
 /** Arrondi lisible : à la centaine (à la dizaine sous 200 €). */
 const roundNice = (n: number) => (n < 200 ? Math.round(n / 10) * 10 : Math.round(n / 100) * 100);
-const nice = (n: number) => `${roundNice(n).toLocaleString("fr-FR")} €`;
+const nice = (n: number) => `${roundNice(n).toLocaleString(intlLocale())} €`;
 const dayMonth = (key: string) =>
-  new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" })
+  lazyDateFormat({ day: "numeric", month: "long" })
     .format(new Date(`${key}T12:00:00`))
     .replace(/^1 /, "1er ");
 const countOf = (n: number, word: string) => `${n} ${word}${n > 1 ? "s" : ""}`;
@@ -171,7 +171,7 @@ const EXTRA_FIELDS: {
 ];
 
 const pct = (part: number, total: number) => (total > 0 ? Math.round((part / total) * 100) : 0);
-const euros = (n: number) => `${Math.round(n).toLocaleString("fr-FR")} €`;
+const euros = (n: number) => `${Math.round(n).toLocaleString(intlLocale())} €`;
 
 /** Le camembert (anneau) : une part par poste, le total au centre. */
 function BudgetDonut({ slices, total }: { slices: Slice[]; total: number }) {
@@ -245,7 +245,7 @@ export function TripBudget({
   const withWhat =
     plan.vehicle === "none" ? "sans voiture" : `et la ${vehicle?.label.toLowerCase() ?? "voiture"}`;
   const outDay = planHasWhen(plan) ? dayMonth(planDay(plan)) : null;
-  const km = Math.round(b.roadKm).toLocaleString("fr-FR");
+  const km = Math.round(b.roadKm).toLocaleString(intlLocale());
   const extras = plan.extras ?? {};
   const slices: Slice[] = [
     {
@@ -284,7 +284,7 @@ export function TripBudget({
               <>
                 {plan.home?.name ?? tr("ui.tripOutlook.chezVous")} → {fromChoice.port.name}{tr("ui.tripOutlook.environ")}{km}{tr("ui.tripOutlook.km")}
                 {b.trips > 1 ? tr("ui.tripOutlook.aFaire2FoisAller") : ""}{tr("ui.tripOutlook.uneVoitureMoyenneConsomme")}{FUEL_L_PER_100}{tr("ui.tripOutlook.lAux100KmA")}{" "}
-                {FUEL_EURO_PER_L.toLocaleString("fr-FR")}{tr("ui.tripOutlook.leLitre")}
+                {FUEL_EURO_PER_L.toLocaleString(intlLocale())}{tr("ui.tripOutlook.leLitre")}
               </>
             ),
           },
@@ -392,7 +392,7 @@ export function TripBudget({
             onClick={() => setEditing((v) => !v)}
           >
             <Plus size={15} aria-hidden />
-            <span className="flex-1 text-left">
+            <span className="flex-1 text-start">
               {b.own ? `Mes autres dépenses : ${nice(b.own)}` : tr("ui.tripOutlook.ajouterMesAutresDepenses")}
             </span>
             <ChevronDown size={14} className={editing ? "rotate-180" : ""} aria-hidden />
@@ -500,7 +500,7 @@ export function SailingsOutlook({
   // La recherche couvre le jour ± 3 : on le dit, plutôt qu'un seul jour.
   const period =
     plan.date && !plan.window
-      ? `autour du ${new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${plan.date}T12:00:00`))}`
+      ? `autour du ${lazyDateFormat({ weekday: "long", day: "numeric", month: "long" }).format(new Date(`${plan.date}T12:00:00`))}`
       : planWhenLabel(plan);
   const see = (label: string) => (
     <button type="button" onClick={onSee} className="bw-outlook__see">

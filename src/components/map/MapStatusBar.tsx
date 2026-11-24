@@ -36,7 +36,7 @@ export function MapStatusBar({
     <div
       role="status"
       aria-live="polite"
-      className={`pointer-events-none absolute left-0 right-0 top-14 z-10 flex flex-wrap items-center justify-center gap-2 px-4 transition-all duration-300 md:top-20 md:justify-start ${panelOpen ? "md:left-[calc(var(--desktop-panel-width)+3rem)]" : "md:left-10"}`}
+      className={`pointer-events-none absolute start-0 end-0 top-14 z-10 flex flex-wrap items-center justify-center gap-2 px-4 transition-all duration-300 md:top-20 md:justify-start ${panelOpen ? "md:left-[calc(var(--desktop-panel-width)+3rem)]" : "md:start-10"}`}
     >
       {hasError ? (
         <div className="pointer-events-auto inline-flex min-h-9 items-center gap-2 rounded-full border border-destructive/20 bg-background px-3 py-1 text-sm font-medium text-destructive shadow-sm">
@@ -57,7 +57,7 @@ export function MapStatusBar({
           type="button"
           aria-label={t("map.status.removeFilter", { label: chip.label })}
           onClick={() => onFiltersChange(chip.remove(filters))}
-          className="pointer-events-auto hidden min-h-9 items-center gap-1.5 rounded-full border border-border bg-background/95 py-1 pl-3 pr-2 text-sm font-semibold text-foreground shadow-sm backdrop-blur hover:bg-secondary md:inline-flex"
+          className="pointer-events-auto hidden min-h-9 items-center gap-1.5 rounded-full border border-border bg-background/95 py-1 ps-3 pe-2 text-sm font-semibold text-foreground shadow-sm backdrop-blur hover:bg-secondary md:inline-flex"
         >
           {chip.label}
           <X className="size-3.5 text-muted-foreground" />

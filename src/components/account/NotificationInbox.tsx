@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { noticeHref } from "@/lib/notifications/noticeStyle";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 import { Bw504Note } from "@/components/companion/Bw504Note";
 
 // Tables communautaires pas encore présentes dans les types générés.
@@ -54,7 +54,7 @@ export function NotificationInbox({ userId }: { userId: string }) {
       ) : notices.error ? (
         <p role="alert" className="text-sm text-destructive">
           {tr("ui.notificationInbox.lesNotificationsSontIndisponibles")}
-          <button type="button" className="ml-2 underline" onClick={() => void notices.refetch()}>
+          <button type="button" className="ms-2 underline" onClick={() => void notices.refetch()}>
             {tr("ui.notificationInbox.reessayer")}
           </button>
         </p>
@@ -67,12 +67,12 @@ export function NotificationInbox({ userId }: { userId: string }) {
           {notices.data.map((notice) => (
             <article
               key={notice.id}
-              className={`py-4 ${notice.read_at ? "" : "border-l-2 border-l-primary pl-3"}`}
+              className={`py-4 ${notice.read_at ? "" : "border-s-2 border-s-primary ps-3"}`}
             >
               <div className="flex flex-wrap justify-between gap-2">
                 <h3 className="text-sm font-semibold">{notice.title}</h3>
                 <time className="text-[11px] text-muted-foreground">
-                  {new Date(notice.created_at).toLocaleDateString("fr-FR")}
+                  {new Date(notice.created_at).toLocaleDateString(intlLocale())}
                 </time>
               </div>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{notice.body}</p>

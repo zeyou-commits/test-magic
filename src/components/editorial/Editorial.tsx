@@ -232,7 +232,7 @@ export function ContentSection({ section }: { section: Section }) {
         </p>
       ))}
       {section.bullets ? (
-        <ul className="mt-4 list-disc space-y-3 pl-5 leading-7 text-muted-foreground">
+        <ul className="mt-4 list-disc space-y-3 ps-5 leading-7 text-muted-foreground">
           {section.bullets.map((item) => (
             <li key={item}>{item}</li>
           ))}
@@ -245,7 +245,7 @@ export function ContentSection({ section }: { section: Section }) {
           tabIndex={0}
           className="mt-5 overflow-x-auto rounded-xl border focus-visible:outline-2 focus-visible:outline-primary"
         >
-          <table className="w-full text-left text-sm">
+          <table className="w-full text-start text-sm">
             <thead className="bg-secondary">
               <tr>
                 {section.table.headers.map((h) => (

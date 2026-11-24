@@ -15,9 +15,9 @@ import { estimateFare, formatEuro, useFareProfile } from "@/lib/ferry/pricing";
 import { summarizePassengers, summarizeVehicle } from "./TripProfile";
 import { vesselPositionsQuery } from "@/lib/ferry/useLiveShips";
 import { wallTimeInZone } from "@/lib/ferry/time";
-import { tr } from "@/lib/i18n";
+import { tr, lazyDateFormat } from "@/lib/i18n";
 
-const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
+const dayFormatter = lazyDateFormat({
   weekday: "short",
   day: "numeric",
   month: "short",
@@ -79,10 +79,10 @@ function Leg({
         onMouseLeave={() => onHover(false)}
         onFocus={() => onHover(true)}
         onBlur={() => onHover(false)}
-        className={`group/leg relative block w-full py-2 pl-3.5 pr-3 md:py-3 md:pl-4 md:pr-3.5 text-left transition-colors hover:bg-secondary/40 ${expanded ? colors.expandedBg : ""}`}
+        className={`group/leg relative block w-full py-2 ps-3.5 pe-3 md:py-3 md:ps-4 md:pe-3.5 text-start transition-colors hover:bg-secondary/40 ${expanded ? colors.expandedBg : ""}`}
       >
         <span
-          className="absolute inset-y-0 left-0 w-1.5"
+          className="absolute inset-y-0 start-0 w-1.5"
           style={{ background: colors.bar }}
           aria-hidden
         />
@@ -109,7 +109,7 @@ function Leg({
               {atdAt ? (
                 <>
                   <span className="text-muted-foreground line-through">{sailing.depTime}</span>
-                  <span className="ml-1.5 text-sm font-bold text-success">
+                  <span className="ms-1.5 text-sm font-bold text-success">
                     {wallTimeInZone(atdAt, sailing.fromZone)}{tr("ui.roundTripCard.reel")}
                   </span>
                 </>
@@ -127,23 +127,23 @@ function Leg({
             </span>
             <div className="relative h-0.5 w-full rounded-full bg-border">
               <span className="absolute inset-0 rounded-full bg-gradient-to-r from-primary to-cta opacity-0 transition-opacity duration-300 group-hover/leg:opacity-100" />
-              <span className="absolute -left-0.5 top-1/2 size-2 -translate-y-1/2 rounded-full bg-primary" />
-              <span className="absolute -right-0.5 top-1/2 size-2 -translate-y-1/2 rounded-full border-2 border-primary bg-card" />
+              <span className="absolute -start-0.5 top-1/2 size-2 -translate-y-1/2 rounded-full bg-primary" />
+              <span className="absolute -end-0.5 top-1/2 size-2 -translate-y-1/2 rounded-full border-2 border-primary bg-card" />
               <span className="absolute left-1/2 top-1/2 grid size-6 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-card text-primary shadow-sm ring-1 ring-border transition-transform duration-500 group-hover/leg:translate-x-3">
                 <Ship className="size-3.5" />
               </span>
             </div>
           </div>
-          <div className="text-right">
+          <div className="text-end">
             <div className="font-display text-xl md:text-2xl font-bold leading-none tabular-nums tracking-tight">
               {sailing.arrTime ?? "—"}
               {sailing.arrDayOffset > 0 ? (
-                <sup className="ml-0.5 text-[11px] font-semibold text-cta">
+                <sup className="ms-0.5 text-[11px] font-semibold text-cta">
                   +{sailing.arrDayOffset}
                 </sup>
               ) : null}
             </div>
-            <div className="ml-auto mt-0.5 max-w-[96px] truncate text-xs font-semibold">
+            <div className="ms-auto mt-0.5 max-w-[96px] truncate text-xs font-semibold">
               {sailing.to.name}
             </div>
           </div>
@@ -290,7 +290,7 @@ export function RoundTripCard({
           {tr("ui.roundTripCard.estimationAR")}
         </span>
         {outAlert || backAlert ? (
-          <span className="ml-auto text-right text-[11px] font-semibold text-destructive">
+          <span className="ms-auto text-end text-[11px] font-semibold text-destructive">
             {tr("ui.roundTripCard.departAConfirmerAupresDe")}
           </span>
         ) : (
@@ -303,7 +303,7 @@ export function RoundTripCard({
             markBookingLeave(bookSite);
           }}
           title={tr("ui.roundTripCard.tarifMoyenIndicatifAllerRetour")}
-          className="ml-auto inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-cta px-3 text-xs font-semibold tabular-nums text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
+          className="ms-auto inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-cta px-3 text-xs font-semibold tabular-nums text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
         >
           ≈ {formatEuro(total)} <ArrowUpRight className="size-3.5" aria-hidden />
           <span className="sr-only">{tr("ui.roundTripCard.sur")}{bookSite}{tr("ui.roundTripCard.nouvelOnglet")}</span>
@@ -370,15 +370,15 @@ function CompactLeg({
         </span>
         <span className="relative block h-0.5 w-full rounded-full bg-border">
           <span className="absolute inset-0 origin-left scale-x-0 rounded-full bg-primary transition-transform duration-500 group-hover/rt:scale-x-100 motion-reduce:transition-none" />
-          <span className="absolute -left-0.5 top-1/2 size-1.5 -translate-y-1/2 rounded-full bg-primary" />
-          <span className="absolute -right-0.5 top-1/2 size-1.5 -translate-y-1/2 rounded-full border border-primary bg-card" />
+          <span className="absolute -start-0.5 top-1/2 size-1.5 -translate-y-1/2 rounded-full bg-primary" />
+          <span className="absolute -end-0.5 top-1/2 size-1.5 -translate-y-1/2 rounded-full border border-primary bg-card" />
         </span>
       </div>
-      <div className="min-w-0 text-right leading-tight">
+      <div className="min-w-0 text-end leading-tight">
         <span className="block font-display text-lg font-bold tabular-nums tracking-tight">
           {sailing.arrTime ?? "—"}
           {sailing.arrDayOffset > 0 ? (
-            <sup className="ml-0.5 text-[10px] font-semibold text-cta">+{sailing.arrDayOffset}</sup>
+            <sup className="ms-0.5 text-[10px] font-semibold text-cta">+{sailing.arrDayOffset}</sup>
           ) : null}
         </span>
         <span className="block truncate text-[11px] text-muted-foreground">{sailing.to.name}</span>
@@ -451,7 +451,7 @@ export function RoundTripRow({
           aria-controls={panelId}
           onFocus={() => onHoverRoute(trip.out.route.id)}
           onBlur={() => onHoverRoute(null)}
-          className="min-w-0 divide-y divide-dashed divide-border rounded-l-2xl px-4 py-1 text-left focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--color-primary)]"
+          className="min-w-0 divide-y divide-dashed divide-border rounded-s-2xl px-4 py-1 text-start focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--color-primary)]"
         >
           <CompactLeg
             label={tr("ui.roundTripCard.aller")}
@@ -468,7 +468,7 @@ export function RoundTripRow({
             onHover={(h) => onHoverRoute(h ? trip.back.route.id : null)}
           />
         </button>
-        <div className="flex flex-col items-end justify-center gap-1 border-l border-border bg-muted/30 px-4 py-3 text-right">
+        <div className="flex flex-col items-end justify-center gap-1 border-s border-border bg-muted/30 px-4 py-3 text-end">
           {outAlert || backAlert ? (
             <span className="text-xs font-semibold text-destructive">
               {tr("ui.roundTripCard.departAConfirmerAupresDe")}

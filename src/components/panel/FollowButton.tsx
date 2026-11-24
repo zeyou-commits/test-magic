@@ -167,7 +167,7 @@ export function FollowButton({
           role="status"
           className={
             iconOnly
-              ? "absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border bg-background p-3 text-[11px] shadow-lg"
+              ? "absolute end-0 top-full z-50 mt-2 w-56 rounded-xl border bg-background p-3 text-[11px] shadow-lg"
               : "max-w-sm text-[11px] leading-snug text-muted-foreground"
           }
         >

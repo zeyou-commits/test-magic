@@ -35,7 +35,7 @@ import {
 } from "@/lib/ferry/queries";
 import { portTimeZone } from "@/lib/ferry/time";
 import { absoluteUrl, seoHead } from "@/lib/seo/site";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 
 export const Route = createFileRoute("/bateaux/$slug")({
   loader: async ({ context, params }) => {
@@ -98,21 +98,21 @@ function Boat() {
     facts.push({
       icon: Users,
       label: "Passagers",
-      value: vessel.passenger_capacity.toLocaleString("fr-FR"),
+      value: vessel.passenger_capacity.toLocaleString(intlLocale()),
       hint: "Capacité annoncée",
     });
   if (vessel?.car_capacity)
     facts.push({
       icon: CarFront,
       label: "Véhicules",
-      value: vessel.car_capacity.toLocaleString("fr-FR"),
+      value: vessel.car_capacity.toLocaleString(intlLocale()),
       hint: "Capacité du garage",
     });
   if (vessel?.length_meters)
     facts.push({
       icon: Ruler,
       label: "Longueur",
-      value: `${vessel.length_meters.toLocaleString("fr-FR")} m`,
+      value: `${vessel.length_meters.toLocaleString(intlLocale())} m`,
       hint: vessel.speed_knots ? `Vitesse ${vessel.speed_knots} nœuds` : undefined,
     });
 

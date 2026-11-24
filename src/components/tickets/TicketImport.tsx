@@ -46,7 +46,7 @@ import {
   type TicketDetails,
 } from "@/lib/tickets/tickets";
 import { TicketCamera } from "./TicketCamera";
-import { tr } from "@/lib/i18n";
+import { tr, lazyDateFormat, intlLocale } from "@/lib/i18n";
 import { useDraftGuard } from "@/components/layout/DraftGuard";
 
 type Step = "choose" | "camera" | "reading" | "review" | "saved";
@@ -317,7 +317,7 @@ export function TicketImport({
     : null;
   const pastTicket = lastDated !== null && lastDated + 86_400_000 < Date.now();
   const pastDay = pastTicket && lastDated
-    ? new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric" }).format(new Date(lastDated))
+    ? lazyDateFormat({ day: "numeric", month: "long", year: "numeric" }).format(new Date(lastDated))
     : "";
 
   const companyVessels = vessels.filter(
@@ -571,7 +571,7 @@ export function TicketImport({
                         <option value="">{tr("ui.ticketImport.aucuneDeCesTraversees")}</option>
                         {list.map((d) => (
                           <option key={d.id} value={d.id}>
-                            {new Date(d.departure_at).toLocaleDateString("fr-FR", {
+                            {new Date(d.departure_at).toLocaleDateString(intlLocale(), {
                               weekday: "short",
                               day: "numeric",
                               month: "short",

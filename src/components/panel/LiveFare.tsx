@@ -8,7 +8,7 @@ import type { Sailing } from "@/lib/ferry/trips";
 import { VEHICLES, type TripProfileValue } from "./TripProfile";
 import { directFerriesStatus, getLiveFare } from "@/lib/directferries/functions";
 import type { LiveFare as LiveFareResult } from "@/lib/directferries/quote";
-import { tr } from "@/lib/i18n";
+import { tr, lazyNumberFormat } from "@/lib/i18n";
 
 /** Direct Ferries est-il branché sur ce serveur ? Une seule question par visite. */
 export function useDirectFerriesEnabled() {
@@ -23,7 +23,7 @@ export function useDirectFerriesEnabled() {
 }
 
 const money = (amount: number, currency: string) =>
-  new Intl.NumberFormat("fr-FR", { style: "currency", currency, maximumFractionDigits: 0 }).format(
+  lazyNumberFormat({ style: "currency", currency, maximumFractionDigits: 0 }).format(
     Math.ceil(amount),
   );
 

@@ -9,7 +9,7 @@ import { companiesQuery, portsQuery, routesQuery, vesselsQuery } from "@/lib/fer
 import { portTimeZone } from "@/lib/ferry/time";
 import { useVesselAlert } from "@/lib/ferry/vesselAlerts";
 import type { TravelAction } from "@/lib/notifications/actions";
-import { tr } from "@/lib/i18n";
+import { tr, lazyDateFormat } from "@/lib/i18n";
 
 type Follow = Extract<TravelAction, { type: "follow" }>;
 type Purpose = "voyageur" | "proche" | "curieux";
@@ -131,13 +131,13 @@ export function TripQuestion({
   const label = from && to ? `${from.name} → ${to.name}` : action.label;
   const upper = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
   const pill = (iso: string, tz: string) => ({
-    day: upper(new Intl.DateTimeFormat("fr-FR", {
+    day: upper(lazyDateFormat({
       timeZone: tz,
       weekday: "short",
       day: "numeric",
       month: "short",
     }).format(new Date(iso))),
-    time: new Intl.DateTimeFormat("fr-FR", {
+    time: lazyDateFormat({
       timeZone: tz,
       hour: "2-digit",
       minute: "2-digit",

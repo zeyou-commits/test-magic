@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { offlineSavedAt } from "@/lib/offline";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 
 /** Sans réseau (en mer, au port) : on dit d'où viennent les informations affichées. */
 export function OfflineBanner() {
@@ -21,7 +21,7 @@ export function OfflineBanner() {
   }, []);
   if (!offline) return null;
   const time = savedAt
-    ? new Date(savedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
+    ? new Date(savedAt).toLocaleTimeString(intlLocale(), { hour: "2-digit", minute: "2-digit" })
     : null;
   return (
     <div className="bw-offline-banner" role="status">

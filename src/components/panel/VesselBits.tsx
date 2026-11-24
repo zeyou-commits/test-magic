@@ -3,9 +3,9 @@ import { Ship } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { Vessel } from "@/lib/ferry/types";
 import { safeExternalUrl } from "./shared";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 
-const number = (value: number | null | undefined) => value?.toLocaleString("fr-FR");
+const number = (value: number | null | undefined) => value?.toLocaleString(intlLocale());
 
 export function VesselSpecs({ vessel }: { vessel: Vessel }) {
   const items = [

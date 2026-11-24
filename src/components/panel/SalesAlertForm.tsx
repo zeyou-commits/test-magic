@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { BellRing, CalendarClock, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { tr } from "@/lib/i18n";
+import { tr, lazyDateFormat } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
 
 /** Message « pas encore programmé » + inscription à l'alerte d'ouverture des ventes. */
@@ -54,7 +54,7 @@ export function SalesAlertForm({
           {publishedUntil ? (
             <span className="mt-0.5 block text-xs font-normal text-foreground/80">
               {tr("ui.salesAlertForm.publieJusquAu")}
-              {new Intl.DateTimeFormat("fr-FR", {
+              {lazyDateFormat({
                 day: "numeric",
                 month: "long",
                 year: "numeric",

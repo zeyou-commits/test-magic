@@ -35,7 +35,7 @@ import {
 } from "@/lib/company/access";
 import { dateKeyInZone, wallTimeInZone, zoneLabel, zonedTimeToUtc } from "@/lib/ferry/time";
 import type { Departure } from "@/lib/ferry/types";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 
 /** Ce que la page « Espace compagnie » sait déjà afficher, partagé avec ces rubriques. */
 export type DeskContext = {
@@ -100,7 +100,7 @@ function History({ activity, itemId }: { activity: CompanyActivity | undefined; 
         {events.map((event, index) => (
           <li key={`${event.at}-${index}`}>
             {EVENT_LABELS[event.action] ?? event.action} · {event.by} ·{" "}
-            {new Date(event.at).toLocaleString("fr-FR", {
+            {new Date(event.at).toLocaleString(intlLocale(), {
               dateStyle: "short",
               timeStyle: "short",
               timeZone: "Europe/Paris",

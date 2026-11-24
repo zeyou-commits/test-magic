@@ -66,7 +66,7 @@
   width: 100%;
   min-height: 84px;
   padding: 10px 12px;
-  text-align: left;
+  text-align: start;
   color: var(--foreground);
 }
 .bw-vessel-mini__open:hover {
@@ -108,15 +108,15 @@
 }
 .bw-vessel-mini__company {
   position: absolute;
-  left: 88px;
-  right: 32px;
+  inset-inline-start: 88px;
+  inset-inline-end: 32px;
   bottom: 12px;
   display: flex;
   min-height: 24px;
   align-items: center;
   gap: 5px;
   color: var(--muted-foreground);
-  text-align: left;
+  text-align: start;
   font-size: 12px;
 }
 .bw-vessel-mini__company > span:last-child {
@@ -133,7 +133,7 @@
   z-index: 42;
   top: 20px;
   bottom: 20px;
-  left: calc(var(--desktop-panel-width) + 32px);
+  inset-inline-start: calc(var(--desktop-panel-width) + 32px);
   width: 380px;
   display: flex;
   flex-direction: column;
@@ -297,7 +297,7 @@
 .bw-company-programmes button {
   display: flex;
   flex-direction: column;
-  text-align: left;
+  text-align: start;
   width: 100%;
   gap: 4px;
   padding: 12px 6px;
@@ -344,7 +344,7 @@
   color: var(--muted-foreground);
 }
 .bw-entity-reviews__summary > button {
-  margin-left: auto;
+  margin-inline-start: auto;
   min-height: 40px;
 }
 .bw-rating-notice {
@@ -414,7 +414,7 @@
 .bw-rating-choices .bw-rating-na {
   width: auto;
   padding: 4px 8px;
-  margin-left: 3px;
+  margin-inline-start: 3px;
   font-size: 11px;
   color: var(--muted-foreground);
 }
@@ -453,7 +453,7 @@
 }
 .bw-rating-detail dd,
 .bw-rating-list dd {
-  text-align: right;
+  text-align: end;
   flex: none;
   color: var(--muted-foreground);
 }

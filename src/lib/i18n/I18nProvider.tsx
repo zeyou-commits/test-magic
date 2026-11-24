@@ -11,12 +11,13 @@ import {
 import {
   DEFAULT_LOCALE,
   ENABLED_LOCALES,
+  FOLLOW_DEVICE_LANGUAGE,
   STORAGE_KEY,
   dirOf,
   pickLocale,
   type Locale,
 } from "./config";
-import { setCurrentLocale, translate, type TranslateVars } from "./translate";
+import { loadCatalog, setCurrentLocale, translate, type TranslateVars } from "./translate";
 import type { MessageKey } from "./messages/fr";
 
 interface I18nValue {
@@ -44,8 +45,13 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (ENABLED_LOCALES.length < 2) return;
-    const next = pickLocale(navigator.languages, readSaved());
-    if (next !== DEFAULT_LOCALE) setLocaleState(next);
+    const next = pickLocale(FOLLOW_DEVICE_LANGUAGE ? navigator.languages : [], readSaved());
+    if (next === DEFAULT_LOCALE) return;
+    let alive = true;
+    void loadCatalog(next).then(() => alive && setLocaleState(next));
+    return () => {
+      alive = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -63,7 +69,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     } catch {
       // Navigation privée : le choix vaut pour cette visite seulement.
     }
-    setLocaleState(next);
+    void loadCatalog(next).then(() => setLocaleState(next));
   }, []);
 
   const value = useMemo(() => ({ locale, setLocale }), [locale, setLocale]);

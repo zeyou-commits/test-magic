@@ -50,7 +50,7 @@ import {
 import { OptionIcon, SituationBadge } from "@/components/panel/SituationIcon";
 import { PhotoPicker } from "@/components/photos/Photos";
 import { photosKey, submitPhoto, type PreparedPhoto } from "@/lib/photos/photos";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 
 // Suivis du compte (table bw_follows), absente des types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -669,7 +669,7 @@ export function QuickReport({
                   {crossingMode ? tr("ui.quickReport.choisirLePortDeDepart") : tr("ui.quickReport.choisirLePort")}
                 </option>
                 {[...ports]
-                  .sort((a, b) => a.name.localeCompare(b.name, "fr"))
+                  .sort((a, b) => a.name.localeCompare(b.name, intlLocale()))
                   .map((port) => (
                     <option key={port.id} value={port.id}>
                       {port.name} ({port.country_name})
@@ -708,7 +708,7 @@ export function QuickReport({
               ) : null}
               <optgroup label={tr("ui.quickReport.tousLesBateaux")}>
                 {[...vessels]
-                  .sort((a, b) => a.name.localeCompare(b.name, "fr"))
+                  .sort((a, b) => a.name.localeCompare(b.name, intlLocale()))
                   .map((s) => (
                     <option key={s.vesselId} value={s.vesselId!}>
                       {s.name} ·{" "}
@@ -947,7 +947,7 @@ export function QuickReport({
           </button>
           <Sheet open={open} onOpenChange={(next) => (next ? setOpen(true) : closeReport())}>
             <SheetContent side="bottom" className="bw-report-sheet">
-              <SheetHeader className="text-left">
+              <SheetHeader className="text-start">
                 <SheetTitle>{title}</SheetTitle>
                 <SheetDescription className="sr-only">
                   {tr("ui.quickReport.signalerUneSituationAuPort")}

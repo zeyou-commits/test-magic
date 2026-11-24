@@ -942,7 +942,7 @@ export function TaskRow({
             type="button"
             onClick={() => setOpen((o) => !o)}
             aria-expanded={open}
-            className="w-full text-left"
+            className="w-full text-start"
           >
             <span
               className={`block font-semibold leading-snug ${done ? "text-muted-foreground line-through" : ""}`}
@@ -979,7 +979,7 @@ export function TaskRow({
                   <AlertTriangle size={12} aria-hidden />{tr("ui.papersFlow.aFaireConfirmer")}
                 </span>
               ) : null}
-              <span className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-primary">
+              <span className="ms-auto inline-flex items-center gap-1 text-xs font-semibold text-primary">
                 {open ? tr("ui.papersFlow.masquer") : tr("ui.papersFlow.pourquoiComment")}
                 <ChevronDown size={14} className={open ? "rotate-180" : ""} aria-hidden />
               </span>

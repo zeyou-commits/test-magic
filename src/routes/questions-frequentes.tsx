@@ -12,7 +12,7 @@ import { companiesQuery, portsQuery, routesQuery } from "@/lib/ferry/queries";
 import { formatDuration } from "@/lib/ferry/format";
 import { CONFIRM_NOTE, generalFaq } from "@/lib/seo/answers";
 import { seoHead } from "@/lib/seo/site";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 
 export const Route = createFileRoute("/questions-frequentes")({
   loader: async ({ context }) => {
@@ -45,7 +45,7 @@ function FaqPage() {
         .map((company) => company.name)
         .join(", "),
     }))
-    .sort((a, b) => a.label.localeCompare(b.label, "fr"));
+    .sort((a, b) => a.label.localeCompare(b.label, intlLocale()));
 
   return (
     <SiteLayout>
@@ -63,7 +63,7 @@ function FaqPage() {
       <section className="mt-10">
         <h2 className="font-display text-2xl font-bold">{tr("ui.pageQuestionsFrequentes.toutesLesLignesEtLeur")}</h2>
         <div className="mt-4 overflow-x-auto rounded-xl border">
-          <table className="w-full min-w-[560px] text-left text-sm">
+          <table className="w-full min-w-[560px] text-start text-sm">
             <thead className="bg-secondary/70">
               <tr>
                 <th className="px-4 py-3">{tr("ui.pageQuestionsFrequentes.ligne")}</th>

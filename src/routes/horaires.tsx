@@ -37,7 +37,7 @@ import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import { useVesselAlerts } from "@/lib/ferry/vesselAlerts";
 import { breadcrumbSchema, seoHead } from "@/lib/seo/site";
 import { Breadcrumbs } from "@/components/editorial/Editorial";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 
 const BoardMap = lazy(() => import("@/components/board/BoardMap"));
 
@@ -160,7 +160,7 @@ function EmptyBoard({
       >
         Avec ces filtres, les départs publiés vont jusqu'au{" "}
         {new Date(why.until)
-          .toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
+          .toLocaleDateString(intlLocale(), { day: "numeric", month: "long", year: "numeric" })
           .replace(/^1 /, "1er ")}
         . Reviens
         plus tard pour cette date.
@@ -555,7 +555,7 @@ function BoardPage() {
                 onClick={() =>
                   update({ company: on ? undefined : item.id, vessel: undefined, route: undefined })
                 }
-                className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl border-2 py-1 pl-2 pr-3 text-[13px] font-semibold transition-all hover:-translate-y-px ${on ? "border-primary bg-card shadow-md" : "border-border bg-card/60"}`}
+                className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl border-2 py-1 ps-2 pe-3 text-[13px] font-semibold transition-all hover:-translate-y-px ${on ? "border-primary bg-card shadow-md" : "border-border bg-card/60"}`}
               >
                 <CompanyBadge name={item.name} logoUrl={item.logo_url} size={26} />
                 {item.name}
@@ -639,7 +639,7 @@ function BoardPage() {
                       }
                     >
                       {vessel.name}{" "}
-                      {alerts.has(vessel.id) ? <b className="ml-1 text-red-600">!</b> : null}
+                      {alerts.has(vessel.id) ? <b className="ms-1 text-red-600">!</b> : null}
                     </Chip>
                   ))
                 ) : (
@@ -707,7 +707,7 @@ function BoardPage() {
                       type="button"
                       aria-expanded={open}
                       onClick={() => select(id)}
-                      className={`flex min-h-[68px] w-full flex-wrap items-center gap-x-3 gap-y-1.5 px-3 py-2.5 text-left transition-colors sm:flex-nowrap sm:px-4 ${open ? "bg-primary/5" : "hover:bg-secondary/50"}`}
+                      className={`flex min-h-[68px] w-full flex-wrap items-center gap-x-3 gap-y-1.5 px-3 py-2.5 text-start transition-colors sm:flex-nowrap sm:px-4 ${open ? "bg-primary/5" : "hover:bg-secondary/50"}`}
                     >
                       <span className="w-[76px] shrink-0">
                         <strong className="block text-lg font-extrabold tabular-nums leading-tight">

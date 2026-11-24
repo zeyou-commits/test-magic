@@ -7,7 +7,7 @@ import { VesselPhotoBadge } from "@/components/panel/VesselFacts";
 import { vesselDossiers } from "@/content/vessels";
 import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
 import type { Port, RouteLine, Vessel } from "@/lib/ferry/types";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 
 export function routeLabel(route: RouteLine, ports: Port[]) {
   const from = ports.find((p) => p.id === route.departure_port_id)?.name ?? "?";
@@ -23,14 +23,14 @@ export function VesselCard({ vessel, routes, ports }: { vessel: Vessel; routes: 
   const dossier = vesselDossiers.find((d) => d.name.toLowerCase() === vessel.name.toLowerCase());
   const stats = [
     { icon: CalendarDays, label: "Âge", value: vessel.build_year && vessel.build_year <= year ? `${year - vessel.build_year} ans` : null },
-    { icon: Users, label: "Passagers", value: vessel.passenger_capacity?.toLocaleString("fr-FR") },
-    { icon: CarFront, label: "Véhicules", value: vessel.car_capacity?.toLocaleString("fr-FR") },
+    { icon: Users, label: "Passagers", value: vessel.passenger_capacity?.toLocaleString(intlLocale()) },
+    { icon: CarFront, label: "Véhicules", value: vessel.car_capacity?.toLocaleString(intlLocale()) },
     { icon: Ruler, label: "Longueur", value: vessel.length_meters ? `${vessel.length_meters} m` : null },
     { icon: Gauge, label: "Vitesse", value: vessel.speed_knots ? `${Math.round(vessel.speed_knots * 1.852)} km/h` : null },
-    { icon: BedDouble, label: "Cabines", value: vessel.cabin_capacity?.toLocaleString("fr-FR") },
-    { icon: Scale, label: "Jauge brute", value: vessel.gross_tonnage ? `${vessel.gross_tonnage.toLocaleString("fr-FR")} t` : null },
-    { icon: MoveHorizontal, label: "Largeur", value: vessel.beam_meters ? `${vessel.beam_meters.toLocaleString("fr-FR")} m` : null },
-    { icon: Layers, label: "Ponts", value: vessel.deck_count?.toLocaleString("fr-FR") },
+    { icon: BedDouble, label: "Cabines", value: vessel.cabin_capacity?.toLocaleString(intlLocale()) },
+    { icon: Scale, label: "Jauge brute", value: vessel.gross_tonnage ? `${vessel.gross_tonnage.toLocaleString(intlLocale())} t` : null },
+    { icon: MoveHorizontal, label: "Largeur", value: vessel.beam_meters ? `${vessel.beam_meters.toLocaleString(intlLocale())} m` : null },
+    { icon: Layers, label: "Ponts", value: vessel.deck_count?.toLocaleString(intlLocale()) },
   ].filter((s) => s.value);
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border bg-background shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">

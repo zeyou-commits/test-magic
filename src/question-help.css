@@ -146,7 +146,7 @@
   padding: 13px 14px 4px;
   color: #16324a;
   font: inherit;
-  text-align: left;
+  text-align: start;
 }
 .bw-help__q > span {
   display: grid;
@@ -269,7 +269,7 @@
   background: #ffffff;
   color: #16324a;
   font: inherit;
-  text-align: left;
+  text-align: start;
   text-decoration: none;
 }
 .bw-help__exit:not([data-static]):hover,
@@ -327,7 +327,7 @@
   border-radius: 14px;
   background: #f3faf6;
   color: #0e7a43;
-  text-align: left;
+  text-align: start;
 }
 .bw-room-picker__ask span {
   display: grid;
@@ -589,7 +589,7 @@
 .bw-ai__assistant > svg {
   position: absolute;
   top: 8px;
-  right: 8px;
+  inset-inline-end: 8px;
   color: #9a95bf;
 }
 .bw-ai__assistant[data-preferred] {
@@ -748,7 +748,7 @@
   border-radius: 18px;
   background: #ffffff;
   color: #16324a;
-  text-align: left;
+  text-align: start;
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease,

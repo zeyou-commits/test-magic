@@ -56,7 +56,7 @@ function ResultRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex min-h-12 w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left hover:bg-secondary"
+      className="flex min-h-12 w-full items-center gap-3 rounded-lg px-2 py-1.5 text-start hover:bg-secondary"
     >
       <Icon className="size-4 shrink-0 text-primary" aria-hidden />
       <span className="min-w-0 flex-1">
@@ -151,7 +151,7 @@ export function MapSearch({
       </button>
       <Dialog open={open} onOpenChange={(next) => (next ? setOpen(true) : close())}>
         <DialogContent onOpenAutoFocus={keepKeyboardClosedOnTouch} className="top-0 flex h-dvh max-w-none translate-y-0 flex-col gap-3 rounded-none sm:top-[12%] sm:h-auto sm:max-h-[76dvh] sm:max-w-lg sm:rounded-2xl">
-          <DialogHeader className="text-left">
+          <DialogHeader className="text-start">
             <DialogTitle>{t("map.search.title")}</DialogTitle>
             <DialogDescription>{t("map.search.description")}</DialogDescription>
           </DialogHeader>

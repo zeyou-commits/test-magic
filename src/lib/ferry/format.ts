@@ -1,3 +1,4 @@
+import { intlLocale } from "@/lib/i18n/translate";
 /** Majuscule à la première lettre seulement (règle typographique française). */
 export function capitalizeFirst(value: string): string {
   return value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
@@ -30,10 +31,11 @@ function formatter(
   timeZone: string | undefined,
 ): Intl.DateTimeFormat {
   const zoneKey = timeZone ?? `local${new Date().getTimezoneOffset()}`;
-  const key = `${zoneKey}|${JSON.stringify(options)}`;
+  const locale = intlLocale();
+  const key = `${locale}|${zoneKey}|${JSON.stringify(options)}`;
   let cached = formatters.get(key);
   if (!cached) {
-    cached = new Intl.DateTimeFormat("fr-FR", { ...options, timeZone });
+    cached = new Intl.DateTimeFormat(locale, { ...options, timeZone });
     formatters.set(key, cached);
   }
   return cached;

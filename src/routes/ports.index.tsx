@@ -29,7 +29,7 @@ import {
 } from "@/lib/ferry/queries";
 import { deName, formatDate } from "@/lib/ferry/format";
 import { portTimeZone } from "@/lib/ferry/time";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 
 const title = "Ports de ferry Europe ↔ Algérie : lignes, départs, services | BledWay";
 const description =
@@ -55,7 +55,7 @@ function PortsPage() {
   const { data: departures } = useSuspenseQuery(upcomingDeparturesQuery());
 
   const countries = [...new Set(ports.map((port) => port.country_name))].sort((a, b) =>
-    a.localeCompare(b, "fr"),
+    a.localeCompare(b, intlLocale()),
   );
   const routesOf = (id: string) =>
     routes.filter((route) => route.departure_port_id === id || route.arrival_port_id === id);
@@ -140,7 +140,7 @@ function PortsPage() {
           .filter((port) => port.country_name === country)
           .sort(
             (a, b) =>
-              routesOf(b.id).length - routesOf(a.id).length || a.name.localeCompare(b.name, "fr"),
+              routesOf(b.id).length - routesOf(a.id).length || a.name.localeCompare(b.name, intlLocale()),
           );
         return (
           <section

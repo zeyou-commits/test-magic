@@ -145,7 +145,7 @@ export function JourneyPlanner({
             className="font-semibold text-primary underline underline-offset-2"
           >
             {currentIsReturn ? tr("ui.journeyPlanner.voirMonAller") : tr("ui.journeyPlanner.voirMonRetour")}
-            <ArrowRight size={12} className="ml-1 inline" aria-hidden />
+            <ArrowRight size={12} className="ms-1 inline" aria-hidden />
           </button>
         ) : currentIsReturn ? null : (
           <button

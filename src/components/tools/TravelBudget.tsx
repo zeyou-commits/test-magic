@@ -143,7 +143,7 @@ export function TravelBudget() {
           <ResultPanel>
             <h2 className="font-display text-xl font-bold">{tr("ui.travelBudget.comparaisonAvecVosMontants")}</h2>
             <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="w-full text-start text-sm">
                 <thead>
                   <tr>
                     <th scope="col" className="py-2">

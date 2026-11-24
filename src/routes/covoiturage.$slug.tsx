@@ -47,7 +47,7 @@ function Place() {
         <section className="mt-8">
           <h2 className="font-display text-2xl font-bold">{tr("ui.pageCovoiturageSlug.fixerUnRendezVousQui")}</h2>
           <p className="mt-4 leading-7 text-muted-foreground">{p.rendezvous}</p>
-          <ul className="mt-4 list-disc space-y-3 pl-5 leading-7 text-muted-foreground">
+          <ul className="mt-4 list-disc space-y-3 ps-5 leading-7 text-muted-foreground">
             <li>
               {tr("ui.pageCovoiturageSlug.verifiezLaLocalisationAvecLe")}
             </li>

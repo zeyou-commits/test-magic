@@ -179,10 +179,10 @@ export function TrafficCard({
               <s className="bw-old-time">{time(replacedTime(c.times.departure), c.from)}</s>
             ) : null}
           </span>
-          <span className="text-right">
+          <span className="text-end">
             {tr("ui.trafficCard.arrivee")}
             <b>{time(c.times.arrival.iso, c.to)}</b>
-            {dayDelta > 0 && <sup className="ml-0.5 text-primary">+{dayDelta} j</sup>}
+            {dayDelta > 0 && <sup className="ms-0.5 text-primary">+{dayDelta} j</sup>}
             {replacedTime(c.times.arrival) ? (
               <s className="bw-old-time">{time(replacedTime(c.times.arrival), c.to)}</s>
             ) : null}

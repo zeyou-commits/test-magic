@@ -617,7 +617,7 @@ function AccessRequestFormCard({ defaultEmail }: { defaultEmail: string }) {
         />
       </Field>
       {/* Champ piège : invisible pour une personne, rempli par un robot. */}
-      <div aria-hidden className="absolute -left-[9999px] size-px overflow-hidden">
+      <div aria-hidden className="absolute -start-[9999px] size-px overflow-hidden">
         <label>
           {tr("ui.companyShowcase.siteWeb")}
           <input

@@ -9,7 +9,7 @@ import {
 import type { ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 
 type Point = { latitude: number; longitude: number };
 const ORIGIN: Point = { latitude: 0, longitude: 0 };
@@ -238,7 +238,7 @@ export function SeaForecast({
           {level.label}{" "}
           <span>
             {tr("ui.seaForecast.vaguesJusquA")}
-            {peak.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} m
+            {peak.toLocaleString(intlLocale(), { maximumFractionDigits: 1 })} m
           </span>
         </strong>
         {lively ? <p>{tr("ui.seaForecast.siVousEtesSensibleAu")}</p> : null}

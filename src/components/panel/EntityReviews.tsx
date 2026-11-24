@@ -23,7 +23,7 @@ import {
 } from "@/lib/ferry/entityReviews";
 import { PhotoPicker, PhotoStrip } from "@/components/photos/Photos";
 import { photosKey, photosQuery, submitPhoto, type PreparedPhoto } from "@/lib/photos/photos";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 import { CompanyReplyNote } from "./CompanyPublic";
 import { companyRepliesQuery } from "@/lib/company/publicDesk";
 
@@ -192,7 +192,7 @@ export function EntityReviews({
                 <strong>
                   {r.author?.pseudo ?? tr("ui.entityReviews.voyageurBledway")} · {reviewNumber(r.score)}/5
                 </strong>
-                <time dateTime={r.date}>{new Date(r.date).toLocaleDateString("fr-FR")}</time>
+                <time dateTime={r.date}>{new Date(r.date).toLocaleDateString(intlLocale())}</time>
               </div>
               <PhotoStrip photos={reviewPhotos?.get(r.id)} label={tr("ui.entityReviews.photosDeCetAvis")} />
               <details>

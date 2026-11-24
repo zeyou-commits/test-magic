@@ -46,7 +46,7 @@
 .bw-chat-pin__count {
   position: absolute;
   top: -6px;
-  right: -8px;
+  inset-inline-end: -8px;
   min-width: 14px;
   height: 12px;
   padding: 0 3px;
@@ -87,7 +87,7 @@
 /* Au zoom : la pastille s'ouvre en une ligne blanche, l'icône reste devant. */
 .bw-chat-pin[data-peek="true"] {
   height: 20px;
-  padding-right: 9px;
+  padding-inline-end: 9px;
   background: #fff;
   color: #16324a;
   border-radius: 999px;
@@ -98,7 +98,7 @@
 .bw-chat-pin[data-peek="true"] .bw-chat-pin__icon {
   width: 16px;
   height: 16px;
-  margin-left: 2px;
+  margin-inline-start: 2px;
   border-radius: 50%;
   background: #0e7a43;
   color: #fff;
@@ -121,7 +121,7 @@
   position: absolute;
   z-index: 40;
   /* PC : à droite, à côté des boutons de la carte, loin du panneau de gauche. */
-  right: 76px;
+  inset-inline-end: 76px;
   bottom: 24px;
   width: min(300px, calc(100% - 92px));
   padding: 9px 10px 10px 12px;
@@ -209,7 +209,7 @@
   font-weight: 800;
 }
 .bw-pin-sheet li small {
-  margin-left: 5px;
+  margin-inline-start: 5px;
   font-size: 10.5px;
   color: #6b7a74;
 }

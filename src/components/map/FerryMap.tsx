@@ -1270,7 +1270,7 @@ export default function FerryMap({
             // Médaillon compact : logo rond, nom du navire, puce d'allure.
             const info = vesselCardsRef.current[String(feature.properties["vesselId"] ?? "")];
             const moving = feature.properties["icon"] !== "ship-dock";
-            card.className = "flex items-center gap-2 pr-1";
+            card.className = "flex items-center gap-2 pe-1";
             const badge = document.createElement("span");
             badge.className =
               "grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-card ring-1 ring-border";
@@ -1302,7 +1302,7 @@ export default function FerryMap({
               photo.alt = String(feature.properties["name"] ?? "");
               photo.className = "h-28 w-full rounded-lg object-contain bg-white p-1";
               const row = document.createElement("div");
-              row.className = "flex items-center gap-2 pr-1";
+              row.className = "flex items-center gap-2 pe-1";
               row.append(badge, text);
               card.append(photo, row);
             } else card.append(badge, text);
@@ -1336,14 +1336,14 @@ export default function FerryMap({
         card.className = "min-w-48 space-y-1 p-1";
         const heading = document.createElement("strong");
         heading.textContent = `${members.length} navires à proximité`;
-        heading.className = "mb-2 block pr-4 text-sm";
+        heading.className = "mb-2 block pe-4 text-sm";
         card.append(heading);
         for (const member of members) {
           const button = document.createElement("button");
           button.type = "button";
           button.textContent = String(member.properties["name"]);
           button.className =
-            "block min-h-11 w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-primary hover:bg-secondary focus-visible:outline-2 focus-visible:outline-primary";
+            "block min-h-11 w-full rounded-lg px-3 py-2 text-start text-sm font-semibold text-primary hover:bg-secondary focus-visible:outline-2 focus-visible:outline-primary";
           button.addEventListener("click", (e) => {
             e.stopPropagation();
             selectShip(member.properties);

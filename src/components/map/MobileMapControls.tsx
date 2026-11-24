@@ -156,7 +156,7 @@ export function MobileMapControls({
           type="button"
           variant="ghost"
           onClick={() => openPicker("departure")}
-          className="h-11 min-w-0 justify-start rounded-lg px-2 text-left hover:bg-secondary/70"
+          className="h-11 min-w-0 justify-start rounded-lg px-2 text-start hover:bg-secondary/70"
         >
           <span className="min-w-0">
             <span className="block text-[11px] font-semibold uppercase text-muted-foreground">
@@ -183,7 +183,7 @@ export function MobileMapControls({
           type="button"
           variant="ghost"
           onClick={() => openPicker("arrival")}
-          className="h-11 min-w-0 justify-start rounded-lg px-2 text-left hover:bg-secondary/70"
+          className="h-11 min-w-0 justify-start rounded-lg px-2 text-start hover:bg-secondary/70"
         >
           <span className="min-w-0">
             <span className="block text-[11px] font-semibold uppercase text-muted-foreground">
@@ -231,12 +231,12 @@ export function MobileMapControls({
 
           <div className="shrink-0 space-y-3 px-4 py-3">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={t("map.picker.placeholder")}
-                className="batogo-control h-12 pl-10 pr-10 text-base"
+                className="batogo-control h-12 ps-10 pe-10 text-base"
               />
               {query ? (
                 <Button
@@ -245,7 +245,7 @@ export function MobileMapControls({
                   size="icon"
                   aria-label={t("map.picker.clearSearch")}
                   onClick={() => setQuery("")}
-                  className="absolute right-1 top-1/2 -translate-y-1/2"
+                  className="absolute end-1 top-1/2 -translate-y-1/2"
                 >
                   <X className="size-4" />
                 </Button>
@@ -328,7 +328,7 @@ export function MobileMapControls({
                         >
                           {selected ? <Check className="size-4" /> : <MapPin className="size-4" />}
                         </span>
-                        <span className="min-w-0 flex-1 text-left">
+                        <span className="min-w-0 flex-1 text-start">
                           <span className="block truncate text-sm font-semibold">{port.name}</span>
                           {detail ? (
                             <span className="block truncate text-xs font-normal text-muted-foreground">

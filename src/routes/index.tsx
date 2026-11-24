@@ -1961,7 +1961,7 @@ function Index() {
               onPointerCancel={() => {
                 resizingPanel.current = false;
               }}
-              className="absolute -right-1 top-4 bottom-4 z-10 hidden w-2 cursor-ew-resize rounded-full transition-colors hover:bg-primary/30 md:block"
+              className="absolute -end-1 top-4 bottom-4 z-10 hidden w-2 cursor-ew-resize rounded-full transition-colors hover:bg-primary/30 md:block"
             />
             <Button
               type="button"
@@ -1980,7 +1980,7 @@ function Index() {
               aria-expanded={desktopPanelOpen}
               aria-controls="map-side-panel"
               onClick={() => setDesktopPanelOpen((open) => !open)}
-              className={`absolute -right-8 top-1/2 hidden h-14 w-8 -translate-y-1/2 rounded-l-none rounded-r-lg border-l-0 bg-background/95 text-primary shadow-md backdrop-blur-md ${wideIdle ? "" : "md:flex"}`}
+              className={`absolute -end-8 top-1/2 hidden h-14 w-8 -translate-y-1/2 rounded-s-none rounded-e-lg border-s-0 bg-background/95 text-primary shadow-md backdrop-blur-md ${wideIdle ? "" : "md:flex"}`}
             >
               {desktopPanelOpen ? (
                 <ChevronLeft className="size-5" />
@@ -1991,7 +1991,7 @@ function Index() {
           </aside>
 
           {/* NAVIGATION MOBILE */}
-          <div className="bw-home-mobile-tabs fixed bottom-0 left-0 right-0 z-[70] md:hidden">
+          <div className="bw-home-mobile-tabs fixed bottom-0 start-0 end-0 z-[70] md:hidden">
             <MobileTabBar
               className="h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]"
               activeTab={
@@ -2421,7 +2421,7 @@ function CollapsedPanelSummary({
       variant="ghost"
       onClick={onOpen}
       {...dragHandlers}
-      className="h-24 w-full flex-none touch-none flex-col items-stretch justify-start gap-2 rounded-none rounded-t-3xl border-b bg-card px-4 py-2 text-left md:hidden"
+      className="h-24 w-full flex-none touch-none flex-col items-stretch justify-start gap-2 rounded-none rounded-t-3xl border-b bg-card px-4 py-2 text-start md:hidden"
       style={{ touchAction: "none" }}
       aria-label={`${title} — ${matchingRoutesCount} lignes. Ouvrir la liste`}
     >

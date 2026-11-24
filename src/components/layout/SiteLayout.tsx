@@ -351,7 +351,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
     <div className="flex min-h-dvh flex-col bg-background">
       <a
         href="#contenu"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-background focus:p-3 focus:text-primary"
+        className="sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-background focus:p-3 focus:text-primary"
       >
         {t("menu.skipToContent")}
       </a>

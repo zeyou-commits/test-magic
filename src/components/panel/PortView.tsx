@@ -57,10 +57,10 @@ import { TravelSignals } from "./TravelCommunity";
 import { PortGallery } from "./CompanyPublic";
 import { PortHelpRequests } from "@/components/community/HelpRequests";
 import { globalCriterionQuery } from "./PortReviewForm";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 
 const scoreLabel = (value: number) =>
-  value.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  value.toLocaleString(intlLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 /** Cinq étoiles, lisibles d'un coup d'œil. */
 function StarRow({ value, size = 15 }: { value: number; size?: number }) {
@@ -634,7 +634,7 @@ export function PortView({
                       <strong>{name}</strong>
                       {score != null ? <StarRow value={score} size={13} /> : null}
                       <time dateTime={review.created_at}>
-                        {new Date(review.created_at).toLocaleDateString("fr-FR", {
+                        {new Date(review.created_at).toLocaleDateString(intlLocale(), {
                           day: "numeric",
                           month: "short",
                           year: "numeric",

@@ -4,7 +4,7 @@ import { companiesQuery, portsQuery, vesselsQuery } from "@/lib/ferry/queries";
 import { Button } from "@/components/ui/button";
 import { reviewScore } from "@/lib/ferry/reviewCriteria";
 import { reviewNumber } from "@/lib/ferry/reviewCriteria";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 export function MyEntityReviews({ userId }: { userId: string }) {
   const query = useQuery(ownEntityReviewsQuery(userId));
   const client = useQueryClient();
@@ -61,7 +61,7 @@ export function MyEntityReviews({ userId }: { userId: string }) {
                         : tr("ui.myEntityReviews.masquee")}
                   </p>
                   <small className="text-muted-foreground">
-                    {new Date(r.updated_at).toLocaleDateString("fr-FR")}
+                    {new Date(r.updated_at).toLocaleDateString(intlLocale())}
                     {r.status === "pending" && r.published_scores
                       ? tr("ui.myEntityReviews.ancienneNoteToujoursPubliee")
                       : ""}

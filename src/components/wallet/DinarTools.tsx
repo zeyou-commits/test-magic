@@ -13,16 +13,16 @@ import {
   type StayPlan,
 } from "@/lib/wallet/plan";
 import type { Currency, Rate } from "@/lib/wallet/wallet";
-import { tr } from "@/lib/i18n";
+import { tr, lazyNumberFormat, intlLocale } from "@/lib/i18n";
 
 const PLAN_KEY = "bledway:dinars-plan:v1";
 const POCKET_KEY = "bledway:dinars-poche:v1";
 
-const da = (value: number) => `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(value)} DA`;
+const da = (value: number) => `${lazyNumberFormat({ maximumFractionDigits: 0 }).format(value)} DA`;
 const cur = (value: number, currency: Currency) =>
-  new Intl.NumberFormat("fr-FR", { style: "currency", currency, maximumFractionDigits: 0 }).format(value);
+  lazyNumberFormat({ style: "currency", currency, maximumFractionDigits: 0 }).format(value);
 const day = (date: string | null | undefined) =>
-  date ? new Date(date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : "date inconnue";
+  date ? new Date(date).toLocaleDateString(intlLocale(), { day: "numeric", month: "short" }) : "date inconnue";
 
 function readJson(key: string) {
   try {
@@ -62,7 +62,7 @@ export function RateCompare({ rate, currency }: { rate: Rate | undefined; curren
         </p>
       </div>
       <strong>
-        {tr("ui.dinarTools.ecart")}{da(parallel - official)} (× {(parallel / official).toLocaleString("fr-FR", { maximumFractionDigits: 2 })})
+        {tr("ui.dinarTools.ecart")}{da(parallel - official)} (× {(parallel / official).toLocaleString(intlLocale(), { maximumFractionDigits: 2 })})
       </strong>
       <em>{tr("ui.dinarTools.repereIndicatifBledwayNEncourage")}</em>
     </section>
@@ -311,7 +311,7 @@ export function PocketCount({ left, started }: { left: number; started: boolean 
       <ul>
         {POCKET_VALUES.map((value) => (
           <li key={value}>
-            <span>{value.toLocaleString("fr-FR")}{tr("ui.dinarTools.da")}</span>
+            <span>{value.toLocaleString(intlLocale())}{tr("ui.dinarTools.da")}</span>
             <div className="bw-dz-pocket__qty">
               <button type="button" aria-label={`Retirer un billet de ${value} DA`} disabled={!counts[value]} onClick={() => step(value, -1)}>
                 <Minus size={16} aria-hidden />

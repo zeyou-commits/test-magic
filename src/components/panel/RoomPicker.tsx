@@ -15,7 +15,7 @@ import { companiesQuery, portsQuery, routesQuery, vesselsQuery } from "@/lib/fer
 import { CompanyBadge } from "./CompanyBadge";
 import { portTimeZone } from "@/lib/ferry/time";
 import type { Selection } from "@/lib/ferry/types";
-import { tr } from "@/lib/i18n";
+import { tr, lazyDateFormat } from "@/lib/i18n";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 
@@ -139,7 +139,7 @@ export function RoomPicker({
     const tomorrow = dateKeyInZone(new Date(Date.now() + 86_400_000).toISOString(), "Europe/Paris");
     if (key === today) return "Aujourd'hui";
     if (key === tomorrow) return "Demain";
-    const label = new Intl.DateTimeFormat("fr-FR", {
+    const label = lazyDateFormat({
       weekday: "long",
       day: "numeric",
       month: "long",

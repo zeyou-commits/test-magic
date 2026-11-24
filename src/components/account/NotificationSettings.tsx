@@ -78,7 +78,7 @@ export function NotificationSettings({ userId }: { userId: string }) {
       ) : query.error ? (
         <p role="alert" className="rounded-xl bg-destructive/5 p-4 text-sm text-destructive">
           {tr("ui.notificationSettings.preferencesIndisponibles")}
-          <button type="button" className="ml-2 underline" onClick={() => void query.refetch()}>
+          <button type="button" className="ms-2 underline" onClick={() => void query.refetch()}>
             {tr("ui.notificationSettings.reessayer")}
           </button>
         </p>

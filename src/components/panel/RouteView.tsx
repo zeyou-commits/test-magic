@@ -145,7 +145,7 @@ export function RouteView({
                   key={departure.id}
                   type="button"
                   onClick={() => onSelect({ type: "departure", id: departure.id })}
-                  className="group flex w-full items-center justify-between rounded-md px-2 py-2 text-left hover:bg-secondary"
+                  className="group flex w-full items-center justify-between rounded-md px-2 py-2 text-start hover:bg-secondary"
                 >
                   <div className="flex flex-col">
                     <span className="text-sm font-semibold text-foreground">
@@ -197,7 +197,7 @@ export function RouteView({
                   <button
                     type="button"
                     onClick={() => onSelect({ type: "company", id: company.id })}
-                    className="group flex w-full items-center gap-3 text-left"
+                    className="group flex w-full items-center gap-3 text-start"
                   >
                     <CompanyBadge name={company.name} logoUrl={company.logo_url} size={30} />
                     <span className="min-w-0 flex-1">
@@ -246,7 +246,7 @@ export function RouteView({
                 key={port.id}
                 type="button"
                 onClick={() => onSelect({ type: "port", id: port.id })}
-                className="group flex items-center justify-between rounded-md px-2 py-2 text-left hover:bg-secondary"
+                className="group flex items-center justify-between rounded-md px-2 py-2 text-start hover:bg-secondary"
               >
                 <div>
                   <span className="font-medium text-foreground">

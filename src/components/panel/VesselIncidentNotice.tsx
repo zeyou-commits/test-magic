@@ -23,9 +23,9 @@ import {
 import { CompanyContacts } from "./CompanyContacts";
 import { ReportButton } from "./ReportButton";
 import { safeExternalUrl } from "./shared";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 
-const day = (iso: string) => new Date(iso).toLocaleDateString("fr-FR");
+const day = (iso: string) => new Date(iso).toLocaleDateString(intlLocale());
 
 /** Rouge si l'immobilisation est vérifiée, ambre pendant la vérification, vert une fois levée. */
 const incidentTone = (incident: VesselIncident) =>

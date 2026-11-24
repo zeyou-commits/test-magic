@@ -22,7 +22,7 @@ import type { MapLine, MapPin, MapPlace } from "@/components/routesDuBled/Routes
 import { Mosque } from "@/components/routesDuBled/StopVisuals";
 import { RouteCard, courte, duree } from "@/components/routesDuBled/RouteCard";
 import { seoHead } from "@/lib/seo/site";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 import { calculateRoadGeometry, measureBledLegs } from "@/lib/ferry/itinerary.functions";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -74,7 +74,7 @@ export const Route = createFileRoute("/routes-du-bled")({
   component: RoutesDuBledPage,
 });
 
-const fmt = (n: number) => Math.round(n).toLocaleString("fr-FR");
+const fmt = (n: number) => Math.round(n).toLocaleString(intlLocale());
 const STORE = "bw-routes-du-bled-v3";
 const BUDGET_KEY = "bw-routes-budget-v1";
 const DEPART_KEY = "bw-routes-depart-h";

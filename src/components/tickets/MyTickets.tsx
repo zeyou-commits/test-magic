@@ -14,11 +14,11 @@ import {
   type TicketRow,
 } from "@/lib/tickets/tickets";
 import { TicketImport } from "./TicketImport";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 
 const day = (date: string | null) =>
   date
-    ? new Date(`${date}T12:00:00Z`).toLocaleDateString("fr-FR", {
+    ? new Date(`${date}T12:00:00Z`).toLocaleDateString(intlLocale(), {
         weekday: "short",
         day: "numeric",
         month: "long",
@@ -215,7 +215,7 @@ export function TicketViewer({
             </dl>
             <p className="bw-ticket-note">
               {tr("ui.myTickets.effaceAutomatiquementLe")}{" "}
-              {new Date(ticket.delete_after).toLocaleDateString("fr-FR", {
+              {new Date(ticket.delete_after).toLocaleDateString(intlLocale(), {
                 day: "numeric",
                 month: "long",
               })}

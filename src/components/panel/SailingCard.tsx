@@ -37,9 +37,9 @@ import {
   useFareProfile,
 } from "@/lib/ferry/pricing";
 import { RECOMMENDED_RULE } from "@/lib/ferry/trips";
-import { tr } from "@/lib/i18n";
+import { tr, lazyDateFormat, intlLocale } from "@/lib/i18n";
 
-const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
+const dayFormatter = lazyDateFormat({
   weekday: "short",
   day: "numeric",
   month: "short",
@@ -109,7 +109,7 @@ export function SailingCard({
           onClick={onToggle}
           aria-expanded={expanded}
           aria-controls={panelId}
-          className="min-w-0 flex-1 rounded-l-2xl py-2 pl-3 pr-1 text-left focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--color-primary)]"
+          className="min-w-0 flex-1 rounded-s-2xl py-2 ps-3 pe-1 text-start focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--color-primary)]"
         >
           <div className="flex min-w-0 items-center gap-1.5 text-[11px] leading-4">
             <span className="truncate font-semibold text-foreground">
@@ -143,7 +143,7 @@ export function SailingCard({
               </span>
             ) : null}
             <ChevronDown
-              className={`ml-auto size-3.5 shrink-0 text-muted-foreground transition-transform duration-300 motion-reduce:transition-none ${expanded ? "rotate-180 text-primary" : ""}`}
+              className={`ms-auto size-3.5 shrink-0 text-muted-foreground transition-transform duration-300 motion-reduce:transition-none ${expanded ? "rotate-180 text-primary" : ""}`}
               aria-hidden
             />
           </div>
@@ -169,28 +169,28 @@ export function SailingCard({
                 {formatDuration(sailing.durationMin)}
               </span>
               <span className="relative h-0.5 w-full rounded-full bg-border">
-                <span className="absolute inset-y-0 left-0 w-full origin-left scale-x-0 rounded-full bg-primary transition-transform duration-500 group-hover:scale-x-100 motion-reduce:transition-none" />
-                <span className="absolute -left-0.5 top-1/2 size-1.5 -translate-y-1/2 rounded-full bg-primary" />
-                <span className="absolute -right-0.5 top-1/2 size-1.5 -translate-y-1/2 rounded-full border border-primary bg-card" />
+                <span className="absolute inset-y-0 start-0 w-full origin-left scale-x-0 rounded-full bg-primary transition-transform duration-500 group-hover:scale-x-100 motion-reduce:transition-none" />
+                <span className="absolute -start-0.5 top-1/2 size-1.5 -translate-y-1/2 rounded-full bg-primary" />
+                <span className="absolute -end-0.5 top-1/2 size-1.5 -translate-y-1/2 rounded-full border border-primary bg-card" />
               </span>
             </div>
-            <div className="min-w-0 text-right">
+            <div className="min-w-0 text-end">
               <div className="font-display text-lg font-bold leading-none tabular-nums tracking-tight">
                 {sailing.arrTime ?? "—"}
                 {arrivalSuffix ? (
-                  <sup className="ml-0.5 text-[10px] font-semibold text-cta">{arrivalSuffix}</sup>
+                  <sup className="ms-0.5 text-[10px] font-semibold text-cta">{arrivalSuffix}</sup>
                 ) : null}
               </div>
-              <div className="ml-auto mt-0.5 max-w-[88px] truncate text-[11px] font-medium text-muted-foreground">
+              <div className="ms-auto mt-0.5 max-w-[88px] truncate text-[11px] font-medium text-muted-foreground">
                 {sailing.to.name}
               </div>
             </div>
           </div>
         </button>
 
-        <div className="flex shrink-0 items-center py-2 pl-1 pr-2.5">
+        <div className="flex shrink-0 items-center py-2 ps-1 pe-2.5">
           {alert ? (
-            <span className="max-w-[88px] text-right text-[11px] font-semibold leading-tight text-destructive">
+            <span className="max-w-[88px] text-end text-[11px] font-semibold leading-tight text-destructive">
               {tr("ui.sailingCard.departAConfirmerAupresDe")}
             </span>
           ) : href ? (
@@ -206,7 +206,7 @@ export function SailingCard({
               title={`Voir l’offre sur ${bookingSite(sailing)} · budget estimé ${formatEuro(fare.amount)} (${formatFareRange(fare)})`}
             >
               <span className="tabular-nums">
-                {liveTotal != null ? `${liveTotal.toLocaleString("fr-FR")} €` : formatEuro(fare.amount)}
+                {liveTotal != null ? `${liveTotal.toLocaleString(intlLocale())} €` : formatEuro(fare.amount)}
               </span>
               {liveTotal != null ? (
                 <span className="sr-only"> : réserver ce départ</span>
@@ -380,7 +380,7 @@ export function SailingDetail({
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => markBookingLeave(bookingSite(sailing))}
-            className="ml-auto inline-flex h-8 items-center gap-1 rounded-full bg-cta px-3 font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
+            className="ms-auto inline-flex h-8 items-center gap-1 rounded-full bg-cta px-3 font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
           >
             {tr("ui.sailingCard.voirLOffre")}
             <ArrowUpRight className="size-3.5" aria-hidden />
@@ -403,9 +403,9 @@ function Fact({ label, value, hint }: { label: string; value: string; hint?: str
   );
 }
 
-const weekdayFmt = new Intl.DateTimeFormat("fr-FR", { weekday: "short", timeZone: "UTC" });
-const monthFmt = new Intl.DateTimeFormat("fr-FR", { month: "short", timeZone: "UTC" });
-const fullDayFmt = new Intl.DateTimeFormat("fr-FR", {
+const weekdayFmt = lazyDateFormat({ weekday: "short", timeZone: "UTC" });
+const monthFmt = lazyDateFormat({ month: "short", timeZone: "UTC" });
+const fullDayFmt = lazyDateFormat({
   weekday: "long",
   day: "numeric",
   month: "long",
@@ -556,7 +556,7 @@ export function DayStrip({
               {/* Plusieurs départs ce jour-là : un compteur en coin, qui ne pousse pas le jour. */}
               {count > 1 ? (
                 <span
-                  className={`absolute right-0.5 top-0.5 grid min-w-3.5 place-items-center rounded-full px-0.5 text-[9px] font-bold leading-[14px] ${active ? "bg-cta text-cta-foreground" : "bg-primary text-primary-foreground"}`}
+                  className={`absolute end-0.5 top-0.5 grid min-w-3.5 place-items-center rounded-full px-0.5 text-[9px] font-bold leading-[14px] ${active ? "bg-cta text-cta-foreground" : "bg-primary text-primary-foreground"}`}
                   aria-hidden
                 >
                   {count}
@@ -623,13 +623,13 @@ export function LiveStrip({ live, arrivalZone }: { live: LiveShip; arrivalZone: 
             : ""}
         </span>
       </span>
-      <span className="shrink-0 text-right text-muted-foreground">
+      <span className="shrink-0 text-end text-muted-foreground">
         {atSea && live.etaIso ? (
           <>
             {tr("ui.sailingCard.arriveeVers")}{" "}
             <strong className="text-foreground">{wallTimeInZone(live.etaIso, arrivalZone)}</strong>
             {live.delayMinutes !== null && delay.tone === "late" ? (
-              <span className="ml-1 font-semibold text-destructive">
+              <span className="ms-1 font-semibold text-destructive">
                 ({delay.label.replace("Retard estimé : ", "+")})
               </span>
             ) : null}

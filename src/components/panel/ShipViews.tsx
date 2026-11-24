@@ -54,7 +54,7 @@ import { ShipPhoto, VesselSpecs } from "./VesselBits";
 import { VesselIdentity, VesselPhotoBadge } from "./VesselFacts";
 import { TripStatusPicker, VesselPresence } from "./TripPresence";
 import { CompanyGallery } from "./CompanyPublic";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 
 function useShipData(exactDepartureId?: string) {
   const exact = useQuery({
@@ -242,12 +242,12 @@ export function VesselView({
             <div>
               <Users size={12} aria-hidden />
               <dt>{tr("ui.shipViews.passagers")}</dt>
-              <dd>{vessel.passenger_capacity?.toLocaleString("fr-FR") ?? "—"}</dd>
+              <dd>{vessel.passenger_capacity?.toLocaleString(intlLocale()) ?? "—"}</dd>
             </div>
             <div>
               <CarFront size={12} aria-hidden />
               <dt>{tr("ui.shipViews.vehicules")}</dt>
-              <dd>{vessel.car_capacity?.toLocaleString("fr-FR") ?? "—"}</dd>
+              <dd>{vessel.car_capacity?.toLocaleString(intlLocale()) ?? "—"}</dd>
             </div>
           </dl>
 

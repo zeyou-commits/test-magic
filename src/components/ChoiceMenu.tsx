@@ -48,7 +48,7 @@ export function ChoiceMenu({
     >
       {lead ? <span className="bw-wide-menu__lead">{lead}</span> : null}
       <span className="truncate">{text}</span>
-      {on ? <Check className="ml-auto size-4" aria-hidden /> : null}
+      {on ? <Check className="ms-auto size-4" aria-hidden /> : null}
     </button>
   );
   return (
@@ -61,7 +61,7 @@ export function ChoiceMenu({
           aria-label={current ? `${label} : ${current.label}` : label}
         >
           <span className="bw-wide-chip__lead">{current?.leading ?? icon}</span>
-          <span className="min-w-0 flex-1 truncate text-left">{shown}</span>
+          <span className="min-w-0 flex-1 truncate text-start">{shown}</span>
           <ChevronDown className="size-3.5 shrink-0 opacity-60" aria-hidden />
         </button>
       </PopoverTrigger>

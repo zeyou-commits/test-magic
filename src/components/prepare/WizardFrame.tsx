@@ -305,7 +305,7 @@ export function WizardFrame({
                 </button>
               ) : null}
             </div>
-            <div className="mt-1 flex items-baseline justify-between gap-3 pl-1">
+            <div className="mt-1 flex items-baseline justify-between gap-3 ps-1">
               <h2
                 id="wiz-title"
                 className="min-w-0 truncate font-display text-base font-bold leading-tight md:text-lg"

@@ -24,7 +24,7 @@ function CharterPage() {
       <div className="mx-auto mt-8 max-w-3xl space-y-6 text-sm leading-relaxed text-muted-foreground">
         <section>
           <h2 className="text-base font-semibold text-foreground">{tr("ui.pageCharte.lEssentiel")}</h2>
-          <ul className="mt-2 list-disc space-y-1 pl-5">
+          <ul className="mt-2 list-disc space-y-1 ps-5">
             {CHARTER_RULES.map((rule) => (
               <li key={rule}>{rule}</li>
             ))}
@@ -32,7 +32,7 @@ function CharterPage() {
         </section>
         <section>
           <h2 className="text-base font-semibold text-foreground">{tr("ui.pageCharte.ceQuiEstInterdit")}</h2>
-          <ul className="mt-2 list-disc space-y-1 pl-5">
+          <ul className="mt-2 list-disc space-y-1 ps-5">
             <li>
               {tr("ui.pageCharte.lesInsultesLeHarcelementLes")}
             </li>

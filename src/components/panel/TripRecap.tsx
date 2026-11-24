@@ -61,15 +61,15 @@ import { LeaveTrip } from "./LeaveTrip";
 import { RoomPicker } from "./RoomPicker";
 import { PortPresence, TripStatusPicker, VesselPresence } from "./TripPresence";
 import { VesselSpecs } from "./VesselBits";
-import { tr } from "@/lib/i18n";
+import { tr, lazyDateFormat } from "@/lib/i18n";
 
 const HOUR = 3_600_000;
 const time = (iso: string, timeZone: string) =>
-  new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone }).format(
+  lazyDateFormat({ hour: "2-digit", minute: "2-digit", timeZone }).format(
     new Date(iso),
   );
 const day = (iso: string, timeZone: string) => {
-  const label = new Intl.DateTimeFormat("fr-FR", {
+  const label = lazyDateFormat({
     weekday: "long",
     day: "numeric",
     month: "long",

@@ -53,7 +53,7 @@ import {
   type SharedPreparation,
 } from "@/lib/prepare/share";
 import { useAuth } from "@/hooks/useAuth";
-import { tr } from "@/lib/i18n";
+import { tr, lazyDateFormat } from "@/lib/i18n";
 
 export const Route = createFileRoute("/ma-preparation")({
   head: () => ({
@@ -78,7 +78,7 @@ const icons: Record<PlanCategory, typeof ClipboardList> = {
 
 const dayLabel = (key: string | null) =>
   key
-    ? new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "long", year: "numeric" }).format(
+    ? lazyDateFormat({ weekday: "short", day: "numeric", month: "long", year: "numeric" }).format(
         new Date(`${key}T12:00:00`),
       )
     : null;
@@ -486,7 +486,7 @@ function OnePage({
               <dd>
                 {trip.date
                   ? dayLabel(trip.date)
-                  : new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
+                  : lazyDateFormat({ month: "long", year: "numeric" }).format(
                       new Date(`${trip.month}-15T12:00:00`),
                     )}
               </dd>
@@ -544,7 +544,7 @@ function OnePage({
             trip?.date
               ? dayLabel(trip.date)
               : trip?.month
-                ? new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
+                ? lazyDateFormat({ month: "long", year: "numeric" }).format(
                     new Date(`${trip.month}-15T12:00:00`),
                   )
                 : null

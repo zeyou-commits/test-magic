@@ -159,7 +159,7 @@ import { TripLink, useLinkedTrip, openMyVoyage } from "@/components/prepare/Trip
 import { TripGlance, type GlanceTile } from "@/components/prepare/TripGlance";
 import type { PapersFees } from "@/components/prepare/TripOutlook";
 import { openRoutesDuBled } from "@/lib/routesDuBled/lien";
-import { tr } from "@/lib/i18n";
+import { tr, lazyDateFormat, intlLocale } from "@/lib/i18n";
 
 const PATH = "/preparer-mon-voyage";
 
@@ -386,7 +386,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
           </span>
         </Bw504Note>
       </button>
-      <p className="mt-2 text-center md:text-left">
+      <p className="mt-2 text-center md:text-start">
         <button
           type="button"
           onClick={() => {
@@ -416,11 +416,11 @@ function Welcome({ onStart }: { onStart: () => void }) {
 const stepTitles = companionStepTitles;
 
 const monthName = (key: string) =>
-  new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
+  lazyDateFormat({ month: "long", year: "numeric" }).format(
     new Date(`${key}-15T12:00:00`),
   );
 const dayName = (key: string) =>
-  new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(
+  lazyDateFormat({ weekday: "long", day: "numeric", month: "long" }).format(
     new Date(`${key}T12:00:00`),
   );
 const shortSeason = {
@@ -821,7 +821,7 @@ function CompanionPage() {
                     <button
                       type="button"
                       onClick={() => openStep(nextStep)}
-                      className="mt-3 flex w-full items-center gap-3 rounded-2xl bg-primary px-3.5 py-3 text-left text-primary-foreground shadow-md"
+                      className="mt-3 flex w-full items-center gap-3 rounded-2xl bg-primary px-3.5 py-3 text-start text-primary-foreground shadow-md"
                     >
                       <StepArt step={nextStep} size="sm" />
                       <span className="min-w-0 flex-1">
@@ -1034,7 +1034,7 @@ function StepCard({
           aria-expanded={open}
           aria-controls={`contenu-${id}`}
           onClick={onToggle}
-          className="flex min-h-16 w-full items-center gap-3 rounded-2xl p-4 text-left md:p-5"
+          className="flex min-h-16 w-full items-center gap-3 rounded-2xl p-4 text-start md:p-5"
         >
           <StepArt step={id} done={done} />
           <span className="min-w-0 flex-1">
@@ -1828,8 +1828,8 @@ function RouteStep({
                     </span>
                   </span>
                   {choice.km !== null ? (
-                    <span className="shrink-0 text-right text-xs font-semibold tabular-nums">
-                      ~{choice.km.toLocaleString("fr-FR")}{tr("ui.pagePreparerMonVoyage.km")}
+                    <span className="shrink-0 text-end text-xs font-semibold tabular-nums">
+                      ~{choice.km.toLocaleString(intlLocale())}{tr("ui.pagePreparerMonVoyage.km")}
                     </span>
                   ) : null}
                 </button>
@@ -2086,7 +2086,7 @@ function BookStep({
         {rows.map(([label, value]) => (
           <div key={label} className="flex justify-between gap-4">
             <dt className="text-muted-foreground">{label}</dt>
-            <dd className="text-right font-semibold">{value}</dd>
+            <dd className="text-end font-semibold">{value}</dd>
           </div>
         ))}
       </dl>
@@ -2096,7 +2096,7 @@ function BookStep({
         <button
           type="button"
           onClick={onBudget}
-          className="flex min-h-11 items-center gap-2 text-left text-sm font-semibold text-primary underline-offset-4 hover:underline"
+          className="flex min-h-11 items-center gap-2 text-start text-sm font-semibold text-primary underline-offset-4 hover:underline"
         >
           <Wallet size={16} aria-hidden />{tr("ui.pagePreparerMonVoyage.revoirMonBudgetEstime")}
         </button>
@@ -2152,12 +2152,12 @@ const addDaysKey = (day: string, n: number) => {
   return d.toISOString().slice(0, 10);
 };
 const shortDate = (key: string) =>
-  new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" })
+  lazyDateFormat({ day: "numeric", month: "short" })
     .format(new Date(`${key}T12:00:00`))
     .replace(/^1 /, "1er ")
     .replace(".", "");
 const longDate = (key: string) =>
-  new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" })
+  lazyDateFormat({ weekday: "long", day: "numeric", month: "long" })
     .format(new Date(`${key}T12:00:00`))
     .replace(/ 1 /, " 1er ");
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
@@ -2715,7 +2715,7 @@ function EuropeConsulateCard({
               {post.km !== null ? (
                 <span className="font-normal text-muted-foreground">
                   {" "}
-                  · ~{post.km.toLocaleString("fr-FR")}{tr("ui.pagePreparerMonVoyage.km")}{index === 0 ? tr("ui.pagePreparerMonVoyage.lePlusProche") : ""}
+                  · ~{post.km.toLocaleString(intlLocale())}{tr("ui.pagePreparerMonVoyage.km")}{index === 0 ? tr("ui.pagePreparerMonVoyage.lePlusProche") : ""}
                 </span>
               ) : null}
             </p>
@@ -3128,7 +3128,7 @@ function TodoItem({
           onClick={() => setWhy(!why)}
           aria-expanded={why}
           aria-label={tr("ui.pagePreparerMonVoyage.pourquoiCetteDate")}
-          className="-my-1 -mr-1 grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
+          className="-my-1 -me-1 grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
         >
           <Info size={15} aria-hidden />
         </button>
@@ -3262,7 +3262,7 @@ function ReadyDashboard({
       label: "Budget",
       icon: Wallet,
       value: budget
-        ? `≈ ${(Math.round(budget.total / 100) * 100).toLocaleString("fr-FR")} €`
+        ? `≈ ${(Math.round(budget.total / 100) * 100).toLocaleString(intlLocale())} €`
         : "À calculer",
       detail: budget
         ? budget.back

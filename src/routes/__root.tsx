@@ -39,7 +39,7 @@ function NotFoundComponent() {
         {/* La raison est sûre : l'adresse ne mène à aucune page. La 504 propose deux sorties. */}
         <Bw504Note
           tone="stuck"
-          className="mt-5 text-left"
+          className="mt-5 text-start"
           title="J'ai pris la mauvaise sortie"
           actions={
             <>
@@ -92,7 +92,7 @@ function ErrorComponent({ error }: ErrorComponentProps) {
         {/* Deux cas seulement sont sûrs : une mise à jour du site, ou « un problème » sans plus. */}
         <Bw504Note
           tone="stuck"
-          className="mt-5 text-left"
+          className="mt-5 text-start"
           title={assetLoadError ? "Le site vient d'être mis à jour" : "J'ai calé sur cette page"}
           actions={
             <>
@@ -209,7 +209,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap",
       },
     ],
   }),
@@ -277,7 +277,7 @@ function RootComponent() {
             <Outlet />
             {/* La carte a sa propre barre, reliée à ses volets ; l'espace équipe a la sienne. */}
             {pathname === "/" || proAuth || /^\/(admin|espace-compagnie)(\/|$)/.test(pathname) ? null : (
-              <div className="bw-global-tabs fixed bottom-0 left-0 right-0 z-[70] md:hidden">
+              <div className="bw-global-tabs fixed bottom-0 start-0 end-0 z-[70] md:hidden">
                 <MobileTabBar className="h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]" />
               </div>
             )}

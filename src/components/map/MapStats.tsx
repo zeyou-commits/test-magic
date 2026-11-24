@@ -162,7 +162,7 @@ export function MapStats({
       icon: (
         <span className="relative inline-flex">
           <Ship className={`${icon} bw-ship-sailing`} />
-          <span className="absolute -right-0.5 -top-0.5 inline-flex size-2" aria-hidden>
+          <span className="absolute -end-0.5 -top-0.5 inline-flex size-2" aria-hidden>
             <span className="absolute inline-flex size-full rounded-full bg-success opacity-75 motion-safe:animate-ping" />
             <span className="relative inline-flex size-2 rounded-full border border-background bg-success" />
           </span>
@@ -177,7 +177,7 @@ export function MapStats({
       icon: (
         <span className="relative inline-flex">
           <Ship className={icon} />
-          <span className="absolute -bottom-1 -right-1 grid size-3 place-items-center rounded-full bg-background">
+          <span className="absolute -bottom-1 -end-1 grid size-3 place-items-center rounded-full bg-background">
             <Anchor className="size-2.5" strokeWidth={2.5} />
           </span>
         </span>
@@ -202,7 +202,7 @@ export function MapStats({
     <div
       ref={rootRef}
       data-map-rail
-      className="bw-map-stats pointer-events-auto absolute left-2 top-14 z-30 md:left-auto md:right-5 md:top-5"
+      className="bw-map-stats pointer-events-auto absolute start-2 top-14 z-30 md:start-auto md:end-5 md:top-5"
       onPointerLeave={(e) => {
         if (e.pointerType === "mouse") hoverClose();
       }}
@@ -210,7 +210,7 @@ export function MapStats({
       {/* Raccourcis empilés à la verticale, icône au-dessus du nombre : colonne étroite, sans
           libellé (le nom complet reste lu par les lecteurs d'écran et affiché au survol).
           Mobile : à gauche, sous la légende, pour dégager l'est de la carte (ports italiens). */}
-      <div data-tour="filters" className="flex w-max flex-col items-stretch md:ml-auto gap-0.5 rounded-2xl border border-border bg-background/95 p-1 shadow-md backdrop-blur md:shadow-lg">
+      <div data-tour="filters" className="flex w-max flex-col items-stretch md:ms-auto gap-0.5 rounded-2xl border border-border bg-background/95 p-1 shadow-md backdrop-blur md:shadow-lg">
         {search ? <div className="border-b border-border pb-0.5">{search}</div> : null}
         {shortcuts.map(({ id, label, title, count, icon }) => (
           <button
@@ -237,7 +237,7 @@ export function MapStats({
             {shown !== id ? (
               <span
                 aria-hidden
-                className="pointer-events-none absolute right-full top-1/2 mr-2 hidden -translate-y-1/2 whitespace-nowrap rounded-lg bg-foreground px-2 py-1 text-xs font-semibold text-background shadow-md md:group-hover:block"
+                className="pointer-events-none absolute end-full top-1/2 me-2 hidden -translate-y-1/2 whitespace-nowrap rounded-lg bg-foreground px-2 py-1 text-xs font-semibold text-background shadow-md md:group-hover:block"
               >
                 {label}
               </span>
@@ -249,7 +249,7 @@ export function MapStats({
         <div
           ref={listRef}
           style={listMaxHeight ? { maxHeight: listMaxHeight } : undefined}
-          className="absolute left-full top-0 ml-2 max-h-[min(60dvh,24rem)] md:left-auto md:right-full md:ml-0 md:mr-2 w-[min(18rem,calc(100vw-5.5rem))] touch-pan-y overflow-y-auto overscroll-contain rounded-2xl border border-border bg-background/95 p-1 shadow-lg backdrop-blur"
+          className="absolute start-full top-0 ms-2 max-h-[min(60dvh,24rem)] md:start-auto md:end-full md:ms-0 md:me-2 w-[min(18rem,calc(100vw-5.5rem))] touch-pan-y overflow-y-auto overscroll-contain rounded-2xl border border-border bg-background/95 p-1 shadow-lg backdrop-blur"
           onPointerEnter={(e) => {
             if (e.pointerType === "mouse") window.clearTimeout(hoverTimer.current);
           }}
@@ -281,7 +281,7 @@ export function MapStats({
                       setHoverId(null);
                       onDismiss();
                     }}
-                    className={`flex min-h-12 w-full cursor-pointer items-center gap-2 rounded-xl px-2 py-2 text-left transition-colors hover:bg-secondary ${value === "published" ? "text-success" : "text-foreground"}`}
+                    className={`flex min-h-12 w-full cursor-pointer items-center gap-2 rounded-xl px-2 py-2 text-start transition-colors hover:bg-secondary ${value === "published" ? "text-success" : "text-foreground"}`}
                   >
                     <span
                       aria-hidden
@@ -301,7 +301,7 @@ export function MapStats({
             <>
               <button
                 type="button"
-                className="flex w-full items-center rounded-xl px-3 py-2 text-left text-xs font-semibold hover:bg-secondary"
+                className="flex w-full items-center rounded-xl px-3 py-2 text-start text-xs font-semibold hover:bg-secondary"
                 aria-pressed={!selectedCompanyId}
                 onClick={() => onSelectCompany(null)}
                 onPointerEnter={() => onPreview(null)}
@@ -313,7 +313,7 @@ export function MapStats({
                 <button
                   key={company.id}
                   type="button"
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium hover:bg-secondary data-[active=true]:bg-secondary"
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-start text-xs font-medium hover:bg-secondary data-[active=true]:bg-secondary"
                   data-active={selectedCompanyId === company.id}
                   aria-pressed={selectedCompanyId === company.id}
                   onClick={() =>
@@ -366,7 +366,7 @@ export function MapStats({
                   })
                 }
                 onBlur={() => onPreview(null)}
-                className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-xs font-medium hover:bg-secondary"
+                className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-start text-xs font-medium hover:bg-secondary"
               >
                 {alerts.has(ship.vesselId ?? "") ? (
                   <b className="bw-alert-mark" aria-hidden>

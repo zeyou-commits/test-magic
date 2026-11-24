@@ -67,7 +67,7 @@ export function LineMapCard({ line }: { line: LineGlance }) {
             />
           </Suspense>
         </ClientOnly>
-        <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-[#0f2a3d] shadow">
+        <span className="pointer-events-none absolute start-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-[#0f2a3d] shadow">
           {tr("ui.lineBlocks.t1NuitEnMer")}
         </span>
       </div>

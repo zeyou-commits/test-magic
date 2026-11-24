@@ -6,10 +6,10 @@ import { searchCarModels } from "@/lib/directferries/functions";
 import { loadFromAccessories, type CarModel } from "@/lib/directferries/quote";
 import { useDirectFerriesEnabled } from "./LiveFare";
 import type { TripProfileValue } from "./TripProfile";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 
 const metres = (cm: number | null) =>
-  cm == null ? "?" : `${(cm / 100).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m`;
+  cm == null ? "?" : `${(cm / 100).toLocaleString(intlLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m`;
 
 /**
  * « Ma voiture exacte » : le modèle pris dans le catalogue Direct Ferries donne la vraie longueur
@@ -112,7 +112,7 @@ export function CarModelPicker({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex w-full items-center gap-2 rounded-xl border border-dashed border-border px-3 py-2 text-left text-xs hover:bg-muted"
+        className="flex w-full items-center gap-2 rounded-xl border border-dashed border-border px-3 py-2 text-start text-xs hover:bg-muted"
       >
         <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
         <span>
@@ -159,7 +159,7 @@ export function CarModelPicker({
                 role="option"
                 aria-selected={false}
                 onClick={() => choose(model)}
-                className="flex w-full items-baseline justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted"
+                className="flex w-full items-baseline justify-between gap-2 rounded-lg px-2 py-1.5 text-start text-sm hover:bg-muted"
               >
                 <span className="min-w-0 truncate font-semibold">
                   {model.make} {model.model}

@@ -275,7 +275,7 @@ export function PortMultiPicker({
       <div className="flex min-w-0 flex-col rounded-2xl border border-border bg-card p-2.5 shadow-sm">
         <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-wider text-primary">
           {title ?? label}
-          <span className="ml-1 font-medium normal-case tracking-normal text-muted-foreground">
+          <span className="ms-1 font-medium normal-case tracking-normal text-muted-foreground">
             · {summarizePorts(value, ports, "à choisir")}
           </span>
         </p>
@@ -287,7 +287,7 @@ export function PortMultiPicker({
   const trigger = (
     <button
       type="button"
-      className="batogo-control flex h-14 w-full min-w-0 items-center justify-between gap-2 px-3 text-left"
+      className="batogo-control flex h-14 w-full min-w-0 items-center justify-between gap-2 px-3 text-start"
       aria-label={`${label} : ${summarizePorts(value, ports, "à choisir")}`}
     >
       <span className="min-w-0">

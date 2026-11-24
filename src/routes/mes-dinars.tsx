@@ -12,13 +12,13 @@ import { useQuery } from "@tanstack/react-query";
 import { SPOKEN_EXAMPLES, parseSpoken, saidAs } from "@/lib/wallet/jargon";
 import { dinarVoicesQuery, playVoice } from "@/lib/wallet/voices";
 import "@/wallet.css";
-import { tr } from "@/lib/i18n";
+import { tr, lazyNumberFormat, intlLocale } from "@/lib/i18n";
 
 const supabase = typedSupabase as unknown as import("@supabase/supabase-js").SupabaseClient;
 const LOCAL_KEY = "bledway:bezass:v1";
-const money = (value: number, currency: Currency | "DZD", digits = 0) => currency === "DZD" ? `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: digits }).format(value)} DA` : new Intl.NumberFormat("fr-FR", { style: "currency", currency, maximumFractionDigits: digits }).format(value);
+const money = (value: number, currency: Currency | "DZD", digits = 0) => currency === "DZD" ? `${lazyNumberFormat({ maximumFractionDigits: digits }).format(value)} DA` : lazyNumberFormat({ style: "currency", currency, maximumFractionDigits: digits }).format(value);
 const parseAmount = (value: string) => Number(value.replace(/\s/g, "").replace(",", "."));
-const sourceDay = (date: string | null | undefined, today: string) => !date ? "Date inconnue" : date.slice(0, 10) === today ? "Aujourd’hui" : new Date(date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+const sourceDay = (date: string | null | undefined, today: string) => !date ? "Date inconnue" : date.slice(0, 10) === today ? "Aujourd’hui" : new Date(date).toLocaleDateString(intlLocale(), { day: "numeric", month: "short" });
 
 function NoteVisual({ image, fallback, variant, value, kind, empty }: { image: string | null; fallback?: string | null; variant?: string | null; value: number; kind: string; empty: boolean }) {
   const [attempt, setAttempt] = useState(0);
@@ -29,7 +29,7 @@ function NoteVisual({ image, fallback, variant, value, kind, empty }: { image: s
   return <div data-value={value} className={`bw-wallet-note ${kind === "coin" ? "bw-wallet-note--coin" : ""} ${empty ? "bw-wallet-note--empty" : ""} ${portrait ? "bw-wallet-note--portrait" : ""}`} aria-label={`${kind === "note" ? "Billet" : "Pièce"} de ${value} dinars`}>
     {sources[attempt] ? <img src={sources[attempt]} alt="" loading="eager" onError={() => setAttempt((current) => current + 1)} /> : <span className="bw-wallet-note__fallback">{tr("ui.pageMesDinars.photoIndisponible")}</span>}
     {variant && !variantFailed ? <img className="bw-wallet-note__variant" src={variant} alt="" loading="eager" onError={() => setVariantFailed(true)} /> : null}
-    <span>{value.toLocaleString("fr-FR")}</span>
+    <span>{value.toLocaleString(intlLocale())}</span>
   </div>;
 }
 
@@ -293,7 +293,7 @@ function WalletPage() {
           </form> : null}
           {movements.length ? <ul className="bw-dz-moves" aria-label={tr("ui.pageMesDinars.derniersMouvements")}>
             {movements.map((item) => <li key={item.key}>
-              <span>{item.label}<small>{item.day === today ? tr("ui.pageMesDinars.aujourdHui") : new Date(`${item.day}T12:00:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}</small></span>
+              <span>{item.label}<small>{item.day === today ? tr("ui.pageMesDinars.aujourdHui") : new Date(`${item.day}T12:00:00`).toLocaleDateString(intlLocale(), { day: "numeric", month: "short" })}</small></span>
               <b>{item.value}</b>
               <button type="button" aria-label={`Supprimer : ${item.label}`} onClick={item.remove}><Trash2 size={15} aria-hidden /></button>
             </li>)}

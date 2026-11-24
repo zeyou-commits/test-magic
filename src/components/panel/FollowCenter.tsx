@@ -16,7 +16,7 @@ import { VesselAlertTag } from "./VesselAlert";
 import { useTravelAction } from "@/hooks/useTravelAction";
 import { useTravelFollows } from "@/hooks/useTravelFollows";
 import { useMyJourneys } from "@/lib/ferry/journey";
-import { tr } from "@/lib/i18n";
+import { tr, lazyDateFormat } from "@/lib/i18n";
 import { Bw504Button, Bw504Note } from "@/components/companion/Bw504Note";
 
 export function FollowCenter({ userId }: { userId: string }) {
@@ -77,7 +77,7 @@ export function FollowCenter({ userId }: { userId: string }) {
             {tr("ui.followCenter.chargementDesSuivisImpossible")}
             <button
               type="button"
-              className="ml-2 underline"
+              className="ms-2 underline"
               onClick={() => {
                 void follows.refetch();
                 void watches.refetch();
@@ -136,7 +136,7 @@ export function FollowCenter({ userId }: { userId: string }) {
                   </h3>
                   {detail?.departureAt && (
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {new Intl.DateTimeFormat("fr-FR", {
+                      {lazyDateFormat({
                         day: "numeric",
                         month: "long",
                         year: "numeric",
@@ -153,7 +153,7 @@ export function FollowCenter({ userId }: { userId: string }) {
                   {follow.follow_purpose === "curieux" && !follow.traveller && follow.target_kind !== "company" ? (
                     <button
                       type="button"
-                      className="ml-3 inline-flex min-h-9 items-center gap-1 text-xs font-semibold text-primary"
+                      className="ms-3 inline-flex min-h-9 items-center gap-1 text-xs font-semibold text-primary"
                       onClick={() =>
                         request({
                           type: "follow",
@@ -202,7 +202,7 @@ export function FollowCenter({ userId }: { userId: string }) {
                     </button>
                   </div>
                   <h3 className="font-semibold">
-                    {new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
+                    {lazyDateFormat({ month: "long", year: "numeric" }).format(
                       new Date(`${watch.period_month}T12:00:00`),
                     )}
                   </h3>

@@ -87,7 +87,7 @@ import {
   saveTravelProfile,
   TRAVEL_PROFILE_EVENT,
 } from "@/lib/ferry/travelProfile";
-import { tr } from "@/lib/i18n";
+import { tr, lazyDateFormat, intlLocale } from "@/lib/i18n";
 import { Bw504Button, Bw504Note } from "@/components/companion/Bw504Note";
 import {
   explainNoSailing,
@@ -437,7 +437,7 @@ export function SearchPanel({
     const scope = (onPair.length ? onPair : departures).filter((d) => !isEstimatedDeparture(d));
     const last = scope.reduce((max, d) => (d.departure_at > max ? d.departure_at : max), "");
     if (filters.date <= last.slice(0, 10)) return null;
-    const month = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
+    const month = lazyDateFormat({ month: "long", year: "numeric" }).format(
       new Date(`${filters.date}T12:00:00`),
     );
     return { month, last: last.slice(0, 10) };
@@ -856,7 +856,7 @@ export function SearchPanel({
             <h2 className="sr-only">Réserver une traversée</h2>
             <div className="flex items-stretch gap-3">
               <div className="bw-wide-bar grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1.15fr)] gap-[2px] overflow-hidden rounded-2xl border border-border/70 bg-border/70">
-                <div className={`${wideSegment} relative pr-4`}>
+                <div className={`${wideSegment} relative pe-4`}>
                   <PortMultiPicker
                     onOpenPort={(id) => onSelect({ type: "port", id })}
                     title={tr("ui.searchPanel.depart")}
@@ -890,7 +890,7 @@ export function SearchPanel({
                       style={{ transform: `rotate(${swapTurns * 180}deg)` }}
                     />
                   </button>
-                  <div className="pl-3">
+                  <div className="ps-3">
                     <PortMultiPicker
                       onOpenPort={(id) => onSelect({ type: "port", id })}
                       title={tr("ui.searchPanel.arrivee")}
@@ -925,7 +925,7 @@ export function SearchPanel({
                                 setCalField(leg);
                                 setWideCalOpen(true);
                               }}
-                              className={`flex min-w-0 flex-col items-start justify-center px-4 text-left transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--color-primary)] ${leg === "ret" ? "border-l border-border/70" : ""} ${on ? "bg-card shadow-[inset_0_0_0_2px_var(--color-primary)]" : "hover:bg-card"}`}
+                              className={`flex min-w-0 flex-col items-start justify-center px-4 text-start transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--color-primary)] ${leg === "ret" ? "border-s border-border/70" : ""} ${on ? "bg-card shadow-[inset_0_0_0_2px_var(--color-primary)]" : "hover:bg-card"}`}
                             >
                               <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                                 {leg === "out" ? tr("ui.searchPanel.aller") : tr("ui.searchPanel.retour")}
@@ -967,7 +967,7 @@ export function SearchPanel({
                     <PopoverTrigger asChild>
                       <button
                         type="button"
-                        className="flex h-16 w-full min-w-0 items-center justify-between gap-2 px-4 text-left transition-colors hover:bg-card focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--color-primary)] data-[state=open]:bg-card data-[state=open]:shadow-[inset_0_0_0_2px_var(--color-primary)]"
+                        className="flex h-16 w-full min-w-0 items-center justify-between gap-2 px-4 text-start transition-colors hover:bg-card focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--color-primary)] data-[state=open]:bg-card data-[state=open]:shadow-[inset_0_0_0_2px_var(--color-primary)]"
                       >
                         <Users className="size-5 shrink-0 text-muted-foreground" aria-hidden />
                         <span className="min-w-0 flex-1">
@@ -1382,7 +1382,7 @@ export function SearchPanel({
                                     setCalField(leg);
                                     setCalOpen(true);
                                   }}
-                                  className={`flex min-h-12 flex-col items-start justify-center rounded-xl border px-3 py-1.5 text-left transition disabled:opacity-50 ${on ? "border-primary bg-primary/5 ring-2 ring-primary/30" : "border-border bg-card hover:border-primary/60"}`}
+                                  className={`flex min-h-12 flex-col items-start justify-center rounded-xl border px-3 py-1.5 text-start transition disabled:opacity-50 ${on ? "border-primary bg-primary/5 ring-2 ring-primary/30" : "border-border bg-card hover:border-primary/60"}`}
                                 >
                                   <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
                                     {leg === "out"
@@ -1700,9 +1700,9 @@ export function SearchPanel({
 
 type SortBy = "date" | "price" | "duration";
 
-const roundKm = (km: number) => (Math.round(Math.abs(km) / 10) * 10).toLocaleString("fr-FR");
+const roundKm = (km: number) => (Math.round(Math.abs(km) / 10) * 10).toLocaleString(intlLocale());
 const roundEuros = (euros: number) =>
-  (Math.round(Math.abs(euros) / 10) * 10).toLocaleString("fr-FR");
+  (Math.round(Math.abs(euros) / 10) * 10).toLocaleString(intlLocale());
 /** « 1 010 km de route en plus depuis chez vous (≈ 190 €) », ou en moins. */
 function roadLabel(kind: "from" | "to", road: { km: number; euros: number }, byCar: boolean) {
   const more = road.km > 0;
@@ -1810,7 +1810,7 @@ function ResultBlock({
                     item ? (
                       <Bw504Button key={item.day} primary onClick={() => onDate(item.day)}>
                         {item.day < date! ? "← " : ""}
-                        {new Date(`${item.day}T00:00:00Z`).toLocaleDateString("fr-FR", {
+                        {new Date(`${item.day}T00:00:00Z`).toLocaleDateString(intlLocale(), {
                           weekday: "short",
                           day: "numeric",
                           month: "short",
@@ -1891,7 +1891,7 @@ function ResultBlock({
 }
 
 const fmtShort = (key: string, weekday = false) =>
-  new Date(`${key}T00:00:00Z`).toLocaleDateString("fr-FR", {
+  new Date(`${key}T00:00:00Z`).toLocaleDateString(intlLocale(), {
     ...(weekday ? { weekday: "short" as const } : {}),
     day: "numeric",
     month: "short",
@@ -1919,13 +1919,13 @@ function DateButton({
       onClick={onClick}
       aria-haspopup="dialog"
       aria-expanded={active}
-      className={`batogo-control flex h-12 min-w-0 items-center gap-2 px-3 text-left ${active ? "!border-primary" : ""}`}
+      className={`batogo-control flex h-12 min-w-0 items-center gap-2 px-3 text-start ${active ? "!border-primary" : ""}`}
     >
       <CalendarDays className="size-4 shrink-0 text-primary" aria-hidden />
       <span className="min-w-0 leading-tight">
         <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           {label}
-          {flex > 0 ? <span className="ml-1 text-primary">± {flex} j</span> : null}
+          {flex > 0 ? <span className="ms-1 text-primary">± {flex} j</span> : null}
         </span>
         <span className="block truncate text-sm font-semibold">
           {value
@@ -2138,7 +2138,7 @@ function RoundTripSection({
   );
 }
 
-const shortDayFormatter = new Intl.DateTimeFormat("fr-FR", {
+const shortDayFormatter = lazyDateFormat({
   day: "numeric",
   month: "short",
   timeZone: "UTC",
@@ -2172,7 +2172,7 @@ function StepLabel({
     <button
       type="button"
       onClick={onOpen}
-      className={`flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-card px-3.5 py-2.5 text-left shadow-sm transition hover:border-primary ${className}`}
+      className={`flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-card px-3.5 py-2.5 text-start shadow-sm transition hover:border-primary ${className}`}
     >
       <span className="text-xs font-semibold text-muted-foreground">{children}</span>
       <span className="min-w-0 truncate text-xs font-bold text-foreground">{summary}</span>
@@ -2203,7 +2203,7 @@ function reasonBody(reason: NoSailingReason, fallback: string) {
     case "notPublished":
       return `Les compagnies ont publié leurs départs jusqu'au ${new Date(
         `${reason.publishedUntil}T00:00:00Z`,
-      ).toLocaleDateString("fr-FR", {
+      ).toLocaleDateString(intlLocale(), {
         day: "numeric",
         month: "long",
         year: "numeric",

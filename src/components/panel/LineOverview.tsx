@@ -7,7 +7,7 @@ import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
 import type { Port, Selection, Vessel } from "@/lib/ferry/types";
 import { CompanyBadge } from "./CompanyBadge";
 import { MiniFerry } from "./MiniFerry";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 
 /** « 22 h » ou « 22 h à 30 h » : seulement des durées publiées. */
 export const durationRange = (min: number | null, max: number | null) =>
@@ -142,7 +142,7 @@ export function LineFigures({ stats, timeZone }: { stats: LineStats; timeZone: s
       extra: stats.lastAt ? (
         <small>
           {tr("ui.lineOverview.jusquAu")}{" "}
-          {new Date(stats.lastAt).toLocaleDateString("fr-FR", {
+          {new Date(stats.lastAt).toLocaleDateString(intlLocale(), {
             day: "numeric",
             month: "long",
             year: "numeric",

@@ -11,9 +11,9 @@ import { swapDirection, withArrivalPorts, withDeparturePorts } from "@/lib/ferry
 import { isNorthShore, isSouthShore } from "@/lib/ferry/markets";
 import { readTravelProfile, TRAVEL_PROFILE_EVENT } from "@/lib/ferry/travelProfile";
 import type { Filters, Port, RouteLine } from "@/lib/ferry/types";
-import { tr } from "@/lib/i18n";
+import { tr, lazyDateFormat } from "@/lib/i18n";
 
-const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
+const dayFormatter = lazyDateFormat({
   weekday: "short",
   day: "numeric",
   month: "short",

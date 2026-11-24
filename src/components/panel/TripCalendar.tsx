@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type * as React from "react";
-import { fr } from "react-day-picker/locale";
+import { arDZ, fr } from "react-day-picker/locale";
+import { useLocale } from "@/lib/i18n";
 import { Backpack, CalendarDays } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
@@ -20,7 +21,7 @@ import { SalesAlertForm } from "./SalesAlertForm";
 import { useQuery } from "@tanstack/react-query";
 import { companiesQuery, upcomingDeparturesQuery } from "@/lib/ferry/queries";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 
 const ZONE_STORAGE_KEY = "batogo:school-zone";
 
@@ -70,10 +71,10 @@ const dateToKey = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
 const short = (key: string) =>
-  keyToDate(key).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+  keyToDate(key).toLocaleDateString(intlLocale(), { day: "numeric", month: "short" });
 const long = (key: string) =>
   capitalizeFirst(
-    keyToDate(key).toLocaleDateString("fr-FR", {
+    keyToDate(key).toLocaleDateString(intlLocale(), {
       weekday: "short",
       day: "numeric",
       month: "short",
@@ -122,6 +123,7 @@ export function TripCalendar({
   inline = false,
   side = "bottom",
 }: TripCalendarProps) {
+  const { locale: uiLocale } = useLocale();
   const [zones, setZones] = useState<SchoolZone[]>([]);
   const [month, setMonth] = useState<Date>(() =>
     keyToDate(date ?? (initialDay && initialDay > today ? initialDay : today)),
@@ -393,7 +395,7 @@ export function TripCalendar({
   };
 
   const headerBlock = (
-    <div className="flex flex-col gap-3 border-b border-border/60 px-5 pb-2.5 pr-14 pt-3 md:flex-row md:pr-5 md:pb-3 md:pt-4 md:items-end md:justify-between">
+    <div className="flex flex-col gap-3 border-b border-border/60 px-5 pb-2.5 pe-14 pt-3 md:flex-row md:pe-5 md:pb-3 md:pt-4 md:items-end md:justify-between">
       <div className="min-w-0">
         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-primary">
           {field === "out" ? tr("ui.tripCalendar.dateDAller") : tr("ui.tripCalendar.dateDeRetour")}
@@ -419,7 +421,7 @@ export function TripCalendar({
         role="group"
         aria-label={tr("ui.tripCalendar.zonesDeVacancesScolaires")}
       >
-        <Backpack className="mr-1 size-3.5 text-muted-foreground" aria-hidden />
+        <Backpack className="me-1 size-3.5 text-muted-foreground" aria-hidden />
         {(["A", "B", "C"] as SchoolZone[]).map((item) => {
           const on = holidaysOn && zones.includes(item);
           return (
@@ -543,7 +545,8 @@ export function TripCalendar({
       >
         <Calendar
           mode="single"
-          locale={fr}
+          locale={uiLocale === "ar" ? arDZ : fr}
+          dir={uiLocale === "ar" ? "rtl" : "ltr"}
           weekStartsOn={1}
           numberOfMonths={stacked ? monthCount : isMobile || inline || !isWide ? 1 : 2}
           hideNavigation={stacked}
@@ -627,7 +630,7 @@ export function TripCalendar({
         <button
           type="button"
           onClick={() => pick(suggestion)}
-          className="w-full rounded-xl bg-warning/15 px-3 py-2 text-left text-xs text-warning-foreground"
+          className="w-full rounded-xl bg-warning/15 px-3 py-2 text-start text-xs text-warning-foreground"
         >
           {tr("ui.tripCalendar.pasDeDepartLe")}{long(activeValue!)}{tr("ui.tripCalendar.lePlusProche")}{" "}
           <strong>{long(suggestion)}</strong>{tr("ui.tripCalendar.cliquezPourLeChoisir")}
@@ -702,7 +705,7 @@ export function TripCalendar({
             aria-selected={on}
             disabled={f === "ret" && !date}
             onClick={() => onFieldChange(f)}
-            className={`flex h-8 min-w-0 items-center gap-1.5 rounded-full border px-3 text-left text-xs transition disabled:opacity-50 ${on ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground hover:border-primary/50"}`}
+            className={`flex h-8 min-w-0 items-center gap-1.5 rounded-full border px-3 text-start text-xs transition disabled:opacity-50 ${on ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground hover:border-primary/50"}`}
           >
             <span className="shrink-0 font-bold">{f === "out" ? tr("ui.tripCalendar.aller") : tr("ui.tripCalendar.retour")}</span>
             <span className={`min-w-0 truncate font-semibold ${value ? "text-foreground" : ""}`}>
@@ -723,10 +726,10 @@ export function TripCalendar({
           role="group"
           aria-label={tr("ui.tripCalendar.zonesDeVacancesScolaires")}
         >
-          <span className="mr-auto text-[11px] font-semibold text-muted-foreground">
+          <span className="me-auto text-[11px] font-semibold text-muted-foreground">
             {field === "out" ? tr("ui.tripCalendar.touchezVotreJourDeDepart") : tr("ui.tripCalendar.touchezVotreJourDeRetour")}
           </span>
-          <Backpack className="mr-1 size-3.5 text-muted-foreground" aria-hidden />
+          <Backpack className="me-1 size-3.5 text-muted-foreground" aria-hidden />
           {(["A", "B", "C"] as SchoolZone[]).map((item) => {
             const on = holidaysOn && zones.includes(item);
             return (
@@ -766,7 +769,7 @@ export function TripCalendar({
             >
               <SheetPrimitive.Title className="sr-only">{tr("ui.tripCalendar.choisirLesDates")}</SheetPrimitive.Title>
               <SheetPrimitive.Close
-                className="absolute right-3 top-3 grid size-9 place-items-center rounded-full text-muted-foreground hover:bg-muted"
+                className="absolute end-3 top-3 grid size-9 place-items-center rounded-full text-muted-foreground hover:bg-muted"
                 aria-label={tr("ui.tripCalendar.fermer")}
               >
                 <X className="size-4" />

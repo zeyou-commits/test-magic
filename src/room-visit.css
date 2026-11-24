@@ -83,5 +83,5 @@
 }
 .bw-visit__bar .bw-visit__error {
   flex-basis: 100%;
-  text-align: left;
+  text-align: start;
 }

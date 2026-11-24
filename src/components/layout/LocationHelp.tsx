@@ -169,7 +169,7 @@ export function LocationHelp() {
             </div>
             <details className="bw-location-help__more">
               <summary>{tr("ui.locationHelp.leBoutonNeMarchePas")}</summary>
-              <ol className="list-decimal space-y-2 pl-5 text-sm">
+              <ol className="list-decimal space-y-2 ps-5 text-sm">
                 {steps.map((step) => (
                   <li key={step}>{step}</li>
                 ))}
@@ -178,13 +178,13 @@ export function LocationHelp() {
             </details>
           </>
         ) : problem === "denied" && !inApp ? (
-          <ol className="list-decimal space-y-2 pl-5 text-sm">
+          <ol className="list-decimal space-y-2 ps-5 text-sm">
             {steps.map((step) => (
               <li key={step}>{step}</li>
             ))}
           </ol>
         ) : problem === "unavailable" && !inApp ? (
-          <ol className="list-decimal space-y-2 pl-5 text-sm">
+          <ol className="list-decimal space-y-2 ps-5 text-sm">
             {unavailableSteps(agent).map((step) => (
               <li key={step}>{step}</li>
             ))}

@@ -12,6 +12,7 @@ import {
   type FxQuote,
   type FxTicker,
 } from "@/lib/fx/ticker";
+import { intlLocale } from "@/lib/i18n";
 
 /**
  * Taux de change posé sur l'Algérie : une étiquette compacte et secondaire (taille bornée en CSS),
@@ -26,10 +27,10 @@ const COMPACT_BELOW_ZOOM = 3.5;
 const SHOWN_FIRST = 4;
 
 const amount = (value: number) =>
-  value.toLocaleString("fr-FR", { maximumFractionDigits: value >= 100 ? 0 : value >= 10 ? 1 : 2 });
+  value.toLocaleString(intlLocale(), { maximumFractionDigits: value >= 100 ? 0 : value >= 10 ? 1 : 2 });
 
 const amount2 = (value: number) =>
-  value.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  value.toLocaleString(intlLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const ago = (iso: string) => {
   const minutes = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60_000));
@@ -99,7 +100,7 @@ function sheet(ticker: FxTicker) {
   if (ticker.officialDate) {
     note.append(
       link(FX_OFFICIAL_URL, "Banque d'Algérie"),
-      ` (${new Date(`${ticker.officialDate}T12:00:00`).toLocaleDateString("fr-FR")}) · `,
+      ` (${new Date(`${ticker.officialDate}T12:00:00`).toLocaleDateString(intlLocale())}) · `,
     );
   }
   note.append(

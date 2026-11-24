@@ -3,10 +3,10 @@ import { BellRing, Check, ChevronDown, CircleCheck, Hourglass } from "lucide-rea
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { longDay, type CompanyCalendar } from "@/lib/companion/salesCalendar";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 
 const shortDay = (key: string) =>
-  new Date(`${key}T00:00:00Z`).toLocaleDateString("fr-FR", {
+  new Date(`${key}T00:00:00Z`).toLocaleDateString(intlLocale(), {
     day: "numeric",
     month: "short",
     year: "numeric",

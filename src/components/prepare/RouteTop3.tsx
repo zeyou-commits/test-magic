@@ -33,11 +33,11 @@ import {
   TOLL_EURO_PER_KM,
   type CompanionPlan,
 } from "@/lib/ferry/companion";
-import { tr } from "@/lib/i18n";
+import { tr, lazyDateFormat, lazyNumberFormat } from "@/lib/i18n";
 
 export { FUEL_EURO_PER_L, FUEL_L_PER_100, TOLL_EURO_PER_KM };
 
-const numberFormat = new Intl.NumberFormat("fr-FR");
+const numberFormat = lazyNumberFormat();
 
 const addDays = (day: string, days: number) => {
   const date = new Date(`${day}T12:00:00Z`);
@@ -293,7 +293,7 @@ export function RouteTop3({
 
   // Sans date choisie, le mois de secours sert au calcul mais ne s'affiche pas.
   const monthLabel = planHasWhen(plan)
-    ? new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
+    ? lazyDateFormat({ month: "long", year: "numeric" }).format(
         new Date(`${plan.month}-15T12:00:00Z`),
       )
     : "date à choisir";

@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { pickLocale, dirOf } from "./config";
-import { translate } from "./translate";
+import { loadCatalog, translate } from "./translate";
 import { fr } from "./messages/fr";
 
 describe("pickLocale", () => {
-  it("reste en français tant que seul le français est ouvert", () => {
-    expect(pickLocale(["ar-DZ", "en-GB"], "ar")).toBe("fr");
+  it("reste en français pour une langue pas encore ouverte", () => {
+    expect(pickLocale(["en-GB"], "en", ["fr", "ar"])).toBe("fr");
   });
   it("suit la langue du téléphone quand elle est ouverte", () => {
     expect(pickLocale(["ar-DZ", "fr-FR"], null, ["fr", "ar"])).toBe("ar");
@@ -27,8 +27,10 @@ describe("translate", () => {
   it("donne le texte français", () => {
     expect(translate("fr", "nav.map")).toBe("Carte");
   });
-  it("retombe sur le français pour une langue sans dictionnaire", () => {
-    expect(translate("ar", "nav.departures")).toBe("Départs");
+  it("traduit en arabe et retombe sur le français pour une langue sans dictionnaire", async () => {
+    await loadCatalog("ar");
+    expect(translate("ar", "nav.map")).toBe("الخريطة");
+    expect(translate("en", "nav.departures")).toBe("Départs");
   });
   it("remplace les variables", () => {
     expect(translate("fr", "footer.disclaimer", { year: 2026 })).toMatch(/^© 2026 BledWay · /);

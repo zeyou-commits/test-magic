@@ -44,7 +44,7 @@ import { photosQuery } from "@/lib/photos/photos";
 import { SituationBadge, SituationIcon } from "./SituationIcon";
 import { CompanyReplyNote } from "./CompanyPublic";
 import { companyRepliesQuery } from "@/lib/company/publicDesk";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 
 /** Picto d'une situation (nom conservé pour les écrans existants). */
 export function AlertIcon({ category, size = 17 }: { category: AlertCategory; size?: number }) {
@@ -407,7 +407,7 @@ export function VesselReviews({
             <span className="bw-review-score">
               <Star size={24} aria-hidden />
               {average !== null
-                ? average.toLocaleString("fr-FR", {
+                ? average.toLocaleString(intlLocale(), {
                     maximumFractionDigits: 1,
                     minimumFractionDigits: 1,
                   })
@@ -476,7 +476,7 @@ export function VesselReviews({
                   : (reviewAuthors.authors?.[review.id]?.pseudo ?? tr("ui.travelCommunity.voyageurBledway"))}
               </strong>
               <time dateTime={review.created_at}>
-                {new Date(review.created_at).toLocaleDateString("fr-FR")}
+                {new Date(review.created_at).toLocaleDateString(intlLocale())}
               </time>
             </div>
             <p className="bw-review-stars" aria-label={`${review.score} sur 5`}>

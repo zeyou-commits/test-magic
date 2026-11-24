@@ -89,7 +89,7 @@ export function ProfilePhotoField() {
           {tr("ui.profilePhotoField.votrePhotoEstEnCours")}
           <button
             type="button"
-            className="ml-auto font-semibold underline"
+            className="ms-auto font-semibold underline"
             disabled={remove.isPending}
             onClick={() => remove.mutate({ id: pending.id, path: "" })}
           >

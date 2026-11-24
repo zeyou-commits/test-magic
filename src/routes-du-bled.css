@@ -50,8 +50,8 @@
   content: "";
   position: absolute;
   top: 17px;
-  left: 0;
-  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
   height: 4px;
   background: #3a4a57;
 }
@@ -95,9 +95,9 @@
   top: 22px;
   bottom: 22px;
 }
-.rdb-road::before { left: 15px; width: 18px; border-radius: 9px; background: #3a4a57; }
+.rdb-road::before { inset-inline-start: 15px; width: 18px; border-radius: 9px; background: #3a4a57; }
 .rdb-road::after {
-  left: 23px;
+  inset-inline-start: 23px;
   width: 2px;
   background: repeating-linear-gradient(#f5d58a 0 10px, transparent 10px 20px);
 }
@@ -175,7 +175,7 @@
   font-weight: 700;
   font-size: 0.9rem;
 }
-.rdb-go--inline { min-height: 2rem; padding: 0 0.75rem; font-size: 0.8rem; margin-left: 0.25rem; vertical-align: middle; }
+.rdb-go--inline { min-height: 2rem; padding: 0 0.75rem; font-size: 0.8rem; margin-inline-start: 0.25rem; vertical-align: middle; }
 .rdb-more { display: inline-flex; align-items: center; gap: 0.3rem; min-height: 2.5rem; padding: 0 0.75rem; font-size: 0.875rem; font-weight: 700; color: var(--foreground); }
 .rdb-more svg { transition: transform 0.2s; }
 .rdb-more[aria-expanded="true"] svg { transform: rotate(180deg); }
@@ -236,8 +236,8 @@
 .rdb-sugg {
   position: absolute;
   top: calc(100% + 0.4rem);
-  left: 0;
-  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
   z-index: 30;
   display: grid;
   margin: 0;
@@ -249,7 +249,7 @@
   box-shadow: 0 16px 36px rgb(13 48 67 / 0.18);
 }
 @media (min-width: 720px) { .rdb-sugg { min-width: 22rem; } }
-.rdb-sugg button { display: flex; align-items: center; gap: 0.65rem; width: 100%; padding: 0.6rem 0.65rem; border-radius: 0.7rem; text-align: left; font-size: 0.92rem; font-weight: 600; }
+.rdb-sugg button { display: flex; align-items: center; gap: 0.65rem; width: 100%; padding: 0.6rem 0.65rem; border-radius: 0.7rem; text-align: start; font-size: 0.92rem; font-weight: 600; }
 .rdb-sugg button:hover, .rdb-sugg button[data-active] { background: var(--secondary); }
 .rdb-sugg__ico { flex: none; display: grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 50%; background: var(--secondary); color: var(--muted-foreground); }
 .rdb-sugg__ico[data-kind="geo"] { background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); }
@@ -275,8 +275,8 @@
   .rdb-side .rdb-step__card { padding: 0.8rem 0.9rem; }
   .rdb-side .rdb-step__marker { width: 40px; height: 40px; }
   .rdb-side .rdb-step__marker img { width: 32px; height: 32px; }
-  .rdb-side .rdb-road::before { left: 12px; width: 16px; }
-  .rdb-side .rdb-road::after { left: 19px; }
+  .rdb-side .rdb-road::before { inset-inline-start: 12px; width: 16px; }
+  .rdb-side .rdb-road::after { inset-inline-start: 19px; }
   .rdb-side .rdb-step__title { font-size: 1.02rem; }
   .rdb-side .rdb-step__text { font-size: 0.85rem; }
 }
@@ -379,7 +379,7 @@
 .rdb-ports { display: grid; gap: 0.4rem; list-style: none; margin: 0; padding: 0; }
 .rdb-ports li { display: flex; align-items: center; gap: 0.6rem; padding: 0.7rem 0.8rem; border-radius: 0.9rem; border: 1px solid var(--border); }
 .rdb-ports li svg { flex: none; color: var(--muted-foreground); }
-.rdb-ports li span { margin-left: auto; font-size: 0.85rem; color: var(--muted-foreground); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rdb-ports li span { margin-inline-start: auto; font-size: 0.85rem; color: var(--muted-foreground); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 .rdb-chemin {
   display: grid;
@@ -388,7 +388,7 @@
   padding: 0.85rem 0.95rem;
   border-radius: 1rem;
   border: 1px solid var(--border);
-  text-align: left;
+  text-align: start;
   transition: border-color 0.2s, background 0.2s;
 }
 .rdb-chemin:hover { border-color: #d9861c; }
@@ -442,7 +442,7 @@
 .rdb-rc { border: 1px solid var(--border); border-radius: 1.1rem; background: var(--card); overflow: hidden; }
 .rdb-rcw[data-sel] .rdb-rc { border-color: color-mix(in srgb, var(--rt) 55%, var(--border)); }
 .rdb-rc[data-open] { border: 2px solid var(--rt); box-shadow: 0 10px 28px rgb(13 48 67 / 0.12), 0 2px 6px rgb(13 48 67 / 0.06); }
-.rdb-rc__head { display: grid; gap: 0.25rem; width: 100%; padding: 0.85rem 0.95rem; text-align: left; cursor: pointer; }
+.rdb-rc__head { display: grid; gap: 0.25rem; width: 100%; padding: 0.85rem 0.95rem; text-align: start; cursor: pointer; }
 .rdb-rc[data-open] .rdb-rc__head { padding: calc(0.85rem - 1px) calc(0.95rem - 1px) 0.6rem; }
 .rdb-rc__title { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
 .rdb-rc__title b { font-family: var(--font-display); font-size: 1.15rem; line-height: 1.2; overflow-wrap: anywhere; }
@@ -490,9 +490,9 @@
 .rdb-leg { position: relative; display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 0.6rem; min-height: 2rem; }
 .rdb-leg::before { content: ""; justify-self: center; width: 3px; height: 100%; border-radius: 2px; background: var(--rt); }
 .rdb-leg[data-side="dz"]::before { background: var(--dz); }
-.rdb-leg[data-k="mer"]::before { width: 0; border-left: 3px dashed var(--mer); background: none; }
-.rdb-leg[data-k="todo"]::before { width: 0; border-left: 3px dashed var(--todo); background: none; }
-.rdb-leg[data-k="approche"]::before { width: 0; border-left: 3px dotted var(--rt); background: none; }
+.rdb-leg[data-k="mer"]::before { width: 0; border-inline-start: 3px dashed var(--mer); background: none; }
+.rdb-leg[data-k="todo"]::before { width: 0; border-inline-start: 3px dashed var(--todo); background: none; }
+.rdb-leg[data-k="approche"]::before { width: 0; border-inline-start: 3px dotted var(--rt); background: none; }
 .rdb-leg__in { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; padding: 0.25rem 0; font-size: 0.75rem; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
 .rdb-leg[data-k="mer"] .rdb-leg__in { color: var(--mer); font-weight: 700; }
 .rdb-leg__add { display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.15rem 0.55rem; border-radius: 999px; border: 1px dashed var(--border); color: #1f6fd1; font-weight: 700; font-size: 0.74rem; opacity: 0.6; transition: opacity 0.15s; }
@@ -504,7 +504,7 @@
 .rdb-todo button { padding: 0.45rem 0.75rem; border-radius: 0.65rem; background: var(--todo); color: #fff; font-weight: 700; font-size: 0.82rem; }
 
 /* Filtres par service, posés sur la carte. */
-.rdb-filters { position: absolute; z-index: 3; top: 0.6rem; left: 0.6rem; right: 3.2rem; display: flex; gap: 0.35rem; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.rdb-filters { position: absolute; z-index: 3; top: 0.6rem; inset-inline-start: 0.6rem; inset-inline-end: 3.2rem; display: flex; gap: 0.35rem; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
 .rdb-filters::-webkit-scrollbar { display: none; }
 .rdb-filter { flex: none; display: inline-flex; align-items: center; gap: 0.3rem; min-height: 2rem; padding: 0 0.7rem; border-radius: 999px; border: 1px solid var(--border); background: color-mix(in srgb, var(--card) 94%, transparent); box-shadow: 0 2px 8px rgb(13 48 67 / 0.12); font-size: 0.78rem; font-weight: 700; color: var(--foreground); }
 .rdb-filter[aria-pressed="true"] { background: #0d3043; border-color: #0d3043; color: #fff; }
@@ -546,7 +546,7 @@
 .rdb-depart { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; font-size: 0.85rem; font-weight: 700; color: var(--foreground); }
 .rdb-depart select { min-height: 2.25rem; padding: 0 0.6rem; border-radius: 0.6rem; border: 1px solid var(--border); background: var(--card); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--foreground); }
 .rdb-pas__when { font-variant-numeric: tabular-nums; }
-.rdb-book__add { display: flex; align-items: center; gap: 0.6rem; width: 100%; margin-top: 1rem; padding: 0.75rem 0.9rem; border-radius: 0.9rem; border: 1px dashed var(--border); text-align: left; font-size: 0.85rem; color: var(--muted-foreground); }
+.rdb-book__add { display: flex; align-items: center; gap: 0.6rem; width: 100%; margin-top: 1rem; padding: 0.75rem 0.9rem; border-radius: 0.9rem; border: 1px dashed var(--border); text-align: start; font-size: 0.85rem; color: var(--muted-foreground); }
 .rdb-book__add svg { flex: none; color: var(--primary); }
 .rdb-book__add b { color: var(--primary); }
 .rdb-book__add:hover { background: var(--secondary); }
@@ -607,7 +607,7 @@
 
 /* Clic droit / appui long sur la carte : la bulle « Ajouter un endroit ici ». */
 .rdb-addhere .maplibregl-popup-content { padding: 0.35rem 1.9rem 0.35rem 0.35rem; border-radius: 999px; box-shadow: 0 8px 22px rgb(13 48 67 / 0.22); }
-.rdb-addhere .maplibregl-popup-close-button { top: 50%; right: 0.35rem; transform: translateY(-50%); width: 1.5rem; height: 1.5rem; border-radius: 50%; font-size: 1.1rem; }
+.rdb-addhere .maplibregl-popup-close-button { top: 50%; inset-inline-end: 0.35rem; transform: translateY(-50%); width: 1.5rem; height: 1.5rem; border-radius: 50%; font-size: 1.1rem; }
 .rdb-addhere__btn { min-height: 2.25rem; padding: 0 0.9rem; border-radius: 999px; background: var(--primary); color: var(--primary-foreground); font-size: 0.85rem; font-weight: 700; white-space: nowrap; }
 .rdb-book__add small { display: block; margin-top: 0.2rem; font-size: 0.75rem; }
 
@@ -617,7 +617,7 @@
 .rdb-recadrer { display: grid; place-items: center; color: #0d3043; }
 
 /* « Agrandir » : la carte en plein écran, au-dessus de tout. */
-.rdb-map__grand { position: absolute; left: 0.6rem; bottom: 0.6rem; z-index: 3; display: inline-flex; align-items: center; gap: 0.35rem; min-height: 2.5rem; padding: 0 0.85rem; border-radius: 999px; background: #fff; color: #0d3043; font-size: 0.82rem; font-weight: 700; box-shadow: 0 2px 10px rgb(13 48 67 / 0.22); }
+.rdb-map__grand { position: absolute; inset-inline-start: 0.6rem; bottom: 0.6rem; z-index: 3; display: inline-flex; align-items: center; gap: 0.35rem; min-height: 2.5rem; padding: 0 0.85rem; border-radius: 999px; background: #fff; color: #0d3043; font-size: 0.82rem; font-weight: 700; box-shadow: 0 2px 10px rgb(13 48 67 / 0.22); }
 .rdb-map[data-grand],
 .rdb[data-trip] .rdb-planner__grid > .rdb-map[data-grand] { position: fixed; inset: 0; z-index: 1000; height: 100svh; max-height: none; min-height: 0; margin: 0; border: 0; border-radius: 0; box-shadow: none; }
 @media (max-width: 1023px) {
@@ -641,7 +641,7 @@
 .rdb-shots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
 .rdb-shot { position: relative; aspect-ratio: 1; border-radius: 0.8rem; overflow: hidden; background: var(--secondary); }
 .rdb-shot img { width: 100%; height: 100%; object-fit: cover; }
-.rdb-shot > button { position: absolute; top: 0.3rem; right: 0.3rem; display: grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 50%; background: rgb(13 48 67 / 0.7); color: #fff; }
+.rdb-shot > button { position: absolute; top: 0.3rem; inset-inline-end: 0.3rem; display: grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 50%; background: rgb(13 48 67 / 0.7); color: #fff; }
 .rdb-shot--add { display: grid; place-content: center; justify-items: center; gap: 0.3rem; border: 2px dashed var(--border); color: var(--primary); font-size: 0.8rem; font-weight: 700; }
 .rdb-plus > button { display: inline-flex; align-items: center; gap: 0.3rem; min-height: 2.25rem; font-size: 0.85rem; font-weight: 700; color: var(--primary); }
 .rdb-plus > button[aria-expanded="true"] svg { transform: rotate(180deg); }
@@ -651,7 +651,7 @@
 .rdb-stop-photos a { flex: none; }
 .rdb-stop-photos img { width: 4.5rem; height: 4.5rem; border-radius: 0.6rem; object-fit: cover; }
 @media (max-width: 639px) {
-  .rdb-dialog.rdb-dialog { inset: 0; left: 0; top: 0; transform: none; --tw-translate-x: 0; --tw-translate-y: 0; translate: 0 0; width: 100%; max-width: none; height: 100dvh; max-height: none; border-radius: 0; border: 0; align-content: start; padding: 1.25rem 1rem calc(1rem + env(safe-area-inset-bottom)); }
+  .rdb-dialog.rdb-dialog { inset: 0; inset-inline-start: 0; top: 0; transform: none; --tw-translate-x: 0; --tw-translate-y: 0; translate: 0 0; width: 100%; max-width: none; height: 100dvh; max-height: none; border-radius: 0; border: 0; align-content: start; padding: 1.25rem 1rem calc(1rem + env(safe-area-inset-bottom)); }
   .rdb-dialog .rdb-dialog__foot { bottom: calc(-1rem - env(safe-area-inset-bottom)); }
 }
 

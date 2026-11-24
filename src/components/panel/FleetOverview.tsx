@@ -17,10 +17,10 @@ import type { Vessel } from "@/lib/ferry/types";
 import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
 import { fleetOverview } from "@/lib/ferry/vesselFacts";
 import { VesselAlertTag } from "./VesselAlert";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 
 const year = new Date().getFullYear();
-const number = (value: number) => value.toLocaleString("fr-FR");
+const number = (value: number) => value.toLocaleString(intlLocale());
 
 const rankings: {
   id: string;

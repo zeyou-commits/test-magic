@@ -11,7 +11,7 @@ import {
   Ship,
   Waypoints,
 } from "lucide-react";
-import { tr } from "@/lib/i18n";
+import { tr, intlLocale } from "@/lib/i18n";
 import { KIND_COLOR, mapsLink, type BledRoute, type StopFeature } from "@/lib/routesDuBled/data";
 import {
   anonyme,
@@ -30,7 +30,7 @@ import { CostView } from "./CostView";
 import { StopPhotos } from "./StopPhotos";
 import { FeatureIcon, KindIcon, Mosque, featureLabel, kindLabel, sourceLabel } from "./StopVisuals";
 
-export const fmt = (n: number) => Math.round(n).toLocaleString("fr-FR");
+export const fmt = (n: number) => Math.round(n).toLocaleString(intlLocale());
 export const duree = (b: Bout) => (b.mesure ? dureeRonde(b.h) : `≈ ${dureeRonde(b.h)}`);
 /** « 12 Rue X, 42000, Saint-Étienne, France » devient « Saint-Étienne ». */
 export const courte = (label: string) => {

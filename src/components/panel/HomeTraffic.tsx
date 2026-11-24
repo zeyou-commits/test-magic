@@ -25,7 +25,7 @@ import { MyTripsShortcut } from "./MyTrip";
 import { MyTripHero } from "./MyTripHero";
 import { useMyTrip } from "@/lib/ferry/myTrip";
 import type { MapPreview } from "@/lib/ferry/mapPresentation";
-import { tr } from "@/lib/i18n";
+import { tr, lazyDateFormat } from "@/lib/i18n";
 
 /** Mouvements montrés d'abord, puis ajoutés à chaque « Voir plus ». */
 const PAGE = 6;
@@ -37,7 +37,7 @@ function dayLabel(key: string, todayKey: string) {
   const gap = Math.round((at - Date.parse(`${todayKey}T12:00:00Z`)) / 86_400_000);
   if (gap <= 0) return "Aujourd'hui";
   if (gap === 1) return "Demain";
-  return new Intl.DateTimeFormat("fr-FR", {
+  return lazyDateFormat({
     timeZone: "UTC",
     weekday: "long",
     day: "numeric",
@@ -305,7 +305,7 @@ export function HomeTraffic({
               <button
                 type="button"
                 onClick={() => onSelect({ type: "port", id: list[0]!.port.id })}
-                className="flex w-full items-center gap-1.5 border-b border-border/70 bg-secondary/70 px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wide text-foreground hover:text-primary"
+                className="flex w-full items-center gap-1.5 border-b border-border/70 bg-secondary/70 px-3 py-2 text-start text-[11px] font-bold uppercase tracking-wide text-foreground hover:text-primary"
               >
                 <MapPin className="size-3.5 shrink-0 text-primary" aria-hidden />
                 {list[0]!.port.name}

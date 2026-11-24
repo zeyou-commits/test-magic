@@ -334,7 +334,7 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
               <p role="alert" className="mt-3 text-sm text-destructive">
                 {error}
                 <button
-                  className="ml-2 underline"
+                  className="ms-2 underline"
                   onClick={() => {
                     if (action && user) void complete(action, user.id);
                   }}

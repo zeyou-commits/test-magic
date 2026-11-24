@@ -32,7 +32,7 @@ import {
 } from "@/lib/papers/planCategories";
 import { SourceLinks } from "@/components/papers/PapersFlow";
 import { TaskLink } from "@/components/papers/TaskLink";
-import { tr } from "@/lib/i18n";
+import { tr, lazyDateFormat } from "@/lib/i18n";
 
 const icons: Record<PlanCategory, LucideIcon> = {
   steps: ClipboardList,
@@ -280,7 +280,7 @@ export function RecapSheet({
               <CalendarDays size={13} aria-hidden />{tr("ui.recapSheet.depart")}
             </dt>
             <dd>
-              {new Intl.DateTimeFormat("fr-FR", {
+              {lazyDateFormat({
                 weekday: "short",
                 day: "numeric",
                 month: "long",

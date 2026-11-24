@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, MessageSquareReply } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { tr, type MessageKey } from "@/lib/i18n";
+import { tr, type MessageKey, intlLocale } from "@/lib/i18n";
 import {
   ALL_PHOTO_CATEGORIES,
   asPhotoCategory,
@@ -20,12 +20,12 @@ import {
 export function CompanyReplyNote({ reply }: { reply: PublicCompanyReply | undefined }) {
   if (!reply) return null;
   return (
-    <div className="mt-1.5 grid gap-0.5 rounded-lg border-l-2 border-primary/50 bg-muted/50 px-2.5 py-1.5 text-sm">
+    <div className="mt-1.5 grid gap-0.5 rounded-lg border-s-2 border-primary/50 bg-muted/50 px-2.5 py-1.5 text-sm">
       <span className="flex items-center gap-1.5 text-xs font-semibold">
         <MessageSquareReply className="size-3.5" aria-hidden />
         {tr("ui.companyVoice.reponseDe", { company: reply.companyName })}
         <time className="font-normal text-muted-foreground" dateTime={reply.date}>
-          {new Date(reply.date).toLocaleDateString("fr-FR")}
+          {new Date(reply.date).toLocaleDateString(intlLocale())}
         </time>
       </span>
       <p className="whitespace-pre-line">{reply.body}</p>

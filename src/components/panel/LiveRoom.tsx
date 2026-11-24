@@ -72,7 +72,7 @@ import { DmRequest, PrivateMessages } from "./PrivateMessages";
 import { AuthorAvatar, StaffBadge, StaffTools, type ChatAuthor } from "./StaffChat";
 import { PHOTO_ACCEPT, PhotoPicker, PhotoStrip } from "@/components/photos/Photos";
 import { photosKey, photosQuery, sendChatPhoto, type PreparedPhoto } from "@/lib/photos/photos";
-import { tr } from "@/lib/i18n";
+import { tr, lazyDateFormat, intlLocale } from "@/lib/i18n";
 import {
   applyReaction,
   chatReactionsQuery,
@@ -167,7 +167,7 @@ function saveReported(ids: Set<string>) {
 }
 
 const time = (iso: string) =>
-  new Intl.DateTimeFormat("fr-FR", {
+  lazyDateFormat({
     timeZone: "Europe/Paris",
     hour: "2-digit",
     minute: "2-digit",
@@ -181,7 +181,7 @@ const stamp = (iso: string) => {
   const gap = Math.round((Date.parse(day(new Date())) - Date.parse(day(at))) / 86_400_000);
   if (gap <= 0) return time(iso);
   if (gap === 1) return `hier ${time(iso)}`;
-  const short = new Intl.DateTimeFormat("fr-FR", {
+  const short = lazyDateFormat({
     timeZone: "Europe/Paris",
     day: "2-digit",
     month: "2-digit",
@@ -873,7 +873,7 @@ function LiveChat({
                 <time
                   className="bw-chat__stamp"
                   dateTime={message.created_at}
-                  title={new Date(message.created_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" })}
+                  title={new Date(message.created_at).toLocaleString(intlLocale(), { timeZone: "Europe/Paris" })}
                 >
                   {message.edited ? "modifié · " : ""}
                   {stamp(message.created_at)}

@@ -124,8 +124,9 @@ export type StopProposal = {
   note: string;
 };
 
-export async function submitStop(p: StopProposal): Promise<void> {
-  const { error } = await db.rpc("bw_route_stop_submit", {
+/** Envoie la proposition et rend son identifiant (pour y joindre les photos). */
+export async function submitStop(p: StopProposal): Promise<string> {
+  const { data, error } = await db.rpc("bw_route_stop_submit", {
     p_route: p.route,
     p_kind: p.kind,
     p_name: p.name,
@@ -137,6 +138,7 @@ export async function submitStop(p: StopProposal): Promise<void> {
     p_note: p.note || null,
   });
   if (error) throw new Error(error.message);
+  return data as string;
 }
 
 /** Kilomètre et écart au tracé d'un point (projection locale, suffisante à cette échelle). */

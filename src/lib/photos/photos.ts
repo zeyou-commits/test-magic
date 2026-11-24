@@ -7,7 +7,13 @@ const db = typedSupabase as unknown as SupabaseClient;
 
 export const PENDING_BUCKET = "bledway-photos-attente";
 export const PUBLIC_BUCKET = "bledway-photos";
-export type PhotoKind = "report" | "vessel_review" | "port_review" | "chat" | "profile";
+export type PhotoKind =
+  | "report"
+  | "vessel_review"
+  | "port_review"
+  | "chat"
+  | "profile"
+  | "route_stop";
 
 /**
  * Une photo prête à l'envoi : réduite, visages floutés, réencodée (sans aucune métadonnée,

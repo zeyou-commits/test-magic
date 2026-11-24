@@ -13,7 +13,7 @@ const QUEUE_KEY = ["admin", "photos-queue"];
 
 type QueuedPhoto = {
   id: string;
-  kind: "report" | "vessel_review" | "port_review" | "chat" | "profile";
+  kind: "report" | "vessel_review" | "port_review" | "chat" | "profile" | "route_stop";
   parent_id: string;
   pending_path: string | null;
   public_path: string | null;
@@ -29,6 +29,7 @@ const KIND_LABEL: Record<QueuedPhoto["kind"], string> = {
   port_review: "Avis sur un port",
   chat: "Salon (signalée)",
   profile: "Photo de profil",
+  route_stop: "Halte d'une route du bled",
 };
 
 /**

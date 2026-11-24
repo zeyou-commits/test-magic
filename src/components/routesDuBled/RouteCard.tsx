@@ -27,6 +27,7 @@ import { heure, horaires, type Carnet, type Pas } from "@/lib/routesDuBled/carne
 import { VILLES, nomVille } from "@/lib/routesDuBled/villes";
 import { coutRoute, type Reglages } from "@/lib/routesDuBled/budget";
 import { CostView } from "./CostView";
+import { StopPhotos } from "./StopPhotos";
 import { FeatureIcon, KindIcon, Mosque, featureLabel, kindLabel, sourceLabel } from "./StopVisuals";
 
 export const fmt = (n: number) => Math.round(n).toLocaleString("fr-FR");
@@ -676,6 +677,7 @@ function PasView({
               ))}
             </ul>
           ) : null}
+          {lead ? <StopPhotos id={lead.id} /> : null}
           {nuit && pray ? (
             <ul className="rdb-near">
               <li>

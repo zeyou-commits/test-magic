@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { offlineSavedAt } from "@/lib/offline";
+import { tr } from "@/lib/i18n";
 
 /** Sans réseau (en mer, au port) : on dit d'où viennent les informations affichées. */
 export function OfflineBanner() {
@@ -26,9 +27,9 @@ export function OfflineBanner() {
     <div className="bw-offline-banner" role="status">
       <img src="/cabas/persos/voiture_504.webp" alt="" width={26} height={26} className="shrink-0" />
       <span>
-        <b>Pas de réseau, pas de panique.</b>{" "}
-        {time ? `Ton voyage est là, tel qu’enregistré à ${time}. ` : "Ton voyage est gardé sur le téléphone. "}
-        Ça se remet à jour dès que ça capte.
+        <b>{tr("ui.offlineBanner.pasDeReseauPasDe")}</b>{" "}
+        {time ? `Ton voyage est là, tel qu’enregistré à ${time}. ` : tr("ui.offlineBanner.tonVoyageEstGardeSur")}
+        {tr("ui.offlineBanner.caSeRemetAJour")}
       </span>
     </div>
   );

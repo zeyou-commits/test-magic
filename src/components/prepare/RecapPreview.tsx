@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { Check, FileText, Share2, type LucideIcon } from "lucide-react";
+import { tr } from "@/lib/i18n";
 
 export type PreviewRow = {
   icon: LucideIcon;
@@ -63,7 +64,7 @@ export function RecapPreview({
       <div className="bw-rprev__head">
         <span className="min-w-0">
           <small>
-            <FileText size={11} aria-hidden /> {example ? "Exemple de récap" : "Votre récap"}
+            <FileText size={11} aria-hidden /> {example ? tr("ui.recapPreview.exempleDeRecap") : tr("ui.recapPreview.votreRecap")}
           </small>
           <b>{title}</b>
           <span>{subtitle}</span>
@@ -95,7 +96,7 @@ export function RecapPreview({
               {isDone && row.value ? (
                 <span className="bw-rprev__value">{row.value}</span>
               ) : missing ? (
-                <span className="bw-rprev__missing">À compléter</span>
+                <span className="bw-rprev__missing">{tr("ui.recapPreview.aCompleter")}</span>
               ) : (
                 <span className="bw-rprev__bar" aria-hidden />
               )}
@@ -113,7 +114,7 @@ export function RecapPreview({
       </ol>
       {share ? (
         <span className="bw-rprev__share" aria-hidden>
-          <Share2 size={12} /> PDF · lien à partager
+          <Share2 size={12} />{tr("ui.recapPreview.pdfLienAPartager")}
         </span>
       ) : null}
     </figure>

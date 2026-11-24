@@ -72,6 +72,7 @@ import {
 import { reviewCriteria, reviewNumber } from "@/lib/ferry/reviewCriteria";
 import { routeArrivalTimeZone, routeDepartureTimeZone } from "@/lib/ferry/time";
 import type { Departure } from "@/lib/ferry/types";
+import { tr } from "@/lib/i18n";
 
 type Search = { c?: string; tab?: string; vessel?: string };
 export const Route = createFileRoute("/espace-compagnie")({
@@ -234,14 +235,14 @@ function Gate({
           </span>
         </div>
         <p className="bw-gate__kicker">
-          <Building2 size={13} aria-hidden /> Espace compagnie
+          <Building2 size={13} aria-hidden />{tr("ui.pageEspaceCompagnie.espaceCompagnie")}
         </p>
         <h1 className="bw-gate__title">{title}</h1>
         <div className="bw-gate__body">{children}</div>
         <div className="bw-gate__acts">
           {action}
           <Link to="/" className="bw-gate__b2">
-            Retour au site
+            {tr("ui.pageEspaceCompagnie.retourAuSite")}
           </Link>
         </div>
         {footnote ? <p className="bw-gate__foot">{footnote}</p> : null}
@@ -266,17 +267,17 @@ function CompanySpacePage() {
       count < 2 && (!(error instanceof AdminRequestError) || error.status >= 500),
     retryDelay: (count) => 800 * (count + 1),
   });
-  if (loading) return <p className="bo-empty p-6">Chargement…</p>;
+  if (loading) return <p className="bo-empty p-6">{tr("ui.pageEspaceCompagnie.chargement")}</p>;
   // Personne connectée : page d'accueil professionnelle, avec les deux portes.
   if (!user) return <CompanyShowcase />;
   if (staff) return <CompanySpace allowed={null} />;
-  if (access.isPending) return <p className="bo-empty p-6">Vérification de votre accès…</p>;
+  if (access.isPending) return <p className="bo-empty p-6">{tr("ui.pageEspaceCompagnie.verificationDeVotreAcces")}</p>;
   if (access.isError) {
     const code = access.error instanceof AdminRequestError ? access.error.code : undefined;
     return (
       <Gate
         tone="error"
-        title="Connexion à votre espace interrompue"
+        title={tr("ui.pageEspaceCompagnie.connexionAVotreEspaceInterrompue")}
         action={
           <button
             type="button"
@@ -289,16 +290,16 @@ function CompanySpacePage() {
             ) : (
               <RefreshCw size={16} aria-hidden />
             )}
-            {access.isFetching ? "Nouvel essai…" : "Réessayer"}
+            {access.isFetching ? tr("ui.pageEspaceCompagnie.nouvelEssai") : tr("ui.pageEspaceCompagnie.reessayer")}
           </button>
         }
         footnote={
           <>
-            Le problème continue ? Écrivez à votre interlocuteur BledWay
+            {tr("ui.pageEspaceCompagnie.leProblemeContinueEcrivezA")}
             {code ? (
               <>
                 {" "}
-                en indiquant le code <code>{code}</code>
+                {tr("ui.pageEspaceCompagnie.enIndiquantLeCode")}<code>{code}</code>
               </>
             ) : null}
             .
@@ -306,15 +307,14 @@ function CompanySpacePage() {
         }
       >
         <p>
-          Nous n'avons pas pu vérifier votre accès à l'instant : le service a mis trop de temps à
-          répondre.
+          {tr("ui.pageEspaceCompagnie.nousNAvonsPasPu")}
         </p>
         <ul className="bw-gate__list">
           <li>
-            <ShieldCheck size={15} aria-hidden /> Votre accès et vos données sont intacts.
+            <ShieldCheck size={15} aria-hidden />{tr("ui.pageEspaceCompagnie.votreAccesEtVosDonnees")}
           </li>
           <li>
-            <RefreshCw size={15} aria-hidden /> Un nouvel essai suffit le plus souvent.
+            <RefreshCw size={15} aria-hidden />{tr("ui.pageEspaceCompagnie.unNouvelEssaiSuffitLe")}
           </li>
         </ul>
       </Gate>
@@ -330,11 +330,10 @@ function CompanySpacePage() {
       <Gate>
         {suspended ? (
           <p>
-            Votre accès à l'espace de {suspended.name} est suspendu. Contactez votre interlocuteur
-            BledWay.
+            {tr("ui.pageEspaceCompagnie.votreAccesALEspace")}{suspended.name}{tr("ui.pageEspaceCompagnie.estSuspenduContactezVotreInterlocuteur")}
           </p>
         ) : (
-          <p>L'espace de {closed!.name} est suspendu par BledWay pour le moment.</p>
+          <p>{tr("ui.pageEspaceCompagnie.lEspaceDe")}{closed!.name}{tr("ui.pageEspaceCompagnie.estSuspenduParBledwayPour")}</p>
         )}
       </Gate>
     );
@@ -555,7 +554,7 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
                 aria-label={`Modifier ou prévenir : ${lineOf(item.route_id)}, ${dayFmt.format(new Date(item.departure_at))} à ${hourFmt.format(new Date(item.departure_at))}`}
                 onClick={() => setChanging(changing === item.id ? null : item.id)}
               >
-                Modifier ou prévenir
+                {tr("ui.pageEspaceCompagnie.modifierOuPrevenir")}
               </button>
             ) : null}
             {withAction && changing === item.id && desk && changingDeparture ? (
@@ -572,7 +571,7 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
       </ul>
     ) : (
       <p className="bo-empty">
-        {departures.isPending ? "Chargement des traversées…" : "Aucune traversée à venir publiée."}
+        {departures.isPending ? tr("ui.pageEspaceCompagnie.chargementDesTraversees") : tr("ui.pageEspaceCompagnie.aucuneTraverseeAVenirPubliee")}
       </p>
     );
   const criteria = reviewCriteria.company.filter((item) => reviews.data?.criteria[item.code]);
@@ -585,7 +584,7 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
             <span>
               <strong>{item.label}</strong>
               <small>
-                {value.count} note{value.count > 1 ? "s" : ""}
+                {value.count}{tr("ui.pageEspaceCompagnie.note")}{value.count > 1 ? "s" : ""}
               </small>
             </span>
             <meter min={0} max={5} value={value.average} className="bo-meter" />
@@ -596,7 +595,7 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
     </ul>
   ) : (
     <p className="bo-empty">
-      {reviews.isPending ? "Chargement des notes…" : "Pas encore de note publiée."}
+      {reviews.isPending ? tr("ui.pageEspaceCompagnie.chargementDesNotes") : tr("ui.pageEspaceCompagnie.pasEncoreDeNotePubliee")}
     </p>
   );
   const signalRows = alerts.length ? (
@@ -612,13 +611,13 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
             <small>{vesselName(alert.target_id)}</small>
           </span>
           <em className="bo-pill" data-tone="warn">
-            {1 + alert.confirmations} voyageur{alert.confirmations ? "s" : ""}
+            {1 + alert.confirmations}{tr("ui.pageEspaceCompagnie.voyageur")}{alert.confirmations ? "s" : ""}
           </em>
         </li>
       ))}
     </ul>
   ) : (
-    <p className="bo-empty">Aucun signalement en cours sur vos navires.</p>
+    <p className="bo-empty">{tr("ui.pageEspaceCompagnie.aucunSignalementEnCoursSur")}</p>
   );
 
   return (
@@ -628,7 +627,7 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
       brandSub={
         active.length > 1 ? (
           <label className="bo-company-pick">
-            <span>Compagnie affichée</span>
+            <span>{tr("ui.pageEspaceCompagnie.compagnieAffichee")}</span>
             <select
               value={company?.id ?? ""}
               onChange={(event) => void navigate({ search: { c: event.target.value, tab } })}
@@ -642,7 +641,7 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
           </label>
         ) : (
           <span className="bo-company-pick">
-            <span>Compagnie</span>
+            <span>{tr("ui.pageEspaceCompagnie.compagnie")}</span>
             <strong>{company?.name ?? "…"}</strong>
           </span>
         )
@@ -656,44 +655,42 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
         allowed ? (
           <div className="bo-notice" data-tone="info" role="note">
             <strong>
-              Votre accès : {level ? LEVEL_CATALOG[level].label : "Lecture"}. Données publiées sur
-              BledWay.
+              {tr("ui.pageEspaceCompagnie.votreAcces")}{level ? LEVEL_CATALOG[level].label : tr("ui.pageEspaceCompagnie.lecture")}{tr("ui.pageEspaceCompagnie.donneesPublieesSurBledway")}
             </strong>
             <span>
               {canAct
-                ? "Ce que vous publiez part tout de suite, sous le nom de votre compagnie. BledWay peut retirer après coup ce qui enfreint les règles communes."
-                : "Vous suivez les traversées, les demandes, les annonces et les avis de votre compagnie. Le niveau Opérations permet d'agir."}
+                ? tr("ui.pageEspaceCompagnie.ceQueVousPubliezPart")
+                : tr("ui.pageEspaceCompagnie.vousSuivezLesTraverseesLes")}
             </span>
           </div>
         ) : (
           <div className="bo-notice" data-tone="info" role="note">
-            <strong>Aperçu de l'équipe BledWay : toutes les compagnies.</strong>
+            <strong>{tr("ui.pageEspaceCompagnie.apercuDeLEquipeBledway")}</strong>
             <span>
-              Un collaborateur de compagnie ne voit que la sienne. Les accès se gèrent dans Espace
-              équipe → Réseau → Compagnies.
+              {tr("ui.pageEspaceCompagnie.unCollaborateurDeCompagnieNe")}
             </span>
           </div>
         )
       }
     >
       {!company || !overview ? (
-        <p className="bo-empty">Chargement de la compagnie…</p>
+        <p className="bo-empty">{tr("ui.pageEspaceCompagnie.chargementDeLaCompagnie")}</p>
       ) : tab === "team" ? (
         <div className="grid gap-3.5">
           <section className="bo-card">
             <h2>
-              <UserRound aria-hidden /> Accès à l'espace {company.name}
-              <small>attribués par BledWay</small>
+              <UserRound aria-hidden />{tr("ui.pageEspaceCompagnie.accesALEspace")}{company.name}
+              <small>{tr("ui.pageEspaceCompagnie.attribuesParBledway")}</small>
             </h2>
             {team.isPending ? (
-              <p className="bo-empty">Chargement de l'équipe…</p>
+              <p className="bo-empty">{tr("ui.pageEspaceCompagnie.chargementDeLEquipe")}</p>
             ) : team.isError ? (
               <p className="bo-empty">
                 {!refused
                   ? (team.error as Error).message
                   : allowed
-                    ? "Votre accès a changé. Rechargez la page."
-                    : "Dans l'équipe BledWay, seuls les administrateurs voient les accès."}
+                    ? tr("ui.pageEspaceCompagnie.votreAccesAChangeRechargez")
+                    : tr("ui.pageEspaceCompagnie.dansLEquipeBledwaySeuls")}
               </p>
             ) : team.data.length ? (
               <ul className="bo-rows">
@@ -704,7 +701,7 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
                         {mate.name}
                         {mate.you ? " (vous)" : ""}
                       </strong>
-                      <small>Depuis le {dayFmt.format(new Date(mate.since))}</small>
+                      <small>{tr("ui.pageEspaceCompagnie.depuisLe")}{dayFmt.format(new Date(mate.since))}</small>
                     </span>
                     <em
                       className="bo-pill"
@@ -716,12 +713,12 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
                 ))}
               </ul>
             ) : (
-              <p className="bo-empty">Aucun collaborateur n'a encore d'accès.</p>
+              <p className="bo-empty">{tr("ui.pageEspaceCompagnie.aucunCollaborateurNAEncore")}</p>
             )}
             <p className="bo-lead">
               {manager
-                ? "Vous êtes responsable : gérez vos collaborateurs ci-dessous."
-                : "Pour ajouter ou retirer une personne, écrivez au responsable de votre compagnie ou à votre interlocuteur BledWay."}
+                ? tr("ui.pageEspaceCompagnie.vousEtesResponsableGerezVos")
+                : tr("ui.pageEspaceCompagnie.pourAjouterOuRetirerUne")}
             </p>
           </section>
           {manager && voice ? <CompanyManagerPanel ctx={voice} /> : null}
@@ -729,18 +726,16 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
       ) : tab === "crossings" ? (
         <section className="bo-card">
           <h2>
-            <CalendarDays aria-hidden /> {mine.length} traversée{mine.length > 1 ? "s" : ""} à venir
+            <CalendarDays aria-hidden /> {mine.length}{tr("ui.pageEspaceCompagnie.traversee")}{mine.length > 1 ? "s" : ""}{tr("ui.pageEspaceCompagnie.aVenir")}
             <small>
               <button type="button" className="bo-link" onClick={() => go("requests")}>
-                Historique des changements{inReview ? ` (${inReview} en attente)` : ""}
+                {tr("ui.pageEspaceCompagnie.historiqueDesChangements")}{inReview ? ` (${inReview} en attente)` : ""}
               </button>
             </small>
           </h2>
           {canAct ? (
             <p className="bo-lead mb-2">
-              Un retard, un nouvel horaire, un autre navire, une annulation ou une simple consigne ?
-              Touchez « Modifier ou prévenir » sur la traversée : tout part tout de suite, et les
-              voyageurs qui la suivent sont prévenus.
+              {tr("ui.pageEspaceCompagnie.unRetardUnNouvelHoraire")}
             </p>
           ) : null}
           {crossingRows(mine, true)}
@@ -750,9 +745,9 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
       ) : tab === "lines" ? (
         <section className="bo-card">
           <h2>
-            <RouteIcon aria-hidden /> {overview.lines.length} ligne
+            <RouteIcon aria-hidden /> {overview.lines.length}{tr("ui.pageEspaceCompagnie.ligne")}
             {overview.lines.length > 1 ? "s" : ""}
-            <small>fréquence calculée sur 8 semaines</small>
+            <small>{tr("ui.pageEspaceCompagnie.frequenceCalculeeSur8Semaines")}</small>
           </h2>
           {overview.lines.length ? (
             <ul className="bo-rows">
@@ -763,17 +758,17 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
                     <small>
                       {line.next
                         ? `Prochain départ ${dayFmt.format(new Date(line.next))}`
-                        : "Aucun départ publié"}
+                        : tr("ui.pageEspaceCompagnie.aucunDepartPublie")}
                     </small>
                   </span>
                   <em className="bo-pill" data-tone={line.perWeek ? undefined : "mute"}>
-                    {String(line.perWeek).replace(".", ",")} / semaine
+                    {String(line.perWeek).replace(".", ",")}{tr("ui.pageEspaceCompagnie.semaine")}
                   </em>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="bo-empty">Aucune ligne rattachée à cette compagnie.</p>
+            <p className="bo-empty">{tr("ui.pageEspaceCompagnie.aucuneLigneRattacheeACette")}</p>
           )}
         </section>
       ) : tab === "fleet" ? (
@@ -799,25 +794,25 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
                 <h2>
                   <Ship aria-hidden /> {vessel.name}
                   <small>
-                    {note?.count ? `${reviewNumber(note.average ?? 0)}/5` : "pas de note"}
+                    {note?.count ? `${reviewNumber(note.average ?? 0)}/5` : tr("ui.pageEspaceCompagnie.pasDeNote")}
                   </small>
                 </h2>
                 <dl className="bo-facts">
                   <div>
-                    <dt>Mise en service</dt>
+                    <dt>{tr("ui.pageEspaceCompagnie.miseEnService")}</dt>
                     <dd>{vessel.build_year ?? "—"}</dd>
                   </div>
                   <div>
-                    <dt>Passagers</dt>
+                    <dt>{tr("ui.pageEspaceCompagnie.passagers")}</dt>
                     <dd>{vessel.passenger_capacity ?? "—"}</dd>
                   </div>
                   <div>
-                    <dt>Véhicules</dt>
+                    <dt>{tr("ui.pageEspaceCompagnie.vehicules")}</dt>
                     <dd>{vessel.car_capacity ?? "—"}</dd>
                   </div>
                   <div>
-                    <dt>Suivi en mer</dt>
-                    <dd>{vessel.mmsi ? "Actif" : "Non relié"}</dd>
+                    <dt>{tr("ui.pageEspaceCompagnie.suiviEnMer")}</dt>
+                    <dd>{vessel.mmsi ? tr("ui.pageEspaceCompagnie.actif") : tr("ui.pageEspaceCompagnie.nonRelie")}</dd>
                   </div>
                 </dl>
                 {voice ? (
@@ -834,13 +829,13 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
                       })
                     }
                   >
-                    <Camera className="size-4" aria-hidden /> Photos du navire
+                    <Camera className="size-4" aria-hidden />{tr("ui.pageEspaceCompagnie.photosDuNavire")}
                   </button>
                 ) : null}
               </article>
             );
           })}
-          {fleet.length ? null : <p className="bo-empty">Aucun navire en service.</p>}
+          {fleet.length ? null : <p className="bo-empty">{tr("ui.pageEspaceCompagnie.aucunNavireEnService")}</p>}
         </div>
       ) : tab === "reviews" && voice ? (
         <CompanyReviewsTab ctx={voice} summary={reviewBars} />
@@ -873,23 +868,23 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
                 <p>
                   {overview.next
                     ? `Prochain départ ${dayFmt.format(new Date(overview.next.departure_at))} à ${hourFmt.format(new Date(overview.next.departure_at))}`
-                    : "Aucun départ publié à venir"}
+                    : tr("ui.pageEspaceCompagnie.aucunDepartPublieAVenir")}
                 </p>
               </div>
             </div>
             <div className="bo-hello__actions">
               <button type="button" onClick={() => go("crossings")}>
-                <CalendarDays aria-hidden /> Mes traversées
+                <CalendarDays aria-hidden />{tr("ui.pageEspaceCompagnie.mesTraversees")}
               </button>
               <button type="button" onClick={() => go("announce")}>
-                <Megaphone aria-hidden /> Prévenir mes passagers
+                <Megaphone aria-hidden />{tr("ui.pageEspaceCompagnie.prevenirMesPassagers")}
               </button>
             </div>
           </div>
           <section className="bo-card mb-3.5" aria-labelledby="bo-todo-title">
             <h2 id="bo-todo-title">
-              <ListTodo aria-hidden /> À traiter
-              <small className="max-sm:hidden">mis à jour chaque minute</small>
+              <ListTodo aria-hidden />{tr("ui.pageEspaceCompagnie.aTraiter")}
+              <small className="max-sm:hidden">{tr("ui.pageEspaceCompagnie.misAJourChaqueMinute")}</small>
             </h2>
             {todo.length ? (
               <ul className="bo-rows">
@@ -912,11 +907,11 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
               </ul>
             ) : (
               <p className="bo-empty flex items-center gap-2">
-                <CheckCircle2 aria-hidden className="size-4" /> Rien à traiter pour le moment.
+                <CheckCircle2 aria-hidden className="size-4" />{tr("ui.pageEspaceCompagnie.rienATraiterPourLe")}
               </p>
             )}
             <h3 className="mt-3 text-sm font-semibold">
-              Dans les 48 heures{" "}
+              {tr("ui.pageEspaceCompagnie.dansLes48Heures")}{" "}
               <span className="font-normal text-[var(--bo-muted)]">
                 · {plural(soon.length, "traversée")}
               </span>
@@ -926,37 +921,37 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
             ) : (
               <p className="bo-empty">
                 {departures.isPending
-                  ? "Chargement des traversées…"
-                  : "Aucune traversée dans les 48 prochaines heures."}
+                  ? tr("ui.pageEspaceCompagnie.chargementDesTraversees")
+                  : tr("ui.pageEspaceCompagnie.aucuneTraverseeDansLes48")}
               </p>
             )}
           </section>
           <div className="bo-kpis">
             <button type="button" className="bo-kpi" onClick={() => go("crossings")}>
               <span className="bo-kpi__top">
-                Traversées à venir <CalendarDays aria-hidden />
+                {tr("ui.pageEspaceCompagnie.traverseesAVenir")}<CalendarDays aria-hidden />
               </span>
               <strong>{departures.isPending ? "–" : overview.upcoming}</strong>
-              <small>{String(overview.perWeek).replace(".", ",")} par semaine sur 8 semaines</small>
+              <small>{String(overview.perWeek).replace(".", ",")}{tr("ui.pageEspaceCompagnie.parSemaineSur8Semaines")}</small>
             </button>
             <button type="button" className="bo-kpi" onClick={() => go("crossings")}>
               <span className="bo-kpi__top">
-                Personnes qui suivent <Users aria-hidden />
+                {tr("ui.pageEspaceCompagnie.personnesQuiSuivent")}<Users aria-hidden />
               </span>
               <strong>{audience.data ? audience.data.total : "–"}</strong>
               <small>
                 {audience.isError
-                  ? "chiffre indisponible"
+                  ? tr("ui.pageEspaceCompagnie.chiffreIndisponible")
                   : !audience.data
-                    ? "calcul en cours"
+                    ? tr("ui.pageEspaceCompagnie.calculEnCours")
                     : audience.data.total
                       ? `vos traversées à venir, dont ${audience.data.travellers} qui voyage${audience.data.travellers > 1 ? "nt" : ""}`
-                      : "personne ne suit encore vos traversées"}
+                      : tr("ui.pageEspaceCompagnie.personneNeSuitEncoreVos")}
               </small>
             </button>
             <button type="button" className="bo-kpi" onClick={() => go("reviews")}>
               <span className="bo-kpi__top">
-                Note des voyageurs <Star aria-hidden />
+                {tr("ui.pageEspaceCompagnie.noteDesVoyageurs")}<Star aria-hidden />
               </span>
               <strong>
                 {reviews.data?.count ? reviewNumber(reviews.data.average ?? 0) : "–"}
@@ -965,7 +960,7 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
               <small>
                 {reviews.data?.count
                   ? `${reviews.data.count} avis publié${reviews.data.count > 1 ? "s" : ""}`
-                  : "pas encore d'avis publié"}
+                  : tr("ui.pageEspaceCompagnie.pasEncoreDAvisPublie")}
               </small>
             </button>
             <button
@@ -975,10 +970,10 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
               onClick={() => go("reviews")}
             >
               <span className="bo-kpi__top">
-                Avis sans réponse <MessageSquare aria-hidden />
+                {tr("ui.pageEspaceCompagnie.avisSansReponse")}<MessageSquare aria-hidden />
               </span>
               <strong>{feedback.data ? unanswered : "–"}</strong>
-              <small>{unanswered ? "une réponse rassure les voyageurs" : "Tout est à jour"}</small>
+              <small>{unanswered ? tr("ui.pageEspaceCompagnie.uneReponseRassureLesVoyageurs") : tr("ui.pageEspaceCompagnie.toutEstAJour")}</small>
             </button>
             <button
               type="button"
@@ -987,19 +982,19 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
               onClick={() => go("signals")}
             >
               <span className="bo-kpi__top">
-                Signalements en cours <MessageSquare aria-hidden />
+                {tr("ui.pageEspaceCompagnie.signalementsEnCours")}<MessageSquare aria-hidden />
               </span>
               <strong>{alerts.length}</strong>
-              <small>{alerts.length ? "sur vos navires" : "Rien en ce moment"}</small>
+              <small>{alerts.length ? tr("ui.pageEspaceCompagnie.surVosNavires") : tr("ui.pageEspaceCompagnie.rienEnCeMoment")}</small>
             </button>
           </div>
           <div className="bo-grid2">
             <section className="bo-card">
               <h2>
-                <CalendarDays aria-hidden /> Prochaines traversées
+                <CalendarDays aria-hidden />{tr("ui.pageEspaceCompagnie.prochainesTraversees")}
                 <small>
                   <button type="button" className="bo-link" onClick={() => go("crossings")}>
-                    Tout voir
+                    {tr("ui.pageEspaceCompagnie.toutVoir")}
                   </button>
                 </small>
               </h2>
@@ -1008,13 +1003,13 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
             <div className="bo-stack">
               <section className="bo-card">
                 <h2>
-                  <Star aria-hidden /> Ce que disent les voyageurs
+                  <Star aria-hidden />{tr("ui.pageEspaceCompagnie.ceQueDisentLesVoyageurs")}
                 </h2>
                 {reviewBars}
               </section>
               <section className="bo-card">
                 <h2>
-                  <Radio aria-hidden /> Signalé en ce moment
+                  <Radio aria-hidden />{tr("ui.pageEspaceCompagnie.signaleEnCeMoment")}
                 </h2>
                 {signalRows}
               </section>

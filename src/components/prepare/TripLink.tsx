@@ -6,6 +6,7 @@ import {
   type FavoriteCrossing,
 } from "@/lib/ferry/favoriteCrossings";
 import { useMyTrip } from "@/lib/ferry/myTrip";
+import { tr } from "@/lib/i18n";
 
 /** La traversée déjà déclarée « Ma traversée » : ce que « Mon voyage » suit. */
 export function useLinkedTrip() {
@@ -53,17 +54,17 @@ export function TripLink({
   const request = useTravelAction();
   if (linked)
     return (
-      <section className={`bw-triplink bw-triplink--mine ${className}`} aria-label="Ma traversée">
+      <section className={`bw-triplink bw-triplink--mine ${className}`} aria-label={tr("ui.tripLink.maTraversee")}>
         <span className="bw-triplink__icon" aria-hidden>
           <Ship size={18} />
         </span>
         <span className="min-w-0 flex-1">
-          <small>Ma traversée · suivie dans Mon voyage</small>
+          <small>{tr("ui.tripLink.maTraverseeSuivieDansMon")}</small>
           <b>{linked.label}</b>
           <span>{favoriteWhen(linked.at)}</span>
         </span>
         <button type="button" className="bw-triplink__go" onClick={openMyVoyage}>
-          Mon voyage <ArrowRight size={14} aria-hidden />
+          {tr("ui.tripLink.monVoyage")}<ArrowRight size={14} aria-hidden />
         </button>
       </section>
     );
@@ -72,11 +73,10 @@ export function TripLink({
   return (
     <section className={`bw-triplink ${className}`} aria-labelledby="triplink-title">
       <p id="triplink-title" className="bw-triplink__head">
-        <Heart size={14} className="fill-current" aria-hidden /> Dans vos favoris
+        <Heart size={14} className="fill-current" aria-hidden />{tr("ui.tripLink.dansVosFavoris")}
       </p>
       <p className="bw-triplink__hint">
-        Vous avez déjà votre billet pour l'une d'elles ? Faites-en votre traversée : « Mon voyage »
-        la suivra pas à pas, du départ à l'arrivée.
+        {tr("ui.tripLink.vousAvezDejaVotreBillet")}
       </p>
       <ul>
         {list.map((item) => (
@@ -102,7 +102,7 @@ export function TripLink({
                 })
               }
             >
-              C'est ma traversée
+              {tr("ui.tripLink.cEstMaTraversee")}
             </button>
           </li>
         ))}

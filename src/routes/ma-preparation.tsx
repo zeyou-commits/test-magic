@@ -53,6 +53,7 @@ import {
   type SharedPreparation,
 } from "@/lib/prepare/share";
 import { useAuth } from "@/hooks/useAuth";
+import { tr } from "@/lib/i18n";
 
 export const Route = createFileRoute("/ma-preparation")({
   head: () => ({
@@ -106,8 +107,8 @@ function SharedPreparationPage() {
   if (shareId && !user)
     return (
       <Empty
-        title="Une préparation de voyage a été partagée avec vous"
-        text="Pour la protéger, seule l'adresse e-mail invitée peut l'ouvrir. Connectez-vous (ou créez un compte gratuit) avec cette adresse."
+        title={tr("ui.pageMaPreparation.unePreparationDeVoyageA")}
+        text={tr("ui.pageMaPreparation.pourLaProtegerSeuleL")}
         cta={{
           href: `/auth?next=${encodeURIComponent(`/ma-preparation?s=${shareId}`)}`,
           label: "Me connecter pour la voir",
@@ -118,7 +119,7 @@ function SharedPreparationPage() {
   if (shareId && !shared.data)
     return (
       <Empty
-        title="Cette préparation ne vous est pas ouverte"
+        title={tr("ui.pageMaPreparation.cettePreparationNeVousEst")}
         text={`Elle est réservée aux adresses invitées, et vous êtes connecté avec ${user?.email ?? "un autre compte"}. Demandez à la personne qui l'a partagée d'ajouter cette adresse, ou connectez-vous avec la bonne. Un partage expire aussi au bout de 4 mois.`}
         cta={{ href: "/preparer-mon-voyage", label: "Préparer mon propre voyage" }}
         locked
@@ -128,8 +129,8 @@ function SharedPreparationPage() {
   if (!prep)
     return (
       <Empty
-        title="Aucune préparation à afficher"
-        text="La préparation n'a pas encore commencé sur cet appareil."
+        title={tr("ui.pageMaPreparation.aucunePreparationAAfficher")}
+        text={tr("ui.pageMaPreparation.laPreparationNAPas")}
         cta={{ href: "/preparer-mon-voyage", label: "Préparer mon voyage" }}
       />
     );
@@ -169,7 +170,7 @@ function Empty({
   return (
     <div className="bw-onepage-wrap">
       <div className="bw-onepage bw-onepage--empty">
-        <BrandPicture alt="BledWay" className="bw-brand-small h-9 w-auto" />
+        <BrandPicture alt={tr("ui.pageMaPreparation.bledway")} className="bw-brand-small h-9 w-auto" />
         {locked ? <Lock size={22} className="text-primary" aria-hidden /> : null}
         <h1>{title}</h1>
         <p>{text}</p>
@@ -196,9 +197,8 @@ function SharePanel({ prep, title }: { prep: SharedPreparation; title: string })
         <p>
           <Lock size={15} className="shrink-0" aria-hidden />
           <span>
-            Pour partager,{" "}
-            <a href={`/auth?next=${encodeURIComponent("/ma-preparation")}`}>connectez-vous</a> : le
-            lien ne s'ouvrira que pour les adresses que vous invitez.
+            {tr("ui.pageMaPreparation.pourPartager")}{" "}
+            <a href={`/auth?next=${encodeURIComponent("/ma-preparation")}`}>{tr("ui.pageMaPreparation.connectezVous")}</a>{tr("ui.pageMaPreparation.leLienNeSOuvrira")}
           </span>
         </p>
       </div>
@@ -236,18 +236,18 @@ function SharePanel({ prep, title }: { prep: SharedPreparation; title: string })
     return (
       <div className="bw-onepage__sharebox">
         <p>
-          <Lock size={15} aria-hidden /> Lien prêt, réservé à <b>{list.join(", ")}</b>.
+          <Lock size={15} aria-hidden />{tr("ui.pageMaPreparation.lienPretReserveA")}<b>{list.join(", ")}</b>.
         </p>
         <code>{url}</code>
         <span className="flex flex-wrap gap-2">
           <button type="button" onClick={send} className="bw-onepage__btn bw-onepage__btn--main">
-            <Share2 size={16} aria-hidden /> {copied ? "Lien copié" : "Envoyer le lien"}
+            <Share2 size={16} aria-hidden /> {copied ? tr("ui.pageMaPreparation.lienCopie") : tr("ui.pageMaPreparation.envoyerLeLien")}
           </button>
           <a
             className="bw-onepage__btn"
             href={`mailto:${list.join(",")}?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(`Je t'ai préparé le voyage sur BledWay. Connecte-toi avec cette adresse pour le voir : ${url}`)}`}
           >
-            <Mail size={16} aria-hidden /> Par e-mail
+            <Mail size={16} aria-hidden />{tr("ui.pageMaPreparation.parEMail")}
           </a>
         </span>
       </div>
@@ -257,8 +257,8 @@ function SharePanel({ prep, title }: { prep: SharedPreparation; title: string })
       <label htmlFor="share-emails">
         <Lock size={15} className="shrink-0" aria-hidden />
         <span>
-          Partager avec
-          <small className="bw-onepage__sharehint">Seules ces adresses pourront l'ouvrir</small>
+          {tr("ui.pageMaPreparation.partagerAvec")}
+          <small className="bw-onepage__sharehint">{tr("ui.pageMaPreparation.seulesCesAdressesPourrontL")}</small>
         </span>
       </label>
       <span className="bw-onepage__sharerow">
@@ -267,7 +267,7 @@ function SharePanel({ prep, title }: { prep: SharedPreparation; title: string })
           type="text"
           inputMode="email"
           autoComplete="email"
-          placeholder="adresse@exemple.fr"
+          placeholder={tr("ui.pageMaPreparation.adresseExempleFr")}
           value={emails}
           onChange={(e) => setEmails(e.target.value)}
         />
@@ -276,10 +276,10 @@ function SharePanel({ prep, title }: { prep: SharedPreparation; title: string })
           disabled={!list.length || state === "sending"}
           className="bw-onepage__btn bw-onepage__btn--main"
         >
-          <Share2 size={16} aria-hidden /> Partager
+          <Share2 size={16} aria-hidden />{tr("ui.pageMaPreparation.partager")}
         </button>
       </span>
-      {state === "error" ? <small>Le partage n'a pas pu être créé. Réessayez.</small> : null}
+      {state === "error" ? <small>{tr("ui.pageMaPreparation.lePartageNAPas")}</small> : null}
     </form>
   );
 }
@@ -314,11 +314,10 @@ function ConsulateAsk({
       <img src="/cabas/persos/voiture_504.webp" alt="" width={48} height={48} />
       <div className="min-w-0">
         <p className="bw-onepage__ask-title">
-          {nudged ? "Une seconde avant le PDF : ton consulat ?" : "Ton consulat manque sur la feuille"}
+          {nudged ? tr("ui.pageMaPreparation.uneSecondeAvantLePdf") : tr("ui.pageMaPreparation.tonConsulatManqueSurLa")}
         </p>
         <p className="bw-onepage__ask-text">
-          Des démarches se font au consulat d'Algérie. Ton code postal suffit pour mettre son
-          adresse et son lien de rendez-vous sur le PDF.
+          {tr("ui.pageMaPreparation.desDemarchesSeFontAu")}
         </p>
         <span className="bw-onepage__sharerow">
           <input
@@ -326,13 +325,13 @@ function ConsulateAsk({
             inputMode="numeric"
             autoComplete="postal-code"
             maxLength={5}
-            placeholder="Code postal, par exemple 13001"
-            aria-label="Code postal"
+            placeholder={tr("ui.pageMaPreparation.codePostalParExemple13001")}
+            aria-label={tr("ui.pageMaPreparation.codePostal")}
             value={value}
             onChange={(event) => setValue(event.target.value)}
           />
           <button type="submit" disabled={!found} className="bw-onepage__btn bw-onepage__btn--main">
-            <Check size={16} aria-hidden /> Ajouter
+            <Check size={16} aria-hidden />{tr("ui.pageMaPreparation.ajouter")}
           </button>
         </span>
         {found ? (
@@ -340,11 +339,11 @@ function ConsulateAsk({
             <MapPin size={13} aria-hidden /> {found.name}
           </small>
         ) : department ? (
-          <small className="bw-onepage__ask-found">Pas de consulat trouvé pour ce code postal.</small>
+          <small className="bw-onepage__ask-found">{tr("ui.pageMaPreparation.pasDeConsulatTrouvePour")}</small>
         ) : null}
         {nudged ? (
           <button type="button" onClick={onPrint} className="bw-onepage__ask-skip">
-            Imprimer sans le consulat
+            {tr("ui.pageMaPreparation.imprimerSansLeConsulat")}
           </button>
         ) : null}
       </div>
@@ -418,12 +417,12 @@ function OnePage({
 
   return (
     <div className="bw-onepage-wrap">
-      <div className="bw-onepage__bar" role="toolbar" aria-label="Actions">
+      <div className="bw-onepage__bar" role="toolbar" aria-label={tr("ui.pageMaPreparation.actions")}>
         <a href={mine && fromRecap ? "/preparer-mon-voyage?etape=papers" : "/preparer-mon-voyage"} className="bw-onepage__back">
-          {mine ? (fromRecap ? "← Revenir au récap des papiers" : "← Revenir à ma préparation") : "Préparer mon propre voyage"}
+          {mine ? (fromRecap ? tr("ui.pageMaPreparation.revenirAuRecapDesPapiers") : tr("ui.pageMaPreparation.revenirAMaPreparation")) : tr("ui.pageMaPreparation.preparerMonPropreVoyage")}
         </a>
         <button type="button" onClick={print} className="bw-onepage__btn bw-onepage__btn--main">
-          <Download size={16} aria-hidden /> PDF
+          <Download size={16} aria-hidden />{tr("ui.pageMaPreparation.pdf")}
         </button>
       </div>
       {askConsulate && onPostcode ? (
@@ -437,44 +436,44 @@ function OnePage({
       {mine && onNames && answers.travellers.length > 1 ? (
         naming ? (
           <div className="bw-onepage__names">
-            <p className="bw-onepage__ask-title">Les prénoms sur la feuille</p>
+            <p className="bw-onepage__ask-title">{tr("ui.pageMaPreparation.lesPrenomsSurLaFeuille")}</p>
             <NamesEditor travellers={answers.travellers} onChange={onNames} />
             <button
               type="button"
               onClick={() => setNaming(false)}
               className="bw-onepage__btn bw-onepage__btn--main mt-3"
             >
-              <Check size={16} aria-hidden /> C'est bon
+              <Check size={16} aria-hidden />{tr("ui.pageMaPreparation.cEstBon")}
             </button>
           </div>
         ) : (
           <button type="button" onClick={() => setNaming(true)} className="bw-onepage__nameshint">
             <Pencil size={15} aria-hidden />
             {named.length
-              ? "Modifier les prénoms de la feuille"
-              : "Mettre les prénoms sur la feuille (facultatif)"}
+              ? tr("ui.pageMaPreparation.modifierLesPrenomsDeLa")
+              : tr("ui.pageMaPreparation.mettreLesPrenomsSurLa")}
           </button>
         )
       ) : null}
       {mine ? (
         <SharePanel
           prep={prep}
-          title={named.length ? `Le voyage de ${joinNames(named)}` : "Notre voyage au bled"}
+          title={named.length ? `Le voyage de ${joinNames(named)}` : tr("ui.pageMaPreparation.notreVoyageAuBled")}
         />
       ) : null}
 
       <article className="bw-onepage">
         <header className="bw-onepage__head">
-          <img src="/bledway-brand-entete.webp" alt="BledWay" className="bw-onepage__logo" />
+          <img src="/bledway-brand-entete.webp" alt={tr("ui.pageMaPreparation.bledway")} className="bw-onepage__logo" />
           <div className="min-w-0">
-            <p className="bw-onepage__kicker">Préparation du voyage au bled</p>
-            <h1>{named.length ? `Le voyage de ${joinNames(named)}` : "Notre voyage en Algérie"}</h1>
+            <p className="bw-onepage__kicker">{tr("ui.pageMaPreparation.preparationDuVoyageAuBled")}</p>
+            <h1>{named.length ? `Le voyage de ${joinNames(named)}` : tr("ui.pageMaPreparation.notreVoyageEnAlgerie")}</h1>
           </div>
           <div className="bw-onepage__score">
             <b>{toDo}</b>
-            <small>démarche{toDo > 1 ? "s" : ""}</small>
-            {toTake ? <small>{toTake} à emporter</small> : null}
-            {fees ? <small>{fees} € de frais</small> : null}
+            <small>{tr("ui.pageMaPreparation.demarche")}{toDo > 1 ? "s" : ""}</small>
+            {toTake ? <small>{toTake}{tr("ui.pageMaPreparation.aEmporter")}</small> : null}
+            {fees ? <small>{fees}{tr("ui.pageMaPreparation.deFrais")}</small> : null}
           </div>
         </header>
 
@@ -482,7 +481,7 @@ function OnePage({
           {trip?.date || trip?.month ? (
             <div>
               <dt>
-                <CalendarDays size={14} aria-hidden /> Aller
+                <CalendarDays size={14} aria-hidden />{tr("ui.pageMaPreparation.aller")}
               </dt>
               <dd>
                 {trip.date
@@ -496,7 +495,7 @@ function OnePage({
           {trip?.returnDate ? (
             <div>
               <dt>
-                <CalendarDays size={14} aria-hidden /> Retour
+                <CalendarDays size={14} aria-hidden />{tr("ui.pageMaPreparation.retour")}
               </dt>
               <dd>{dayLabel(trip.returnDate)}</dd>
             </div>
@@ -504,7 +503,7 @@ function OnePage({
           {port(trip?.fromPortId ?? null) || port(trip?.toPortId ?? null) ? (
             <div>
               <dt>
-                <Ship size={14} aria-hidden /> Traversée
+                <Ship size={14} aria-hidden />{tr("ui.pageMaPreparation.traversee")}
               </dt>
               <dd>
                 {port(trip?.fromPortId ?? null) ?? "?"} → {port(trip?.toPortId ?? null) ?? "?"}
@@ -514,21 +513,21 @@ function OnePage({
           {trip?.vehicle ? (
             <div>
               <dt>
-                <Car size={14} aria-hidden /> Véhicule
+                <Car size={14} aria-hidden />{tr("ui.pageMaPreparation.vehicule")}
               </dt>
               <dd>{VEHICLES.find((v) => v.id === trip.vehicle)?.label ?? "—"}</dd>
             </div>
           ) : null}
           <div>
             <dt>
-              <Users size={14} aria-hidden /> Voyageurs
+              <Users size={14} aria-hidden />{tr("ui.pageMaPreparation.voyageurs")}
             </dt>
             <dd>{names.join(", ")}</dd>
           </div>
           {trip?.destination ? (
             <div>
               <dt>
-                <MapPin size={14} aria-hidden /> Destination
+                <MapPin size={14} aria-hidden />{tr("ui.pageMaPreparation.destination")}
               </dt>
               <dd>{trip.destination}</dd>
             </div>
@@ -588,18 +587,17 @@ function OnePage({
             <MapPin size={14} aria-hidden /> <b>{consulat.name}</b> · {consulat.address} · {consulat.phone}
             {" · "}
             <a href={consulat.rdv ?? consulat.site} target="_blank" rel="noreferrer">
-              {consulat.rdv ? "Prendre rendez-vous" : "Site du consulat"}
+              {consulat.rdv ? tr("ui.pageMaPreparation.prendreRendezVous") : tr("ui.pageMaPreparation.siteDuConsulat")}
             </a>
           </p>
         ) : null}
 
         <footer className="bw-onepage__foot">
           <span>
-            Préparé avec <b>BledWay</b> · bledway.com/preparer-mon-voyage
+            {tr("ui.pageMaPreparation.prepareAvec")}<b>{tr("ui.pageMaPreparation.bledway")}</b>{tr("ui.pageMaPreparation.bledwayComPreparerMonVoyage")}
           </span>
           <span>
-            Partagé le {dayLabel(prep.at)} · Règles lues le {dayLabel(FORMALITES_CHECKED)} : le consulat et la police
-            aux frontières restent la référence.
+            {tr("ui.pageMaPreparation.partageLe")}{dayLabel(prep.at)}{tr("ui.pageMaPreparation.reglesLuesLe")}{dayLabel(FORMALITES_CHECKED)}{tr("ui.pageMaPreparation.leConsulatEtLaPolice")}
           </span>
         </footer>
       </article>
@@ -651,9 +649,9 @@ function Frise({
   if (goNode && !nodes.includes(goNode)) nodes.push(goNode);
   if (!nodes.some((n) => n.items.length)) return null;
   return (
-    <section className="bw-onepage__frise" aria-label="Le calendrier des démarches">
+    <section className="bw-onepage__frise" aria-label={tr("ui.pageMaPreparation.leCalendrierDesDemarches")}>
       <h2>
-        <CalendarDays size={15} aria-hidden /> Le calendrier des démarches
+        <CalendarDays size={15} aria-hidden />{tr("ui.pageMaPreparation.leCalendrierDesDemarches2")}
       </h2>
       <ol>
         {nodes.map((node) => {
@@ -709,7 +707,7 @@ function Row({
 }) {
   return (
     <li data-done={done || undefined}>
-      {checkable ? <span className="bw-onepage__box" aria-label={done ? "Fait" : "À faire"}>{done ? "✓" : ""}</span> : <span className="bw-onepage__dot" aria-hidden />}
+      {checkable ? <span className="bw-onepage__box" aria-label={done ? tr("ui.pageMaPreparation.fait") : tr("ui.pageMaPreparation.aFaire")}>{done ? "✓" : ""}</span> : <span className="bw-onepage__dot" aria-hidden />}
       <span className="min-w-0">
         <b>{task.title}</b>
         <small>

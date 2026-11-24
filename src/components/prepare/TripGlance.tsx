@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { AlertCircle, Check, ChevronRight, FileText, type LucideIcon } from "lucide-react";
+import { tr } from "@/lib/i18n";
 
 export type GlanceTile = {
   key: string;
@@ -43,7 +44,7 @@ export function TripGlance({
       <header className="bw-glance__head">
         <div className="min-w-0">
           <small>
-            <FileText size={12} aria-hidden /> Votre récap
+            <FileText size={12} aria-hidden />{tr("ui.tripGlance.votreRecap")}
           </small>
           <h2 id="glance-title">{title}</h2>
           <p>
@@ -53,8 +54,8 @@ export function TripGlance({
         </div>
         {daysLeft !== null && daysLeft >= 0 ? (
           <span className="bw-glance__count" aria-label={`Départ dans ${daysLeft} jours`}>
-            <b>{daysLeft === 0 ? "Jour J" : `J-${daysLeft}`}</b>
-            <small>{daysLeft === 0 ? "c'est aujourd'hui" : "avant le départ"}</small>
+            <b>{daysLeft === 0 ? tr("ui.tripGlance.jourJ") : `J-${daysLeft}`}</b>
+            <small>{daysLeft === 0 ? tr("ui.tripGlance.cEstAujourdHui") : tr("ui.tripGlance.avantLeDepart")}</small>
           </span>
         ) : null}
       </header>
@@ -64,12 +65,12 @@ export function TripGlance({
         </div>
         <p>
           <b>
-            {ready} sur {tiles.length} prêts
+            {ready}{tr("ui.tripGlance.sur")}{tiles.length}{tr("ui.tripGlance.prets")}
           </b>
           {left.length ? (
-            <> · reste : {left.map((tile) => tile.label.toLowerCase()).join(", ")}</>
+            <>{tr("ui.tripGlance.reste")}{left.map((tile) => tile.label.toLowerCase()).join(", ")}</>
           ) : (
-            <> · tout est prêt, bon voyage !</>
+            <>{tr("ui.tripGlance.toutEstPretBonVoyage")}</>
           )}
         </p>
       </div>

@@ -44,6 +44,7 @@ import {
   TOLL_EURO_PER_KM,
   travelDays,
 } from "@/components/prepare/RouteTop3";
+import { tr } from "@/lib/i18n";
 
 const dayLabel = (key: string) =>
   new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short" })
@@ -201,7 +202,7 @@ function BudgetDonut({ slices, total }: { slices: Slice[]; total: number }) {
       </svg>
       <span className="bw-bdonut__center">
         <b>{nice(total)}</b>
-        <small>au total</small>
+        <small>{tr("ui.tripOutlook.auTotal")}</small>
       </span>
     </div>
   );
@@ -255,19 +256,19 @@ export function TripBudget({
       amount: b.out.amount + (b.back?.amount ?? 0),
       how: (
         <>
-          Aller {line}
+          {tr("ui.tripOutlook.aller")}{line}
           {outDay ? ` le ${outDay}` : ""} : ≈ {nice(b.out.amount)} (
           {seasonLabels[b.out.season].toLowerCase()}).
           {b.back ? (
             <>
               {" "}
-              Retour{plan.returnDate ? ` le ${dayMonth(plan.returnDate)}` : ""} : ≈{" "}
+              {tr("ui.tripOutlook.retour")}{plan.returnDate ? ` le ${dayMonth(plan.returnDate)}` : ""} : ≈{" "}
               {nice(b.back.amount)} ({seasonLabels[b.back.season].toLowerCase()}).
             </>
           ) : (
-            " Pas de retour choisi : il n'est pas compté."
+            tr("ui.tripOutlook.pasDeRetourChoisiIl")
           )}{" "}
-          C'est le prix moyen de la ligne pour {who} {withWhat}.
+          {tr("ui.tripOutlook.cEstLePrixMoyen")}{who} {withWhat}.
         </>
       ),
     },
@@ -281,10 +282,9 @@ export function TripBudget({
             amount: b.fuel,
             how: (
               <>
-                {plan.home?.name ?? "Chez vous"} → {fromChoice.port.name} : environ {km} km
-                {b.trips > 1 ? ", à faire 2 fois (aller et retour)" : ""}. Une voiture moyenne
-                consomme {FUEL_L_PER_100} L aux 100 km, à{" "}
-                {FUEL_EURO_PER_L.toLocaleString("fr-FR")} € le litre.
+                {plan.home?.name ?? tr("ui.tripOutlook.chezVous")} → {fromChoice.port.name}{tr("ui.tripOutlook.environ")}{km}{tr("ui.tripOutlook.km")}
+                {b.trips > 1 ? tr("ui.tripOutlook.aFaire2FoisAller") : ""}{tr("ui.tripOutlook.uneVoitureMoyenneConsomme")}{FUEL_L_PER_100}{tr("ui.tripOutlook.lAux100KmA")}{" "}
+                {FUEL_EURO_PER_L.toLocaleString("fr-FR")}{tr("ui.tripOutlook.leLitre")}
               </>
             ),
           },
@@ -300,8 +300,8 @@ export function TripBudget({
             amount: b.tolls,
             how: (
               <>
-                Les autoroutes françaises coûtent environ {Math.round(TOLL_EURO_PER_KM * 100)}{" "}
-                centimes par kilomètre : {km} km{b.trips > 1 ? " × 2" : ""}.
+                {tr("ui.tripOutlook.lesAutoroutesFrancaisesCoutentEnviron")}{Math.round(TOLL_EURO_PER_KM * 100)}{" "}
+                {tr("ui.tripOutlook.centimesParKilometre")}{km}{tr("ui.tripOutlook.km")}{b.trips > 1 ? " × 2" : ""}.
               </>
             ),
           },
@@ -317,9 +317,8 @@ export function TripBudget({
             amount: b.fees,
             how: (
               <>
-                Les frais connus de votre liste :{" "}
-                {papers.items.map((item) => `${item.label} (${euros(item.eur)})`).join(", ")}. Les
-                papiers sans tarif officiel publié ne sont pas comptés.
+                {tr("ui.tripOutlook.lesFraisConnusDeVotre")}{" "}
+                {papers.items.map((item) => `${item.label} (${euros(item.eur)})`).join(", ")}{tr("ui.tripOutlook.lesPapiersSansTarifOfficiel")}
               </>
             ),
           },
@@ -331,7 +330,7 @@ export function TripBudget({
       icon: field.icon,
       color: field.color,
       amount: extras[field.key]!,
-      how: <>Le montant que vous avez indiqué. {field.hint}</>,
+      how: <>{tr("ui.tripOutlook.leMontantQueVousAvez")}{field.hint}</>,
       mine: true,
     })),
   ];
@@ -342,11 +341,11 @@ export function TripBudget({
     <section className="bw-tbudget" aria-labelledby="budget-estime">
       <p className="bw-tbudget__head">
         <Wallet size={16} aria-hidden />
-        <span id="budget-estime">Votre budget</span>
+        <span id="budget-estime">{tr("ui.tripOutlook.votreBudget")}</span>
       </p>
-      <p className="bw-tbudget__total">Environ {nice(b.total)}</p>
+      <p className="bw-tbudget__total">{tr("ui.tripOutlook.environ2")}{nice(b.total)}</p>
       <p className="bw-tbudget__who">
-        Pour {who} {withWhat}, {b.back ? "aller et retour" : "l'aller seulement"}.
+        {tr("ui.tripOutlook.pour")}{who} {withWhat}, {b.back ? tr("ui.tripOutlook.allerEtRetour") : tr("ui.tripOutlook.lAllerSeulement")}.
       </p>
       <div className="bw-tbudget__chart">
         <BudgetDonut slices={slices} total={b.total} />
@@ -362,7 +361,7 @@ export function TripBudget({
                     </span>
                     <span className="bw-tbudget__lbl">
                       {slice.label}
-                      {slice.mine ? <em>ajouté par vous</em> : null}
+                      {slice.mine ? <em>{tr("ui.tripOutlook.ajouteParVous")}</em> : null}
                     </span>
                     <span className="bw-tbudget__amt">
                       {nice(slice.amount)}
@@ -380,8 +379,8 @@ export function TripBudget({
       <p className="bw-tbudget__tip">
         <Lightbulb size={16} aria-hidden />
         <span>
-          Sur {nice(b.total)}, la plus grosse part est <b>{biggest.label.toLowerCase()}</b> (
-          {pct(biggest.amount, b.total)} %). Touchez une ligne pour voir le calcul.
+          {tr("ui.tripOutlook.sur")}{nice(b.total)}{tr("ui.tripOutlook.laPlusGrossePartEst")}<b>{biggest.label.toLowerCase()}</b> (
+          {pct(biggest.amount, b.total)}{tr("ui.tripOutlook.touchezUneLignePourVoir")}
         </span>
       </p>
       {onExtras ? (
@@ -394,7 +393,7 @@ export function TripBudget({
           >
             <Plus size={15} aria-hidden />
             <span className="flex-1 text-left">
-              {b.own ? `Mes autres dépenses : ${nice(b.own)}` : "Ajouter mes autres dépenses"}
+              {b.own ? `Mes autres dépenses : ${nice(b.own)}` : tr("ui.tripOutlook.ajouterMesAutresDepenses")}
             </span>
             <ChevronDown size={14} className={editing ? "rotate-180" : ""} aria-hidden />
           </button>
@@ -439,10 +438,9 @@ export function TripBudget({
         </div>
       ) : null}
       <p className="bw-tbudget__note">
-        Le prix réel peut aller de {nice(b.low)} à {nice(b.high)} selon la compagnie, la date et
-        votre place à bord.{" "}
+        {tr("ui.tripOutlook.lePrixReelPeutAller")}{nice(b.low)} à {nice(b.high)}{tr("ui.tripOutlook.selonLaCompagnieLaDate")}{" "}
         <button type="button" onClick={onDetail}>
-          D'où viennent ces chiffres ?
+          {tr("ui.tripOutlook.dOuViennentCesChiffres")}
         </button>
       </p>
     </section>
@@ -513,8 +511,7 @@ export function SailingsOutlook({
   if (loading)
     body = (
       <p className="bw-outlook__line" role="status">
-        <Loader2 size={15} className="animate-spin text-primary" aria-hidden /> Je regarde les
-        départs publiés…
+        <Loader2 size={15} className="animate-spin text-primary" aria-hidden />{tr("ui.tripOutlook.jeRegardeLesDepartsPublies")}
       </p>
     );
   else if (inSpan.length) {
@@ -525,7 +522,7 @@ export function SailingsOutlook({
           <CalendarCheck size={16} aria-hidden />
           <span>
             <b>
-              {total} départ{total > 1 ? "s" : ""} publié{total > 1 ? "s" : ""}
+              {total}{tr("ui.tripOutlook.depart")}{total > 1 ? "s" : ""}{tr("ui.tripOutlook.publie")}{total > 1 ? "s" : ""}
             </b>{" "}
             {fromName} → {toName}, {period}
           </span>
@@ -552,8 +549,7 @@ export function SailingsOutlook({
           />
         </div>
         <p className="bw-outlook__more">
-          <CalendarClock size={14} aria-hidden /> En attendant, lancez vos papiers : les visas, eux,
-          n'attendent pas.
+          <CalendarClock size={14} aria-hidden />{tr("ui.tripOutlook.enAttendantLancezVosPapiers")}
         </p>
       </>
     );
@@ -563,8 +559,8 @@ export function SailingsOutlook({
         <p className="bw-outlook__line" data-tone="warn">
           <CalendarClock size={16} aria-hidden />
           <span>
-            <b>Aucun départ publié {period}</b> sur {fromName} → {toName}.
-            {near.length ? " Les jours les plus proches :" : ""}
+            <b>{tr("ui.tripOutlook.aucunDepartPublie")}{period}</b>{tr("ui.tripOutlook.sur2")}{fromName} → {toName}.
+            {near.length ? tr("ui.tripOutlook.lesJoursLesPlusProches") : ""}
           </span>
         </p>
         {near.length ? (
@@ -579,7 +575,7 @@ export function SailingsOutlook({
     );
   return (
     <section className="bw-outlook" aria-labelledby="outlook-titre">
-      <h3 id="outlook-titre">Les traversées de votre période</h3>
+      <h3 id="outlook-titre">{tr("ui.tripOutlook.lesTraverseesDeVotrePeriode")}</h3>
       {body}
     </section>
   );

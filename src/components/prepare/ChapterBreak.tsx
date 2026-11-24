@@ -2,6 +2,7 @@ import { useEffect, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { ArrowLeft, ArrowRight, Check, Clock3, type LucideIcon } from "lucide-react";
 import { RecapPreview, type PreviewRow } from "./RecapPreview";
+import { tr } from "@/lib/i18n";
 
 /**
  * Entre deux chapitres : le fil du parcours revient, en court. Le chapitre fini se coche, le récap
@@ -54,22 +55,22 @@ export function ChapterBreak({
             type="button"
             onClick={onBack}
             className="bw-prepintro__back"
-            aria-label="Revenir à Préparer mon voyage"
+            aria-label={tr("ui.chapterBreak.revenirAPreparerMonVoyage")}
           >
             <ArrowLeft size={20} aria-hidden />
           </button>
           <span className="bw-prepintro__eyebrow">
-            Chapitre {finished + 1} sur {chapters.length} terminé
+            {tr("ui.chapterBreak.chapitre")}{finished + 1}{tr("ui.chapterBreak.sur")}{chapters.length}{tr("ui.chapterBreak.termine")}
           </span>
           <span className="size-10" aria-hidden />
         </div>
 
         <div className="bw-prepintro__body">
           <h1 id="bw-chapbreak-title" className="bw-prepintro__in" style={step(0)}>
-            {next ? next.headline : "Tout est prêt"}
+            {next ? next.headline : tr("ui.chapterBreak.toutEstPret")}
           </h1>
           <p className="bw-prepintro__lead bw-prepintro__in" style={step(1)}>
-            {next ? next.hint : "Votre récap est complet : il ne reste qu'à le partager."}
+            {next ? next.hint : tr("ui.chapterBreak.votreRecapEstCompletIl")}
           </p>
 
           {/* Le chapitre qui vient, en grand ; ceux faits et ceux d'après, sur une ligne. */}
@@ -93,8 +94,8 @@ export function ChapterBreak({
                   </span>
                   <span className="min-w-0">
                     <small>
-                      Chapitre {index + 1}
-                      {state === "done" ? " · fait" : state === "next" ? " · à suivre" : ""}
+                      {tr("ui.chapterBreak.chapitre")}{index + 1}
+                      {state === "done" ? tr("ui.chapterBreak.fait") : state === "next" ? tr("ui.chapterBreak.aSuivre") : ""}
                     </small>
                     <b>{chapter.title}</b>
                     {state === "next" ? <span>{chapter.hint}</span> : null}
@@ -108,7 +109,7 @@ export function ChapterBreak({
             className="bw-prepintro__result bw-prepintro__preview bw-prepintro__in"
             style={step(5)}
           >
-            <span>Votre récap se remplit</span>
+            <span>{tr("ui.chapterBreak.votreRecapSeRemplit")}</span>
             <RecapPreview
               title={title}
               subtitle={subtitle}
@@ -124,12 +125,12 @@ export function ChapterBreak({
           {next ? (
             <p className="bw-prepintro__meta">
               <span>
-                <Clock3 size={14} aria-hidden /> {minutes} min
+                <Clock3 size={14} aria-hidden /> {minutes}{tr("ui.chapterBreak.min")}
               </span>
             </p>
           ) : null}
           <button type="button" onClick={onGo} className="bw-prepintro__go" autoFocus>
-            {next ? "Continuer" : "Voir ma préparation"} <ArrowRight size={19} aria-hidden />
+            {next ? tr("ui.chapterBreak.continuer") : tr("ui.chapterBreak.voirMaPreparation")} <ArrowRight size={19} aria-hidden />
           </button>
         </div>
       </div>

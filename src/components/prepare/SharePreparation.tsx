@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Share2 } from "lucide-react";
+import { tr } from "@/lib/i18n";
 
 /**
  * Au début, pendant ou à la fin : la préparation en une page aux couleurs de BledWay, à envoyer
@@ -12,7 +13,7 @@ export function SharePreparation({ compact = false }: { compact?: boolean }) {
         to="/ma-preparation"
         className="inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold hover:bg-secondary"
       >
-        <Share2 size={14} aria-hidden /> Partager · PDF
+        <Share2 size={14} aria-hidden />{tr("ui.sharePreparation.partagerPdf")}
       </Link>
     );
   return (
@@ -24,9 +25,9 @@ export function SharePreparation({ compact = false }: { compact?: boolean }) {
         <Share2 size={18} aria-hidden />
       </span>
       <span className="min-w-0 flex-1 leading-tight">
-        <strong className="block text-sm">Partager ma préparation</strong>
+        <strong className="block text-sm">{tr("ui.sharePreparation.partagerMaPreparation")}</strong>
         <small className="block text-xs text-muted-foreground">
-          Une page claire pour la famille : lien à envoyer ou PDF à imprimer.
+          {tr("ui.sharePreparation.unePageClairePourLa")}
         </small>
       </span>
     </Link>

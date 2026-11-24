@@ -4,6 +4,7 @@ import { SiteLayout } from "@/components/layout/SiteLayout";
 import { HomeContent } from "@/components/home/HomeContent";
 import { portsQuery, routesQuery } from "@/lib/ferry/queries";
 import { seoHead } from "@/lib/seo/site";
+import { tr } from "@/lib/i18n";
 
 /**
  * « Découvrir BledWay » : le récit, les lignes, les navires, les guides et les questions qui
@@ -31,7 +32,7 @@ function DiscoverPage() {
   const navigate = useNavigate();
   return (
     <SiteLayout>
-      <h1 className="sr-only">Découvrir BledWay</h1>
+      <h1 className="sr-only">{tr("ui.pageDecouvrir.decouvrirBledway")}</h1>
       <HomeContent
         ports={ports}
         routes={routes}

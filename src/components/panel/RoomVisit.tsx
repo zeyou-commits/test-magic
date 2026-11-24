@@ -7,6 +7,7 @@ import {
   visitRefusal,
   type VisitState,
 } from "@/lib/ferry/roomGuests";
+import { tr } from "@/lib/i18n";
 
 /**
  * Le salon d'une autre traversée : on le lit, et l'on peut y entrer « en invité » pour poser une
@@ -44,11 +45,10 @@ export function RoomVisitJoin({
         onClick={() => guard(() => join.mutate())}
       >
         <UserPlus size={16} aria-hidden />
-        {join.isPending ? "Un instant…" : "Rejoindre en invité"}
+        {join.isPending ? tr("ui.roomVisit.unInstant") : tr("ui.roomVisit.rejoindreEnInvite")}
       </button>
       <p className="bw-visit__note">
-        Pour poser une question aux passagers. Vos messages porteront la mention « invité · autre
-        traversée ».
+        {tr("ui.roomVisit.pourPoserUneQuestionAux")}
       </p>
       {join.error ? (
         <p className="bw-visit__error" role="alert">
@@ -70,21 +70,21 @@ export function RoomVisitBar({ room, onDone }: { room: string; onDone: () => voi
     <div className="bw-visit__bar" role="status">
       <DoorOpen size={15} aria-hidden />
       <span>
-        Vous êtes <b>invité</b> dans ce salon : 1 message par minute, sans photo ni message privé.
+        {tr("ui.roomVisit.vousEtes")}<b>{tr("ui.roomVisit.invite")}</b>{tr("ui.roomVisit.dansCeSalon1Message")}
       </span>
       {asked ? (
         <span className="bw-visit__confirm">
           <button type="button" disabled={leave.isPending} onClick={() => leave.mutate()}>
-            {leave.isPending ? "…" : "Oui, quitter"}
+            {leave.isPending ? "…" : tr("ui.roomVisit.ouiQuitter")}
           </button>
           <button type="button" onClick={() => setAsked(false)}>
-            Rester
+            {tr("ui.roomVisit.rester")}
           </button>
         </span>
       ) : (
         <button type="button" className="bw-visit__leave" onClick={() => setAsked(true)}>
           <LogOut size={14} aria-hidden />
-          Quitter
+          {tr("ui.roomVisit.quitter")}
         </button>
       )}
       {leave.error ? (

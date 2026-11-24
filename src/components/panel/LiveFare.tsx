@@ -8,6 +8,7 @@ import type { Sailing } from "@/lib/ferry/trips";
 import { VEHICLES, type TripProfileValue } from "./TripProfile";
 import { directFerriesStatus, getLiveFare } from "@/lib/directferries/functions";
 import type { LiveFare as LiveFareResult } from "@/lib/directferries/quote";
+import { tr } from "@/lib/i18n";
 
 /** Direct Ferries est-il branché sur ce serveur ? Une seule question par visite. */
 export function useDirectFerriesEnabled() {
@@ -66,7 +67,7 @@ export function LiveFare({ sailing, profile }: { sailing: Sailing; profile: Trip
     return (
       <div className="flex items-center gap-2 rounded-xl border border-dashed px-3 py-2 text-muted-foreground">
         <Loader2 className="size-3.5 animate-spin" aria-hidden />
-        Prix pour votre voyage…
+        {tr("ui.liveFare.prixPourVotreVoyage")}
       </div>
     );
   const fare = query.data;
@@ -76,7 +77,7 @@ export function LiveFare({ sailing, profile }: { sailing: Sailing; profile: Trip
       <p className="flex items-start gap-1.5 rounded-xl bg-secondary/60 px-3 py-2 text-muted-foreground">
         <CircleAlert className="mt-px size-3.5 shrink-0" aria-hidden />
         <span>
-          Prix en direct indisponible : {fare.reason} Le montant affiché reste une estimation.
+          {tr("ui.liveFare.prixEnDirectIndisponible")}{fare.reason}{tr("ui.liveFare.leMontantAfficheResteUne")}
         </span>
       </p>
     );
@@ -92,11 +93,11 @@ export function LiveFare({ sailing, profile }: { sailing: Sailing; profile: Trip
   // Couchage imposé dont on ne connaît pas le prix : on n'affiche pas un total qui serait faux.
   const missingCompulsory = fare.cabinCompulsory && !fare.included;
   return (
-    <section aria-label="Prix pour votre voyage" className="space-y-2 rounded-2xl border border-border bg-background p-3">
+    <section aria-label={tr("ui.liveFare.prixPourVotreVoyage2")} className="space-y-2 rounded-2xl border border-border bg-background p-3">
       <div>
         <p className="text-base font-bold leading-snug text-foreground">
           <span className="tabular-nums">
-            {missingCompulsory ? "dès " : ""}
+            {missingCompulsory ? tr("ui.liveFare.des") : ""}
             {money(fare.total, fare.currency)}
           </span>{" "}
           <span className="font-semibold">{whoLabel(travellers, profile)}</span>
@@ -104,30 +105,30 @@ export function LiveFare({ sailing, profile }: { sailing: Sailing; profile: Trip
         {fare.included ? (
           <p className="flex items-center gap-1 font-semibold text-foreground">
             <SleepIcon kind={fare.included.kind} />
-            {fare.included.label} compris, obligatoire sur ce départ
+            {fare.included.label}{tr("ui.liveFare.comprisObligatoireSurCeDepart")}
           </p>
         ) : missingCompulsory ? null : (
           <p className="flex items-center gap-1 text-muted-foreground">
             <Armchair className="size-3.5" aria-hidden />
-            Sans couchage réservé
+            {tr("ui.liveFare.sansCouchageReserve")}
           </p>
         )}
         {!fare.sameSailing ? (
-          <p className="text-muted-foreground">Prix du départ de {otherTime}, le moins cher ce jour-là.</p>
+          <p className="text-muted-foreground">{tr("ui.liveFare.prixDuDepartDe")}{otherTime}{tr("ui.liveFare.leMoinsCherCeJour")}</p>
         ) : null}
         {conditions.length ? <p className="text-muted-foreground">{conditions.join(" · ")}</p> : null}
       </div>
 
       {missingCompulsory ? (
         <p className="rounded-lg bg-warning/15 px-2.5 py-1.5 font-semibold text-warning-foreground">
-          Un couchage est obligatoire sur ce départ, en plus de ce prix : le total s'affiche à l'étape suivante.
+          {tr("ui.liveFare.unCouchageEstObligatoireSur")}
         </p>
       ) : null}
 
       {fare.options.length ? (
         <div>
           <p className="mb-1 text-[11px] font-semibold text-muted-foreground">
-            {fare.included ? "Pour plus de confort, en plus" : "Pour dormir à bord, en plus"}
+            {fare.included ? tr("ui.liveFare.pourPlusDeConfortEn") : tr("ui.liveFare.pourDormirABordEn")}
           </p>
           <ul className="flex flex-wrap gap-1.5">
             {fare.options.map((option) => (
@@ -152,10 +153,10 @@ export function LiveFare({ sailing, profile }: { sailing: Sailing; profile: Trip
         }}
         className="flex h-11 w-full items-center justify-center rounded-full bg-cta text-sm font-bold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-[0.98]"
       >
-        {missingCompulsory ? "Voir le prix complet" : `Réserver à ${money(fare.total, fare.currency)}`}
+        {missingCompulsory ? tr("ui.liveFare.voirLePrixComplet") : `Réserver à ${money(fare.total, fare.currency)}`}
       </a>
       <p className="text-center text-[11px] text-muted-foreground">
-        {fare.options.length ? "Couchage à choisir à l'étape suivante. " : ""}Prix du moment, il peut évoluer jusqu'au paiement.
+        {fare.options.length ? tr("ui.liveFare.couchageAChoisirAL") : ""}{tr("ui.liveFare.prixDuMomentIlPeut")}
       </p>
     </section>
   );

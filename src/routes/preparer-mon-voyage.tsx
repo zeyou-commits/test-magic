@@ -159,6 +159,7 @@ import { TripLink, useLinkedTrip, openMyVoyage } from "@/components/prepare/Trip
 import { TripGlance, type GlanceTile } from "@/components/prepare/TripGlance";
 import type { PapersFees } from "@/components/prepare/TripOutlook";
 import { openRoutesDuBled } from "@/lib/routesDuBled/lien";
+import { tr } from "@/lib/i18n";
 
 const PATH = "/preparer-mon-voyage";
 
@@ -271,7 +272,7 @@ function StepFrieze({
   hasRecap: (step: CompanionStep) => boolean;
 }) {
   return (
-    <nav aria-label="Les étapes du voyage" className="bw-prep-frieze mt-3">
+    <nav aria-label={tr("ui.pagePreparerMonVoyage.lesEtapesDuVoyage")} className="bw-prep-frieze mt-3">
       <ol style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
         {steps.map((step, index) => {
           const isDone = done.includes(step);
@@ -301,7 +302,7 @@ function StepFrieze({
                 aria-current={current ? "step" : undefined}
                 aria-label={`${stepTitles[step]} · ${sub}${isDone && hasRecap(step) ? " · voir le récap" : ""}`}
               >
-                {current ? <b className="bw-prep-frieze__here">Ici</b> : null}
+                {current ? <b className="bw-prep-frieze__here">{tr("ui.pagePreparerMonVoyage.ici")}</b> : null}
                 <span className="bw-prep-frieze__dot">
                   <Icon
                     size={current ? 20 : 18}
@@ -378,10 +379,10 @@ function Welcome({ onStart }: { onStart: () => void }) {
     <div>
       {/* L'action d'abord (la 504 et « Commencer »), les photos d'Algérie ensuite. */}
       <button type="button" onClick={onStart} className="bw-prep-start">
-        <Bw504Note title="Salut tonton ! On charge la 504 ?">
-          Je t'aide à tout préparer, avec des rappels pour ne rien oublier.
+        <Bw504Note title={tr("ui.pagePreparerMonVoyage.salutTontonOnChargeLa")}>
+          {tr("ui.pagePreparerMonVoyage.jeTAideATout")}
           <span className="bw-prep-start__cta">
-            Commencer <ArrowRight size={16} aria-hidden />
+            {tr("ui.pagePreparerMonVoyage.commencer")}<ArrowRight size={16} aria-hidden />
           </span>
         </Bw504Note>
       </button>
@@ -394,13 +395,13 @@ function Welcome({ onStart }: { onStart: () => void }) {
           }}
           className="text-sm font-semibold text-primary underline underline-offset-4"
         >
-          Comment ça marche ?
+          {tr("ui.pagePreparerMonVoyage.commentCaMarche")}
         </button>
       </p>
       <p className="mt-3 flex flex-wrap items-center justify-center gap-2 text-sm md:justify-start">
-        <span className="text-muted-foreground">Bientôt :</span>
-        <span className="rounded-full border px-3 py-1 text-muted-foreground">Tunisie</span>
-        <span className="rounded-full border px-3 py-1 text-muted-foreground">Maroc</span>
+        <span className="text-muted-foreground">{tr("ui.pagePreparerMonVoyage.bientot")}</span>
+        <span className="rounded-full border px-3 py-1 text-muted-foreground">{tr("ui.pagePreparerMonVoyage.tunisie")}</span>
+        <span className="rounded-full border px-3 py-1 text-muted-foreground">{tr("ui.pagePreparerMonVoyage.maroc")}</span>
       </p>
       <div className="mt-5">
         <AlgeriaCarousel />
@@ -752,8 +753,8 @@ function CompanionPage() {
           finished={pause.finished}
           chapters={chapters}
           rows={previewRows}
-          title="Votre voyage"
-          subtitle="Il se complète à chaque chapitre"
+          title={tr("ui.pagePreparerMonVoyage.votreVoyage")}
+          subtitle={tr("ui.pagePreparerMonVoyage.ilSeCompleteAChaque")}
           minutes={pause.finished === 0 ? 3 : 2}
           onBack={() => {
             setPause(null);
@@ -789,13 +790,13 @@ function CompanionPage() {
             <>
               <div className="flex items-center justify-between gap-3 md:mt-2" aria-live="polite">
                 <h1 className="font-display text-2xl font-bold leading-tight md:text-4xl">
-                  Préparer mon voyage
+                  {tr("ui.pagePreparerMonVoyage.preparerMonVoyage")}
                 </h1>
                 <span
                   className={`shrink-0 rounded-full px-3 py-1 text-sm font-bold ${completeAll ? "bg-primary text-primary-foreground" : "bg-secondary"}`}
                 >
-                  {completeAll ? "Récap prêt" : `${doneCount}/${steps.length}`}
-                  <span className="sr-only"> étapes faites</span>
+                  {completeAll ? tr("ui.pagePreparerMonVoyage.recapPret") : `${doneCount}/${steps.length}`}
+                  <span className="sr-only">{tr("ui.pagePreparerMonVoyage.etapesFaites")}</span>
                 </span>
               </div>
               {/* La vue d'ensemble : toutes les étapes, reliées. Une fois prêt, le récap la remplace. */}
@@ -825,7 +826,7 @@ function CompanionPage() {
                       <StepArt step={nextStep} size="sm" />
                       <span className="min-w-0 flex-1">
                         <span className="block text-[11px] font-bold uppercase tracking-wider opacity-80">
-                          Reprendre ma préparation
+                          {tr("ui.pagePreparerMonVoyage.reprendreMaPreparation")}
                         </span>
                         <span className="block font-display text-base font-bold leading-tight">
                           {stepTitles[nextStep]}
@@ -857,7 +858,7 @@ function CompanionPage() {
                   ) : null}
                   {ready ? null : (
                     <>
-                      <h2 className="mt-6 font-display text-lg font-bold">Mes étapes</h2>
+                      <h2 className="mt-6 font-display text-lg font-bold">{tr("ui.pagePreparerMonVoyage.mesEtapes")}</h2>
                       <ol className="mt-2 grid grid-cols-1 gap-2">
                         {steps.map((step, index) =>
                           isLocked(step) ? null : (
@@ -916,10 +917,10 @@ function CompanionPage() {
                   }}
                   aside={
                     <>
-                      <p className="bw-wiz-aside__title">Votre récap se remplit</p>
+                      <p className="bw-wiz-aside__title">{tr("ui.pagePreparerMonVoyage.votreRecapSeRemplit")}</p>
                       <RecapPreview
-                        title="Votre voyage"
-                        subtitle="Il se complète à chaque étape"
+                        title={tr("ui.pagePreparerMonVoyage.votreVoyage")}
+                        subtitle={tr("ui.pagePreparerMonVoyage.ilSeCompleteAChaque2")}
                         // Une ligne remplie dès que son étape est faite ; les autres restent grises.
                         rows={previewRows.map((row) => ({
                           ...row,
@@ -1038,7 +1039,7 @@ function StepCard({
           <StepArt step={id} done={done} />
           <span className="min-w-0 flex-1">
             <span className="block text-[11px] font-bold uppercase tracking-wider text-primary">
-              Étape {index}
+              {tr("ui.pagePreparerMonVoyage.etape")}{index}
             </span>
             <span className="block font-display text-lg font-bold leading-tight md:text-xl">
               {title}
@@ -1047,7 +1048,7 @@ function StepCard({
               <span className="mt-0.5 block truncate text-sm text-muted-foreground">{summary}</span>
             ) : null}
           </span>
-          {done ? <span className="sr-only">(fait)</span> : null}
+          {done ? <span className="sr-only">{tr("ui.pagePreparerMonVoyage.fait")}</span> : null}
           {open ? (
             <ChevronDown
               size={18}
@@ -1056,7 +1057,7 @@ function StepCard({
             />
           ) : (
             <span className="shrink-0 text-sm font-semibold text-primary">
-              {done ? "Revoir" : "Ouvrir"}
+              {done ? tr("ui.pagePreparerMonVoyage.revoir") : tr("ui.pagePreparerMonVoyage.ouvrir")}
             </span>
           )}
         </button>
@@ -1087,7 +1088,7 @@ function NextButton({ label, onClick }: { label: string; onClick: () => void }) 
 function MoreLinks({ links }: { links: { href: string; label: string }[] }) {
   return (
     <p className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm">
-      <span className="text-muted-foreground">En savoir plus :</span>
+      <span className="text-muted-foreground">{tr("ui.pagePreparerMonVoyage.enSavoirPlus")}</span>
       {links.map((link) => (
         <a key={link.href} href={link.href} className={textLink}>
           {link.label}
@@ -1149,12 +1150,12 @@ function ProfileStep({
       {question === "group" ? <GroupStep answers={papers.answers} patch={papersPatch} /> : null}
       {question === "vehicle" ? (
         <Question
-          title="Vous partez avec votre voiture ?"
-          hint="Pour le prix de la traversée et les papiers du véhicule."
+          title={tr("ui.pagePreparerMonVoyage.vousPartezAvecVotreVoiture")}
+          hint={tr("ui.pagePreparerMonVoyage.pourLePrixDeLa")}
         >
           <div
             role="radiogroup"
-            aria-label="Véhicule"
+            aria-label={tr("ui.pagePreparerMonVoyage.vehicule")}
             className="grid grid-cols-2 gap-2 sm:grid-cols-3"
           >
             {VEHICLES.map(({ id, Icon, label, hint }) => {
@@ -1183,9 +1184,9 @@ function ProfileStep({
                     className={on ? "text-primary" : "text-muted-foreground"}
                     aria-hidden
                   />
-                  <span className="font-semibold">{id === "none" ? "Sans voiture" : label}</span>
+                  <span className="font-semibold">{id === "none" ? tr("ui.pagePreparerMonVoyage.sansVoiture") : label}</span>
                   <span className="text-xs text-muted-foreground">
-                    {id === "none" ? "À pied à bord" : hint}
+                    {id === "none" ? tr("ui.pagePreparerMonVoyage.aPiedABord") : hint}
                   </span>
                 </button>
               );
@@ -1245,9 +1246,8 @@ function ProfileReview({
   ];
   return (
     <div className="pt-4">
-      <Bw504Note tone="win" title="C'est noté, cette étape est faite">
-        Voici ce que tu m'as dit. Tout reste modifiable, mais je te demanderai confirmation : la
-        date et les voyageurs servent à calculer tes échéances et ta liste de papiers.
+      <Bw504Note tone="win" title={tr("ui.pagePreparerMonVoyage.cEstNoteCetteEtape")}>
+        {tr("ui.pagePreparerMonVoyage.voiciCeQueTuM")}
       </Bw504Note>
       <dl className="bw-review mt-4">
         {rows.map(({ icon: Icon, label, value }) => (
@@ -1264,19 +1264,18 @@ function ProfileReview({
         onClick={() => setAsking(true)}
         className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 text-sm font-semibold hover:bg-secondary"
       >
-        <Pencil size={15} aria-hidden /> Modifier le départ
+        <Pencil size={15} aria-hidden />{tr("ui.pagePreparerMonVoyage.modifierLeDepart")}
       </button>
       {asking ? (
         <ConfirmChange
-          title="On modifie le départ ?"
+          title={tr("ui.pagePreparerMonVoyage.onModifieLeDepart")}
           onCancel={() => setAsking(false)}
           onConfirm={() => {
             setAsking(false);
             onEdit();
           }}
         >
-          Changer la date ou les voyageurs change tes échéances et ta liste de papiers : je les
-          recalcule. Ce que tu as déjà coché reste coché.
+          {tr("ui.pagePreparerMonVoyage.changerLaDateOuLes")}
         </ConfirmChange>
       ) : null}
       <WizardNav next={{ label: "Continuer : mes papiers", onClick: onNext }} />
@@ -1356,7 +1355,7 @@ function PapersStepBody({
           />
           {asking ? (
             <ConfirmChange
-              title="On modifie tes papiers ?"
+              title={tr("ui.pagePreparerMonVoyage.onModifieTesPapiers")}
               onCancel={() => setAsking(null)}
               onConfirm={() => {
                 const target = asking;
@@ -1364,20 +1363,17 @@ function PapersStepBody({
                 editAt(target);
               }}
             >
-              Changer un voyageur, ses papiers, la famille ou le séjour peut changer la liste : je
-              la recalcule à la fin des questions. Ce que tu as déjà coché reste coché si la
-              démarche existe toujours.
+              {tr("ui.pagePreparerMonVoyage.changerUnVoyageurSesPapiers")}
             </ConfirmChange>
           ) : null}
           {plan.vehicle !== "none" ? <CarPapers plan={plan} patch={patch} /> : null}
           {allPapersTicked ? (
-            <Bw504Note tone="win" className="mt-6" title="Tout est coché, bravo !">
-              Range tes papiers dans la pochette du voyage. Ta liste t'attend ici, si tu en as
-              besoin.
+            <Bw504Note tone="win" className="mt-6" title={tr("ui.pagePreparerMonVoyage.toutEstCocheBravo")}>
+              {tr("ui.pagePreparerMonVoyage.rangeTesPapiersDansLa")}
             </Bw504Note>
           ) : (
             <p className="mt-6 text-sm text-muted-foreground">
-              Pas besoin de tout cocher maintenant : la liste vous attend ici.
+              {tr("ui.pagePreparerMonVoyage.pasBesoinDeToutCocher")}
             </p>
           )}
           <div className="mt-4">
@@ -1393,7 +1389,7 @@ function PapersStepBody({
               papers={papers}
               plan={plan}
               patch={patch}
-              title="Trouver mon consulat"
+              title={tr("ui.pagePreparerMonVoyage.trouverMonConsulat")}
               hint={`${reasons ? `${reasons.charAt(0).toUpperCase()}${reasons.slice(1)} se ${reasons.includes(" et ") ? "font" : "fait"} au consulat d'Algérie dont dépend votre domicile, sur rendez-vous. ` : ""}Indiquez votre ville : vous aurez son adresse, son téléphone et le lien pour prendre rendez-vous.`}
             />
           }
@@ -1434,12 +1430,9 @@ function DuaNotice() {
     <div className="mt-4 flex items-start gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm">
       <Info size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
       <div className="min-w-0">
-        <p className="font-semibold">Voiture très chargée : pensez au DUA</p>
+        <p className="font-semibold">{tr("ui.pagePreparerMonVoyage.voitureTresChargeePensezAu")}</p>
         <p className="mt-1">
-          Au départ de Valence ou de Barcelone avec Baleària, si vous transportez plus de 3 colis
-          par passager, ou de la marchandise dans le véhicule, la compagnie recommande fortement
-          de présenter un DUA d'exportation (la déclaration en douane). Tout ce qui n'est pas
-          strictement un effet personnel est considéré comme marchandise commerciale.
+          {tr("ui.pagePreparerMonVoyage.auDepartDeValenceOu")}
         </p>
         <a
           href={source.url}
@@ -1447,7 +1440,7 @@ function DuaNotice() {
           rel="noreferrer"
           className={`${textLink} mt-1 inline-flex items-center gap-1`}
         >
-          Source : {source.short}, {source.updated}
+          {tr("ui.pagePreparerMonVoyage.source")}{source.short}, {source.updated}
           <ExternalLink size={12} aria-hidden />
         </a>
       </div>
@@ -1476,16 +1469,16 @@ function CarPapers({
     <section aria-labelledby="papiers-voiture" className="bw-carpapers mt-6">
       <div className="flex items-center justify-between gap-3">
         <h3 id="papiers-voiture" className="flex items-center gap-2 font-display text-xl font-bold">
-          <Car size={19} className="text-primary" aria-hidden /> La voiture
+          <Car size={19} className="text-primary" aria-hidden />{tr("ui.pagePreparerMonVoyage.laVoiture")}
         </h3>
         <span className="text-sm font-semibold text-muted-foreground">
-          {ready} sur {carItems.length}
+          {ready}{tr("ui.pagePreparerMonVoyage.sur")}{carItems.length}
         </span>
       </div>
       <div className="mt-3">
-        <p className="mb-2 text-sm font-semibold">Elle reste en Algérie ?</p>
+        <p className="mb-2 text-sm font-semibold">{tr("ui.pagePreparerMonVoyage.elleResteEnAlgerie")}</p>
         <Options
-          label="La voiture reste-t-elle en Algérie ?"
+          label={tr("ui.pagePreparerMonVoyage.laVoitureResteTElle")}
           value={plan.importCar ? "import" : "vacances"}
           onChange={(v) => patch({ importCar: v === "import" })}
           small
@@ -1507,9 +1500,9 @@ function CarPapers({
         <p className="mt-4 flex items-start gap-2 rounded-xl bg-primary/5 p-3 text-sm">
           <Info size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
           <span>
-            L'importation suit ses propres conditions, différentes de l'admission temporaire.{" "}
+            {tr("ui.pagePreparerMonVoyage.lImportationSuitSesPropres")}{" "}
             <a href="/vehicules-moins-3-ans" className={textLink}>
-              Les conditions pour importer une voiture
+              {tr("ui.pagePreparerMonVoyage.lesConditionsPourImporterUne")}
             </a>
           </span>
         </p>
@@ -1555,7 +1548,7 @@ function CarPapers({
                         : {})}
                       className={`${textLink} mt-1 inline-flex items-center gap-1 text-sm`}
                     >
-                      {item.linkLabel ?? "En savoir plus"}
+                      {item.linkLabel ?? tr("ui.pagePreparerMonVoyage.enSavoirPlus2")}
                       {item.href.startsWith("http") ? <ExternalLink size={12} aria-hidden /> : null}
                     </a>
                   ) : null}
@@ -1695,8 +1688,8 @@ function RouteStep({
               papers={papers}
               plan={plan}
               patch={patch}
-              title="D'où partez-vous ?"
-              hint="Pour calculer vos trajets porte à porte. La ville suffit."
+              title={tr("ui.pagePreparerMonVoyage.dOuPartezVous")}
+              hint={tr("ui.pagePreparerMonVoyage.pourCalculerVosTrajetsPorte")}
               showConsulate={false}
             />
             {/^\d{5}$/.test(papers.answers.postcode.trim()) ? (
@@ -1704,8 +1697,7 @@ function RouteStep({
                 className="mt-3 flex items-center gap-2 text-sm font-semibold text-primary"
                 role="status"
               >
-                <Loader2 size={15} className="animate-spin" aria-hidden /> Je place votre ville sur
-                la carte…
+                <Loader2 size={15} className="animate-spin" aria-hidden />{tr("ui.pagePreparerMonVoyage.jePlaceVotreVilleSur")}
               </p>
             ) : null}
           </div>
@@ -1720,7 +1712,7 @@ function RouteStep({
               aria-expanded={edit === "home"}
               onClick={() => setEdit(edit === "home" ? null : "home")}
             >
-              <small>Départ</small>
+              <small>{tr("ui.pagePreparerMonVoyage.depart")}</small>
               <b>{plan.home.name}</b>
               <Pencil size={13} aria-hidden />
             </button>
@@ -1734,8 +1726,8 @@ function RouteStep({
               aria-expanded={edit === "dest"}
               onClick={() => setEdit(edit === "dest" ? null : "dest")}
             >
-              <small>Au bled</small>
-              <b>{plan.destination?.label ?? arrivalName ?? "Ajouter ma ville"}</b>
+              <small>{tr("ui.pagePreparerMonVoyage.auBled")}</small>
+              <b>{plan.destination?.label ?? arrivalName ?? tr("ui.pagePreparerMonVoyage.ajouterMaVille")}</b>
               <Pencil size={13} aria-hidden />
             </button>
           </div>
@@ -1745,19 +1737,18 @@ function RouteStep({
                 papers={papers}
                 plan={plan}
                 patch={patch}
-                title="D'où partez-vous ?"
-                hint="La ville suffit."
+                title={tr("ui.pagePreparerMonVoyage.dOuPartezVous")}
+                hint={tr("ui.pagePreparerMonVoyage.laVilleSuffit")}
                 showConsulate={false}
               />
               <button type="button" onClick={() => setEdit(null)} className="bw-trip__ok">
-                <Check size={15} aria-hidden /> C'est bon
+                <Check size={15} aria-hidden />{tr("ui.pagePreparerMonVoyage.cEstBon")}
               </button>
             </div>
           ) : null}
           {edit === "dest" ? <div className="bw-trip__edit">{destinationField}</div> : null}
-          <Bw504Note title="Pourquoi pas juste le port le plus proche ?" className="mt-3">
-            Il n'est pas toujours le plus rapide : je compte la route, l'attente au port et la mer,
-            jusqu'{plan.destination ? `à ${plan.destination.label}` : "à l'arrivée"}.
+          <Bw504Note title={tr("ui.pagePreparerMonVoyage.pourquoiPasJusteLePort")} className="mt-3">
+            {tr("ui.pagePreparerMonVoyage.ilNEstPasToujours")}{plan.destination ? `à ${plan.destination.label}` : tr("ui.pagePreparerMonVoyage.aLArrivee")}.
           </Bw504Note>
         </>
       )}
@@ -1773,30 +1764,30 @@ function RouteStep({
       <div className="bw-route__acts">
         <button type="button" onClick={onItinerary}>
           <MapIcon size={18} aria-hidden />
-          <b>Étape par étape</b>
-          <small>Pauses, prière, nuits</small>
+          <b>{tr("ui.pagePreparerMonVoyage.etapeParEtape")}</b>
+          <small>{tr("ui.pagePreparerMonVoyage.pausesPriereNuits")}</small>
         </button>
         <button type="button" onClick={() => setManual(!manual)} aria-expanded={manual}>
           <Ship size={18} aria-hidden />
-          <b>Autres ports</b>
-          <small>{manual ? "Masquer la liste" : "Choisir à la main"}</small>
+          <b>{tr("ui.pagePreparerMonVoyage.autresPorts")}</b>
+          <small>{manual ? tr("ui.pagePreparerMonVoyage.masquerLaListe") : tr("ui.pagePreparerMonVoyage.choisirALaMain")}</small>
         </button>
         <a href="/covoiturage">
           <Users size={18} aria-hidden />
-          <b>Covoiturage</b>
-          <small>Jusqu'au port</small>
+          <b>{tr("ui.pagePreparerMonVoyage.covoiturage")}</b>
+          <small>{tr("ui.pagePreparerMonVoyage.jusquAuPort")}</small>
         </a>
       </div>
 
       {manual ? (
         <div className="bw-route__manual">
           <h3 className="font-display text-base font-bold">
-            {plan.home ? "Tous les ports, du plus proche au plus loin" : "Votre port de départ"}
+            {plan.home ? tr("ui.pagePreparerMonVoyage.tousLesPortsDuPlus") : tr("ui.pagePreparerMonVoyage.votrePortDeDepart")}
           </h3>
           {!choices.length ? (
-            <p className="mt-2 text-sm text-muted-foreground">Chargement des lignes…</p>
+            <p className="mt-2 text-sm text-muted-foreground">{tr("ui.pagePreparerMonVoyage.chargementDesLignes")}</p>
           ) : null}
-          <div role="radiogroup" aria-label="Port de départ" className="mt-2 grid gap-1.5">
+          <div role="radiogroup" aria-label={tr("ui.pagePreparerMonVoyage.portDeDepart")} className="mt-2 grid gap-1.5">
             {[...shown, ...(selectedHidden && fromChoice ? [fromChoice] : [])].map((choice) => {
               const on = choice.port.id === fromChoice?.port.id;
               return (
@@ -1833,12 +1824,12 @@ function RouteStep({
                       </span>
                     </span>
                     <span className="block truncate text-xs text-muted-foreground">
-                      Vers {[...new Set(choice.lines.map((l) => l.to.name))].join(", ")}
+                      {tr("ui.pagePreparerMonVoyage.vers")}{[...new Set(choice.lines.map((l) => l.to.name))].join(", ")}
                     </span>
                   </span>
                   {choice.km !== null ? (
                     <span className="shrink-0 text-right text-xs font-semibold tabular-nums">
-                      ~{choice.km.toLocaleString("fr-FR")} km
+                      ~{choice.km.toLocaleString("fr-FR")}{tr("ui.pagePreparerMonVoyage.km")}
                     </span>
                   ) : null}
                 </button>
@@ -1851,16 +1842,16 @@ function RouteStep({
               onClick={() => setAll(!all)}
               className="mt-2 text-sm font-semibold text-primary underline underline-offset-4"
             >
-              {all ? "Moins de ports" : `Voir les ${choices.length} ports de départ`}
+              {all ? tr("ui.pagePreparerMonVoyage.moinsDePorts") : `Voir les ${choices.length} ports de départ`}
             </button>
           ) : null}
 
           {fromChoice ? (
             <>
-              <h3 className="mt-4 font-display text-base font-bold">Votre port d'arrivée</h3>
+              <h3 className="mt-4 font-display text-base font-bold">{tr("ui.pagePreparerMonVoyage.votrePortDArrivee")}</h3>
               <div
                 role="radiogroup"
-                aria-label="Port d'arrivée"
+                aria-label={tr("ui.pagePreparerMonVoyage.portDArrivee")}
                 className="mt-2 flex flex-wrap gap-2"
               >
                 {fromChoice.lines.map(({ route, to }) => {
@@ -1942,10 +1933,9 @@ function BudgetStep({
       <div className="pt-4">
         <Bw504Note
           tone="stuck"
-          title="Il me manque tes ports pour chiffrer"
+          title={tr("ui.pagePreparerMonVoyage.ilMeManqueTesPorts")}
         >
-          Le prix dépend du port de départ et d'arrivée. Choisis-les en un geste, ou passe le
-          budget : c'est toi qui décides.
+          {tr("ui.pagePreparerMonVoyage.lePrixDependDuPort")}
         </Bw504Note>
         <WizardNav
           next={{ label: "Choisir mes ports", onClick: onOpenRoute }}
@@ -1971,13 +1961,13 @@ function BudgetStep({
       />
       {/* D'où viennent les chiffres : en mots simples, avec la source quand elle existe. */}
       <div id="budget-aller" className="mt-3 scroll-mt-4 rounded-2xl border p-4 text-sm md:p-5">
-        <p className="font-display text-base font-bold">D'où viennent ces chiffres ?</p>
+        <p className="font-display text-base font-bold">{tr("ui.pagePreparerMonVoyage.dOuViennentCesChiffres")}</p>
         <ul className="mt-2 grid gap-2 leading-relaxed text-muted-foreground">
           <li>
-            <b className="text-foreground">Le bateau :</b>{" "}
+            <b className="text-foreground">{tr("ui.pagePreparerMonVoyage.leBateau")}</b>{" "}
             {fare.benchmarked ? (
               <>
-                les prix moyens publiés par{" "}
+                {tr("ui.pagePreparerMonVoyage.lesPrixMoyensPubliesPar")}{" "}
                 {fare.source ? (
                   <a
                     href={fare.source}
@@ -1985,39 +1975,36 @@ function BudgetStep({
                     rel="noreferrer"
                     className="underline underline-offset-2"
                   >
-                    Direct Ferries
+                    {tr("ui.pagePreparerMonVoyage.directFerries")}
                   </a>
                 ) : (
-                  "Direct Ferries"
+                  tr("ui.pagePreparerMonVoyage.directFerries")
                 )}{" "}
-                pour {fromChoice.port.name} → {toPort.name} (relevés en septembre et octobre 2026),
+                {tr("ui.pagePreparerMonVoyage.pour")}{fromChoice.port.name} → {toPort.name}{tr("ui.pagePreparerMonVoyage.relevesEnSeptembreEtOctobre")}
               </>
             ) : (
               <>
-                aucun prix moyen n'est publié pour {fromChoice.port.name} → {toPort.name} : on part
-                d'un prix type de traversée,
+                {tr("ui.pagePreparerMonVoyage.aucunPrixMoyenNEst")}{fromChoice.port.name} → {toPort.name}{tr("ui.pagePreparerMonVoyage.onPartDUnPrix")}
               </>
             )}{" "}
-            puis on ajuste selon la saison ({seasonLabels[fare.season].toLowerCase()}{" "}
-            {planWhenLabel(plan)}), le nombre de voyageurs et{" "}
-            {plan.vehicle === "none" ? "l'absence de voiture" : `la ${vehicle?.label.toLowerCase()}`}.
+            {tr("ui.pagePreparerMonVoyage.puisOnAjusteSelonLa")}{seasonLabels[fare.season].toLowerCase()}{" "}
+            {planWhenLabel(plan)}{tr("ui.pagePreparerMonVoyage.leNombreDeVoyageursEt")}{" "}
+            {plan.vehicle === "none" ? tr("ui.pagePreparerMonVoyage.lAbsenceDeVoiture") : `la ${vehicle?.label.toLowerCase()}`}.
           </li>
           {plan.vehicle !== "none" ? (
             <li>
-              <b className="text-foreground">La route :</b> la distance jusqu'au port, la
-              consommation d'une voiture moyenne et, en France, les péages.
+              <b className="text-foreground">{tr("ui.pagePreparerMonVoyage.laRoute")}</b>{tr("ui.pagePreparerMonVoyage.laDistanceJusquAuPort")}
             </li>
           ) : null}
           <li>
-            <b className="text-foreground">Ce n'est pas un devis :</b> le vrai prix s'affiche
-            quand vous réservez chez la compagnie.
+            <b className="text-foreground">{tr("ui.pagePreparerMonVoyage.ceNEstPasUn")}</b>{tr("ui.pagePreparerMonVoyage.leVraiPrixSAffiche")}
           </li>
         </ul>
       </div>
       {hot ? (
         <p className="mt-3 flex items-start gap-2 rounded-xl bg-primary/5 p-3 text-sm">
           <Info size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
-          En été, les places avec voiture partent vite : comparez les mois et réservez tôt.
+          {tr("ui.pagePreparerMonVoyage.enEteLesPlacesAvec")}
         </p>
       ) : null}
       <div className="mt-4 grid gap-2 sm:grid-cols-3">
@@ -2025,24 +2012,23 @@ function BudgetStep({
           href="/barometre-prix"
           className="flex min-h-12 items-center gap-2 rounded-xl border px-4 text-sm font-semibold hover:bg-secondary"
         >
-          <TrendingUp size={16} className="text-primary" aria-hidden /> Comparer les mois
+          <TrendingUp size={16} className="text-primary" aria-hidden />{tr("ui.pagePreparerMonVoyage.comparerLesMois")}
         </a>
         <a
           href="/simulateurs"
           className="flex min-h-12 items-center gap-2 rounded-xl border px-4 text-sm font-semibold hover:bg-secondary"
         >
-          <Calculator size={16} className="text-primary" aria-hidden /> Essence, péages, tout le
-          budget
+          <Calculator size={16} className="text-primary" aria-hidden />{tr("ui.pagePreparerMonVoyage.essencePeagesToutLeBudget")}
         </a>
         <a
           href="/mes-dinars"
           className="flex min-h-12 items-center gap-2 rounded-xl border px-4 text-sm font-semibold hover:bg-secondary"
         >
-          <Wallet size={16} className="text-primary" aria-hidden /> Mes dinars, le change
+          <Wallet size={16} className="text-primary" aria-hidden />{tr("ui.pagePreparerMonVoyage.mesDinarsLeChange")}
         </a>
       </div>
       <div className="mt-6">
-        <NextButton label="Continuer : mon billet" onClick={onDone} />
+        <NextButton label={tr("ui.pagePreparerMonVoyage.continuerMonBillet")} onClick={onDone} />
       </div>
     </div>
   );
@@ -2112,7 +2098,7 @@ function BookStep({
           onClick={onBudget}
           className="flex min-h-11 items-center gap-2 text-left text-sm font-semibold text-primary underline-offset-4 hover:underline"
         >
-          <Wallet size={16} aria-hidden /> Revoir mon budget estimé
+          <Wallet size={16} aria-hidden />{tr("ui.pagePreparerMonVoyage.revoirMonBudgetEstime")}
         </button>
         <SailingsOutlook
           plan={plan}
@@ -2128,24 +2114,23 @@ function BookStep({
             onChange={(event) => onTicket(event.target.checked)}
           />
           <span>
-            J'ai mon billet
+            {tr("ui.pagePreparerMonVoyage.jAiMonBillet")}
             <span className="block text-xs font-normal text-muted-foreground">
-              À cocher quand vous l'avez : la ligne « Billet » de votre récap passe alors à fait.
+              {tr("ui.pagePreparerMonVoyage.aCocherQuandVousL")}
             </span>
           </span>
         </label>
         {plan.ticket ? (
           <Bw504Note
             tone="win"
-            title="Billet en poche !"
+            title={tr("ui.pagePreparerMonVoyage.billetEnPoche")}
             actions={
               <Bw504Button primary onClick={() => window.location.assign("/compte")}>
-                Ajouter mon billet
+                {tr("ui.pagePreparerMonVoyage.ajouterMonBillet")}
               </Bw504Button>
             }
           >
-            Ajoute-le à ton compte : je garde un œil sur ton navire et, avec les notifications, je
-            te préviens d'un retard signalé.
+            {tr("ui.pagePreparerMonVoyage.ajouteLeATonCompte")}
           </Bw504Note>
         ) : null}
       </div>
@@ -2254,7 +2239,7 @@ function WhenQuestion({
   );
 
   return (
-    <Question title="Quand souhaitez-vous partir ?">
+    <Question title={tr("ui.pagePreparerMonVoyage.quandSouhaitezVousPartir")}>
       {/* Sur ordinateur, le calendrier garde la taille de celui de « Réserver ». */}
       <div className="md:max-w-[420px]">
         <TripCalendar
@@ -2299,7 +2284,7 @@ function WhenQuestion({
         }}
         className="mt-3 inline-flex min-h-10 items-center gap-1.5 text-sm font-semibold text-primary"
       >
-        <School size={15} aria-hidden /> Vacances scolaires hors de France (Belgique, Espagne…)
+        <School size={15} aria-hidden />{tr("ui.pagePreparerMonVoyage.vacancesScolairesHorsDeFrance")}
       </button>
       <p
         className="mt-3 flex items-start gap-2 rounded-xl bg-primary/5 p-3 text-sm"
@@ -2308,12 +2293,11 @@ function WhenQuestion({
         <CalendarDays size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
         {!plan.date && !plan.window ? (
           <span>
-            Touchez votre jour de départ dans le calendrier, ou passez par vos vacances scolaires :
-            le compte à rebours de vos démarches part de cette date.
+            {tr("ui.pagePreparerMonVoyage.touchezVotreJourDeDepart")}
           </span>
         ) : (
           <span>
-            Départ {planWhenLabel(plan)}
+            {tr("ui.pagePreparerMonVoyage.depart2")}{planWhenLabel(plan)}
             {countdown > 0
               ? countdown > 60
                 ? `, dans ${Math.round(countdown / 7)} semaines : le temps de tout préparer sans stress.`
@@ -2331,10 +2315,8 @@ function WhenQuestion({
         )}
       </p>
       <div className="mt-4">
-        <Bw504Note title="Pourquoi la date d'abord ?">
-          Tout part de là : je compte à rebours tes démarches (un visa demande plusieurs semaines),
-          je te montre les départs publiés pour ces jours-là et je te signale la haute saison, quand
-          les places et les rendez-vous partent vite.
+        <Bw504Note title={tr("ui.pagePreparerMonVoyage.pourquoiLaDateDAbord")}>
+          {tr("ui.pagePreparerMonVoyage.toutPartDeLaJe")}
         </Bw504Note>
       </div>
     </Question>
@@ -2373,13 +2355,13 @@ function HolidaysQuestion({
     }`;
   return (
     <Question
-      title="Vos vacances scolaires"
-      hint="Le pays de l'école, la zone, puis vos vacances : les dates se remplissent toutes seules."
+      title={tr("ui.pagePreparerMonVoyage.vosVacancesScolaires")}
+      hint={tr("ui.pagePreparerMonVoyage.lePaysDeLEcole")}
     >
-      <p className="text-sm font-semibold">Le pays de l'école</p>
+      <p className="text-sm font-semibold">{tr("ui.pagePreparerMonVoyage.lePaysDeLEcole2")}</p>
       <div
         role="radiogroup"
-        aria-label="Pays de l'école"
+        aria-label={tr("ui.pagePreparerMonVoyage.paysDeLEcole")}
         className="mt-2 flex flex-wrap gap-1.5 sm:gap-2"
       >
         {countries.map((country) => {
@@ -2405,19 +2387,19 @@ function HolidaysQuestion({
           onClick={() => patch({ holidays: "none" })}
           className={chip(!calendar)}
         >
-          Autre pays
+          {tr("ui.pagePreparerMonVoyage.autrePays")}
         </button>
       </div>
 
       {calendar && calendar.areas.length ? (
         <div className="mt-4">
           <p className="text-sm font-semibold">
-            {calendar.areaLabel ? capitalize(calendar.areaLabel) : "Zone"}
+            {calendar.areaLabel ? capitalize(calendar.areaLabel) : tr("ui.pagePreparerMonVoyage.zone")}
           </p>
           {calendar.areas.length <= 6 ? (
             <div
               role="radiogroup"
-              aria-label={calendar.areaLabel ?? "Zone"}
+              aria-label={calendar.areaLabel ?? tr("ui.pagePreparerMonVoyage.zone")}
               className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3"
             >
               {calendar.areas.map((zone) => {
@@ -2455,14 +2437,14 @@ function HolidaysQuestion({
                     : "bg-background hover:border-primary/40"
                 }`}
               >
-                Je ne sais pas
+                {tr("ui.pagePreparerMonVoyage.jeNeSaisPas")}
               </button>
             </div>
           ) : (
             <ChoiceMenu
               variant="field"
               className="mt-2 sm:max-w-xs"
-              label={calendar.areaLabel ?? "Zone"}
+              label={calendar.areaLabel ?? tr("ui.pagePreparerMonVoyage.zone")}
               icon={<MapPin size={16} aria-hidden />}
               value={area ?? null}
               all="Je ne sais pas"
@@ -2478,7 +2460,7 @@ function HolidaysQuestion({
       {calendar ? (
         spans.length ? (
           <>
-            <p className="mt-4 text-sm font-semibold">Vos vacances</p>
+            <p className="mt-4 text-sm font-semibold">{tr("ui.pagePreparerMonVoyage.vosVacances")}</p>
             <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
               {spans.map((span) => {
                 const from = span.start < today ? today : span.start;
@@ -2505,8 +2487,8 @@ function HolidaysQuestion({
                     <span
                       className={`text-xs ${on ? "text-primary-foreground/85" : "text-muted-foreground"}`}
                     >
-                      {shortDate(span.start)} → {span.end ? shortDate(span.end) : "à venir"}
-                      {span.varies ? " · selon la zone" : ""}
+                      {shortDate(span.start)} → {span.end ? shortDate(span.end) : tr("ui.pagePreparerMonVoyage.aVenir")}
+                      {span.varies ? tr("ui.pagePreparerMonVoyage.selonLaZone") : ""}
                     </span>
                   </button>
                 );
@@ -2515,18 +2497,17 @@ function HolidaysQuestion({
           </>
         ) : (
           <p className="mt-4 text-sm text-muted-foreground">
-            Pas de vacances publiées sur les 12 prochains mois pour ce calendrier.
+            {tr("ui.pagePreparerMonVoyage.pasDeVacancesPublieesSur")}
           </p>
         )
       ) : (
         <p className="mt-4 text-sm text-muted-foreground">
-          Les vacances des autres pays ne sont pas publiées en données ouvertes : revenez à l'écran
-          d'avant et indiquez vos dates.
+          {tr("ui.pagePreparerMonVoyage.lesVacancesDesAutresPays")}
         </p>
       )}
       {calendar ? (
         <p className="mt-3 text-[11px] text-muted-foreground">
-          Source :{" "}
+          {tr("ui.pagePreparerMonVoyage.source2")}{" "}
           <a
             href={holidaySources[calendar.source].url}
             target="_blank"
@@ -2535,7 +2516,7 @@ function HolidaysQuestion({
           >
             {holidaySources[calendar.source].name}
           </a>
-          , relevé le {shortDate(vacancesChecked())} {vacancesChecked().slice(0, 4)}.
+          {tr("ui.pagePreparerMonVoyage.releveLe")}{shortDate(vacancesChecked())} {vacancesChecked().slice(0, 4)}.
         </p>
       ) : null}
     </Question>
@@ -2573,11 +2554,11 @@ function ResidenceQuestion({
   };
   return (
     <Question title={title} hint={hint}>
-      <p className="text-sm font-semibold">Pays</p>
+      <p className="text-sm font-semibold">{tr("ui.pagePreparerMonVoyage.pays")}</p>
       <ChoiceMenu
         variant="field"
         className="mt-1 sm:max-w-xs"
-        label="Pays"
+        label={tr("ui.pagePreparerMonVoyage.pays")}
         icon={<Globe2 size={16} aria-hidden />}
         value={plan.country}
         onChange={(code) => (code ? setCountry(code) : undefined)}
@@ -2734,7 +2715,7 @@ function EuropeConsulateCard({
               {post.km !== null ? (
                 <span className="font-normal text-muted-foreground">
                   {" "}
-                  · ~{post.km.toLocaleString("fr-FR")} km{index === 0 ? ", le plus proche" : ""}
+                  · ~{post.km.toLocaleString("fr-FR")}{tr("ui.pagePreparerMonVoyage.km")}{index === 0 ? tr("ui.pagePreparerMonVoyage.lePlusProche") : ""}
                 </span>
               ) : null}
             </p>
@@ -2755,7 +2736,7 @@ function EuropeConsulateCard({
                   rel="noreferrer"
                   className={`${textLink} inline-flex items-center gap-1`}
                 >
-                  Site du poste <ExternalLink size={12} aria-hidden />
+                  {tr("ui.pagePreparerMonVoyage.siteDuPoste")}<ExternalLink size={12} aria-hidden />
                 </a>
               ) : null}
             </p>
@@ -2764,18 +2745,18 @@ function EuropeConsulateCard({
       </ul>
       <p className="mt-3 text-xs text-muted-foreground">
         {result.embassyOnly
-          ? "Aucun consulat n'est listé dans ce pays : renseignez-vous auprès de l'ambassade pour les démarches. "
-          : "Le plus proche est probablement le vôtre, mais c'est votre adresse qui décide : vérifiez sur son site que votre ville en dépend. "}
-        Liste du{" "}
+          ? tr("ui.pagePreparerMonVoyage.aucunConsulatNEstListe")
+          : tr("ui.pagePreparerMonVoyage.lePlusProcheEstProbablement")}
+        {tr("ui.pagePreparerMonVoyage.listeDu")}{" "}
         <a
           href={MFA_REPRESENTATIONS_URL}
           target="_blank"
           rel="noreferrer"
           className="underline underline-offset-2"
         >
-          ministère algérien des Affaires étrangères
+          {tr("ui.pagePreparerMonVoyage.ministereAlgerienDesAffairesEtrangeres")}
         </a>
-        , relevée le {shortDate(consulatsChecked())} {consulatsChecked().slice(0, 4)}.
+        {tr("ui.pagePreparerMonVoyage.releveeLe")}{shortDate(consulatsChecked())} {consulatsChecked().slice(0, 4)}.
       </p>
     </div>
   );
@@ -2963,13 +2944,13 @@ function PlanTodo({
   return (
     <section aria-labelledby="a-faire" className="mt-4 rounded-2xl border bg-card p-3.5 md:p-5">
       <h2 id="a-faire" className="flex items-center gap-2 font-display text-lg font-bold">
-        <ListChecks size={19} className="text-primary" aria-hidden /> À faire
+        <ListChecks size={19} className="text-primary" aria-hidden />{tr("ui.pagePreparerMonVoyage.aFaire")}
       </h2>
       <p className="mt-0.5 text-sm text-muted-foreground">{todoSummary(todo, plan)}</p>
       <p className="bw-todo-legend" aria-hidden>
-        <span data-urgency="late">Urgent</span>
-        <span data-urgency="soon">Bientôt</span>
-        <span data-urgency="later">Plus tard</span>
+        <span data-urgency="late">{tr("ui.pagePreparerMonVoyage.urgent")}</span>
+        <span data-urgency="soon">{tr("ui.pagePreparerMonVoyage.bientot2")}</span>
+        <span data-urgency="later">{tr("ui.pagePreparerMonVoyage.plusTard")}</span>
       </p>
       <ol className="bw-todo-line">
         {shown.map((m) => {
@@ -2983,7 +2964,7 @@ function PlanTodo({
               </span>
               <p className="bw-todo-line__lead">
                 {milestoneLead(m, plan)}
-                {isDone ? " · fait" : ""}
+                {isDone ? tr("ui.pagePreparerMonVoyage.fait2") : ""}
                 <span className="bw-todo-line__tag">{nodeGroup(m)}</span>
               </p>
               <p className="bw-todo-line__title">{m.title}</p>
@@ -2997,8 +2978,8 @@ function PlanTodo({
                       className="mt-2 inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground"
                     >
                       {mine[0]!.step === "papers"
-                        ? "Faire ma liste de papiers"
-                        : "Réserver ma traversée"}
+                        ? tr("ui.pagePreparerMonVoyage.faireMaListeDePapiers")
+                        : tr("ui.pagePreparerMonVoyage.reserverMaTraversee")}
                       <ArrowRight size={15} aria-hidden />
                     </button>
                   )}
@@ -3030,7 +3011,7 @@ function PlanTodo({
           aria-expanded={showDone}
           className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-muted-foreground"
         >
-          {showDone ? "Masquer ce qui est fait" : `Voir ce qui est fait (${finished.length})`}
+          {showDone ? tr("ui.pagePreparerMonVoyage.masquerCeQuiEstFait") : `Voir ce qui est fait (${finished.length})`}
           <ChevronDown
             size={15}
             aria-hidden
@@ -3040,7 +3021,7 @@ function PlanTodo({
       ) : null}
       {know.length ? (
         <div className="mt-4 rounded-xl border border-[#e0a43a]/50 bg-[#fdf6e7] p-3">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-[#b7791f]">À savoir</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[#b7791f]">{tr("ui.pagePreparerMonVoyage.aSavoir")}</p>
           {know.map((m) => (
             <div key={m.id} className="mt-1">
               <p className="text-sm font-semibold">{m.title}</p>
@@ -3058,7 +3039,7 @@ function Sources({ ids }: { ids?: Milestone["sources"] }) {
   if (!ids?.length) return null;
   return (
     <p className="mt-1 text-xs">
-      Source :{" "}
+      {tr("ui.pagePreparerMonVoyage.source2")}{" "}
       {ids.map((id, index) => (
         <span key={id}>
           {index ? ", " : ""}
@@ -3138,7 +3119,7 @@ function TodoItem({
           ) : null}
           {inLine && !row.done ? null : (
             <p className={`text-xs font-bold ${tone}`}>
-              {row.done ? "Fait" : milestoneLead(m, plan)}
+              {row.done ? tr("ui.pagePreparerMonVoyage.fait3") : milestoneLead(m, plan)}
             </p>
           )}
         </div>
@@ -3146,7 +3127,7 @@ function TodoItem({
           type="button"
           onClick={() => setWhy(!why)}
           aria-expanded={why}
-          aria-label="Pourquoi cette date ?"
+          aria-label={tr("ui.pagePreparerMonVoyage.pourquoiCetteDate")}
           className="-my-1 -mr-1 grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
         >
           <Info size={15} aria-hidden />
@@ -3165,7 +3146,7 @@ function TodoItem({
           onClick={() => onOpenStep(row.step!)}
           className="mt-2 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground"
         >
-          {row.step === "papers" ? "Faire ma liste de papiers" : "Réserver ma traversée"}
+          {row.step === "papers" ? tr("ui.pagePreparerMonVoyage.faireMaListeDePapiers") : tr("ui.pagePreparerMonVoyage.reserverMaTraversee")}
         </button>
       ) : null}
     </li>
@@ -3308,7 +3289,7 @@ function ReadyDashboard({
   return (
     <section id="pret" aria-labelledby="pret-titre" className="bw-ready bw-readygrid mt-4">
       <h2 id="pret-titre" className="sr-only">
-        Votre récap est prêt
+        {tr("ui.pagePreparerMonVoyage.votreRecapEstPret")}
       </h2>
       <div className="bw-readygrid__main">
       {/* Le récap en un coup d'œil : chaque tuile dit son état et rouvre son étape. */}
@@ -3332,27 +3313,26 @@ function ReadyDashboard({
           actions={
             <>
               <Bw504Button primary onClick={missing[0]!.onClick}>
-                Compléter : {missing[0]!.label.toLowerCase()}
+                {tr("ui.pagePreparerMonVoyage.completer")}{missing[0]!.label.toLowerCase()}
               </Bw504Button>
-              <Bw504Button onClick={onShare}>Partager quand même</Bw504Button>
+              <Bw504Button onClick={onShare}>{tr("ui.pagePreparerMonVoyage.partagerQuandMeme")}</Bw504Button>
             </>
           }
         >
-          Ton récap est presque prêt. Choisis tes ports et je calcule la route, le budget et les
-          traversées de ta période.
+          {tr("ui.pagePreparerMonVoyage.tonRecapEstPresquePret")}
         </Bw504Note>
       ) : (
         <Bw504Note
           tone="win"
           className="mt-3"
-          title="Ton récap est prêt"
+          title={tr("ui.pagePreparerMonVoyage.tonRecapEstPret")}
           actions={
             <Bw504Button primary onClick={onShare}>
-              Partager · PDF
+              {tr("ui.pagePreparerMonVoyage.partagerPdf")}
             </Bw504Button>
           }
         >
-          Envoie-le à la famille ou imprime-le. Touche une ligne du récap pour la revoir.
+          {tr("ui.pagePreparerMonVoyage.envoieLeALaFamille")}
         </Bw504Note>
       )}
       </div>
@@ -3379,27 +3359,25 @@ function ReadyDashboard({
       </div>
       <div className="mt-4 rounded-xl border bg-background p-3">
         <p className="flex items-center gap-2 font-semibold">
-          <Bell size={17} className="text-primary" aria-hidden /> Être prévenu avant chaque échéance
+          <Bell size={17} className="text-primary" aria-hidden />{tr("ui.pagePreparerMonVoyage.etrePrevenuAvantChaqueEcheance")}
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Si une action n'est pas cochée à sa date, BledWay vous envoie un rappel : une alerte sur
-          cet appareil et un e-mail. Vous les réglez dans{" "}
+          {tr("ui.pagePreparerMonVoyage.siUneActionNEst")}{" "}
           <a href="/compte" className={textLink}>
-            Mon compte
+            {tr("ui.pagePreparerMonVoyage.monCompte")}
           </a>
           .
         </p>
         <PushStatusLine />
       </div>
       <p className="mt-4 text-sm text-muted-foreground">
-        Une fois le billet enregistré, la suite (48 h avant, au port, à l'arrivée) continue dans «
-        Mon voyage », étape par étape.
+        {tr("ui.pagePreparerMonVoyage.uneFoisLeBilletEnregistre")}
       </p>
       <a
         href="/"
         className="mt-3 inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground hover:bg-primary/90"
       >
-        <MapIcon size={16} aria-hidden /> Suivre en direct
+        <MapIcon size={16} aria-hidden />{tr("ui.pagePreparerMonVoyage.suivreEnDirect")}
       </a>
       </div>
     </section>
@@ -3422,17 +3400,16 @@ function PrepTools({ canShare, onReset }: { canShare: boolean; onReset: () => vo
           aria-expanded={asking}
           className="bw-prep-tools__reset"
         >
-          <RotateCcw size={14} aria-hidden /> Recommencer
+          <RotateCcw size={14} aria-hidden />{tr("ui.pagePreparerMonVoyage.recommencer")}
         </button>
       </div>
       {asking ? (
         <div role="alertdialog" aria-labelledby="reset-titre" className="bw-prep-reset">
           <p id="reset-titre" className="font-bold">
-            Tout recommencer ?
+            {tr("ui.pagePreparerMonVoyage.toutRecommencer")}
           </p>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Les dates, les voyageurs, les papiers, les ports et ce qui est coché seront effacés de
-            cet appareil. Votre compte et vos billets ne changent pas.
+            {tr("ui.pagePreparerMonVoyage.lesDatesLesVoyageursLes")}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button
@@ -3443,14 +3420,14 @@ function PrepTools({ canShare, onReset }: { canShare: boolean; onReset: () => vo
               }}
               className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-destructive px-4 text-sm font-bold text-destructive-foreground hover:bg-destructive/90"
             >
-              <RotateCcw size={15} aria-hidden /> Oui, tout effacer
+              <RotateCcw size={15} aria-hidden />{tr("ui.pagePreparerMonVoyage.ouiToutEffacer")}
             </button>
             <button
               type="button"
               onClick={() => setAsking(false)}
               className="inline-flex min-h-10 items-center rounded-xl bg-secondary px-4 text-sm font-bold hover:bg-secondary/80"
             >
-              Annuler
+              {tr("ui.pagePreparerMonVoyage.annuler")}
             </button>
           </div>
         </div>
@@ -3474,18 +3451,16 @@ function SignupGate({ steps, profileDone }: { steps: CompanionStep[]; profileDon
     >
       <h2 id="compte-titre" className="flex items-center gap-2 font-display text-xl font-bold">
         <Lock size={20} className="text-primary" aria-hidden />
-        {profileDone ? "La suite avec un compte gratuit" : "Un compte gratuit pour la suite"}
+        {profileDone ? tr("ui.pagePreparerMonVoyage.laSuiteAvecUnCompte") : tr("ui.pagePreparerMonVoyage.unCompteGratuitPourLa")}
       </h2>
       {profileDone ? (
-        <Bw504Note className="mt-2" title="Ton départ est noté, on continue ?">
-          Avec un compte gratuit : tes papiers, ta route, ton budget, et mes rappels. Tes réponses
-          restent sur ce téléphone.
+        <Bw504Note className="mt-2" title={tr("ui.pagePreparerMonVoyage.tonDepartEstNoteOn")}>
+          {tr("ui.pagePreparerMonVoyage.avecUnCompteGratuitTes")}
         </Bw504Note>
       ) : null}
       {profileDone ? null : (
         <p className="mt-1 text-sm text-muted-foreground">
-          Commencez par la première étape sans compte. Pour la suite, il faut un compte gratuit ;
-          vos réponses restent sur cet appareil.
+          {tr("ui.pagePreparerMonVoyage.commencezParLaPremiereEtape")}
         </p>
       )}
       <ol className="mt-3 grid gap-2">
@@ -3502,7 +3477,7 @@ function SignupGate({ steps, profileDone }: { steps: CompanionStep[]; profileDon
             <Lock
               size={14}
               className="shrink-0 text-muted-foreground"
-              aria-label="Avec un compte"
+              aria-label={tr("ui.pagePreparerMonVoyage.avecUnCompte")}
             />
           </li>
         ))}
@@ -3512,13 +3487,13 @@ function SignupGate({ steps, profileDone }: { steps: CompanionStep[]; profileDon
           href={`/auth?mode=signup&next=${next}`}
           className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground hover:bg-primary/90"
         >
-          <UserPlus size={16} aria-hidden /> Créer mon compte gratuit
+          <UserPlus size={16} aria-hidden />{tr("ui.pagePreparerMonVoyage.creerMonCompteGratuit")}
         </a>
         <a
           href={`/auth?next=${next}`}
           className="inline-flex min-h-12 items-center rounded-xl bg-secondary px-5 text-sm font-bold hover:bg-secondary/80"
         >
-          J'ai déjà un compte
+          {tr("ui.pagePreparerMonVoyage.jAiDejaUnCompte")}
         </a>
       </div>
     </section>

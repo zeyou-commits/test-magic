@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { tr } from "@/lib/i18n";
 
 /**
  * La 504 dessinée dans la page, jamais dans une fenêtre qui s'ouvre toute seule.
@@ -50,7 +51,7 @@ export function BwKnow({
       <img src="/cabas/persos/voiture_504.webp" alt="" width={34} height={34} className="bw-know__car" />
       <div className="min-w-0">
         <p>
-          <b>Bon à savoir</b>
+          <b>{tr("ui.bw504Note.bonASavoir")}</b>
           {children}
         </p>
         {source ? <div className="bw-know__src">{source}</div> : null}

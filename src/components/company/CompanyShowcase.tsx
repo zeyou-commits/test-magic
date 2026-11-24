@@ -27,6 +27,7 @@ import {
   sendAccessRequest,
   type AccessRequestForm,
 } from "@/lib/company/accessRequest";
+import { tr } from "@/lib/i18n";
 
 /**
  * Page d'accueil professionnelle de l'espace compagnie, pour une personne sans accès :
@@ -166,7 +167,7 @@ function HeroPhone() {
         <div
           className="grid flex-1 grid-cols-4 gap-1.5"
           role="group"
-          aria-label="Écrans de l'appli"
+          aria-label={tr("ui.companyShowcase.ecransDeLAppli")}
         >
           {PASSENGERS.map((item, i) => (
             <button
@@ -204,7 +205,7 @@ function HeroPhone() {
           type="button"
           onClick={() => setStopped((s) => !s)}
           className="grid size-7 flex-none place-items-center rounded-full border border-white/25 text-white/80 hover:bg-white/10"
-          aria-label={stopped ? "Reprendre le défilement" : "Mettre le défilement en pause"}
+          aria-label={stopped ? tr("ui.companyShowcase.reprendreLeDefilement") : tr("ui.companyShowcase.mettreLeDefilementEnPause")}
         >
           {stopped ? (
             <Play className="size-3" aria-hidden />
@@ -261,7 +262,7 @@ export function CompanyShowcase({
           <Link
             to="/"
             className="flex min-w-0 items-center gap-2.5"
-            aria-label="BledWay, retour au site"
+            aria-label={tr("ui.companyShowcase.bledwayRetourAuSite")}
           >
             <img
               src="/favicon-192.png"
@@ -271,9 +272,9 @@ export function CompanyShowcase({
               className="size-10 flex-none rounded-xl shadow-[0_0_0_1px_rgb(255_255_255/0.22),0_4px_14px_rgb(0_0_0/0.25)]"
             />
             <span className="grid leading-tight">
-              <strong className="text-base font-extrabold">BledWay</strong>
+              <strong className="text-base font-extrabold">{tr("ui.companyShowcase.bledway")}</strong>
               <span className="text-[10.5px] font-extrabold uppercase tracking-[.09em] text-[#f6c445]">
-                Espace compagnie
+                {tr("ui.companyShowcase.espaceCompagnie")}
               </span>
             </span>
           </Link>
@@ -282,14 +283,14 @@ export function CompanyShowcase({
               to="/"
               className="hidden rounded-lg px-3 py-2 text-white/80 hover:text-white sm:inline-flex"
             >
-              Retour au site
+              {tr("ui.companyShowcase.retourAuSite")}
             </Link>
             {signedIn ? null : (
               <a
                 href={SIGN_IN}
                 className="inline-flex rounded-lg border border-white/30 px-3 py-2 hover:bg-white/10"
               >
-                Se connecter
+                {tr("ui.companyShowcase.seConnecter")}
               </a>
             )}
           </nav>
@@ -300,9 +301,7 @@ export function CompanyShowcase({
         {signedIn ? (
           <div className="border-b border-[#f6c445]/50 bg-[#fff8e1]">
             <p className="mx-auto max-w-6xl px-4 py-3 text-sm leading-relaxed md:px-8">
-              Votre compte{signedInEmail ? ` (${signedInEmail})` : ""} n'a pas encore d'accès à un
-              espace compagnie. Vous avez reçu une invitation ? Ouvrez le lien reçu avec ce compte.
-              Sinon, faites une demande ci-dessous.
+              {tr("ui.companyShowcase.votreCompte")}{signedInEmail ? ` (${signedInEmail})` : ""}{tr("ui.companyShowcase.nAPasEncoreD")}
             </p>
           </div>
         ) : null}
@@ -311,16 +310,13 @@ export function CompanyShowcase({
           <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 md:grid-cols-[1.25fr_1fr] md:px-8 md:py-20">
             <div>
               <p className="text-xs font-extrabold uppercase tracking-[.14em] text-[#f6c445]">
-                Pour les compagnies maritimes
+                {tr("ui.companyShowcase.pourLesCompagniesMaritimes")}
               </p>
               <h1 className="mt-3 text-3xl font-bold leading-[1.15] md:text-[2.6rem]">
-                Vos passagers préparent et suivent leur traversée sur BledWay. Parlez-leur
-                directement.
+                {tr("ui.companyShowcase.vosPassagersPreparentEtSuivent")}
               </h1>
               <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-white/80 md:text-base">
-                BledWay accompagne les voyageurs entre l'Europe et l'Algérie, de la préparation du
-                voyage jusqu'au port. L'espace compagnie vous permet d'y prendre la parole en votre
-                nom : horaires, annonces, réponses aux avis, fiche et photos, publiés tout de suite.
+                {tr("ui.companyShowcase.bledwayAccompagneLesVoyageursEntre")}
               </p>
               <ul className="mt-5 grid gap-2 text-[15px] font-semibold">
                 {[
@@ -339,14 +335,14 @@ export function CompanyShowcase({
                   href="#demande"
                   className="inline-flex items-center gap-2 rounded-xl bg-[#f6c445] px-5 py-3 text-sm font-bold text-[#0c1f33] hover:bg-[#f9d36d]"
                 >
-                  Demander un accès
+                  {tr("ui.companyShowcase.demanderUnAcces")}
                 </a>
                 {signedIn ? null : (
                   <a
                     href={SIGN_IN}
                     className="inline-flex items-center gap-2 rounded-xl border border-white/35 px-5 py-3 text-sm font-bold hover:bg-white/10"
                   >
-                    J'ai reçu une invitation
+                    {tr("ui.companyShowcase.jAiRecuUneInvitation")}
                   </a>
                 )}
               </div>
@@ -359,7 +355,7 @@ export function CompanyShowcase({
 
         <Section
           eyebrow="Côté voyageurs"
-          title="Ce que vivent vos passagers"
+          title={tr("ui.companyShowcase.ceQueViventVosPassagers")}
           lead="Captures de l'application telle que les voyageurs l'utilisent aujourd'hui."
         >
           <ul className="-mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-3 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-8 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4">
@@ -384,7 +380,7 @@ export function CompanyShowcase({
         <div className="bg-white">
           <Section
             eyebrow="Côté compagnie"
-            title="Votre place dans cette expérience"
+            title={tr("ui.companyShowcase.votrePlaceDansCetteExperience")}
             lead="Un espace réservé à votre équipe, avec deux niveaux d'accès : Lecture et Opérations."
           >
             <ul className="grid gap-4 md:grid-cols-2">
@@ -403,7 +399,7 @@ export function CompanyShowcase({
           </Section>
         </div>
 
-        <Section eyebrow="Confiance" title="Les mêmes règles pour toutes les compagnies">
+        <Section eyebrow="Confiance" title={tr("ui.companyShowcase.lesMemesReglesPourToutes")}>
           <ul className="grid gap-3 sm:grid-cols-2">
             {RULES.map((rule) => (
               <li key={rule.text} className="flex items-start gap-3 text-[15px] leading-relaxed">
@@ -418,32 +414,31 @@ export function CompanyShowcase({
           <Section
             id="demande"
             eyebrow="Accès"
-            title="Demander un accès pour votre compagnie"
+            title={tr("ui.companyShowcase.demanderUnAccesPourVotre")}
             lead="Une demande n'ouvre aucun accès à elle seule : l'équipe BledWay vérifie qui vous êtes, puis vous envoie une invitation personnelle."
           >
             <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
               <AccessRequestFormCard defaultEmail={signedInEmail ?? ""} />
               <aside className="grid content-start gap-4">
                 <div className="rounded-2xl bg-[#0c1f33] p-6 text-white">
-                  <h3 className="text-lg font-bold">Après votre demande</h3>
+                  <h3 className="text-lg font-bold">{tr("ui.companyShowcase.apresVotreDemande")}</h3>
                   <ol className="mt-3 grid gap-2 text-sm leading-relaxed text-white/80">
-                    <li>1. L'équipe BledWay vérifie que vous représentez bien la compagnie.</li>
-                    <li>2. Vous recevez une invitation personnelle par e-mail.</li>
-                    <li>3. Vous ouvrez le lien : votre espace est prêt, avec vos traversées.</li>
+                    <li>{tr("ui.companyShowcase.t1LEquipeBledwayVerifie")}</li>
+                    <li>{tr("ui.companyShowcase.t2VousRecevezUneInvitation")}</li>
+                    <li>{tr("ui.companyShowcase.t3VousOuvrezLeLien")}</li>
                   </ol>
                 </div>
                 {signedIn ? null : (
                   <div className="rounded-2xl border border-[#e1e7ee] p-6">
-                    <h3 className="font-bold">Vous avez reçu une invitation ?</h3>
+                    <h3 className="font-bold">{tr("ui.companyShowcase.vousAvezRecuUneInvitation")}</h3>
                     <p className="mt-1 text-sm leading-relaxed text-[#4a5a6a]">
-                      Ouvrez le lien reçu : il vous permet de créer votre compte ou de vous
-                      connecter avec la bonne adresse.
+                      {tr("ui.companyShowcase.ouvrezLeLienRecuIl")}
                     </p>
                     <a
                       href={SIGN_IN}
                       className="mt-4 inline-flex rounded-xl bg-[#12304d] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#0c1f33]"
                     >
-                      Se connecter
+                      {tr("ui.companyShowcase.seConnecter")}
                     </a>
                   </div>
                 )}
@@ -456,16 +451,16 @@ export function CompanyShowcase({
       <footer className="border-t border-[#e1e7ee] bg-[#f5f7fa]">
         <div className="mx-auto flex max-w-6xl flex-wrap gap-x-5 gap-y-2 px-4 py-6 text-sm text-[#4a5a6a] md:px-8">
           <Link to="/" className="hover:text-[#0c1f33]">
-            Retour au site
+            {tr("ui.companyShowcase.retourAuSite")}
           </Link>
           <Link to="/contact" className="hover:text-[#0c1f33]">
-            Contact
+            {tr("ui.companyShowcase.contact")}
           </Link>
           <Link to="/confidentialite" className="hover:text-[#0c1f33]">
-            Confidentialité
+            {tr("ui.companyShowcase.confidentialite")}
           </Link>
           <Link to="/mentions-legales" className="hover:text-[#0c1f33]">
-            Mentions légales
+            {tr("ui.companyShowcase.mentionsLegales")}
           </Link>
         </div>
       </footer>
@@ -491,7 +486,7 @@ function Field({
     <label className="grid text-sm font-semibold">
       <span>
         {label}
-        {optional ? <span className="font-normal text-[#6b7a89]"> (facultatif)</span> : null}
+        {optional ? <span className="font-normal text-[#6b7a89]">{tr("ui.companyShowcase.facultatif")}</span> : null}
       </span>
       {children}
       {error ? <span className="mt-1 text-xs font-medium text-[#b42318]">{error}</span> : null}
@@ -519,11 +514,10 @@ function AccessRequestFormCard({ defaultEmail }: { defaultEmail: string }) {
       <div className="rounded-2xl border border-[#b7e4c7] bg-[#effaf3] p-6" role="status">
         <p className="flex items-center gap-2 text-lg font-bold text-[#0b5c33]">
           <Check className="size-5" aria-hidden />
-          Demande envoyée
+          {tr("ui.companyShowcase.demandeEnvoyee")}
         </p>
         <p className="mt-2 text-sm leading-relaxed text-[#2c4a3a]">
-          L'équipe BledWay vous répond par e-mail à l'adresse indiquée. Aucun accès n'est ouvert
-          sans vérification.
+          {tr("ui.companyShowcase.lEquipeBledwayVousRepond")}
         </p>
       </div>
     );
@@ -557,7 +551,7 @@ function AccessRequestFormCard({ defaultEmail }: { defaultEmail: string }) {
       className="grid gap-4 rounded-2xl border border-[#e1e7ee] bg-[#fbfcfd] p-5 md:p-6"
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Nom et prénom" error={errors.fullName}>
+        <Field label={tr("ui.companyShowcase.nomEtPrenom")} error={errors.fullName}>
           <input
             className={fieldClass}
             autoComplete="name"
@@ -566,17 +560,17 @@ function AccessRequestFormCard({ defaultEmail }: { defaultEmail: string }) {
             onChange={(e) => set("fullName", e.target.value)}
           />
         </Field>
-        <Field label="Fonction" error={errors.jobTitle}>
+        <Field label={tr("ui.companyShowcase.fonction")} error={errors.jobTitle}>
           <input
             className={fieldClass}
             autoComplete="organization-title"
             maxLength={120}
-            placeholder="Par exemple : responsable relation clients"
+            placeholder={tr("ui.companyShowcase.parExempleResponsableRelationClients")}
             value={form.jobTitle}
             onChange={(e) => set("jobTitle", e.target.value)}
           />
         </Field>
-        <Field label="Compagnie" error={errors.companyName}>
+        <Field label={tr("ui.companyShowcase.compagnie")} error={errors.companyName}>
           <input
             className={fieldClass}
             autoComplete="organization"
@@ -591,7 +585,7 @@ function AccessRequestFormCard({ defaultEmail }: { defaultEmail: string }) {
             ))}
           </datalist>
         </Field>
-        <Field label="E-mail professionnel" error={errors.email}>
+        <Field label={tr("ui.companyShowcase.eMailProfessionnel")} error={errors.email}>
           <input
             className={fieldClass}
             type="email"
@@ -602,7 +596,7 @@ function AccessRequestFormCard({ defaultEmail }: { defaultEmail: string }) {
             onChange={(e) => set("email", e.target.value)}
           />
         </Field>
-        <Field label="Téléphone" optional error={errors.phone}>
+        <Field label={tr("ui.companyShowcase.telephone")} optional error={errors.phone}>
           <input
             className={fieldClass}
             type="tel"
@@ -613,11 +607,11 @@ function AccessRequestFormCard({ defaultEmail }: { defaultEmail: string }) {
           />
         </Field>
       </div>
-      <Field label="Message" optional error={errors.message}>
+      <Field label={tr("ui.companyShowcase.message")} optional error={errors.message}>
         <textarea
           className={`${fieldClass} min-h-24`}
           maxLength={1000}
-          placeholder="Ce que vous souhaitez faire avec l'espace compagnie, vos lignes, vos questions…"
+          placeholder={tr("ui.companyShowcase.ceQueVousSouhaitezFaire")}
           value={form.message}
           onChange={(e) => set("message", e.target.value)}
         />
@@ -625,7 +619,7 @@ function AccessRequestFormCard({ defaultEmail }: { defaultEmail: string }) {
       {/* Champ piège : invisible pour une personne, rempli par un robot. */}
       <div aria-hidden className="absolute -left-[9999px] size-px overflow-hidden">
         <label>
-          Site web
+          {tr("ui.companyShowcase.siteWeb")}
           <input
             tabIndex={-1}
             autoComplete="off"
@@ -642,9 +636,9 @@ function AccessRequestFormCard({ defaultEmail }: { defaultEmail: string }) {
           onChange={(e) => set("consent", e.target.checked)}
         />
         <span>
-          J'accepte que BledWay utilise ces informations pour traiter ma demande et me recontacter.{" "}
+          {tr("ui.companyShowcase.jAccepteQueBledwayUtilise")}{" "}
           <Link to="/confidentialite" className="font-semibold text-[#0f4f86] underline">
-            Confidentialité
+            {tr("ui.companyShowcase.confidentialite")}
           </Link>
           {errors.consent ? (
             <span className="mt-1 block text-xs font-medium text-[#b42318]">{errors.consent}</span>
@@ -663,7 +657,7 @@ function AccessRequestFormCard({ defaultEmail }: { defaultEmail: string }) {
           className="inline-flex items-center gap-2 rounded-xl bg-[#12304d] px-5 py-3 text-sm font-bold text-white hover:bg-[#0c1f33] disabled:opacity-60"
         >
           <Send className="size-4" aria-hidden />
-          {sending ? "Envoi…" : "Envoyer la demande"}
+          {sending ? tr("ui.companyShowcase.envoi") : tr("ui.companyShowcase.envoyerLaDemande")}
         </button>
       </div>
     </form>

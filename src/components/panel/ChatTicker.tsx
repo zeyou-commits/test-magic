@@ -23,6 +23,7 @@ import type { Selection } from "@/lib/ferry/types";
 import { ChatText } from "./ChatText";
 import { LiveRoom } from "./LiveRoom";
 import { AuthorAvatar } from "./StaffChat";
+import { tr } from "@/lib/i18n";
 
 /** Le salon général, ouvert depuis la liste des salons, le fil de la carte ou un lien partagé. */
 export function GeneralRoomHost() {
@@ -69,14 +70,14 @@ function OverlaySwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) 
       type="button"
       role="switch"
       aria-checked={on}
-      aria-label="Chat sur la carte"
+      aria-label={tr("ui.chatTicker.chatSurLaCarte")}
       className="bw-ticker__switch"
       onClick={onToggle}
     >
       <span className="bw-ticker__track" aria-hidden>
         <span />
       </span>
-      {on ? "Activé" : "Chat désactivé"}
+      {on ? tr("ui.chatTicker.active") : tr("ui.chatTicker.chatDesactive")}
     </button>
   );
 }
@@ -168,14 +169,14 @@ export function ChatTicker({
   };
   if (!on)
     return (
-      <section ref={box} className="bw-ticker" data-off data-inline={inline || undefined} aria-label="Messages des salons">
+      <section ref={box} className="bw-ticker" data-off data-inline={inline || undefined} aria-label={tr("ui.chatTicker.messagesDesSalons")}>
         <div className="bw-ticker__head">
           <OverlaySwitch on={false} onToggle={toggle} />
         </div>
       </section>
     );
   return (
-    <section ref={box} className="bw-ticker" data-inline={inline || undefined} aria-label="Messages des salons">
+    <section ref={box} className="bw-ticker" data-inline={inline || undefined} aria-label={tr("ui.chatTicker.messagesDesSalons")}>
       <ol className="bw-ticker__lines" data-reduce={reduce || undefined}>
         {state.shown.map(({ line }) => (
           <li key={line.id}>

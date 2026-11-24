@@ -40,6 +40,7 @@ import {
   type PapersState,
   type PapersStep,
 } from "@/components/papers/PapersFlow";
+import { tr } from "@/lib/i18n";
 
 /**
  * « Mes papiers » dans le guide de « Préparer mon voyage » : une seule question par écran,
@@ -134,7 +135,7 @@ function Who({
       </p>
       {total > 1 ? (
         <span className="sr-only">
-          Question {step} sur {total} pour ce voyageur
+          {tr("ui.papersQuestions.question")}{step}{tr("ui.papersQuestions.sur")}{total}{tr("ui.papersQuestions.pourCeVoyageur")}
         </span>
       ) : null}
     </div>
@@ -240,7 +241,7 @@ export function PapersQuestions({
       body = (
         <>
           {who}
-          <Question title="Quel sera son âge le jour du départ ?">
+          <Question title={tr("ui.papersQuestions.quelSeraSonAgeLe")}>
             {choice(
               "Âge le jour du départ",
               hasAnswered(t, "age") ? String(ageBandOf(t.age).age) : "",
@@ -267,7 +268,7 @@ export function PapersQuestions({
         <>
           {who}
           <Question
-            title={me ? "Quelle est votre nationalité ?" : "Quelle est sa nationalité ?"}
+            title={me ? tr("ui.papersQuestions.quelleEstVotreNationalite") : tr("ui.papersQuestions.quelleEstSaNationalite")}
           >
             {choice("Nationalité", (hasAnswered(t, "nat") ? t.nat : "") as Nat, (nat) => update({ nat, answered: mark(t, "nat") }), [
               { value: "bi", label: "Algérien et français (ou autre)", hint: "Binational" },
@@ -294,8 +295,8 @@ export function PapersQuestions({
         <>
           {who}
           <Question
-            title={me ? "Quels papiers algériens avez-vous ?" : "Quels sont ses papiers algériens ?"}
-            hint="Plusieurs réponses possibles. Cochez tout ce qui existe, même expiré."
+            title={me ? tr("ui.papersQuestions.quelsPapiersAlgeriensAvezVous") : tr("ui.papersQuestions.quelsSontSesPapiersAlgeriens")}
+            hint={tr("ui.papersQuestions.plusieursReponsesPossiblesCochezTout")}
           >
             <DzDocsField
               t={t}
@@ -329,8 +330,8 @@ export function PapersQuestions({
           <Question
             title={
               me
-                ? "Avec quel passeport passerez-vous la frontière algérienne ?"
-                : "Avec quel passeport passera-t-il la frontière algérienne ?"
+                ? tr("ui.papersQuestions.avecQuelPasseportPasserezVous")
+                : tr("ui.papersQuestions.avecQuelPasseportPasseraT")
             }
           >
             {choice<DzTravel>(
@@ -363,7 +364,7 @@ export function PapersQuestions({
           {who}
           <Question
             title={`${me ? "Votre" : "Son"} passeport algérien sera-t-il encore valable au retour ?`}
-            hint="La date de fin est sur la page de la photo."
+            hint={tr("ui.papersQuestions.laDateDeFinEst")}
           >
             {choice<DzValid>(
               "Passeport valable au retour",
@@ -416,8 +417,8 @@ export function PapersQuestions({
           <Question
             title={
               me
-                ? "Où en êtes-vous avec le service national algérien ?"
-                : "Où en est-il avec le service national algérien ?"
+                ? tr("ui.papersQuestions.ouEnEtesVousAvec")
+                : tr("ui.papersQuestions.ouEnEstIlAvec")
             }
           >
             {choice<SnStatus>(
@@ -466,7 +467,7 @@ export function PapersQuestions({
         <>
           {who}
           <Question
-            title={me ? "Vous êtes un homme ou une femme ?" : "Un homme ou une femme ?"}
+            title={me ? tr("ui.papersQuestions.vousEtesUnHommeOu") : tr("ui.papersQuestions.unHommeOuUneFemme")}
           >
             {choice("Homme ou femme", (hasAnswered(t, "man") ? (t.man ? "yes" : "no") : "") as "yes" | "no", (v) => update({ man: v === "yes", answered: mark(t, "man") }), [
               { value: "yes", label: "Un homme" },
@@ -487,7 +488,7 @@ export function PapersQuestions({
     if (q.q === "couple")
       body = (
         <Question
-          title="Deux des adultes sont-ils en couple ?"
+          title={tr("ui.papersQuestions.deuxDesAdultesSontIls")}
         >
           {choice<Couple>("Couple", groupValue("couple", answers.couple), (couple) => setGroup("couple", { couple }), [
             { value: "married", label: "Oui, mariés" },
@@ -507,7 +508,7 @@ export function PapersQuestions({
     if (q.q === "transcribed")
       body = (
         <Question
-          title="Le mariage est-il transcrit à l'état civil algérien ?"
+          title={tr("ui.papersQuestions.leMariageEstIlTranscrit")}
         >
           {choice<Answers["transcribed"]>("Mariage transcrit", groupValue("transcribed", answers.transcribed), (transcribed) => setGroup("transcribed", { transcribed }), [
             { value: "yes", label: "Oui" },
@@ -527,7 +528,7 @@ export function PapersQuestions({
     if (q.q === "kidsWith")
       body = (
         <Question
-          title="Avec qui voyagent les enfants ?"
+          title={tr("ui.papersQuestions.avecQuiVoyagentLesEnfants")}
         >
           {choice<KidsWith>("Les enfants voyagent avec", groupValue("kidsWith", answers.kidsWith), (kidsWith) => setGroup("kidsWith", { kidsWith }), [
             { value: "both", label: "Leurs deux parents" },
@@ -548,7 +549,7 @@ export function PapersQuestions({
       );
     if (q.q === "separated")
       body = (
-        <Question title="Les parents sont-ils séparés ou divorcés ?">
+        <Question title={tr("ui.papersQuestions.lesParentsSontIlsSepares")}>
           {choice(
             "Parents séparés",
             groupValue<"yes" | "no">("separated", answers.separated ? "yes" : "no"),
@@ -566,7 +567,7 @@ export function PapersQuestions({
       );
     if (q.q === "custody")
       body = (
-        <Question title="La garde des enfants est-elle confiée à la mère ?">
+        <Question title={tr("ui.papersQuestions.laGardeDesEnfantsEst")}>
           {choice(
             "Garde à la mère",
             groupValue<"yes" | "no">("custody", answers.motherCustody ? "yes" : "no"),

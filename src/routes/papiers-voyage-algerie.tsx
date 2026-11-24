@@ -12,6 +12,7 @@ import {
 import { PapersQuestions } from "@/components/papers/PapersQuestions";
 import { FORMALITES_CHECKED } from "@/content/formalites";
 import { displayDate, seoHead } from "@/lib/seo/site";
+import { tr } from "@/lib/i18n";
 
 const PATH = "/papiers-voyage-algerie";
 
@@ -97,15 +98,14 @@ function PapersPage() {
             />
           ) : null}
           <p className="mt-6 text-sm text-muted-foreground">
-            Une question par écran, sans compte. Vos réponses restent sur cet appareil et
-            reprennent dans{" "}
+            {tr("ui.pagePapiersVoyageAlgerie.uneQuestionParEcranSans")}{" "}
             <a
               href="/preparer-mon-voyage"
               className="font-semibold text-primary underline underline-offset-4"
             >
-              Préparer mon voyage
+              {tr("ui.pagePapiersVoyageAlgerie.preparerMonVoyage")}
             </a>
-            . Règles relues le {displayDate(FORMALITES_CHECKED)}.
+            {tr("ui.pagePapiersVoyageAlgerie.reglesReluesLe")}{displayDate(FORMALITES_CHECKED)}.
           </p>
         </section>
       )}

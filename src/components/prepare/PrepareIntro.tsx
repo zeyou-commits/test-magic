@@ -14,6 +14,7 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
+import { tr } from "@/lib/i18n";
 
 type Slide = {
   key: string;
@@ -138,12 +139,12 @@ export function PrepareIntro({ onBack, onGo }: { onBack: () => void; onGo: () =>
             type="button"
             onClick={onBack}
             className="bw-prepintro__back"
-            aria-label="Revenir à l'accueil"
+            aria-label={tr("ui.prepareIntro.revenirALAccueil")}
           >
             <ArrowLeft size={20} aria-hidden />
           </button>
           {/* Où l'on en est : un trait par diapo, qui se remplit pendant la lecture. */}
-          <div className="bw-onb__bars" role="tablist" aria-label="Les diapos">
+          <div className="bw-onb__bars" role="tablist" aria-label={tr("ui.prepareIntro.lesDiapos")}>
             {slides.map((slide, i) => (
               <button
                 key={slide.key}
@@ -167,7 +168,7 @@ export function PrepareIntro({ onBack, onGo }: { onBack: () => void; onGo: () =>
           </div>
           {index < last ? (
             <button type="button" onClick={onGo} className="bw-onb__skip">
-              Passer
+              {tr("ui.prepareIntro.passer")}
             </button>
           ) : (
             <span className="bw-onb__skip" aria-hidden />
@@ -198,8 +199,8 @@ export function PrepareIntro({ onBack, onGo }: { onBack: () => void; onGo: () =>
                     <RecapPreview
                       example
                       share
-                      title="Le voyage de la famille"
-                      subtitle="Pour Anne, Marc et Sami"
+                      title={tr("ui.prepareIntro.leVoyageDeLaFamille")}
+                      subtitle={tr("ui.prepareIntro.pourAnneMarcEtSami")}
                       rows={exampleRows}
                       filled={i === index ? 3 : 0}
                       fresh={i === index ? "all" : null}
@@ -234,11 +235,11 @@ export function PrepareIntro({ onBack, onGo }: { onBack: () => void; onGo: () =>
         <div className="bw-prepintro__foot">
           {index < last ? (
             <button type="button" onClick={() => go(index + 1)} className="bw-prepintro__go">
-              Suivant <ArrowRight size={19} aria-hidden />
+              {tr("ui.prepareIntro.suivant")}<ArrowRight size={19} aria-hidden />
             </button>
           ) : (
             <button type="button" onClick={onGo} className="bw-prepintro__go bw-onb__start">
-              C'est parti <ArrowRight size={19} aria-hidden />
+              {tr("ui.prepareIntro.cEstParti")}<ArrowRight size={19} aria-hidden />
             </button>
           )}
         </div>

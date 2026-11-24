@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ALGERIA_PHOTOS, LICENSE_URLS, photoSrc } from "@/content/photosAlgerie";
+import { tr } from "@/lib/i18n";
 
 /** Le temps passé sur chaque photo avant la suivante. */
 const DELAY = 5200;
@@ -45,7 +46,7 @@ export function AlgeriaCarousel() {
     <section
       className="bw-algeria"
       aria-roledescription="carrousel"
-      aria-label="L'Algérie en photos"
+      aria-label={tr("ui.algeriaCarousel.lAlgerieEnPhotos")}
       onPointerEnter={(event) => {
         if (event.pointerType === "mouse") setPaused(true);
       }}
@@ -91,7 +92,7 @@ export function AlgeriaCarousel() {
               <span className="bw-algeria__title">{photo.title}</span>
             </figcaption>
             <small className="bw-algeria__credit">
-              Photo{" "}
+              {tr("ui.algeriaCarousel.photo")}{" "}
               <a
                 href={photo.source}
                 target="_blank"
@@ -117,7 +118,7 @@ export function AlgeriaCarousel() {
         type="button"
         className="bw-algeria__nav"
         data-side="prev"
-        aria-label="Photo précédente"
+        aria-label={tr("ui.algeriaCarousel.photoPrecedente")}
         onClick={() => go(index - 1)}
       >
         <ChevronLeft size={20} aria-hidden />
@@ -126,7 +127,7 @@ export function AlgeriaCarousel() {
         type="button"
         className="bw-algeria__nav"
         data-side="next"
-        aria-label="Photo suivante"
+        aria-label={tr("ui.algeriaCarousel.photoSuivante")}
         onClick={() => go(index + 1)}
       >
         <ChevronRight size={20} aria-hidden />

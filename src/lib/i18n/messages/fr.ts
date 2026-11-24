@@ -200,6 +200,7 @@ export const fr = {
     fr: "Français",
     ar: "العربية",
     en: "English",
+    soon: "bientôt",
   },
 } as const;
 

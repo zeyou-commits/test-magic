@@ -7,6 +7,7 @@ import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
 import type { Port, Selection, Vessel } from "@/lib/ferry/types";
 import { CompanyBadge } from "./CompanyBadge";
 import { MiniFerry } from "./MiniFerry";
+import { tr } from "@/lib/i18n";
 
 /** « 22 h » ou « 22 h à 30 h » : seulement des durées publiées. */
 export const durationRange = (min: number | null, max: number | null) =>
@@ -140,7 +141,7 @@ export function LineFigures({ stats, timeZone }: { stats: LineStats; timeZone: s
       label: stats.upcoming > 1 ? "traversées programmées" : "traversée programmée",
       extra: stats.lastAt ? (
         <small>
-          jusqu'au{" "}
+          {tr("ui.lineOverview.jusquAu")}{" "}
           {new Date(stats.lastAt).toLocaleDateString("fr-FR", {
             day: "numeric",
             month: "long",
@@ -188,7 +189,7 @@ export function LineFigures({ stats, timeZone }: { stats: LineStats; timeZone: s
     });
   if (!tiles.length) return null;
   return (
-    <ul className="bw-line-tiles" aria-label="La ligne en chiffres">
+    <ul className="bw-line-tiles" aria-label={tr("ui.lineOverview.laLigneEnChiffres")}>
       {tiles.map((tile) => (
         <li key={tile.key} className="bw-line-tile">
           <span className="bw-line-tile__icon" aria-hidden>

@@ -11,6 +11,7 @@ import { swapDirection, withArrivalPorts, withDeparturePorts } from "@/lib/ferry
 import { isNorthShore, isSouthShore } from "@/lib/ferry/markets";
 import { readTravelProfile, TRAVEL_PROFILE_EVENT } from "@/lib/ferry/travelProfile";
 import type { Filters, Port, RouteLine } from "@/lib/ferry/types";
+import { tr } from "@/lib/i18n";
 
 const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
   weekday: "short",
@@ -80,12 +81,12 @@ export function HomeSearchCard({
 
   return (
     <section id="bw-home-card" className="bw-home-card" aria-labelledby="bw-home-card-title">
-      <h2 id="bw-home-card-title">Réserver une traversée</h2>
+      <h2 id="bw-home-card-title">{tr("ui.homeSearchCard.reserverUneTraversee")}</h2>
       <div className="bw-home-card__modes">
         <div
           className="batogo-tabbar inline-grid grid-cols-2 gap-0.5 !rounded-full !p-0.5"
           role="radiogroup"
-          aria-label="Type de voyage"
+          aria-label={tr("ui.homeSearchCard.typeDeVoyage")}
         >
           {[true, false].map((round) => (
             <button
@@ -103,14 +104,14 @@ export function HomeSearchCard({
               }
               className="batogo-tab !min-h-7 !rounded-full px-3 !text-xs"
             >
-              {round ? "⇄ Aller-retour" : "→ Aller simple"}
+              {round ? tr("ui.homeSearchCard.allerRetour") : tr("ui.homeSearchCard.allerSimple")}
             </button>
           ))}
         </div>
         <button
           type="button"
           className="bw-home-card__swap"
-          title="Inverser le sens"
+          title={tr("ui.homeSearchCard.inverserLeSens")}
           onClick={() => onFiltersChange(swapDirection(filters))}
           aria-label={`Inverser le sens : actuellement ${reversed ? "Algérie → Europe" : "Europe → Algérie"}`}
         >
@@ -119,7 +120,7 @@ export function HomeSearchCard({
       </div>
       <div className="bw-home-card__ports">
         <PortMultiPicker
-          title="Départ"
+          title={tr("ui.homeSearchCard.depart")}
           direction="departure"
           ports={ports}
           routes={routes}
@@ -131,7 +132,7 @@ export function HomeSearchCard({
           onOpenChange={onPortOpenChange("departure")}
         />
         <PortMultiPicker
-          title="Arrivée"
+          title={tr("ui.homeSearchCard.arrivee")}
           direction="arrival"
           ports={ports}
           routes={routes}
@@ -147,7 +148,7 @@ export function HomeSearchCard({
         <button type="button" className="bw-home-card__row" onClick={onDates}>
           <CalendarDays size={18} aria-hidden />
           <span>
-            <small>Quand partez-vous ?</small>
+            <small>{tr("ui.homeSearchCard.quandPartezVous")}</small>
             <strong data-empty={!filters.date || undefined}>{dates}</strong>
           </span>
           <ChevronRight size={18} aria-hidden />
@@ -157,7 +158,7 @@ export function HomeSearchCard({
         <button type="button" className="bw-home-card__row" onClick={onTravellers}>
           <Users size={18} aria-hidden />
           <span>
-            <small>Qui voyage, avec quel véhicule ?</small>
+            <small>{tr("ui.homeSearchCard.quiVoyageAvecQuelVehicule")}</small>
             <strong>{travellers}</strong>
           </span>
           <ChevronRight size={18} aria-hidden />
@@ -166,7 +167,7 @@ export function HomeSearchCard({
       {hasPair ? (
         <button type="button" className="bw-home-card__go" onClick={onShow}>
           <Ship size={18} aria-hidden />
-          Afficher les départs
+          {tr("ui.homeSearchCard.afficherLesDeparts")}
         </button>
       ) : null}
     </section>

@@ -64,6 +64,7 @@ import { displayDate } from "@/lib/seo/site";
 import { RecapSheet } from "@/components/papers/RecapSheet";
 import { TaskLink } from "@/components/papers/TaskLink";
 import { SharePreparation } from "@/components/prepare/SharePreparation";
+import { tr } from "@/lib/i18n";
 
 /**
  * Le parcours « Mes papiers » : questions, liste à cocher, consulat. Seul sur la page des
@@ -127,7 +128,7 @@ export function PapersDelais() {
       <details className="group rounded-xl border">
         <summary className="flex cursor-pointer items-center justify-between gap-3 p-4 md:p-5">
           <h2 id="delais" className="font-display text-xl font-bold">
-            Les délais, démarche par démarche
+            {tr("ui.papersFlow.lesDelaisDemarcheParDemarche")}
           </h2>
           <ChevronDown
             size={18}
@@ -317,7 +318,7 @@ export function DzDocsField({
         })}
         {/* « Aucun » exclut les autres : à part, après un « ou ». */}
         <p className="bw-or" aria-hidden>
-          ou
+          {tr("ui.papersFlow.ou")}
         </p>
         <button
           type="button"
@@ -327,13 +328,13 @@ export function DzDocsField({
           className={row(none)}
         >
           {box(none)}
-          <span className="block font-semibold">Aucun papier algérien</span>
+          <span className="block font-semibold">{tr("ui.papersFlow.aucunPapierAlgerien")}</span>
         </button>
       </div>
       {withTravel && has.includes("passeport") ? (
         <div>
           <p className="font-semibold">
-            {me ? "Pour ce voyage, vous partez avec :" : "Pour ce voyage, départ avec :"}
+            {me ? tr("ui.papersFlow.pourCeVoyageVousPartez") : tr("ui.papersFlow.pourCeVoyageDepartAvec")}
           </p>
           <div className="mt-2">
             <Options
@@ -393,7 +394,7 @@ export function NamesEditor({
                     ),
                   )
                 }
-                placeholder={i === 0 ? "Votre prénom" : "Prénom"}
+                placeholder={i === 0 ? tr("ui.papersFlow.votrePrenom") : tr("ui.papersFlow.prenom")}
                 autoComplete={i === 0 ? "given-name" : "off"}
                 enterKeyHint="next"
               />
@@ -475,7 +476,7 @@ export function HomeFields({
             disabled={locating}
             className="inline-flex min-h-12 items-center justify-center gap-2 self-end rounded-xl border px-4 text-sm font-semibold hover:bg-secondary disabled:opacity-60"
           >
-            <LocateFixed size={16} aria-hidden /> {locating ? "Recherche…" : "Me localiser"}
+            <LocateFixed size={16} aria-hidden /> {locating ? tr("ui.papersFlow.recherche") : tr("ui.papersFlow.meLocaliser")}
           </button>
         </div>
       ) : null}
@@ -493,14 +494,13 @@ export function HomeFields({
           className="mt-4 text-sm font-semibold text-primary underline underline-offset-4"
         >
           {answers.abroad
-            ? "J'habite en France"
-            : "J'habite hors de France (Belgique, Espagne, Allemagne…)"}
+            ? tr("ui.papersFlow.jHabiteEnFrance")
+            : tr("ui.papersFlow.jHabiteHorsDeFrance")}
         </button>
       ) : null}
       {!answers.abroad ? (
         <p className="mt-3 text-xs text-muted-foreground">
-          La ville tapée ou « Me localiser » (position arrondie) ne sont envoyés qu'au service
-          public API Géo, seulement pour trouver votre commune.
+          {tr("ui.papersFlow.laVilleTapeeOuMe")}
         </p>
       ) : null}
     </>
@@ -579,7 +579,7 @@ export function CityField({
       label={label}
       value={query}
       onChange={setQuery}
-      placeholder="Par exemple Marseille ou 13008"
+      placeholder={tr("ui.papersFlow.parExempleMarseilleOu13008")}
       autoComplete="address-level2"
       large
       busy={busy}
@@ -662,19 +662,19 @@ export function GroupStep({ answers, patch }: StepProps) {
   };
   return (
     <Question
-      title="Qui part ?"
-      hint="Vous compris. Chacun peut avoir des papiers différents : on les verra un par un."
+      title={tr("ui.papersFlow.quiPart")}
+      hint={tr("ui.papersFlow.vousComprisChacunPeutAvoir")}
     >
       <div className="grid gap-3">
         <Counter
-          label="Adultes"
+          label={tr("ui.papersFlow.adultes")}
           icon={<User size={20} aria-hidden />}
           value={adults.length}
           min={1}
           onChange={(n) => resize("adult", n)}
         />
         <Counter
-          label="Mineurs (moins de 19 ans)"
+          label={tr("ui.papersFlow.mineursMoinsDe19Ans")}
           icon={<Baby size={20} aria-hidden />}
           value={kids.length}
           min={0}
@@ -685,7 +685,7 @@ export function GroupStep({ answers, patch }: StepProps) {
         className="mt-4"
         source={<SourceLinks ids={["justice-algerie", "be-pratique"]} />}
       >
-        En Algérie, on est mineur jusqu'à 19 ans : compte un jeune de 18 ans parmi les enfants.
+        {tr("ui.papersFlow.enAlgerieOnEstMineur")}
       </BwKnow>
     </Question>
   );
@@ -693,9 +693,9 @@ export function GroupStep({ answers, patch }: StepProps) {
 
 export function StayStep({ answers, patch }: StepProps) {
   return (
-    <Question title="Où logez-vous en Algérie ?">
+    <Question title={tr("ui.papersFlow.ouLogezVousEnAlgerie")}>
       <Options
-        label="Hébergement"
+        label={tr("ui.papersFlow.hebergement")}
         value={(hasAsked(answers, "stay") ? answers.stay : "") as Stay}
         onChange={(stay) => patch({ stay, asked: markAsked(answers, "stay") })}
         options={[
@@ -709,16 +709,13 @@ export function StayStep({ answers, patch }: StepProps) {
         ]}
       />
       <div className="mt-4 grid gap-3">
-        <Bw504Note title="Pourquoi le logement ?">
-          Selon ta réponse, je mets dans ta liste le bon justificatif pour le visa, et le livret
-          de famille si vous êtes un couple marié.
+        <Bw504Note title={tr("ui.papersFlow.pourquoiLeLogement")}>
+          {tr("ui.papersFlow.selonTaReponseJeMets")}
         </Bw504Note>
         <RuleDetails
           sources={["amb-visa", "cons-visa-familial", "justice-algerie", "be-legislation"]}
         >
-          Pour un visa, on prouve où l'on dort : le certificat d'hébergement de la famille, ou la
-          réservation d'hôtel. Certains hôtels ne mettent un couple dans la même chambre que sur
-          preuve du mariage.
+          {tr("ui.papersFlow.pourUnVisaOnProuve")}
         </RuleDetails>
       </div>
     </Question>
@@ -738,7 +735,7 @@ export function RuleDetails({
 }) {
   return (
     <details className="bw-rule">
-      <summary>La règle officielle et ses sources</summary>
+      <summary>{tr("ui.papersFlow.laRegleOfficielleEtSes")}</summary>
       <BwKnow source={<SourceLinks ids={sources} />}>{children}</BwKnow>
     </details>
   );
@@ -830,12 +827,12 @@ export function PapersResult({
     >
       {embedded ? null : (
         <>
-          <p className="text-xs font-bold uppercase tracking-widest text-primary">Mes papiers</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-primary">{tr("ui.papersFlow.mesPapiers")}</p>
           <h1
             id="resultat"
             className="mt-2 font-display text-3xl font-bold leading-tight md:text-5xl"
           >
-            Votre liste de papiers
+            {tr("ui.papersFlow.votreListeDePapiers")}
           </h1>
         </>
       )}
@@ -871,27 +868,27 @@ export function PapersResult({
             <EditMenu answers={answers} onPick={pickEdit} triggerClassName="bw-recap__hbtn" />
           ) : (
             <button type="button" onClick={onEdit} className="bw-recap__hbtn">
-              <Pencil size={14} aria-hidden /> Modifier
+              <Pencil size={14} aria-hidden />{tr("ui.papersFlow.modifier")}
             </button>
           )
         }
         namesSlot={
           patch && naming ? (
             <div className="bw-names-card">
-              <p className="bw-names-card__title">Les prénoms sur votre récap</p>
+              <p className="bw-names-card__title">{tr("ui.papersFlow.lesPrenomsSurVotreRecap")}</p>
               <NamesEditor
                 travellers={answers.travellers}
                 onChange={(travellers) => patch({ travellers })}
               />
               <button type="button" onClick={() => setNaming(false)} className="bw-names-card__ok">
-                <Check size={14} aria-hidden /> C'est bon
+                <Check size={14} aria-hidden />{tr("ui.papersFlow.cEstBon")}
               </button>
             </div>
           ) : patch && !named && answers.travellers.length > 1 ? (
             <button type="button" onClick={() => setNaming(true)} className="bw-names-hint">
               <Pencil size={14} aria-hidden />
               <span>
-                <b>Ajouter les prénoms</b> « pour Sarah » plutôt que « Adulte 2 »
+                <b>{tr("ui.papersFlow.ajouterLesPrenoms")}</b>{tr("ui.papersFlow.pourSarahPlutotQueAdulte")}
               </span>
             </button>
           ) : null
@@ -956,7 +953,7 @@ export function TaskRow({
               {due}
               {first.length && !done ? (
                 <span className="basis-full text-xs font-semibold text-amber-800 dark:text-amber-200">
-                  D'abord : {first.map(lowerFirst).join(", ")}
+                  {tr("ui.papersFlow.dAbord")}{first.map(lowerFirst).join(", ")}
                 </span>
               ) : null}
               {task.who.map((w) => (
@@ -974,16 +971,16 @@ export function TaskRow({
               ) : null}
               {task.advice ? (
                 <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-semibold text-sky-900 dark:bg-sky-900/40 dark:text-sky-100">
-                  Conseil BledWay, pas une règle
+                  {tr("ui.papersFlow.conseilBledwayPasUneRegle")}
                 </span>
               ) : null}
               {task.toConfirm ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-900/40 dark:text-amber-100">
-                  <AlertTriangle size={12} aria-hidden /> À faire confirmer
+                  <AlertTriangle size={12} aria-hidden />{tr("ui.papersFlow.aFaireConfirmer")}
                 </span>
               ) : null}
               <span className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-primary">
-                {open ? "Masquer" : "Pourquoi, comment"}
+                {open ? tr("ui.papersFlow.masquer") : tr("ui.papersFlow.pourquoiComment")}
                 <ChevronDown size={14} className={open ? "rotate-180" : ""} aria-hidden />
               </span>
             </span>
@@ -999,7 +996,7 @@ export function TaskRow({
                 <SourceLinks ids={task.sources} />
               ) : (
                 <p className="text-xs font-semibold">
-                  Aucune source officielle trouvée sur ce point.
+                  {tr("ui.papersFlow.aucuneSourceOfficielleTrouveeSur")}
                 </p>
               )}
             </div>
@@ -1014,7 +1011,7 @@ export function SourceLinks({ ids }: { ids: FormaliteSourceId[] }) {
   const unique = ids.filter((id, i) => ids.indexOf(id) === i);
   return (
     <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
-      <span className="text-muted-foreground">Source :</span>
+      <span className="text-muted-foreground">{tr("ui.papersFlow.source")}</span>
       {unique.map((id) => (
         <a
           key={id}
@@ -1026,7 +1023,7 @@ export function SourceLinks({ ids }: { ids: FormaliteSourceId[] }) {
         >
           {formaliteSources[id].short}
           <ExternalLink size={11} aria-hidden />
-          <span className="sr-only">(nouvel onglet)</span>
+          <span className="sr-only">{tr("ui.papersFlow.nouvelOnglet")}</span>
         </a>
       ))}
     </p>
@@ -1085,7 +1082,7 @@ function EditMenu({
           "inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 font-semibold hover:bg-secondary"
         }
       >
-        <Pencil size={14} aria-hidden /> Modifier
+        <Pencil size={14} aria-hidden />{tr("ui.papersFlow.modifier")}
         <ChevronDown size={14} className={open ? "rotate-180" : ""} aria-hidden />
       </button>
       {open ? (
@@ -1130,11 +1127,10 @@ export function ConsulateWhere({
   return (
     <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3">
       <p className="flex items-center gap-1.5 text-sm font-bold">
-        <MapPin size={15} className="text-primary" aria-hidden /> Où faire cette démarche ?
+        <MapPin size={15} className="text-primary" aria-hidden />{tr("ui.papersFlow.ouFaireCetteDemarche")}
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
-        Au consulat d'Algérie dont dépend votre domicile. Indiquez votre ville : son adresse et le lien
-        de rendez-vous s'affichent ici.
+        {tr("ui.papersFlow.auConsulatDAlgerieDont")}
       </p>
       {patch ? (
         <div className="mt-2">
@@ -1154,7 +1150,7 @@ export function ConsulatCard({
 }) {
   return (
     <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
-      <p className="text-xs font-bold uppercase tracking-widest text-primary">Votre consulat</p>
+      <p className="text-xs font-bold uppercase tracking-widest text-primary">{tr("ui.papersFlow.votreConsulat")}</p>
       <p className="mt-1 font-display text-lg font-bold">{consulat.name}</p>
       {!compact ? (
         <>
@@ -1179,7 +1175,7 @@ export function ConsulatCard({
               className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
             >
               <CalendarDays size={15} aria-hidden />
-              {consulat.rdv ? "Prendre rendez-vous" : "Site et rendez-vous"}{" "}
+              {consulat.rdv ? tr("ui.papersFlow.prendreRendezVous") : tr("ui.papersFlow.siteEtRendezVous")}{" "}
               <ExternalLink size={14} aria-hidden />
             </a>
             {consulat.rdv ? (
@@ -1189,7 +1185,7 @@ export function ConsulatCard({
                 rel="noreferrer"
                 className="inline-flex min-h-11 items-center gap-2 rounded-xl border bg-background px-4 text-sm font-semibold hover:bg-secondary"
               >
-                Site du consulat <ExternalLink size={14} aria-hidden />
+                {tr("ui.papersFlow.siteDuConsulat")}<ExternalLink size={14} aria-hidden />
               </a>
             ) : null}
             <a
@@ -1198,18 +1194,18 @@ export function ConsulatCard({
               rel="noreferrer"
               className="inline-flex min-h-11 items-center gap-2 rounded-xl border bg-background px-4 text-sm font-semibold hover:bg-secondary"
             >
-              Itinéraire <ExternalLink size={14} aria-hidden />
+              {tr("ui.papersFlow.itineraire")}<ExternalLink size={14} aria-hidden />
             </a>
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            Ouvert du mardi au samedi ; passeports, cartes d'identité et visas sur rendez-vous.{" "}
+            {tr("ui.papersFlow.ouvertDuMardiAuSamedi")}{" "}
             <a
               href={formaliteSources["amb-consulats"].url}
               target="_blank"
               rel="noreferrer"
               className="underline"
             >
-              Source : ambassade d'Algérie
+              {tr("ui.papersFlow.sourceAmbassadeDAlgerie")}
             </a>
           </p>
         </>
@@ -1223,7 +1219,7 @@ export function ConsulatCard({
             className="mt-2 inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-primary px-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
           >
             <CalendarDays size={15} aria-hidden />
-            {consulat.rdv ? "Prendre rendez-vous" : "Site du consulat (rendez-vous)"}
+            {consulat.rdv ? tr("ui.papersFlow.prendreRendezVous") : tr("ui.papersFlow.siteDuConsulatRendezVous")}
             <ExternalLink size={13} aria-hidden />
           </a>
         </>
@@ -1235,10 +1231,9 @@ export function ConsulatCard({
 export function AbroadCard() {
   return (
     <div className="rounded-xl border p-4 text-sm">
-      <p className="font-semibold">Hors de France : le consulat d'Algérie de votre pays</p>
+      <p className="font-semibold">{tr("ui.papersFlow.horsDeFranceLeConsulat")}</p>
       <p className="mt-1 text-muted-foreground">
-        Les démarches se font auprès de l'ambassade ou du consulat d'Algérie de votre pays de
-        résidence. La liste officielle est tenue par le ministère algérien des Affaires étrangères.
+        {tr("ui.papersFlow.lesDemarchesSeFontAupres")}
       </p>
       <a
         href={formaliteSources["mfa-representations"].url}
@@ -1246,7 +1241,7 @@ export function AbroadCard() {
         rel="noreferrer"
         className={`${textLink} mt-2 inline-flex items-center gap-1`}
       >
-        Trouver la représentation de mon pays <ExternalLink size={13} aria-hidden />
+        {tr("ui.papersFlow.trouverLaRepresentationDeMon")}<ExternalLink size={13} aria-hidden />
       </a>
     </div>
   );
@@ -1255,9 +1250,9 @@ export function AbroadCard() {
 export function Sources() {
   return (
     <section id="sources" className="mt-10 border-t pt-6">
-      <h2 className="font-display text-xl font-bold">Sources officielles</h2>
+      <h2 className="font-display text-xl font-bold">{tr("ui.papersFlow.sourcesOfficielles")}</h2>
       <p className="mt-2 text-sm text-muted-foreground">
-        Pages consultées le{" "}
+        {tr("ui.papersFlow.pagesConsulteesLe")}{" "}
         <time dateTime={FORMALITES_CHECKED}>{displayDate(FORMALITES_CHECKED)}</time>.
       </p>
       <ul className="mt-4 space-y-2">
@@ -1277,15 +1272,15 @@ export function Sources() {
       </ul>
       <p className="mt-5 text-sm">
         <a href="/vehicules-moins-3-ans" className={textLink}>
-          Les papiers de la voiture
+          {tr("ui.papersFlow.lesPapiersDeLaVoiture")}
         </a>{" "}
         ·{" "}
         <a href="/voyage-algerie" className={textLink}>
-          Le guide du voyage
+          {tr("ui.papersFlow.leGuideDuVoyage")}
         </a>{" "}
         ·{" "}
         <a href="/contact" className={textLink}>
-          Signaler une règle qui a changé
+          {tr("ui.papersFlow.signalerUneRegleQuiA")}
         </a>
       </p>
     </section>

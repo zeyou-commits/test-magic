@@ -11,6 +11,7 @@ import {
   Ticket,
   type LucideIcon,
 } from "lucide-react";
+import { tr } from "@/lib/i18n";
 
 type Screen = {
   key: string;
@@ -151,16 +152,16 @@ export function HomeTour() {
     <section ref={root} className="bw-container bw-tour" data-reveal aria-labelledby="tour-title">
       <div className="bw-section-heading">
         <div>
-          <p className="bw-eyebrow">Après la réservation</p>
+          <p className="bw-eyebrow">{tr("ui.homeTour.apresLaReservation")}</p>
           <h2 id="tour-title">
-            Des papiers au débarquement, <em>tout se suit ici.</em>
+            {tr("ui.homeTour.desPapiersAuDebarquement")}<em>{tr("ui.homeTour.toutSeSuitIci")}</em>
           </h2>
         </div>
         <button
           type="button"
           className="bw-tour__pause"
           onClick={() => setStopped((value) => !value)}
-          aria-label={stopped ? "Reprendre le défilement" : "Mettre le défilement en pause"}
+          aria-label={stopped ? tr("ui.homeTour.reprendreLeDefilement") : tr("ui.homeTour.mettreLeDefilementEnPause")}
         >
           {stopped ? <Play size={14} aria-hidden /> : <Pause size={14} aria-hidden />}
         </button>
@@ -177,7 +178,7 @@ export function HomeTour() {
           ref={listRef}
           className="bw-tour__list"
           role="tablist"
-          aria-label="Les écrans de BledWay"
+          aria-label={tr("ui.homeTour.lesEcransDeBledway")}
         >
           {SCREENS.map((screen, index) => {
             const selected = index === active;
@@ -252,7 +253,7 @@ export function HomeTour() {
                 <i />
                 <i />
                 <i />
-                <span>bledway.com</span>
+                <span>{tr("ui.homeTour.bledwayCom")}</span>
               </span>
               <div className="bw-tour__shots bw-tour__shots--desktop">
                 {DESKTOP.map((shot, index) => {
@@ -311,7 +312,7 @@ export function HomeTour() {
           </p>
         </div>
       </div>
-      <p className="bw-tour__note">Captures réelles de l'application BledWay.</p>
+      <p className="bw-tour__note">{tr("ui.homeTour.capturesReellesDeLApplication")}</p>
     </section>
   );
 }

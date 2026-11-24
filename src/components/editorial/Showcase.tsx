@@ -10,6 +10,7 @@ import type { Company, Departure, Port, RouteLine, Vessel } from "@/lib/ferry/ty
 import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { VesselThumb } from "@/components/panel/LineOverview";
 import { VesselAlertTag } from "@/components/panel/VesselAlert";
+import { tr } from "@/lib/i18n";
 
 /*
  * Grammaire commune des pages publiques Ligne, Port et Navire :
@@ -265,11 +266,11 @@ export function DepartureRows({
                   ) : null}
                   {cancelled ? (
                     <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-bold text-destructive">
-                      Annulé
+                      {tr("ui.showcase.annule")}
                     </span>
                   ) : departure.status === "modified" ? (
                     <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">
-                      Modifié
+                      {tr("ui.showcase.modifie")}
                     </span>
                   ) : null}
                 </span>
@@ -283,7 +284,7 @@ export function DepartureRows({
                     <CompanyBadge name={company.name} logoUrl={company.logo_url} size={18} />
                   ) : null}
                   <span className="truncate">
-                    {company?.name ?? "Compagnie à confirmer"}
+                    {company?.name ?? tr("ui.showcase.compagnieAConfirmer")}
                     {vessel ? ` · ${vessel.name}` : ""}
                   </span>
                   <VesselAlertTag vesselId={vessel?.id} />
@@ -345,7 +346,7 @@ export function PortTile({
               {caption}
             </span>
           ) : null}
-          <span className="block font-display text-xl font-bold">Port {deName(port.name)}</span>
+          <span className="block font-display text-xl font-bold">{tr("ui.showcase.port")}{deName(port.name)}</span>
           <span className="flex items-center gap-1 text-sm text-white/80">
             <MapPin className="size-3.5" aria-hidden /> {port.city ?? port.name},{" "}
             {port.country_name}

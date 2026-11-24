@@ -10,6 +10,7 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
+import { tr } from "@/lib/i18n";
 
 export type SceneKey = "bonjour" | "depart" | "papiers" | "route";
 
@@ -86,7 +87,7 @@ export function Scene({ name }: { name: SceneKey }) {
         <Char src={perso("papa")} size={30} style={at(8, 34, 1)} />
         <Char src={perso("maman")} size={33} style={at(34, 28, 2)} />
         <Char src={perso("lina")} size={26} style={at(64, 42, 3)} />
-        <Bubble icon={CalendarDays} label="12 juil." style={at(6, 8, 4)} />
+        <Bubble icon={CalendarDays} label={tr("ui.introScenes.t12Juil")} style={at(6, 8, 4)} />
         <Bubble icon={Luggage} style={at(78, 12, 5)} tone="gold" />
       </>
     );
@@ -96,15 +97,15 @@ export function Scene({ name }: { name: SceneKey }) {
         <span className="bw-sc__floor" aria-hidden />
         <span className="bw-sc__doc" data-kind="passport" style={at(10, 22, 1)} aria-hidden>
           <i />
-          <small>Passeport</small>
+          <small>{tr("ui.introScenes.passeport")}</small>
         </span>
         <span className="bw-sc__doc" data-kind="visa" style={at(66, 18, 2)} aria-hidden>
           <Stamp size={18} />
-          <small>Visa</small>
+          <small>{tr("ui.introScenes.visa")}</small>
         </span>
         <Char src={perso("jedda")} size={36} style={at(32, 30, 3)} />
         <Bubble icon={BadgeCheck} style={at(76, 60, 4)} tone="blue" />
-        <Bubble icon={FileText} label="31 mai" style={at(4, 66, 5)} tone="rose" />
+        <Bubble icon={FileText} label={tr("ui.introScenes.t31Mai")} style={at(4, 66, 5)} tone="rose" />
       </>
     );
   else if (name === "route")
@@ -130,8 +131,8 @@ export function Scene({ name }: { name: SceneKey }) {
         <span className="bw-sc__pin" aria-hidden>
           <MapPin size={20} />
         </span>
-        <Bubble icon={Wallet} label="Budget" style={at(6, 8, 3)} tone="gold" />
-        <Bubble icon={Ticket} label="Billet" style={at(64, 8, 4)} />
+        <Bubble icon={Wallet} label={tr("ui.introScenes.budget")} style={at(6, 8, 3)} tone="gold" />
+        <Bubble icon={Ticket} label={tr("ui.introScenes.billet")} style={at(64, 8, 4)} />
       </>
     );
   return (

@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { type AcceptResult, companyAccessKeys, companyAccessRequest } from "@/lib/company/access";
+import { tr } from "@/lib/i18n";
 
 export const Route = createFileRoute("/rejoindre-compagnie")({
   head: () => ({
@@ -131,33 +132,31 @@ function JoinCompanyPage() {
       <div className="mt-2 flex flex-wrap justify-center gap-2">
         {actions}
         <Link to="/" className="bw-action-secondary inline-flex">
-          Retour au site
+          {tr("ui.pageRejoindreCompagnie.retourAuSite")}
         </Link>
       </div>
     </main>
   );
 
-  if (loading || code === undefined) return shell("Espace compagnie", <p>Chargement…</p>);
+  if (loading || code === undefined) return shell("Espace compagnie", <p>{tr("ui.pageRejoindreCompagnie.chargement")}</p>);
   if (!code)
     return shell(
       "Lien incomplet",
       <p>
-        Ouvrez le lien d'invitation reçu de BledWay en entier, depuis le message où il vous a été
-        envoyé.
+        {tr("ui.pageRejoindreCompagnie.ouvrezLeLienDInvitation")}
       </p>,
     );
   if (!user)
     return shell(
       "Rejoindre un espace compagnie",
       <>
-        <p>BledWay vous invite à rejoindre l'espace de votre compagnie.</p>
+        <p>{tr("ui.pageRejoindreCompagnie.bledwayVousInviteARejoindre")}</p>
         <p>
-          Connectez-vous, ou créez votre compte, avec l'adresse e-mail à laquelle vous avez reçu ce
-          lien. Revenez ensuite sur cette page.
+          {tr("ui.pageRejoindreCompagnie.connectezVousOuCreezVotre")}
         </p>
       </>,
       <a href="/auth?next=%2Frejoindre-compagnie" className="bw-action-primary inline-flex">
-        Se connecter ou créer un compte
+        {tr("ui.pageRejoindreCompagnie.seConnecterOuCreerUn")}
       </a>,
     );
 
@@ -170,7 +169,7 @@ function JoinCompanyPage() {
         className="bw-action-primary inline-flex"
         onClick={() => accept.mutate()}
       >
-        Réessayer
+        {tr("ui.pageRejoindreCompagnie.reessayer")}
       </button>,
     );
   if (accept.data) {
@@ -187,7 +186,7 @@ function JoinCompanyPage() {
           href={`/espace-compagnie${accept.data.companyId ? `?c=${accept.data.companyId}` : ""}`}
           className="bw-action-primary inline-flex"
         >
-          Ouvrir l'espace compagnie
+          {tr("ui.pageRejoindreCompagnie.ouvrirLEspaceCompagnie")}
         </a>
       ) : accept.data.result === "wrong_account" ? (
         <button
@@ -195,7 +194,7 @@ function JoinCompanyPage() {
           className="bw-action-primary inline-flex"
           onClick={() => void signOut()}
         >
-          Se déconnecter
+          {tr("ui.pageRejoindreCompagnie.seDeconnecter")}
         </button>
       ) : null,
     );
@@ -204,11 +203,10 @@ function JoinCompanyPage() {
     "Rejoindre un espace compagnie",
     <>
       <p>
-        Compte connecté : <strong className="text-foreground">{user.email}</strong>.
+        {tr("ui.pageRejoindreCompagnie.compteConnecte")}<strong className="text-foreground">{user.email}</strong>.
       </p>
       <p>
-        En acceptant, ce compte personnel aura accès à l'espace de votre compagnie sur BledWay.
-        BledWay peut modifier ou retirer cet accès.
+        {tr("ui.pageRejoindreCompagnie.enAcceptantCeComptePersonnel")}
       </p>
     </>,
     <button
@@ -217,7 +215,7 @@ function JoinCompanyPage() {
       disabled={accept.isPending}
       onClick={() => accept.mutate()}
     >
-      {accept.isPending ? "Vérification…" : "Accepter l'invitation"}
+      {accept.isPending ? tr("ui.pageRejoindreCompagnie.verification") : tr("ui.pageRejoindreCompagnie.accepterLInvitation")}
     </button>,
   );
 }

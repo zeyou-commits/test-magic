@@ -33,6 +33,7 @@ import {
   TOLL_EURO_PER_KM,
   type CompanionPlan,
 } from "@/lib/ferry/companion";
+import { tr } from "@/lib/i18n";
 
 export { FUEL_EURO_PER_L, FUEL_L_PER_100, TOLL_EURO_PER_KM };
 
@@ -286,8 +287,7 @@ export function RouteTop3({
   if (!destinationPoint)
     return (
       <p className="bw-route__empty">
-        Ajoutez votre ville au bled, ou choisissez un port d'arrivée, pour voir vos trajets porte à
-        porte.
+        {tr("ui.routeTop3.ajoutezVotreVilleAuBled")}
       </p>
     );
 
@@ -302,25 +302,25 @@ export function RouteTop3({
   return (
     <section ref={section} aria-labelledby="top3-title" className="bw-route__top scroll-mt-4">
       <h3 id="top3-title" className="bw-route__h">
-        {top.length > 1 ? `Vos ${top.length} meilleurs trajets` : "Votre trajet"}
-        <span>porte à porte · {monthLabel}</span>
+        {top.length > 1 ? `Vos ${top.length} meilleurs trajets` : tr("ui.routeTop3.votreTrajet")}
+        <span>{tr("ui.routeTop3.porteAPorte")}{monthLabel}</span>
       </h3>
       {road.isPending || (road.isFetching && !top.length) ? (
         <RouteLoading month={monthLabel} destination={destinationLabel} />
       ) : road.isError ? (
         <p className="bw-route__empty">
-          Le calcul de la route n'a pas abouti.{" "}
+          {tr("ui.routeTop3.leCalculDeLaRoute")}{" "}
           <button
             type="button"
             onClick={() => void road.refetch()}
             className="font-semibold text-primary underline underline-offset-4"
           >
-            Réessayer
+            {tr("ui.routeTop3.reessayer")}
           </button>
         </p>
       ) : !top.length ? (
         <p className="bw-route__empty">
-          Aucune traversée atteignable sur cette période. Voyez les autres dates sur la carte.
+          {tr("ui.routeTop3.aucuneTraverseeAtteignableSurCette")}
         </p>
       ) : (
         <ol className="grid gap-2">
@@ -348,7 +348,7 @@ export function RouteTop3({
       )}
       {estimated ? (
         <p className="bw-route__note">
-          Horaires pas encore publiés pour cette période : heures et durées estimées.
+          {tr("ui.routeTop3.horairesPasEncorePubliesPour")}
         </p>
       ) : null}
     </section>
@@ -471,7 +471,7 @@ function RouteCard({
           </span>
           <span className="bw-rcard__total">
             <strong>{formatDuration(option.totalMinutes)}</strong>
-            <span>porte à porte</span>
+            <span>{tr("ui.routeTop3.porteAPorte2")}</span>
           </span>
         </span>
         <span className="bw-rcard__bar" aria-hidden>
@@ -495,7 +495,7 @@ function RouteCard({
         </span>
       </button>
       <button type="button" aria-expanded={open} onClick={onToggle} className="bw-rcard__more">
-        {open ? "Masquer le détail" : "Heure par heure"}
+        {open ? tr("ui.routeTop3.masquerLeDetail") : tr("ui.routeTop3.heureParHeure")}
         <ChevronDown
           size={14}
           aria-hidden

@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Bw504Note } from "@/components/companion/Bw504Note";
+import { tr } from "@/lib/i18n";
 
 /**
  * Avant de modifier une étape déjà validée, quand la modification change la suite (voyageurs,
@@ -35,7 +36,7 @@ export function ConfirmChange({
       <button
         type="button"
         className="bw-recap-sheet__scrim"
-        aria-label="Annuler"
+        aria-label={tr("ui.confirmChange.annuler")}
         tabIndex={-1}
         onClick={onCancel}
       />
@@ -51,7 +52,7 @@ export function ConfirmChange({
         <Bw504Note title={title}>{children}</Bw504Note>
         <div className="bw-confirm__acts">
           <button type="button" className="bw-confirm__no" onClick={onCancel}>
-            Garder tel quel
+            {tr("ui.confirmChange.garderTelQuel")}
           </button>
           <button type="button" className="bw-recap-sheet__cta" onClick={onConfirm}>
             {confirmLabel}

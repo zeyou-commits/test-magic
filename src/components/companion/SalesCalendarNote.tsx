@@ -3,6 +3,7 @@ import { BellRing, Check, ChevronDown, CircleCheck, Hourglass } from "lucide-rea
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { longDay, type CompanyCalendar } from "@/lib/companion/salesCalendar";
+import { tr } from "@/lib/i18n";
 
 const shortDay = (key: string) =>
   new Date(`${key}T00:00:00Z`).toLocaleDateString("fr-FR", {
@@ -91,7 +92,7 @@ export function SalesCalendarNote({
     <section
       className="bw-salescal"
       data-open={open || undefined}
-      aria-label="Calendriers de vente des compagnies"
+      aria-label={tr("ui.salesCalendarNote.calendriersDeVenteDesCompagnies")}
     >
       <button
         type="button"
@@ -102,10 +103,10 @@ export function SalesCalendarNote({
       >
         <Hourglass className="size-4 shrink-0" aria-hidden />
         <span className="min-w-0 flex-1">
-          <b>{who}</b> : pas encore en vente pour le {longDay(last)}
+          <b>{who}</b>{tr("ui.salesCalendarNote.pasEncoreEnVentePour")}{longDay(last)}
         </span>
         <span className="bw-salescal__cta">
-          {open ? "Masquer" : "Me prévenir"}
+          {open ? tr("ui.salesCalendarNote.masquer") : tr("ui.salesCalendarNote.mePrevenir")}
           <ChevronDown
             className={`size-3.5 transition-transform motion-reduce:transition-none ${open ? "rotate-180" : ""}`}
             aria-hidden
@@ -115,10 +116,10 @@ export function SalesCalendarNote({
       {open ? (
       <div id={bodyId} className="bw-salescal__body">
       <p className="bw-salescal__text">
-        Les compagnies ouvrent leurs ventes par saison.{" "}
+        {tr("ui.salesCalendarNote.lesCompagniesOuvrentLeursVentes")}{" "}
         {anyEstimated
-          ? "Au-delà, BledWay montre un calendrier théorique : la rotation habituelle des navires, marquée « Estimé ». Les jours et les heures peuvent changer à l'ouverture des ventes."
-          : "Au-delà de ces dates, aucun départ n'est encore publié : rien n'est perdu, la saison n'est simplement pas ouverte."}
+          ? tr("ui.salesCalendarNote.auDelaBledwayMontreUn")
+          : tr("ui.salesCalendarNote.auDelaDeCesDates")}
       </p>
       <ul className="bw-salescal__list">
         {calendars.map((item) => (
@@ -133,23 +134,23 @@ export function SalesCalendarNote({
               <small>
                 {item.commercialUntil
                   ? `En vente jusqu'au ${shortDay(item.commercialUntil)}`
-                  : "Rien en vente sur ces ports"}
+                  : tr("ui.salesCalendarNote.rienEnVenteSurCes")}
                 {item.estimatedUntil ? ` · estimé jusqu'au ${shortDay(item.estimatedUntil)}` : ""}
               </small>
             </span>
-            <em>{item.coversDates ? "En vente" : "Pas encore"}</em>
+            <em>{item.coversDates ? tr("ui.salesCalendarNote.enVente") : tr("ui.salesCalendarNote.pasEncore")}</em>
           </li>
         ))}
       </ul>
       {state === "done" ? (
         <p className="bw-salescal__done">
-          <Check className="size-4" aria-hidden /> C'est noté : on te prévient dès que{" "}
-          {picked.length > 1 ? "ces compagnies ouvrent" : "cette compagnie ouvre"} ses ventes pour tes dates.
+          <Check className="size-4" aria-hidden />{tr("ui.salesCalendarNote.cEstNoteOnTe")}{" "}
+          {picked.length > 1 ? tr("ui.salesCalendarNote.cesCompagniesOuvrent") : tr("ui.salesCalendarNote.cetteCompagnieOuvre")}{tr("ui.salesCalendarNote.sesVentesPourTesDates")}
         </p>
       ) : (
         <div className="bw-salescal__form">
           <p className="bw-salescal__ask">
-            <BellRing className="size-4 shrink-0" aria-hidden /> Être prévenu à l'ouverture des ventes de :
+            <BellRing className="size-4 shrink-0" aria-hidden />{tr("ui.salesCalendarNote.etrePrevenuALOuverture")}
           </p>
           <div className="bw-salescal__chips">
             {waiting.map((item) => {
@@ -178,7 +179,7 @@ export function SalesCalendarNote({
               disabled={!picked.length || state === "sending"}
               className="h-10 rounded-xl bg-primary px-3 text-sm font-bold text-primary-foreground disabled:opacity-50"
             >
-              {state === "sending" ? "…" : "Me prévenir"}
+              {state === "sending" ? "…" : tr("ui.salesCalendarNote.mePrevenir")}
             </button>
           ) : (
             <>
@@ -188,17 +189,16 @@ export function SalesCalendarNote({
                 )}`}
                 className="grid h-10 place-items-center rounded-xl bg-primary px-3 text-sm font-bold text-primary-foreground"
               >
-                Créer mon compte gratuit pour être prévenu
+                {tr("ui.salesCalendarNote.creerMonCompteGratuitPour")}
               </a>
               <p className="text-[11px] text-muted-foreground">
-                Avec un compte, l'alerte arrive sur ton téléphone et par e-mail, et tes recherches te
-                suivent. Tu reviens ici juste après.
+                {tr("ui.salesCalendarNote.avecUnCompteLAlerte")}
               </p>
             </>
           )}
           {state === "error" ? (
             <p className="text-xs font-semibold text-destructive">
-              L'envoi n'a pas marché. Réessaie dans un instant.
+              {tr("ui.salesCalendarNote.lEnvoiNAPas")}
             </p>
           ) : null}
         </div>

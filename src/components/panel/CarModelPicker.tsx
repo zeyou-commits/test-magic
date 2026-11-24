@@ -6,6 +6,7 @@ import { searchCarModels } from "@/lib/directferries/functions";
 import { loadFromAccessories, type CarModel } from "@/lib/directferries/quote";
 import { useDirectFerriesEnabled } from "./LiveFare";
 import type { TripProfileValue } from "./TripProfile";
+import { tr } from "@/lib/i18n";
 
 const metres = (cm: number | null) =>
   cm == null ? "?" : `${(cm / 100).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m`;
@@ -60,13 +61,13 @@ export function CarModelPicker({
               {car.make} {car.model}
             </span>
             <span className="block text-[11px] text-muted-foreground">
-              Longueur {metres(car.length)} · hauteur {metres(car.height)}
+              {tr("ui.carModelPicker.longueur")}{metres(car.length)}{tr("ui.carModelPicker.hauteur")}{metres(car.height)}
             </span>
           </span>
           <button
             type="button"
             onClick={() => onChange({ ...value, car: null, load: null })}
-            aria-label="Retirer ce modèle"
+            aria-label={tr("ui.carModelPicker.retirerCeModele")}
             className="grid size-8 place-items-center rounded-full border border-border hover:bg-muted"
           >
             <X className="size-3.5" aria-hidden />
@@ -74,7 +75,7 @@ export function CarModelPicker({
         </div>
         <div className="grid grid-cols-2 gap-2">
           <label className="text-[11px] font-semibold text-muted-foreground">
-            Ajouté sur le toit (cm)
+            {tr("ui.carModelPicker.ajouteSurLeToitCm")}
             <input
               type="number"
               inputMode="numeric"
@@ -86,7 +87,7 @@ export function CarModelPicker({
             />
           </label>
           <label className="text-[11px] font-semibold text-muted-foreground">
-            Ajouté à l'arrière (cm)
+            {tr("ui.carModelPicker.ajouteALArriereCm")}
             <input
               type="number"
               inputMode="numeric"
@@ -100,9 +101,8 @@ export function CarModelPicker({
         </div>
         <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
           <Ruler className="size-3.5 shrink-0" aria-hidden />
-          Chargée : {metres(car.length == null ? null : car.length + load.extraLength)} de long,{" "}
-          {metres(car.height == null ? null : car.height + load.extraHeight)} de haut. Mesurez
-          galerie et bagages compris : la compagnie contrôle au port.
+          {tr("ui.carModelPicker.chargee")}{metres(car.length == null ? null : car.length + load.extraLength)}{tr("ui.carModelPicker.deLong")}{" "}
+          {metres(car.height == null ? null : car.height + load.extraHeight)}{tr("ui.carModelPicker.deHautMesurezGalerieEt")}
         </p>
       </div>
     );
@@ -116,9 +116,9 @@ export function CarModelPicker({
       >
         <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
         <span>
-          <span className="block font-semibold">Préciser ma voiture (facultatif)</span>
+          <span className="block font-semibold">{tr("ui.carModelPicker.preciserMaVoitureFacultatif")}</span>
           <span className="block text-[11px] text-muted-foreground">
-            Marque et modèle, pour un prix au plus juste
+            {tr("ui.carModelPicker.marqueEtModelePourUn")}
           </span>
         </span>
       </button>
@@ -129,29 +129,29 @@ export function CarModelPicker({
     <div className="space-y-1.5 rounded-xl border border-border bg-background p-2">
       <label className="flex items-center gap-2 rounded-lg bg-card px-2">
         <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-        <span className="sr-only">Marque puis modèle</span>
+        <span className="sr-only">{tr("ui.carModelPicker.marquePuisModele")}</span>
         <input
           autoFocus
           value={text}
           onChange={(event) => setText(event.target.value)}
-          placeholder="Ex. : Peugeot 308, Dacia Duster"
+          placeholder={tr("ui.carModelPicker.exPeugeot308DaciaDuster")}
           className="h-9 min-w-0 flex-1 bg-transparent text-sm outline-none"
         />
-        <button type="button" onClick={() => setOpen(false)} aria-label="Fermer la recherche">
+        <button type="button" onClick={() => setOpen(false)} aria-label={tr("ui.carModelPicker.fermerLaRecherche")}>
           <X className="size-4 text-muted-foreground" aria-hidden />
         </button>
       </label>
       {results.isFetching ? (
         <p className="flex items-center gap-1.5 px-2 py-1 text-[11px] text-muted-foreground">
-          <Loader2 className="size-3.5 animate-spin" aria-hidden /> Recherche…
+          <Loader2 className="size-3.5 animate-spin" aria-hidden />{tr("ui.carModelPicker.recherche")}
         </p>
       ) : query.length >= 2 && !models.length ? (
         <p className="px-2 py-1 text-[11px] text-muted-foreground">
-          Aucun modèle trouvé. Commencez par la marque, puis le modèle.
+          {tr("ui.carModelPicker.aucunModeleTrouveCommencezPar")}
         </p>
       ) : null}
       {models.length ? (
-        <ul className="max-h-56 overflow-y-auto" role="listbox" aria-label="Modèles trouvés">
+        <ul className="max-h-56 overflow-y-auto" role="listbox" aria-label={tr("ui.carModelPicker.modelesTrouves")}>
           {models.map((model) => (
             <li key={`${model.makeModelId}-${model.model}`}>
               <button

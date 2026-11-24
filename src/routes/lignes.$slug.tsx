@@ -46,6 +46,7 @@ import { lineStats } from "@/lib/ferry/lineStats";
 import { lineBenchmark, seasonFares, weeklyPace } from "@/lib/ferry/showcase";
 import { portTimeZone, zoneLabel } from "@/lib/ferry/time";
 import { safeExternalUrl } from "@/components/panel/shared";
+import { tr } from "@/lib/i18n";
 
 export const Route = createFileRoute("/lignes/$slug")({
   loader: async ({ context, params }) => {
@@ -300,11 +301,11 @@ function LignePage() {
             {next ? (
               <span className={heroChip}>
                 <span className="size-2 rounded-full bg-[#0e7a43]" aria-hidden />
-                Prochain départ : {formatDate(next.departure_at, timeZone)}
+                {tr("ui.pageLignesSlug.prochainDepart")}{formatDate(next.departure_at, timeZone)}
               </span>
             ) : null}
-            {route.distance_km ? <span className={heroChip}>{route.distance_km} km</span> : null}
-            <span className={heroChip}>Heures en {zoneLabel(timeZone)}</span>
+            {route.distance_km ? <span className={heroChip}>{route.distance_km}{tr("ui.pageLignesSlug.km")}</span> : null}
+            <span className={heroChip}>{tr("ui.pageLignesSlug.heuresEn")}{zoneLabel(timeZone)}</span>
           </>
         }
         actions={
@@ -314,11 +315,11 @@ function LignePage() {
               search={{ select: "route", id: route.id } as never}
               className={heroPrimary}
             >
-              <MapIcon className="size-4" aria-hidden /> Suivre la ligne sur la carte
+              <MapIcon className="size-4" aria-hidden />{tr("ui.pageLignesSlug.suivreLaLigneSurLa")}
             </Link>
             {reverse ? (
               <Link to="/lignes/$slug" params={{ slug: reverse.slug }} className={heroSecondary}>
-                <ArrowLeftRight className="size-4" aria-hidden /> Sens inverse : {toName} →{" "}
+                <ArrowLeftRight className="size-4" aria-hidden />{tr("ui.pageLignesSlug.sensInverse")}{toName} →{" "}
                 {fromName}
               </Link>
             ) : null}
@@ -344,14 +345,13 @@ function LignePage() {
       <section className="mt-12" aria-labelledby="prochains-departs">
         <SectionTitle
           id="prochains-departs"
-          overline="Calendrier"
-          title="Prochains départs"
+          overline={tr("ui.pageLignesSlug.calendrier")}
+          title={tr("ui.pageLignesSlug.prochainsDeparts")}
           aside={
             stats.lastAt ? `Publiés jusqu'au ${formatDate(stats.lastAt, timeZone)}` : undefined
           }
         >
-          Touchez un départ pour le voir sur la carte, avec sa position en direct quand le navire
-          est en mer.
+          {tr("ui.pageLignesSlug.touchezUnDepartPourLe")}
         </SectionTitle>
         <DepartureRows
           departures={nextDepartures}
@@ -366,8 +366,8 @@ function LignePage() {
 
       {operators.length ? (
         <section className="mt-12" aria-labelledby="compagnies">
-          <SectionTitle id="compagnies" overline="Réserver" title="Les compagnies de la ligne">
-            La réservation se fait directement auprès de la compagnie. {CONFIRM_NOTE}
+          <SectionTitle id="compagnies" overline={tr("ui.pageLignesSlug.reserver")} title={tr("ui.pageLignesSlug.lesCompagniesDeLaLigne")}>
+            {tr("ui.pageLignesSlug.laReservationSeFaitDirectement")}{CONFIRM_NOTE}
           </SectionTitle>
           <div
             className={`mt-5 grid grid-cols-1 gap-4 ${operators.length > 1 ? "md:grid-cols-2" : ""} ${operators.length === 3 || operators.length > 4 ? "lg:grid-cols-3" : ""}`}
@@ -388,11 +388,11 @@ function LignePage() {
                   </div>
                   <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">
                     <div className="rounded-xl bg-secondary/70 px-3 py-2.5">
-                      <dt className="text-xs text-muted-foreground">Départs publiés</dt>
+                      <dt className="text-xs text-muted-foreground">{tr("ui.pageLignesSlug.departsPublies")}</dt>
                       <dd className="font-display text-lg font-bold">{entry?.count ?? 0}</dd>
                     </div>
                     <div className="rounded-xl bg-secondary/70 px-3 py-2.5">
-                      <dt className="text-xs text-muted-foreground">Durée</dt>
+                      <dt className="text-xs text-muted-foreground">{tr("ui.pageLignesSlug.duree")}</dt>
                       <dd className="font-display text-lg font-bold">
                         {companyRange ?? formatDuration(route.typical_duration_minutes)}
                       </dd>
@@ -411,7 +411,7 @@ function LignePage() {
                       search={{ select: "company", id: company.id } as never}
                       className="inline-flex items-center justify-center gap-1 text-sm font-semibold text-[#0e7a43] hover:underline"
                     >
-                      Sa flotte sur la carte <ArrowRight className="size-4" aria-hidden />
+                      {tr("ui.pageLignesSlug.saFlotteSurLaCarte")}<ArrowRight className="size-4" aria-hidden />
                     </Link>
                   </div>
                 </article>
@@ -423,15 +423,14 @@ function LignePage() {
 
       {fares ? (
         <section className="mt-12" aria-labelledby="prix-saison">
-          <SectionTitle id="prix-saison" overline="Budget" title="Combien ça coûte selon la saison">
-            Estimation BledWay d'un aller simple pour 1 adulte, à partir du relevé publié sur cette
-            ligne. Ce ne sont pas des prix disponibles : le devis de la compagnie fait foi.
+          <SectionTitle id="prix-saison" overline={tr("ui.pageLignesSlug.budget")} title={tr("ui.pageLignesSlug.combienCaCouteSelonLa")}>
+            {tr("ui.pageLignesSlug.estimationBledwayDUnAller")}
           </SectionTitle>
           <div className="mt-5 overflow-hidden rounded-3xl border border-border bg-card">
             <div className="hidden grid-cols-[1.3fr_1fr_1fr] gap-4 border-b border-border bg-secondary/60 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:grid">
-              <span>Période</span>
-              <span>À pied</span>
-              <span>Avec une berline</span>
+              <span>{tr("ui.pageLignesSlug.periode")}</span>
+              <span>{tr("ui.pageLignesSlug.aPied")}</span>
+              <span>{tr("ui.pageLignesSlug.avecUneBerline")}</span>
             </div>
             <ul className="divide-y divide-border">
               {fares.map(({ season, foot, car }) => {
@@ -446,13 +445,13 @@ function LignePage() {
                       <span className="text-xs text-muted-foreground">{season.months}</span>
                     </span>
                     <span className="flex items-baseline justify-between gap-2 sm:block">
-                      <span className="text-xs text-muted-foreground sm:hidden">À pied</span>
+                      <span className="text-xs text-muted-foreground sm:hidden">{tr("ui.pageLignesSlug.aPied")}</span>
                       <span className="font-display text-lg font-bold">~{foot.amount} €</span>
                     </span>
                     <span>
                       <span className="flex items-baseline justify-between gap-2 sm:block">
                         <span className="text-xs text-muted-foreground sm:hidden">
-                          Avec une berline
+                          {tr("ui.pageLignesSlug.avecUneBerline")}
                         </span>
                         <span className="font-display text-lg font-bold text-[#0e7a43]">
                           ~{car.amount} €
@@ -472,19 +471,19 @@ function LignePage() {
             <p className="flex items-start gap-2 border-t border-border bg-[#f1f8f4] px-5 py-3 text-xs leading-5 text-muted-foreground">
               <Info className="mt-0.5 size-4 shrink-0 text-[#0e7a43]" aria-hidden />
               <span>
-                Relevé Direct Ferries de septembre–octobre 2026 : {benchmark!.foot} € à pied,{" "}
-                {benchmark!.withCar} € avec voiture.{" "}
+                {tr("ui.pageLignesSlug.releveDirectFerriesDeSeptembre")}{benchmark!.foot}{tr("ui.pageLignesSlug.aPied2")}{" "}
+                {benchmark!.withCar}{tr("ui.pageLignesSlug.avecVoiture")}{" "}
                 <a
                   href={benchmark!.source}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-semibold text-[#0e7a43] underline"
                 >
-                  Voir le relevé <ExternalLink className="inline size-3" aria-hidden />
+                  {tr("ui.pageLignesSlug.voirLeReleve")}<ExternalLink className="inline size-3" aria-hidden />
                 </a>{" "}
                 ·{" "}
                 <a href="/barometre-prix" className="font-semibold text-[#0e7a43] underline">
-                  Méthode et baromètre des prix
+                  {tr("ui.pageLignesSlug.methodeEtBarometreDesPrix")}
                 </a>
               </span>
             </p>
@@ -493,8 +492,8 @@ function LignePage() {
       ) : null}
 
       <section className="mt-12" aria-labelledby="jours-depart">
-        <SectionTitle id="jours-depart" overline="Rythme" title="Jours et heures de départ">
-          Les jours de la semaine où la ligne part, d'après le calendrier publié.
+        <SectionTitle id="jours-depart" overline={tr("ui.pageLignesSlug.rythme")} title={tr("ui.pageLignesSlug.joursEtHeuresDeDepart")}>
+          {tr("ui.pageLignesSlug.lesJoursDeLaSemaine")}
         </SectionTitle>
         <div className="mt-4">
           <LineCalendar departures={lineDepartures} companies={companies} timeZone={timeZone} />
@@ -503,8 +502,8 @@ function LignePage() {
 
       {lineVessels.length ? (
         <section className="mt-12" aria-labelledby="navires">
-          <SectionTitle id="navires" overline="À bord" title="Les navires de la ligne">
-            Les bateaux programmés sur {fromName} → {toName}, du plus fréquent au plus rare.
+          <SectionTitle id="navires" overline={tr("ui.pageLignesSlug.aBord")} title={tr("ui.pageLignesSlug.lesNaviresDeLaLigne")}>
+            {tr("ui.pageLignesSlug.lesBateauxProgrammesSur")}{fromName} → {toName}{tr("ui.pageLignesSlug.duPlusFrequentAuPlus")}
           </SectionTitle>
           <div
             className={`mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 ${lineVessels.length % 2 ? "lg:grid-cols-3" : ""}`}
@@ -519,12 +518,12 @@ function LignePage() {
       <section className="mt-12" aria-labelledby="ports">
         <SectionTitle
           id="ports"
-          overline="Aux deux bouts"
-          title="Les ports et les lignes voisines"
+          overline={tr("ui.pageLignesSlug.auxDeuxBouts")}
+          title={tr("ui.pageLignesSlug.lesPortsEtLesLignes")}
         />
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {from ? <PortTile port={from} caption="Départ" /> : null}
-          {to ? <PortTile port={to} caption="Arrivée" /> : null}
+          {from ? <PortTile port={from} caption={tr("ui.pageLignesSlug.depart")} /> : null}
+          {to ? <PortTile port={to} caption={tr("ui.pageLignesSlug.arrivee")} /> : null}
         </div>
         {reverse || siblingLines.length ? (
           <ul className="mt-4 flex flex-wrap gap-2">
@@ -568,7 +567,7 @@ function LignePage() {
       />
 
       <nav
-        aria-label="Pour aller plus loin"
+        aria-label={tr("ui.pageLignesSlug.pourAllerPlusLoin")}
         className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-3"
       >
         {[

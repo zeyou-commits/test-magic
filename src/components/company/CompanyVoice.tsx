@@ -59,6 +59,7 @@ import {
 import { safeExternalUrl } from "@/components/panel/shared";
 import { alertLabel, type TravelAlert } from "@/lib/ferry/community";
 import { reviewCriteria, reviewNumber } from "@/lib/ferry/reviewCriteria";
+import { tr } from "@/lib/i18n";
 
 /** Ce que ces rubriques reçoivent de la page « Espace compagnie ». */
 export type VoiceContext = {
@@ -90,13 +91,13 @@ function QueryState({
   query: { isPending: boolean; isError: boolean; error: unknown; refetch: () => unknown };
   children: ReactNode;
 }) {
-  if (query.isPending) return <p className="bo-empty">Chargement…</p>;
+  if (query.isPending) return <p className="bo-empty">{tr("ui.companyVoiceDesk.chargement")}</p>;
   if (query.isError)
     return (
       <div className="grid gap-2 py-3 text-sm">
         <p>
           {httpStatus(query.error) === 403
-            ? "Ces informations ne vous sont pas ouvertes. Si votre accès vient de changer, rechargez la page."
+            ? tr("ui.companyVoiceDesk.cesInformationsNeVousSont")
             : (query.error as Error).message}
         </p>
         <Button
@@ -105,7 +106,7 @@ function QueryState({
           className="justify-self-start"
           onClick={() => void query.refetch()}
         >
-          Réessayer
+          {tr("ui.companyVoiceDesk.reessayer")}
         </Button>
       </div>
     );
@@ -199,7 +200,7 @@ function ReplyBlock({
       {current ? (
         <div className="grid gap-1 rounded-lg border border-dashed border-border p-2">
           <span className="flex flex-wrap items-center gap-1.5 text-xs">
-            <strong>{kind === "contest" ? "Votre contestation" : "Votre réponse"}</strong>
+            <strong>{kind === "contest" ? tr("ui.companyVoiceDesk.votreContestation") : tr("ui.companyVoiceDesk.votreReponse")}</strong>
             <em className="bo-pill" data-tone={status?.tone}>
               {status?.label}
             </em>
@@ -210,7 +211,7 @@ function ReplyBlock({
           <p className="whitespace-pre-line text-sm">{current.body}</p>
           {current.decisionNote ? (
             <Note>
-              <strong>Note de BledWay : </strong>
+              <strong>{tr("ui.companyVoiceDesk.noteDeBledway")}</strong>
               {current.decisionNote}
             </Note>
           ) : null}
@@ -251,7 +252,7 @@ function ReplyBlock({
                   withdraw.mutate(current.id);
               }}
             >
-              <Undo2 className="size-4" aria-hidden /> Retirer
+              <Undo2 className="size-4" aria-hidden />{tr("ui.companyVoiceDesk.retirer")}
             </Button>
           ) : null}
         </div>
@@ -267,8 +268,8 @@ function ReplyBlock({
           <label className="grid gap-1 text-sm">
             <span className="font-semibold">
               {kind === "contest"
-                ? "Pourquoi ce signalement vous semble inexact"
-                : "Votre réponse publique"}
+                ? tr("ui.companyVoiceDesk.pourquoiCeSignalementVousSemble")
+                : tr("ui.companyVoiceDesk.votreReponsePublique")}
             </span>
             <Textarea
               value={body}
@@ -277,13 +278,13 @@ function ReplyBlock({
               onChange={(event) => setBody(event.target.value)}
               placeholder={
                 kind === "contest"
-                  ? "Par exemple : départ à l'heure, embarquement ouvert à 18 h. Ajoutez ce qui permet de vérifier."
-                  : "Une réponse courtoise et factuelle, sans données personnelles."
+                  ? tr("ui.companyVoiceDesk.parExempleDepartAL")
+                  : tr("ui.companyVoiceDesk.uneReponseCourtoiseEtFactuelle")
               }
             />
             <span className="text-xs text-muted-foreground">
               {kind === "contest"
-                ? "Lue par l'équipe BledWay seulement. Le signalement n'est ni supprimé ni masqué pendant l'examen."
+                ? tr("ui.companyVoiceDesk.lueParLEquipeBledway")
                 : `Publiée tout de suite sous « Réponse de ${ctx.companyName} ». L'avis reste affiché tel quel. BledWay peut retirer une réponse qui enfreint les règles communes.`}{" "}
               {body.trim().length}/1000
             </span>
@@ -291,10 +292,10 @@ function ReplyBlock({
           <div className="flex flex-wrap gap-2">
             <Button size="sm" type="submit" disabled={!valid || save.isPending}>
               <Send className="size-4" aria-hidden />{" "}
-              {kind === "contest" ? "Envoyer à BledWay" : "Publier la réponse"}
+              {kind === "contest" ? tr("ui.companyVoiceDesk.envoyerABledway") : tr("ui.companyVoiceDesk.publierLaReponse")}
             </Button>
             <Button size="sm" type="button" variant="ghost" onClick={() => setOpen(false)}>
-              Annuler
+              {tr("ui.companyVoiceDesk.annuler")}
             </Button>
           </div>
         </form>
@@ -325,21 +326,20 @@ export function CompanyReviewsTab({ ctx, summary }: { ctx: VoiceContext; summary
     <div className="grid gap-3.5">
       <section className="bo-card">
         <h2>
-          <Star aria-hidden /> Notes par critère
-          <small>compagnie</small>
+          <Star aria-hidden />{tr("ui.companyVoiceDesk.notesParCritere")}
+          <small>{tr("ui.companyVoiceDesk.compagnie")}</small>
         </h2>
         {summary}
       </section>
       <section className="bo-card">
         <h2>
-          <MessageSquareReply aria-hidden /> Avis publiés
-          <small>votre réponse est publiée tout de suite</small>
+          <MessageSquareReply aria-hidden />{tr("ui.companyVoiceDesk.avisPublies")}
+          <small>{tr("ui.companyVoiceDesk.votreReponseEstPublieeTout")}</small>
         </h2>
         <p className="bo-lead mb-2">
-          Vous pouvez répondre à chaque avis publié sur votre compagnie ou vos navires. Un avis
-          n'est jamais masqué, modifié ni supprimé à la demande d'une compagnie.
+          {tr("ui.companyVoiceDesk.vousPouvezRepondreAChaque")}
         </p>
-        <div className="mb-2 flex flex-wrap gap-2" role="group" aria-label="Filtrer les avis">
+        <div className="mb-2 flex flex-wrap gap-2" role="group" aria-label={tr("ui.companyVoiceDesk.filtrerLesAvis")}>
           {(
             [
               ["all", "Tous"],
@@ -371,7 +371,7 @@ export function CompanyReviewsTab({ ctx, summary }: { ctx: VoiceContext; summary
                       <span className="min-w-0 flex-1">
                         <strong>{review.vesselName ?? ctx.companyName}</strong>
                         <span className="block text-xs text-muted-foreground">
-                          Avis d'un voyageur · {ctx.when(review.date)}
+                          {tr("ui.companyVoiceDesk.avisDUnVoyageur")}{ctx.when(review.date)}
                         </span>
                       </span>
                       <em className="bo-pill">{reviewSummary(review)}</em>
@@ -401,8 +401,8 @@ export function CompanyReviewsTab({ ctx, summary }: { ctx: VoiceContext; summary
           ) : (
             <p className="bo-empty">
               {filter === "todo"
-                ? "Tous les avis ont une réponse."
-                : "Aucun avis publié pour l'instant."}
+                ? tr("ui.companyVoiceDesk.tousLesAvisOntUne")
+                : tr("ui.companyVoiceDesk.aucunAvisPubliePourL")}
             </p>
           )}
         </QueryState>
@@ -427,19 +427,18 @@ export function CompanySignalsTab({ ctx, live }: { ctx: VoiceContext; live: Reac
     <div className="grid gap-3.5">
       <section className="bo-card">
         <h2>
-          <Radio aria-hidden /> En ce moment
-          <small>visible par les voyageurs</small>
+          <Radio aria-hidden />{tr("ui.companyVoiceDesk.enCeMoment")}
+          <small>{tr("ui.companyVoiceDesk.visibleParLesVoyageurs")}</small>
         </h2>
         {live}
       </section>
       <section className="bo-card">
         <h2>
-          <Flag aria-hidden /> 30 derniers jours
-          <small>répondre ou contester</small>
+          <Flag aria-hidden />{tr("ui.companyVoiceDesk.t30DerniersJours")}
+          <small>{tr("ui.companyVoiceDesk.repondreOuContester")}</small>
         </h2>
         <p className="bo-lead mb-2">
-          Une réponse est publiée tout de suite sous le signalement. Une contestation est lue par
-          BledWay seulement : elle ne supprime ni ne masque rien.
+          {tr("ui.companyVoiceDesk.uneReponseEstPublieeTout")}
         </p>
         <QueryState query={feedback}>
           {data?.alerts.length ? (
@@ -456,13 +455,13 @@ export function CompanySignalsTab({ ctx, live }: { ctx: VoiceContext; live: Reac
                         <strong>{alertText(alert)}</strong>
                         <span className="block text-xs text-muted-foreground">
                           {alert.vesselName} · {ctx.when(alert.date)}
-                          {alert.onSite ? " · signalé sur place" : ""}
+                          {alert.onSite ? tr("ui.companyVoiceDesk.signaleSurPlace") : ""}
                         </span>
                       </span>
                       <span className="flex flex-none flex-wrap gap-1">
-                        {alert.validated ? <em className="bo-pill">Vérifié par BledWay</em> : null}
+                        {alert.validated ? <em className="bo-pill">{tr("ui.companyVoiceDesk.verifieParBledway")}</em> : null}
                         <em className="bo-pill" data-tone={live ? "warn" : "mute"}>
-                          {live ? "En cours" : "Terminé"}
+                          {live ? tr("ui.companyVoiceDesk.enCours") : tr("ui.companyVoiceDesk.termine")}
                         </em>
                       </span>
                     </div>
@@ -485,7 +484,7 @@ export function CompanySignalsTab({ ctx, live }: { ctx: VoiceContext; live: Reac
               })}
             </ul>
           ) : (
-            <p className="bo-empty">Aucun signalement sur vos navires ces 30 derniers jours.</p>
+            <p className="bo-empty">{tr("ui.companyVoiceDesk.aucunSignalementSurVosNavires")}</p>
           )}
         </QueryState>
       </section>
@@ -522,7 +521,7 @@ export function CompanyProfileTab({
           <Building2 aria-hidden /> {ctx.companyName}
           <small>
             <a className="bo-link" href={publicHref} target="_blank" rel="noreferrer">
-              Voir la fiche publique <ExternalLink aria-hidden />
+              {tr("ui.companyVoiceDesk.voirLaFichePublique")}<ExternalLink aria-hidden />
             </a>
           </small>
         </h2>
@@ -632,8 +631,7 @@ function ProfileForm({
             }}
           >
             <p className="bo-lead">
-              Modifiez seulement ce qui doit changer. Un champ laissé vide est effacé. Les
-              changements s'affichent tout de suite.
+              {tr("ui.companyVoiceDesk.modifiezSeulementCeQuiDoit")}
             </p>
             {PROFILE_FIELDS.map((field) => {
               const value = values[field.key] ?? profile.fields[field.key] ?? "";
@@ -689,7 +687,7 @@ function ProfileForm({
                 <Send className="size-4" aria-hidden />
                 {changed.length
                   ? `Enregistrer ${changed.length} modification${changed.length > 1 ? "s" : ""}`
-                  : "Aucun changement"}
+                  : tr("ui.companyVoiceDesk.aucunChangement")}
               </Button>
               <Button
                 type="button"
@@ -697,7 +695,7 @@ function ProfileForm({
                 variant="ghost"
                 onClick={() => (setEditing(false), setValues({}))}
               >
-                Annuler
+                {tr("ui.companyVoiceDesk.annuler")}
               </Button>
             </div>
           </form>
@@ -705,13 +703,13 @@ function ProfileForm({
           <>
             <dl className="bo-facts bo-facts--wide">
               <div>
-                <dt>Logo</dt>
+                <dt>{tr("ui.companyVoiceDesk.logo")}</dt>
                 <dd>{logo}</dd>
               </div>
               {PROFILE_FIELDS.map((field) => (
                 <div key={field.key}>
                   <dt>{field.label}</dt>
-                  <dd className="break-words">{profile.fields[field.key] || "Non renseigné"}</dd>
+                  <dd className="break-words">{profile.fields[field.key] || tr("ui.companyVoiceDesk.nonRenseigne")}</dd>
                 </div>
               ))}
             </dl>
@@ -722,11 +720,11 @@ function ProfileForm({
                 className="justify-self-start"
                 onClick={() => setEditing(true)}
               >
-                Modifier la fiche
+                {tr("ui.companyVoiceDesk.modifierLaFiche")}
               </Button>
             ) : null}
             <p className="bo-lead">
-              Le nom et le logo se changent avec votre interlocuteur BledWay.
+              {tr("ui.companyVoiceDesk.leNomEtLeLogo")}
             </p>
           </>
         )}
@@ -739,7 +737,7 @@ function ProfileForm({
       </div>
       {profile.proposals.length ? (
         <div className="grid gap-2">
-          <h3 className="text-sm font-semibold">Historique des modifications</h3>
+          <h3 className="text-sm font-semibold">{tr("ui.companyVoiceDesk.historiqueDesModifications")}</h3>
           <ul className="grid gap-2">
             {profile.proposals.map((item) => (
               <li key={item.id} className="grid gap-1 rounded-xl border border-border p-3 text-sm">
@@ -753,13 +751,13 @@ function ProfileForm({
                   {Object.entries(item.changes).map(([key, value]) => (
                     <li key={key} className="break-words">
                       <strong>{label(key)} : </strong>
-                      {value || <em>à effacer</em>}
+                      {value || <em>{tr("ui.companyVoiceDesk.aEffacer")}</em>}
                     </li>
                   ))}
                 </ul>
                 {item.decisionNote ? (
                   <Note>
-                    <strong>Réponse de BledWay : </strong>
+                    <strong>{tr("ui.companyVoiceDesk.reponseDeBledway")}</strong>
                     {item.decisionNote}
                   </Note>
                 ) : null}
@@ -771,7 +769,7 @@ function ProfileForm({
                     disabled={withdraw.isPending}
                     onClick={() => withdraw.mutate(item.id)}
                   >
-                    <Undo2 className="size-4" aria-hidden /> Retirer
+                    <Undo2 className="size-4" aria-hidden />{tr("ui.companyVoiceDesk.retirer")}
                   </Button>
                 ) : null}
               </li>
@@ -808,25 +806,25 @@ function ProfilePreview({
   return (
     <aside
       className="grid gap-3 rounded-2xl border border-border bg-background p-3 lg:sticky lg:top-4"
-      aria-label="Aperçu de la fiche vue par les voyageurs"
+      aria-label={tr("ui.companyVoiceDesk.apercuDeLaFicheVue")}
     >
       <p className="flex items-center justify-between gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        Ce que voient les voyageurs
+        {tr("ui.companyVoiceDesk.ceQueVoientLesVoyageurs")}
         {live ? (
           <em className="bo-pill" data-tone="warn">
-            Aperçu, non enregistré
+            {tr("ui.companyVoiceDesk.apercuNonEnregistre")}
           </em>
         ) : null}
       </p>
       <header className="flex items-center gap-3">
         {logo}
         <div>
-          <p className="text-xs text-muted-foreground">Compagnie</p>
+          <p className="text-xs text-muted-foreground">{tr("ui.companyVoiceDesk.compagnie2")}</p>
           <p className="text-base font-bold">{name}</p>
         </div>
       </header>
       <section className="rounded-xl border border-border bg-card p-3 text-sm">
-        <h3 className="text-sm font-semibold">Contacter {name}</h3>
+        <h3 className="text-sm font-semibold">{tr("ui.companyVoiceDesk.contacter")}{name}</h3>
         {any ? (
           <ul className="mt-2 grid gap-1.5">
             {values.phone ? (
@@ -851,13 +849,13 @@ function ProfilePreview({
             )}
             {site && !links.some(([, href]) => href) ? (
               <li className="inline-flex items-center gap-1.5 font-medium text-primary">
-                <ExternalLink className="size-3.5" aria-hidden /> Site de la compagnie
+                <ExternalLink className="size-3.5" aria-hidden />{tr("ui.companyVoiceDesk.siteDeLaCompagnie")}
               </li>
             ) : null}
           </ul>
         ) : (
           <p className="mt-1 text-xs text-muted-foreground">
-            Aucune coordonnée : les voyageurs ne savent pas comment vous joindre.
+            {tr("ui.companyVoiceDesk.aucuneCoordonneeLesVoyageursNe")}
           </p>
         )}
       </section>
@@ -865,8 +863,7 @@ function ProfilePreview({
         <p className="whitespace-pre-line text-sm leading-relaxed">{values.description}</p>
       ) : (
         <p className="text-xs text-muted-foreground">
-          Pas de présentation : quelques phrases sur vos lignes et vos services aident les voyageurs
-          à vous choisir.
+          {tr("ui.companyVoiceDesk.pasDePresentationQuelquesPhrases")}
         </p>
       )}
     </aside>
@@ -898,18 +895,16 @@ function Galleries({
   return (
     <section className="bo-card">
       <h2>
-        <Camera aria-hidden /> Photos des navires
-        <small>publiées tout de suite</small>
+        <Camera aria-hidden />{tr("ui.companyVoiceDesk.photosDesNavires")}
+        <small>{tr("ui.companyVoiceDesk.publieesToutDeSuite")}</small>
       </h2>
       <p className="bo-lead mb-3">
-        Montrez aux voyageurs ce qui les attend à bord : extérieur, ponts, cabines, restauration,
-        garage, espaces enfants, accessibilité. Pas de publicité ni de texte incrusté. Les visages
-        et les plaques sont floutés avant l'envoi.
+        {tr("ui.companyVoiceDesk.montrezAuxVoyageursCeQui")}
       </p>
       {galleries.length > 1 ? (
         <div className="mb-3 grid gap-1.5">
-          <span className="text-sm font-semibold">Quelle galerie ?</span>
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Choisir la galerie">
+          <span className="text-sm font-semibold">{tr("ui.companyVoiceDesk.quelleGalerie")}</span>
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label={tr("ui.companyVoiceDesk.choisirLaGalerie")}>
             {galleries.map((gallery) => (
               <button
                 key={gallery.id ?? "company"}
@@ -976,12 +971,12 @@ function Gallery({
         <h3 className="text-sm font-semibold">
           {title}{" "}
           <span className="font-normal text-muted-foreground">
-            {taken}/{GALLERY_LIMIT} photos de la compagnie
+            {taken}/{GALLERY_LIMIT}{tr("ui.companyVoiceDesk.photosDeLaCompagnie")}
           </span>
         </h3>
         {ctx.canAct && taken < GALLERY_LIMIT && !adding ? (
           <Button size="sm" onClick={() => setAdding(true)}>
-            <Camera className="size-4" aria-hidden /> Ajouter des photos
+            <Camera className="size-4" aria-hidden />{tr("ui.companyVoiceDesk.ajouterDesPhotos")}
           </Button>
         ) : null}
       </div>
@@ -1028,12 +1023,12 @@ function Gallery({
                       />
                     ) : (
                       <span className="grid aspect-[4/3] place-items-center rounded-lg bg-muted text-muted-foreground">
-                        Aperçu indisponible
+                        {tr("ui.companyVoiceDesk.apercuIndisponible")}
                       </span>
                     )}
                     <span className="flex items-center justify-between gap-1">
                       {team ? (
-                        <em className="bo-pill">Ajoutée par BledWay</em>
+                        <em className="bo-pill">{tr("ui.companyVoiceDesk.ajouteeParBledway")}</em>
                       ) : (
                         <em className="bo-pill" data-tone={PHOTO_STATUS[photo.status].tone}>
                           {PHOTO_STATUS[photo.status].label}
@@ -1069,14 +1064,13 @@ function Gallery({
         ))
       ) : (
         <p className="bo-empty">
-          Aucune photo pour l'instant.
-          {ctx.canAct ? " Choisissez une catégorie, puis une ou plusieurs photos." : ""}
+          {tr("ui.companyVoiceDesk.aucunePhotoPourLInstant")}
+          {ctx.canAct ? tr("ui.companyVoiceDesk.choisissezUneCategoriePuisUne") : ""}
         </p>
       )}
       {photos.some((photo) => photo.source === "team") ? (
         <p className="text-xs text-muted-foreground">
-          Les photos ajoutées par BledWay ne prennent pas de place dans votre galerie. Pour en faire
-          retirer une, écrivez à l'équipe.
+          {tr("ui.companyVoiceDesk.lesPhotosAjouteesParBledway")}
         </p>
       ) : null}
     </div>
@@ -1144,16 +1138,15 @@ export function CompanyManagerPanel({ ctx }: { ctx: VoiceContext }) {
   return (
     <section className="bo-card">
       <h2>
-        <UserRound aria-hidden /> Gérer l'équipe
-        <small>vous êtes responsable</small>
+        <UserRound aria-hidden />{tr("ui.companyVoiceDesk.gererLEquipe")}
+        <small>{tr("ui.companyVoiceDesk.vousEtesResponsable")}</small>
       </h2>
       <p className="bo-lead mb-2">
-        Vous invitez vos collaborateurs et ajustez leurs accès. Chaque action est enregistrée et
-        visible par BledWay. Les autres responsables se gèrent avec BledWay.
+        {tr("ui.companyVoiceDesk.vousInvitezVosCollaborateursEt")}
       </p>
       {link ? (
         <div className="mb-3 grid gap-2 rounded-xl border border-border p-3 text-sm" role="status">
-          <strong>Lien d'invitation, valable 7 jours, montré une seule fois</strong>
+          <strong>{tr("ui.companyVoiceDesk.lienDInvitationValable7")}</strong>
           <code className="break-all rounded bg-muted p-2 text-xs">{link}</code>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -1162,15 +1155,14 @@ export function CompanyManagerPanel({ ctx }: { ctx: VoiceContext }) {
                 void navigator.clipboard.writeText(link).then(() => toast.success("Lien copié."))
               }
             >
-              <Copy className="size-4" aria-hidden /> Copier
+              <Copy className="size-4" aria-hidden />{tr("ui.companyVoiceDesk.copier")}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setLink(null)}>
-              Fermer
+              {tr("ui.companyVoiceDesk.fermer")}
             </Button>
           </div>
           <span className="text-xs text-muted-foreground">
-            Envoyez-le vous-même à la personne. Il ne fonctionne qu'avec un compte à cette adresse
-            e-mail.
+            {tr("ui.companyVoiceDesk.envoyezLeVousMemeA")}
           </span>
         </div>
       ) : null}
@@ -1183,7 +1175,7 @@ export function CompanyManagerPanel({ ctx }: { ctx: VoiceContext }) {
           }}
         >
           <label className="grid gap-1">
-            <span className="font-semibold">Adresse e-mail professionnelle</span>
+            <span className="font-semibold">{tr("ui.companyVoiceDesk.adresseEMailProfessionnelle")}</span>
             <Input
               type="email"
               required
@@ -1193,7 +1185,7 @@ export function CompanyManagerPanel({ ctx }: { ctx: VoiceContext }) {
             />
           </label>
           <fieldset className="grid gap-1">
-            <legend className="font-semibold">Niveau</legend>
+            <legend className="font-semibold">{tr("ui.companyVoiceDesk.niveau")}</legend>
             {(["read", "operations"] as const).map((value) => (
               <label key={value} className="flex items-start gap-2">
                 <input
@@ -1213,13 +1205,13 @@ export function CompanyManagerPanel({ ctx }: { ctx: VoiceContext }) {
             ))}
           </fieldset>
           <label className="grid gap-1">
-            <span className="font-semibold">Comment avez-vous vérifié cette personne ?</span>
+            <span className="font-semibold">{tr("ui.companyVoiceDesk.commentAvezVousVerifieCette")}</span>
             <Input
               required
               minLength={3}
               maxLength={500}
               value={verification}
-              placeholder="Par exemple : collègue du service escale, vu en personne"
+              placeholder={tr("ui.companyVoiceDesk.parExempleCollegueDuService")}
               onChange={(event) => setVerification(event.target.value)}
             />
           </label>
@@ -1229,16 +1221,16 @@ export function CompanyManagerPanel({ ctx }: { ctx: VoiceContext }) {
               size="sm"
               disabled={invite.isPending || verification.trim().length < 3}
             >
-              Créer le lien
+              {tr("ui.companyVoiceDesk.creerLeLien")}
             </Button>
             <Button type="button" size="sm" variant="ghost" onClick={() => setInviting(false)}>
-              Annuler
+              {tr("ui.companyVoiceDesk.annuler")}
             </Button>
           </div>
         </form>
       ) : (
         <Button size="sm" variant="outline" className="mb-3" onClick={() => setInviting(true)}>
-          <UserPlus className="size-4" aria-hidden /> Inviter un collaborateur
+          <UserPlus className="size-4" aria-hidden />{tr("ui.companyVoiceDesk.inviterUnCollaborateur")}
         </Button>
       )}
       <QueryState query={overview}>
@@ -1261,7 +1253,7 @@ export function CompanyManagerPanel({ ctx }: { ctx: VoiceContext }) {
                     </span>
                   </span>
                   <span className="flex flex-wrap gap-1">
-                    {member.manager ? <em className="bo-pill">Responsable</em> : null}
+                    {member.manager ? <em className="bo-pill">{tr("ui.companyVoiceDesk.responsable")}</em> : null}
                     <em
                       className="bo-pill"
                       data-tone={member.level === "operations" ? undefined : "mute"}
@@ -1270,13 +1262,13 @@ export function CompanyManagerPanel({ ctx }: { ctx: VoiceContext }) {
                     </em>
                     {member.status === "suspended" ? (
                       <em className="bo-pill" data-tone="bad">
-                        Suspendu
+                        {tr("ui.companyVoiceDesk.suspendu")}
                       </em>
                     ) : null}
                   </span>
                 </span>
                 {member.reason ? (
-                  <span className="text-xs text-muted-foreground">Motif : {member.reason}</span>
+                  <span className="text-xs text-muted-foreground">{tr("ui.companyVoiceDesk.motif")}{member.reason}</span>
                 ) : null}
                 {editable ? (
                   <span className="flex flex-wrap gap-1">
@@ -1293,7 +1285,7 @@ export function CompanyManagerPanel({ ctx }: { ctx: VoiceContext }) {
                         })
                       }
                     >
-                      Passer en{" "}
+                      {tr("ui.companyVoiceDesk.passerEn")}{" "}
                       {LEVEL_CATALOG[member.level === "read" ? "operations" : "read"].label}
                     </Button>
                     {member.status === "active" ? (
@@ -1312,7 +1304,7 @@ export function CompanyManagerPanel({ ctx }: { ctx: VoiceContext }) {
                             });
                         }}
                       >
-                        Suspendre
+                        {tr("ui.companyVoiceDesk.suspendre")}
                       </Button>
                     ) : (
                       <Button
@@ -1327,7 +1319,7 @@ export function CompanyManagerPanel({ ctx }: { ctx: VoiceContext }) {
                           })
                         }
                       >
-                        Réactiver
+                        {tr("ui.companyVoiceDesk.reactiver")}
                       </Button>
                     )}
                     <Button
@@ -1345,7 +1337,7 @@ export function CompanyManagerPanel({ ctx }: { ctx: VoiceContext }) {
                           });
                       }}
                     >
-                      Retirer l'accès
+                      {tr("ui.companyVoiceDesk.retirerLAcces")}
                     </Button>
                   </span>
                 ) : null}
@@ -1355,7 +1347,7 @@ export function CompanyManagerPanel({ ctx }: { ctx: VoiceContext }) {
         </ul>
         {overview.data?.invites.length ? (
           <div className="mt-3 grid gap-2">
-            <h3 className="text-sm font-semibold">Invitations en attente</h3>
+            <h3 className="text-sm font-semibold">{tr("ui.companyVoiceDesk.invitationsEnAttente")}</h3>
             <ul className="grid gap-2">
               {overview.data.invites.map((item) => (
                 <li
@@ -1365,7 +1357,7 @@ export function CompanyManagerPanel({ ctx }: { ctx: VoiceContext }) {
                   <span className="min-w-0 flex-1">
                     <strong className="break-all">{item.email}</strong>
                     <span className="block text-xs text-muted-foreground">
-                      {LEVEL_CATALOG[item.level].label} · expire {ctx.when(item.expiresAt)}
+                      {LEVEL_CATALOG[item.level].label}{tr("ui.companyVoiceDesk.expire")}{ctx.when(item.expiresAt)}
                     </span>
                   </span>
                   <Button
@@ -1376,7 +1368,7 @@ export function CompanyManagerPanel({ ctx }: { ctx: VoiceContext }) {
                       act.mutate({ action: "manager_invite_revoke", inviteId: item.id })
                     }
                   >
-                    Annuler
+                    {tr("ui.companyVoiceDesk.annuler")}
                   </Button>
                 </li>
               ))}

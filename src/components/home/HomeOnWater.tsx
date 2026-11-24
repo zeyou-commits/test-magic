@@ -4,6 +4,7 @@ import type { FleetShip } from "@/lib/ferry/fleet";
 import type { Vessel } from "@/lib/ferry/types";
 import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
 import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
+import { tr } from "@/lib/i18n";
 
 type VesselRef = Pick<Vessel, "id" | "name" | "photo_url">;
 
@@ -85,8 +86,8 @@ export function HomeOnWater({
   const ships = [...sea, ...docked.slice(0, 3 - sea.length)];
   if (!ships.length) return null;
   return (
-    <div className="bw-on-water" role="region" aria-label="Sur l'eau maintenant">
-      <p className="bw-on-water__title">Sur l'eau maintenant</p>
+    <div className="bw-on-water" role="region" aria-label={tr("ui.homeOnWater.surLEauMaintenant")}>
+      <p className="bw-on-water__title">{tr("ui.homeOnWater.surLEauMaintenant")}</p>
       <div className="bw-on-water__row">
         {ships.map((ship) => {
           const info = infoOf(ship);
@@ -113,15 +114,15 @@ export function HomeOnWater({
               <span className="bw-on-water__badge" data-sea={atSeaNow || undefined}>
                 {atSeaNow
                   ? ship.source === "live"
-                    ? "Position réelle"
-                    : "Position estimée"
-                  : "À quai"}
+                    ? tr("ui.homeOnWater.positionReelle")
+                    : tr("ui.homeOnWater.positionEstimee")
+                  : tr("ui.homeOnWater.aQuai")}
               </span>
             </button>
           );
         })}
         <button type="button" className="bw-on-water__live" onClick={onLive}>
-          Carte en direct
+          {tr("ui.homeOnWater.carteEnDirect")}
           <ArrowRight size={16} aria-hidden />
         </button>
       </div>

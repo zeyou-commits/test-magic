@@ -9,6 +9,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { ArrowLeft, ArrowRight, Check, FileText, type LucideIcon } from "lucide-react";
+import { tr } from "@/lib/i18n";
 
 /**
  * Le guide plein écran de « Préparer mon voyage » : le fil des étapes reste en haut, les boutons
@@ -73,7 +74,7 @@ export function WizardNav({
           aria-label={
             back === undefined && ctx?.backLabel
               ? `Revenir à l'étape ${ctx.backLabel}`
-              : "Question précédente"
+              : tr("ui.wizardFrame.questionPrecedente")
           }
           className="inline-flex min-h-12 shrink-0 items-center gap-1.5 rounded-xl px-2 text-sm font-semibold hover:bg-secondary sm:px-3"
         >
@@ -251,14 +252,14 @@ export function WizardFrame({
               <button
                 type="button"
                 onClick={onClose}
-                aria-label="Quitter le guide : Préparer mon voyage"
-                title="Préparer mon voyage"
+                aria-label={tr("ui.wizardFrame.quitterLeGuidePreparerMon")}
+                title={tr("ui.wizardFrame.preparerMonVoyage")}
                 className="grid size-9 shrink-0 place-items-center rounded-full hover:bg-secondary"
               >
                 <ArrowLeft size={18} aria-hidden />
               </button>
               {steps.length > 1 ? (
-                <nav aria-label="Les étapes du voyage" className="min-w-0 flex-1">
+                <nav aria-label={tr("ui.wizardFrame.lesEtapesDuVoyage")} className="min-w-0 flex-1">
                   <ol className="bw-wizsteps">
                     {steps.map((item, index) => {
                       const here = index === current;
@@ -300,7 +301,7 @@ export function WizardFrame({
                   onClick={onSkip}
                   className="inline-flex min-h-8 shrink-0 items-center gap-0.5 rounded-full border px-2.5 text-xs font-semibold text-muted-foreground hover:bg-secondary"
                 >
-                  Passer <ArrowRight size={12} aria-hidden />
+                  {tr("ui.wizardFrame.passer")}<ArrowRight size={12} aria-hidden />
                 </button>
               ) : null}
             </div>
@@ -314,7 +315,7 @@ export function WizardFrame({
               </h2>
               {shown && shown.total > 1 ? (
                 <span className="sr-only">
-                  Écran {shown.index + 1} sur {shown.total}
+                  {tr("ui.wizardFrame.ecran")}{shown.index + 1}{tr("ui.wizardFrame.sur")}{shown.total}
                 </span>
               ) : null}
             </div>

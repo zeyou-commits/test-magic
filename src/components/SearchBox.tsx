@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { CheckCircle2, Loader2, MapPin, Search, X } from "lucide-react";
+import { tr } from "@/lib/i18n";
 
 export type SearchHit = {
   key: string;
@@ -79,14 +80,14 @@ export function SearchBox({
             type="button"
             className="bw-searchbox__clear"
             onClick={() => onChange("")}
-            aria-label="Effacer"
+            aria-label={tr("ui.searchBox.effacer")}
           >
             <X size={15} aria-hidden />
           </button>
         ) : null}
       </div>
       <p className="sr-only" aria-live="polite">
-        {busy ? "Recherche en cours" : hits.length ? `${hits.length} lieux trouvés` : ""}
+        {busy ? tr("ui.searchBox.rechercheEnCours") : hits.length ? `${hits.length} lieux trouvés` : ""}
       </p>
       {hits.length ? (
         <ul id={listId} role="listbox" className="bw-searchbox__list">
@@ -105,7 +106,7 @@ export function SearchBox({
           ))}
         </ul>
       ) : empty ? (
-        <p className="bw-searchbox__none">Aucun lieu trouvé. Essayez le nom de la ville seul.</p>
+        <p className="bw-searchbox__none">{tr("ui.searchBox.aucunLieuTrouveEssayezLe")}</p>
       ) : null}
     </div>
   );

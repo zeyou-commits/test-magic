@@ -4,6 +4,7 @@ import { dateKeyInZone, portTimeZone } from "@/lib/ferry/time";
 import type { Selection } from "@/lib/ferry/types";
 import { VesselThumb } from "./LineOverview";
 import type { TrafficCrossing } from "./TrafficCard";
+import { tr } from "@/lib/i18n";
 
 /**
  * Téléphone, tiroir replié : la traversée en cours (ou, sans navire en mer, la prochaine), en miniature.
@@ -53,14 +54,14 @@ export function LivePeek({
         <i aria-hidden />
         {kind === "sea"
           ? `En mer maintenant${others > 0 ? ` · + ${others} ${others > 1 ? "autres" : "autre"}` : ""}`
-          : "Prochain départ"}
-        <em>Suivre</em>
+          : tr("ui.livePeek.prochainDepart")}
+        <em>{tr("ui.livePeek.suivre")}</em>
       </span>
       <span className="bw-live-peek__ship" aria-hidden>
         <VesselThumb vessel={c.vessel} width={52} towardRight />
       </span>
       <span className="bw-live-peek__main">
-        <strong>{c.vessel?.name ?? c.company?.name ?? "Traversée"}</strong>
+        <strong>{c.vessel?.name ?? c.company?.name ?? tr("ui.livePeek.traversee")}</strong>
         <small>
           {c.from.name} → {c.to.name}
         </small>
@@ -69,13 +70,13 @@ export function LivePeek({
         {kind === "sea" ? (
           arrival ? (
             <>
-              <small>{estimated ? "Arrivée estimée" : "Arrivée"}</small>
+              <small>{estimated ? tr("ui.livePeek.arriveeEstimee") : tr("ui.livePeek.arrivee")}</small>
               <b>{when(arrival, toZone)}</b>
             </>
           ) : null
         ) : (
           <>
-            <small>Départ</small>
+            <small>{tr("ui.livePeek.depart")}</small>
             <b>{when(departure, fromZone)}</b>
           </>
         )}
@@ -84,7 +85,7 @@ export function LivePeek({
         <span
           className="bw-live-peek__bar"
           role="progressbar"
-          aria-label="Avancement de la traversée"
+          aria-label={tr("ui.livePeek.avancementDeLaTraversee")}
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={percent}

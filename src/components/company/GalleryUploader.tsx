@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { blobToBase64 } from "@/lib/company/desk";
 import { PHOTO_CATEGORY_FORM, type PhotoCategory } from "@/lib/company/galleryCategories";
+import { tr } from "@/lib/i18n";
 
 /** Photo prête à partir : réduite, floutée, convertie en JPEG par le navigateur. */
 export type GalleryUpload = {
@@ -147,11 +148,11 @@ export function GalleryUploader({
     // Pas de <form> : le bloc peut s'afficher dans une fiche qui en contient déjà un.
     <div
       role="group"
-      aria-label="Ajouter des photos"
+      aria-label={tr("ui.galleryUploader.ajouterDesPhotos")}
       className="grid gap-3 rounded-xl border border-border p-3 text-sm"
     >
       <fieldset className="grid gap-1.5">
-        <legend className="mb-1.5 font-semibold">1. Que montrent les photos ?</legend>
+        <legend className="mb-1.5 font-semibold">{tr("ui.galleryUploader.t1QueMontrentLesPhotos")}</legend>
         <div className="flex flex-wrap gap-1.5">
           {categories.map((value) => (
             <button
@@ -169,12 +170,12 @@ export function GalleryUploader({
         <span className="text-xs text-muted-foreground">
           {category
             ? `Par exemple : ${PHOTO_CATEGORY_FORM[category].hint.toLowerCase()}.`
-            : "Choisissez une catégorie : les voyageurs pourront filtrer les photos."}
+            : tr("ui.galleryUploader.choisissezUneCategorieLesVoyageurs")}
         </span>
       </fieldset>
 
       <div className="grid gap-1.5">
-        <span className="font-semibold">2. Les photos</span>
+        <span className="font-semibold">{tr("ui.galleryUploader.t2LesPhotos")}</span>
         {room > 0 ? (
           <label
             className={`grid cursor-pointer place-items-center gap-1 rounded-xl border-2 border-dashed px-3 py-5 text-center transition-colors ${
@@ -192,9 +193,9 @@ export function GalleryUploader({
             }}
           >
             <ImagePlus className="size-6 text-muted-foreground" aria-hidden />
-            <span className="font-semibold">Choisir des photos</span>
+            <span className="font-semibold">{tr("ui.galleryUploader.choisirDesPhotos")}</span>
             <span className="text-xs text-muted-foreground">
-              ou glissez-les ici · {max} au plus par envoi
+              {tr("ui.galleryUploader.ouGlissezLesIci")}{max}{tr("ui.galleryUploader.auPlusParEnvoi")}
             </span>
             <input
               ref={inputRef}
@@ -212,13 +213,13 @@ export function GalleryUploader({
           </label>
         ) : remaining <= 0 ? (
           <p className="text-xs text-muted-foreground">
-            Galerie complète : retirez une photo pour en ajouter une autre.
+            {tr("ui.galleryUploader.galerieCompleteRetirezUnePhoto")}
           </p>
         ) : null}
         <span className="text-xs text-muted-foreground">
           {preparing
-            ? "Préparation : réduction, floutage des visages et des plaques, retrait des données de l'appareil…"
-            : "Réduites à 1 600 px, visages et plaques floutés, sans position GPS ni données de l'appareil."}
+            ? tr("ui.galleryUploader.preparationReductionFloutageDesVisages")
+            : tr("ui.galleryUploader.reduitesA1600Px")}
         </span>
         {items.length ? (
           <ul className="grid gap-2 sm:grid-cols-2">
@@ -237,7 +238,7 @@ export function GalleryUploader({
                     placeholder={
                       category
                         ? `Légende (sinon « ${PHOTO_CATEGORY_FORM[category].label} »)`
-                        : "Légende (facultatif)"
+                        : tr("ui.galleryUploader.legendeFacultatif")
                     }
                     disabled={Boolean(sending)}
                     onChange={(event) =>
@@ -256,7 +257,7 @@ export function GalleryUploader({
                     disabled={Boolean(sending)}
                     onClick={() => drop(item.key)}
                   >
-                    <X className="size-3.5" aria-hidden /> Retirer
+                    <X className="size-3.5" aria-hidden />{tr("ui.galleryUploader.retirer")}
                   </button>
                 </div>
               </li>
@@ -266,11 +267,11 @@ export function GalleryUploader({
       </div>
 
       <label className="grid gap-1">
-        <span className="font-semibold">Crédit (facultatif)</span>
+        <span className="font-semibold">{tr("ui.galleryUploader.creditFacultatif")}</span>
         <Input
           value={credit}
           maxLength={120}
-          placeholder="Auteur ou service"
+          placeholder={tr("ui.galleryUploader.auteurOuService")}
           disabled={Boolean(sending)}
           onChange={(event) => setCredit(event.target.value)}
         />
@@ -292,7 +293,7 @@ export function GalleryUploader({
             ? `Envoi ${Math.min(sending.done + 1, sending.total)} sur ${sending.total}…`
             : items.length > 1
               ? `Publier les ${items.length} photos`
-              : "Publier la photo"}
+              : tr("ui.galleryUploader.publierLaPhoto")}
         </Button>
         <Button
           type="button"
@@ -301,10 +302,10 @@ export function GalleryUploader({
           disabled={Boolean(sending)}
           onClick={onClose}
         >
-          Annuler
+          {tr("ui.galleryUploader.annuler")}
         </Button>
         {!category && items.length ? (
-          <span className="text-xs text-muted-foreground">Choisissez d'abord une catégorie.</span>
+          <span className="text-xs text-muted-foreground">{tr("ui.galleryUploader.choisissezDAbordUneCategorie")}</span>
         ) : null}
       </div>
     </div>

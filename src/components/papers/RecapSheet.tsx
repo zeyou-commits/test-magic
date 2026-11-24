@@ -32,6 +32,7 @@ import {
 } from "@/lib/papers/planCategories";
 import { SourceLinks } from "@/components/papers/PapersFlow";
 import { TaskLink } from "@/components/papers/TaskLink";
+import { tr } from "@/lib/i18n";
 
 const icons: Record<PlanCategory, LucideIcon> = {
   steps: ClipboardList,
@@ -98,7 +99,7 @@ export function PaperKpis({
     { key: "attention", n: left("attention").length, label: "points d'attention", icon: Info },
   ];
   return (
-    <div className="bw-kpis" role="list" aria-label="Le récap en chiffres">
+    <div className="bw-kpis" role="list" aria-label={tr("ui.recapSheet.leRecapEnChiffres")}>
       {tiles.map((tile) => {
         const Icon = tile.icon;
         return (
@@ -241,13 +242,13 @@ export function RecapSheet({
     <div className="bw-recap bw-recap--papers">
       <header className="bw-recap__head">
         <div className="min-w-0 flex-1">
-          <p className="bw-recap__kicker">Vos papiers pour le voyage</p>
+          <p className="bw-recap__kicker">{tr("ui.recapSheet.vosPapiersPourLeVoyage")}</p>
           <h2 className="bw-recap__title">{title}</h2>
         </div>
         <div
           className="bw-recap__ring"
           role="img"
-          aria-label={allDone ? "Tout est prêt" : `${doneCount} sur ${total} faites`}
+          aria-label={allDone ? tr("ui.recapSheet.toutEstPret") : `${doneCount} sur ${total} faites`}
           style={{ "--p": total ? doneCount / total : 0 } as CSSProperties}
         >
           <svg viewBox="0 0 44 44" aria-hidden>
@@ -267,7 +268,7 @@ export function RecapSheet({
         <div className="bw-recap__actions">
           {editSlot}
           <Link to="/ma-preparation" search={{ retour: "papiers" } as never} className="bw-recap__hbtn">
-            <Share2 size={14} aria-hidden /> Partager · PDF
+            <Share2 size={14} aria-hidden />{tr("ui.recapSheet.partagerPdf")}
           </Link>
         </div>
       </header>
@@ -276,7 +277,7 @@ export function RecapSheet({
         {departure ? (
           <div>
             <dt>
-              <CalendarDays size={13} aria-hidden /> Départ
+              <CalendarDays size={13} aria-hidden />{tr("ui.recapSheet.depart")}
             </dt>
             <dd>
               {new Intl.DateTimeFormat("fr-FR", {
@@ -289,17 +290,17 @@ export function RecapSheet({
         ) : null}
         <div>
           <dt>
-            <Users size={13} aria-hidden /> Voyageurs
+            <Users size={13} aria-hidden />{tr("ui.recapSheet.voyageurs")}
           </dt>
           <dd>
-            {adults} adulte{adults > 1 ? "s" : ""}
+            {adults}{tr("ui.recapSheet.adulte")}{adults > 1 ? "s" : ""}
             {kids ? ` · ${kids} enfant${kids > 1 ? "s" : ""}` : ""}
           </dd>
         </div>
         {fees ? (
           <div>
             <dt>
-              <Euro size={13} aria-hidden /> Frais connus
+              <Euro size={13} aria-hidden />{tr("ui.recapSheet.fraisConnus")}
             </dt>
             <dd>{fees} €</dd>
           </div>
@@ -307,7 +308,7 @@ export function RecapSheet({
         {atConsulate ? (
           <div className="bw-recap__consulat">
             <dt>
-              <MapPin size={13} aria-hidden /> Consulat
+              <MapPin size={13} aria-hidden />{tr("ui.recapSheet.consulat")}
             </dt>
             {consulat ? (
               <dd>
@@ -318,7 +319,7 @@ export function RecapSheet({
                   rel="noreferrer"
                   className="bw-recap__rdv"
                 >
-                  {consulat.rdv ? "Rendez-vous" : "Site"} <ExternalLink size={11} aria-hidden />
+                  {consulat.rdv ? tr("ui.recapSheet.rendezVous") : tr("ui.recapSheet.site")} <ExternalLink size={11} aria-hidden />
                 </a>
               </dd>
             ) : (
@@ -328,7 +329,7 @@ export function RecapSheet({
                   className="bw-recap__rdv"
                   onClick={() => firstConsulateKey && setOpenKey(firstConsulateKey)}
                 >
-                  À trouver <ChevronRight size={12} aria-hidden />
+                  {tr("ui.recapSheet.aTrouver")}<ChevronRight size={12} aria-hidden />
                 </button>
               </dd>
             )}
@@ -353,7 +354,7 @@ export function RecapSheet({
       {namesSlot}
 
       {travellers.length > 2 ? (
-        <div className="bw-recap__who" role="radiogroup" aria-label="Voir ce qui concerne">
+        <div className="bw-recap__who" role="radiogroup" aria-label={tr("ui.recapSheet.voirCeQuiConcerne")}>
           {filters.map((filter) => (
             <button
               key={filter.value ?? "all"}
@@ -370,8 +371,7 @@ export function RecapSheet({
 
       {allDone ? (
         <p className="bw-recap__ready" role="status">
-          <PartyPopper size={18} aria-hidden /> Tout est prêt : vos papiers sont en règle pour le
-          voyage.
+          <PartyPopper size={18} aria-hidden />{tr("ui.recapSheet.toutEstPretVosPapiers")}
         </p>
       ) : null}
 
@@ -397,7 +397,7 @@ export function RecapSheet({
                   data-zero={checkable && items.length && !left ? "" : undefined}
                 >
                   {checkable && items.length && !left ? (
-                    <Check size={12} strokeWidth={3} aria-label="tout fait" />
+                    <Check size={12} strokeWidth={3} aria-label={tr("ui.recapSheet.toutFait")} />
                   ) : (
                     left
                   )}
@@ -443,8 +443,7 @@ export function RecapSheet({
       ) : null}
 
       <p className="bw-recap__foot">
-        Sources lues le {checkedOn}. Les règles peuvent changer : le consulat d'Algérie et la police
-        aux frontières restent la référence au moment du voyage.
+        {tr("ui.recapSheet.sourcesLuesLe")}{checkedOn}{tr("ui.recapSheet.lesReglesPeuventChangerLe")}
       </p>
 
       {openItem ? (
@@ -523,10 +522,10 @@ function Row({
             {item.cost ? <span className="bw-recap__cost">{item.cost.label}</span> : null}
             {partial ? (
               <span>
-                {doneHere}/{item.tasks.length} faits
+                {doneHere}/{item.tasks.length}{tr("ui.recapSheet.faits")}
               </span>
             ) : null}
-            {toConfirm ? <span className="bw-recap__warn">À faire confirmer</span> : null}
+            {toConfirm ? <span className="bw-recap__warn">{tr("ui.recapSheet.aFaireConfirmer")}</span> : null}
           </span>
         </span>
         <ChevronRight size={16} className="bw-recap__chev" aria-hidden />
@@ -592,7 +591,7 @@ function DetailSheet({
       <button
         type="button"
         className="bw-recap-sheet__scrim"
-        aria-label="Fermer"
+        aria-label={tr("ui.recapSheet.fermer")}
         tabIndex={-1}
         onClick={close}
       />
@@ -614,7 +613,7 @@ function DetailSheet({
                         type="button"
             onClick={close}
             className="bw-recap-sheet__close"
-            aria-label="Fermer"
+            aria-label={tr("ui.recapSheet.fermer")}
           >
             <X size={18} aria-hidden />
           </button>
@@ -644,7 +643,7 @@ function DetailSheet({
           ) : null}
           {first.length ? (
             <p className="bw-recap-sheet__first">
-              <AlertTriangle size={15} aria-hidden /> D'abord :{" "}
+              <AlertTriangle size={15} aria-hidden />{tr("ui.recapSheet.dAbord")}{" "}
               {first.map((t) => t.title.charAt(0).toLowerCase() + t.title.slice(1)).join(", ")}
             </p>
           ) : null}
@@ -686,7 +685,7 @@ function DetailSheet({
             <SourceLinks ids={[...new Set(item.tasks.flatMap((t) => t.sources))]} />
           ) : (
             <p className="text-xs font-semibold text-muted-foreground">
-              Aucune source officielle trouvée sur ce point.
+              {tr("ui.recapSheet.aucuneSourceOfficielleTrouveeSur")}
             </p>
           )}
         </div>
@@ -708,11 +707,11 @@ function DetailSheet({
               }}
             >
               {full ? (
-                <>Remettre à faire</>
+                <>{tr("ui.recapSheet.remettreAFaire")}</>
               ) : (
                 <>
                   <Check size={17} strokeWidth={3} aria-hidden />
-                  {group ? "Tout marquer comme fait" : "Marquer comme fait"}
+                  {group ? tr("ui.recapSheet.toutMarquerCommeFait") : tr("ui.recapSheet.marquerCommeFait")}
                 </>
               )}
             </button>

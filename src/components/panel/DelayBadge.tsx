@@ -2,6 +2,7 @@ import { ChevronRight } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { formatDateParts } from "@/lib/ferry/format";
 import type { TrackingTime } from "@/lib/ferry/tracking";
+import { tr } from "@/lib/i18n";
 
 const stop = (event: { stopPropagation: () => void }) => event.stopPropagation();
 
@@ -55,7 +56,7 @@ export function DelayBadge({
           className={`bw-delay-badge${compact ? " bw-delay-badge--compact" : ""}`}
           aria-label={`Retardé ${label} : voir le détail`}
         >
-          Retardé · {label}
+          {tr("ui.delayBadge.retarde")}{label}
           <ChevronRight className="bw-sea-chip__more" aria-hidden />
         </button>
       </PopoverTrigger>
@@ -65,7 +66,7 @@ export function DelayBadge({
         onClick={stop}
         onPointerDown={stop}
       >
-        <p className="bw-sea-pop__title">Retard {label.replace(/^≈ /, "estimé à ")}</p>
+        <p className="bw-sea-pop__title">{tr("ui.delayBadge.retard")}{label.replace(/^≈ /, "estimé à ")}</p>
         <dl className="bw-delay-pop__rows">
           {rows.map((row) => (
             <div key={row.name}>
@@ -78,24 +79,24 @@ export function DelayBadge({
                   <s>{hour(row.time.scheduledIso, row.zone)}</s>
                 ) : null}
                 <b>
-                  {row.time.notBefore ? "pas avant " : ""}
+                  {row.time.notBefore ? tr("ui.delayBadge.pasAvant") : ""}
                   {hour(row.time.iso ?? row.time.scheduledIso, row.zone)}
                 </b>
-                <small>heure locale</small>
+                <small>{tr("ui.delayBadge.heureLocale")}</small>
               </dd>
             </div>
           ))}
         </dl>
         {times.departure.notBefore ? (
           <p className="bw-sea-pop__lead">
-            Le navire est encore à quai : l'heure de départ est un minimum, pas une heure sûre.
+            {tr("ui.delayBadge.leNavireEstEncoreA")}
           </p>
         ) : null}
         <p className="bw-sea-pop__lead">
           {sourceOf(main, main === times.arrival ? toZone : fromZone)}
         </p>
         <p className="bw-sea-pop__source">
-          Un repère pour s'organiser : seule la compagnie confirme les horaires.
+          {tr("ui.delayBadge.unReperePourSOrganiser")}
         </p>
       </PopoverContent>
     </Popover>

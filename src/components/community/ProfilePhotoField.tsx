@@ -13,6 +13,7 @@ import {
   submitProfilePhoto,
   type PreparedPhoto,
 } from "@/lib/photos/photos";
+import { tr } from "@/lib/i18n";
 
 /**
  * Ma photo de profil, en plus des avatars : réduite, sans métadonnées, filtre de contenu explicite
@@ -54,16 +55,15 @@ export function ProfilePhotoField() {
   const pending = mine.data?.pending ?? null;
   return (
     <fieldset className="bw-profile-photo">
-      <legend>Votre photo de profil</legend>
+      <legend>{tr("ui.profilePhotoField.votrePhotoDeProfil")}</legend>
       <p className="text-xs text-muted-foreground">
-        Facultative : elle remplace votre avatar auprès des autres voyageurs dès l’envoi. Vous
-        pouvez la changer ou la retirer à tout moment.
+        {tr("ui.profilePhotoField.facultativeElleRemplaceVotreAvatar")}
       </p>
       {approved ? (
         <div className="mt-2 flex items-center gap-3">
           <img
             src={photoUrl(approved.path)}
-            alt="Votre photo de profil"
+            alt={tr("ui.profilePhotoField.votrePhotoDeProfil")}
             width={56}
             height={56}
             className="size-14 rounded-full object-cover"
@@ -79,21 +79,21 @@ export function ProfilePhotoField() {
                 remove.mutate(approved);
             }}
           >
-            <Trash2 size={14} aria-hidden /> Retirer ma photo
+            <Trash2 size={14} aria-hidden />{tr("ui.profilePhotoField.retirerMaPhoto")}
           </button>
         </div>
       ) : null}
       {pending ? (
         <p className="mt-2 flex items-center gap-1.5 rounded-lg bg-amber-50 p-2 text-sm text-amber-900">
           <Clock size={14} aria-hidden />
-          Votre photo est en cours de vérification par l’équipe.
+          {tr("ui.profilePhotoField.votrePhotoEstEnCours")}
           <button
             type="button"
             className="ml-auto font-semibold underline"
             disabled={remove.isPending}
             onClick={() => remove.mutate({ id: pending.id, path: "" })}
           >
-            La retirer
+            {tr("ui.profilePhotoField.laRetirer")}
           </button>
         </p>
       ) : null}
@@ -116,7 +116,7 @@ export function ProfilePhotoField() {
           onClick={() => send.mutate()}
         >
           {send.isPending ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : null}
-          Publier ma photo
+          {tr("ui.profilePhotoField.publierMaPhoto")}
         </button>
       ) : null}
     </fieldset>

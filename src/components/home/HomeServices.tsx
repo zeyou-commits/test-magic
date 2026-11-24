@@ -15,6 +15,7 @@ import type { Company, Port, RouteLine } from "@/lib/ferry/types";
 import { newsDay, newsFeedQuery, newsSlug } from "@/lib/ferry/newsFeed";
 import { TICKETING } from "@/lib/seo/pitch";
 import { HomeTour } from "./HomeTour";
+import { tr } from "@/lib/i18n";
 
 const COMMUNITY = [
   {
@@ -106,29 +107,28 @@ export function HomeServices({
   const latest = news.slice(0, 3);
 
   return (
-    <div ref={root} className="bw-services" aria-label="Les services de BledWay">
+    <div ref={root} className="bw-services" aria-label={tr("ui.homeServices.lesServicesDeBledway")}>
       {/* Juste sous la carte : les écrans du site, puis le récit « Tout le voyage ». */}
       <HomeTour />
 
       <section className="bw-container bw-services-hero" data-reveal aria-labelledby="services-title">
         <div>
-          <p className="bw-eyebrow">BledWay, du premier projet au retour</p>
+          <p className="bw-eyebrow">{tr("ui.homeServices.bledwayDuPremierProjetAu")}</p>
           <h2 id="services-title">
-            Tout le voyage vers le bled, <em>au même endroit.</em>
+            {tr("ui.homeServices.toutLeVoyageVersLe")}<em>{tr("ui.homeServices.auMemeEndroit")}</em>
           </h2>
           <p>
-            Préparer les papiers et le budget, comparer les traversées, suivre le navire, passer le
-            port : BledWay vous accompagne à chaque étape. Indépendant et gratuit.
+            {tr("ui.homeServices.preparerLesPapiersEtLe")}
           </p>
           <div className="bw-services-actions">
             <button type="button" className="bw-primary-link" onClick={onBook}>
-              Chercher une traversée
+              {tr("ui.homeServices.chercherUneTraversee")}
               <span>
                 <ArrowUpRight size={19} aria-hidden />
               </span>
             </button>
             <Link to="/preparer-mon-voyage" className="bw-text-link">
-              Préparer mon voyage
+              {tr("ui.homeServices.preparerMonVoyage")}
               <ArrowUpRight size={18} aria-hidden />
             </Link>
           </div>
@@ -142,8 +142,8 @@ export function HomeServices({
               </div>
             ))}
             <div>
-              <dt>pour chercher et comparer</dt>
-              <dd>Gratuit</dd>
+              <dt>{tr("ui.homeServices.pourChercherEtComparer")}</dt>
+              <dd>{tr("ui.homeServices.gratuit")}</dd>
             </div>
           </dl>
         ) : null}
@@ -154,9 +154,9 @@ export function HomeServices({
         <div className="bw-container">
           <div className="bw-section-heading">
             <div>
-              <p className="bw-eyebrow">La communauté</p>
+              <p className="bw-eyebrow">{tr("ui.homeServices.laCommunaute")}</p>
               <h2 id="community-title">
-                Ceux qui sont au port renseignent <em>ceux qui arrivent.</em>
+                {tr("ui.homeServices.ceuxQuiSontAuPort")}<em>{tr("ui.homeServices.ceuxQuiArrivent")}</em>
               </h2>
             </div>
           </div>
@@ -177,11 +177,10 @@ export function HomeServices({
 
       <section className="bw-container bw-services-trust" data-reveal aria-labelledby="trust-title">
         <div>
-          <p className="bw-eyebrow">D'où viennent les informations</p>
-          <h2 id="trust-title">Ce que BledWay sait, et ce qu'il estime.</h2>
+          <p className="bw-eyebrow">{tr("ui.homeServices.dOuViennentLesInformations")}</p>
+          <h2 id="trust-title">{tr("ui.homeServices.ceQueBledwaySaitEt")}</h2>
           <p>
-            Chaque information porte sa source et sa fraîcheur. Quand une donnée est estimée,
-            c'est écrit, au même endroit que la donnée.
+            {tr("ui.homeServices.chaqueInformationPorteSaSource")}
           </p>
         </div>
         <ul>
@@ -201,11 +200,11 @@ export function HomeServices({
         <section className="bw-container bw-services-news" data-reveal aria-labelledby="news-title">
           <div className="bw-section-heading">
             <div>
-              <p className="bw-eyebrow">Les actualités</p>
-              <h2 id="news-title">Ce qui bouge sur les lignes.</h2>
+              <p className="bw-eyebrow">{tr("ui.homeServices.lesActualites")}</p>
+              <h2 id="news-title">{tr("ui.homeServices.ceQuiBougeSurLes")}</h2>
             </div>
             <Link to="/actualites" className="bw-text-link">
-              Toutes les actualités
+              {tr("ui.homeServices.toutesLesActualites")}
               <ArrowUpRight size={18} aria-hidden />
             </Link>
           </div>
@@ -221,17 +220,17 @@ export function HomeServices({
         </section>
       ) : null}
 
-      <section className="bw-container bw-services-final" data-reveal aria-label="Commencer">
+      <section className="bw-container bw-services-final" data-reveal aria-label={tr("ui.homeServices.commencer")}>
         <Waves size={26} strokeWidth={1.6} aria-hidden />
-        <p>Le prochain chapitre commence par une date et un port.</p>
+        <p>{tr("ui.homeServices.leProchainChapitreCommencePar")}</p>
         <button type="button" className="bw-primary-link" onClick={onBook}>
-          Chercher une traversée
+          {tr("ui.homeServices.chercherUneTraversee")}
           <span>
             <ArrowUpRight size={19} aria-hidden />
           </span>
         </button>
         <Link to="/decouvrir" className="bw-text-link">
-          Découvrir BledWay en détail
+          {tr("ui.homeServices.decouvrirBledwayEnDetail")}
           <ArrowUpRight size={18} aria-hidden />
         </Link>
       </section>

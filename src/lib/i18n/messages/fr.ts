@@ -202,6 +202,7 @@ export const fr = {
     en: "English",
     soon: "bientôt",
     switchTo: "Afficher BledWay en {lang}",
+    choose: "Langue : {lang}. Changer de langue",
   },
 } as const;
 

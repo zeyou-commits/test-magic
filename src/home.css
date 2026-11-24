@@ -232,6 +232,48 @@ html {
   box-shadow: 0 0 0 1px #0f3d2e26;
   overflow: hidden;
 }
+.bw-lang-toggle {
+  padding-inline-end: 7px;
+}
+.bw-lang-toggle__chevron {
+  flex: none;
+  opacity: 0.6;
+  transition: transform 0.15s ease;
+}
+.bw-lang-toggle[data-state="open"] .bw-lang-toggle__chevron {
+  transform: rotate(180deg);
+}
+/* Liste des langues : une ligne par langue ouverte, écrite dans sa langue, la langue affichée cochée. */
+.bw-lang-menu {
+  min-width: 176px;
+  padding: 6px;
+  border: 1px solid #dfe6e0;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px #0f3d2e24;
+}
+.bw-lang-menu__item {
+  gap: 10px;
+  min-height: 44px;
+  padding-inline: 10px;
+  border-radius: 10px;
+  color: #0f3d2e;
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.bw-lang-menu__item[lang="ar"] {
+  font-family: "BW Arabic", system-ui, sans-serif;
+}
+.bw-lang-menu__item[data-current] {
+  background: #eef6f1;
+  font-weight: 800;
+}
+.bw-lang-menu__name {
+  flex: 1;
+}
+.bw-lang-menu__check {
+  color: #1f7a4d;
+}
 .bw-lang-toggle:active {
   transform: scale(0.96);
 }

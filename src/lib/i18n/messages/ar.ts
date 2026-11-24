@@ -7203,6 +7203,7 @@ export const ar: PartialMessages = {
   "language": {
     "label": "اللغة",
     "soon": "قريبًا",
-    "switchTo": "عرض BledWay بـ{lang}"
+    "switchTo": "عرض BledWay بـ{lang}",
+    "choose": "اللغة: {lang}. تغيير اللغة"
   }
 };

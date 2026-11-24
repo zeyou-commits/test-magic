@@ -43,7 +43,7 @@ export type TickerLine = {
 
 const missing = (code?: string) => code === "PGRST202" || code === "42883";
 
-/** Les derniers messages publics (6 h), sans les comptes de moins de 7 jours ni les signalés. */
+/** Les derniers messages publics (salon général : 7 jours ; traversées : 6 h), sans les comptes de moins de 7 jours ni les signalés. */
 export const tickerQuery = queryOptions({
   queryKey: ["bw-chat", "ticker"],
   queryFn: async (): Promise<TickerLine[] | null> => {

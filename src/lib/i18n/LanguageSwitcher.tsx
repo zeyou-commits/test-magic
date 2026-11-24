@@ -1,8 +1,14 @@
-import { Globe } from "lucide-react";
+import { Check, ChevronDown, Globe } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ENABLED_LOCALES, LOCALES, type Locale } from "./config";
 import { useLocale, useT } from "./I18nProvider";
 
-/** Nom court de la langue proposée, dans cette langue : « عربي » sur le site en français, « FR » en arabe. */
+/** Nom court de chaque langue, écrit dans cette langue. */
 const SHORT: Record<Locale, string> = { fr: "FR", ar: "عربي", en: "EN" };
 
 /** Drapeaux ronds dessinés (les drapeaux emoji ne s'affichent pas sous Windows). Arabe : Algérie. */
@@ -44,27 +50,43 @@ function Flag({ locale }: { locale: Locale }) {
 }
 
 /**
- * Bouton de la barre du haut : un seul toucher pour passer à l'autre langue ouverte. Le choix est
- * enregistré et passe avant la langue du téléphone.
+ * Bouton de la barre du haut : le drapeau et le nom court de la langue affichée ; un toucher
+ * déroule toutes les langues ouvertes (ENABLED_LOCALES), chacune écrite dans sa propre langue.
+ * Une nouvelle langue ouverte y apparaît d'elle-même. Le choix est enregistré et passe avant la
+ * langue du téléphone.
  */
 export function LanguageToggle({ className = "" }: { className?: string }) {
   const { locale, setLocale } = useLocale();
   const t = useT();
-  const target = ENABLED_LOCALES.find((code) => code !== locale);
-  if (!target || ENABLED_LOCALES.length < 2) return null;
-  const label = t("language.switchTo", { lang: t(`language.${target}`) });
+  if (ENABLED_LOCALES.length < 2) return null;
+  const label = t("language.choose", { lang: t(`language.${locale}`) });
   return (
-    <button
-      type="button"
-      onClick={() => setLocale(target)}
-      className={`bw-lang-toggle ${className}`}
-      lang={target}
-      aria-label={label}
-      title={label}
-    >
-      <Flag locale={target} />
-      <span>{SHORT[target]}</span>
-    </button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button type="button" className={`bw-lang-toggle ${className}`} lang={locale} aria-label={label} title={label}>
+          <Flag locale={locale} />
+          <span>{SHORT[locale]}</span>
+          <ChevronDown size={14} className="bw-lang-toggle__chevron" aria-hidden="true" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" sideOffset={8} className="bw-lang-menu">
+        {ENABLED_LOCALES.map((code) => (
+          <DropdownMenuItem
+            key={code}
+            lang={code}
+            className="bw-lang-menu__item"
+            data-current={code === locale || undefined}
+            onSelect={() => {
+              if (code !== locale) setLocale(code);
+            }}
+          >
+            <Flag locale={code} />
+            <span className="bw-lang-menu__name">{t(`language.${code}`)}</span>
+            {code === locale ? <Check size={16} className="bw-lang-menu__check" aria-hidden="true" /> : null}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

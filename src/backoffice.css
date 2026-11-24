@@ -249,8 +249,8 @@
 .bo-space__items {
   display: grid;
   gap: 1px;
-  margin: 3px 0 8px 23px;
-  padding: 0 0 0 14px;
+  margin-block: 3px 8px; margin-inline: 23px 0;
+  padding-block: 0; padding-inline: 14px 0;
   border-left: 1px solid var(--bo-side-line);
   list-style: none;
   animation: bo-open 180ms ease-out;
@@ -989,7 +989,7 @@ a.bo-kpi:hover {
     align-items: center;
     gap: 3px;
     min-height: 38px;
-    padding: 0 11px 0 8px;
+    padding-block: 0; padding-inline: 8px 11px;
     border: 1px solid var(--bo-line);
     border-radius: 999px;
     background: #ffffff;

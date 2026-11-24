@@ -338,7 +338,7 @@ export const companionStepTitles: Record<CompanionStep, string> = {
   get profile() { return tr("ui.libFerryCompanion.monDepartEn3Questions"); },
   get papers() { return tr("ui.libFerryCompanion.mesPapiers"); },
   get car() { return tr("ui.libFerryCompanion.maVoiture"); },
-  route: "Ma route jusqu'à destination",
+  get route() { return tr("ui.libFerryCompanion.maRouteJusquADestination"); },
   get budget() { return tr("ui.libFerryCompanion.monBudget"); },
   get book() { return tr("ui.libFerryCompanion.monBillet"); },
 };

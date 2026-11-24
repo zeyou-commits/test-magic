@@ -50,7 +50,7 @@
   align-items: center;
   gap: 10px;
   min-height: 50px;
-  padding: 0 8px 0 14px;
+  padding-block: 0; padding-inline: 14px 8px;
   border: 1.5px solid #cfe3d8;
   border-radius: 16px;
   background: #ffffff;
@@ -186,7 +186,7 @@
 }
 .bw-help__peek {
   display: -webkit-box;
-  margin: 0 40px 13px 14px;
+  margin-block: 0 13px; margin-inline: 14px 40px;
   overflow: hidden;
   color: #5b6b66;
   font-size: 13px;
@@ -810,8 +810,8 @@
   gap: 2px;
   align-self: flex-start;
   justify-self: start;
-  margin: -4px 0 2px -6px;
-  padding: 4px 8px 4px 4px;
+  margin-block: -4px 2px; margin-inline: -6px 0;
+  padding-block: 4px; padding-inline: 4px 8px;
   border-radius: 999px;
   color: #0e7a43;
   font-size: 13px;

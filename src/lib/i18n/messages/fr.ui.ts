@@ -859,6 +859,7 @@ export const ui = {
     escaleIncoherenteArriveAPuis: "Escale incohérente : arrive à {toName} puis repart de {fromName} sans traversée entre les deux.",
   },
   libFerryCompanion: {
+    maRouteJusquADestination: "Ma route jusqu'à destination",
     entreLeEtLe: "entre le {shortDay} et le {shortDay2}",
     dateAChoisir: "date à choisir",
     basseSaison: "Basse saison",

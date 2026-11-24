@@ -353,7 +353,7 @@
 [data-mid-zoom="true"] .bw-signal-pin__body { zoom: 0.85; }
 [data-low-zoom="true"] .bw-signal-pin { padding-bottom: 4px; }
 /* La bulle elle-même est positionnée par la carte : seul son contenu est réduit. */
-[data-low-zoom="true"] .bw-presence-pin { padding: 1px 4px 1px 1px; }
+[data-low-zoom="true"] .bw-presence-pin { padding-block: 1px; padding-inline: 1px 4px; }
 [data-low-zoom="true"] .bw-presence-pin > * { zoom: 0.6; }
 [data-mid-zoom="true"] .bw-presence-pin > * { zoom: 0.8; }
 .port-marker__dot:hover::after {
@@ -763,7 +763,7 @@
   position: absolute;
   /* En haut de la case : les liserés de vacances occupent le bas. */
   top: 3px;
-  left: 50%;
+  inset-inline-start: 50%;
   width: 4.5px;
   height: 4.5px;
   margin-inline-start: -2.25px;
@@ -962,7 +962,7 @@
   justify-content: center;
   max-width: 112px;
   height: 34px;
-  padding: 4px 18px 4px 8px;
+  padding-block: 4px; padding-inline: 8px 18px;
   background: #ffffff;
   color: #16324a;
   font-size: 12px;

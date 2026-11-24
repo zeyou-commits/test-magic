@@ -3567,6 +3567,31 @@ html {
     font-weight: 600;
     line-height: 1.1;
   }
+  /* Profil en haut à droite : l'avatar seul (36 px), sans libellé « Moi » ; badges recalés. */
+  /* Le cabas entier et centré dans le rond (il n'est plus posé en bas, coupé). */
+  .bw-header-me-slot .bw-tavatar__disc {
+    border-width: 2px;
+  }
+  .bw-header-me-slot .bw-tavatar__disc img:not(.bw-tavatar__photo) {
+    width: 84%;
+    height: 84%;
+    margin-top: 0;
+  }
+  .bw-header-me-slot .bw-me-tab__wrap {
+    margin-block: 0;
+  }
+  .bw-header-me-slot .bw-me-tab .bw-me-tab__bubble[data-empty] {
+    top: 0;
+    left: calc(50% + 9px);
+  }
+  .bw-header-me-slot .bw-me-tab__wrap .bw-mood-bubble {
+    inset: 4px 0 auto;
+    height: 36px;
+  }
+  .bw-header-me-slot .bw-me-tab__wrap .bw-mood-bubble__badge {
+    right: calc(50% - 26px);
+    bottom: -5px;
+  }
 }
 
 /* L'accueil est un écran d'application, sur téléphone comme sur ordinateur : la page ne défile

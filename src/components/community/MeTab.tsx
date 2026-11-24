@@ -102,8 +102,7 @@ export function MeTab({
               <Plus size={11} />
             </span>
           )}
-          <TravellerAvatar card={me} size={30} mood={false} static />
-          <span>{tr("ui.meTab.moi")}</span>
+          <TravellerAvatar card={me} size={36} mood={false} static />
         </button>
         <MoodBubble mood={me.mood} placement={placement} />
       </span>

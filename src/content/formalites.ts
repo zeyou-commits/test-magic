@@ -139,6 +139,30 @@ export const formaliteSources = lazyContent({
     url: "https://helpcenter.balearia.com/hc/fr/articles/24337130398493",
     updated: "lue le 23 novembre 2026",
   },
+  "balearia-export": {
+    name: "Baleària : exportation de véhicules vers l'Algérie",
+    short: "Baleària",
+    url: "https://helpcenter.balearia.com/hc/fr/articles/15042994707997",
+    updated: "lue le 25 novembre 2026",
+  },
+  "douane-export-vehicule": {
+    name: "Douane française : exportation hors de l'Union européenne d'un véhicule acheté en France",
+    short: "Douane française",
+    url: "https://www.douane.gouv.fr/fiche/exportation-hors-de-lunion-europeenne-dun-vehicule-moteur-achete-en-france",
+    updated: "mise à jour du 5 février 2021",
+  },
+  "douane-export-formalites": {
+    name: "Douane française : formalités à l'exportation, les notions essentielles",
+    short: "Douane française",
+    url: "https://www.douane.gouv.fr/fiche/formalites-lexportation-les-notions-essentielles",
+    updated: "mise à jour du 23 novembre 2023",
+  },
+  "douane-mrn": {
+    name: "Douane française : rappel sur les numéros LRN, CRN et MRN (déploiement de DELTA IE)",
+    short: "Douane française",
+    url: "https://www.douane.gouv.fr/actualites/point-dactualite-sur-le-deploiement-de-delta-ie-import-et-export-au-5-fevrier-2026",
+    updated: "point du 5 février 2026",
+  },
 } as const satisfies Record<string, { name: string; short: string; url: string; updated?: string }>);
 
 export type FormaliteSourceId = keyof typeof formaliteSources;

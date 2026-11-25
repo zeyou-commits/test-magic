@@ -115,7 +115,7 @@ import {
   type PortChoice,
 } from "@/lib/ferry/companion";
 import { searchItineraryAddress } from "@/lib/ferry/itinerary.functions";
-import { carPrepItems as carItems } from "@/lib/ferry/dossier";
+import { carItemsFor } from "@/lib/ferry/dossier";
 import {
   PAPERS_LAST_DAYS,
   papersDeadlines,
@@ -370,7 +370,7 @@ const chapterOf = (step: CompanionStep) =>
  * défiler — et « Commencer » ouvre directement la première question. Les diapos (PrepareIntro :
  * pourquoi ces questions, les trois chapitres) restent à la demande, derrière « Comment ça marche ? ».
  */
-function Welcome({ onStart }: { onStart: () => void }) {
+function Welcome({ onStart, onImport }: { onStart: () => void; onImport: () => void }) {
   const [intro, setIntro] = useState(false);
   if (intro) return <PrepareIntro onBack={() => setIntro(false)} onGo={onStart} />;
   return (
@@ -383,6 +383,18 @@ function Welcome({ onStart }: { onStart: () => void }) {
             {tr("ui.pagePreparerMonVoyage.commencer")}<ArrowRight size={16} aria-hidden />
           </span>
         </Bw504Note>
+      </button>
+      {/* Celui qui vient pour importer sa voiture le dit dès l'entrée : le parcours s'adapte. */}
+      <button
+        type="button"
+        onClick={onImport}
+        className="mt-3 flex w-full items-center justify-between gap-3 rounded-2xl border bg-background p-4 text-left font-semibold transition-colors hover:border-primary/40"
+      >
+        <span className="flex items-center gap-2">
+          <Car size={18} className="shrink-0 text-primary" aria-hidden />
+          {tr("ui.pagePreparerMonVoyage.jImporteUneVoiture")}
+        </span>
+        <ArrowRight size={16} className="shrink-0 text-primary" aria-hidden />
       </button>
       <p className="mt-2 text-center md:text-start">
         <button
@@ -783,6 +795,11 @@ function CompanionPage() {
                 setOpen("profile");
                 requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
               }}
+              onImport={() => {
+                patch({ started: true, importCar: true });
+                setOpen("profile");
+                requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+              }}
             />
           ) : (
             <>
@@ -967,7 +984,7 @@ function useSummaries(
     [papers.answers],
   );
   const ready = tasks.filter((t) => papers.done.includes(t.id)).length;
-  const carReady = carItems.filter((item) => plan.carDone.includes(item.id)).length;
+  const carReady = carItemsFor(plan.importCar).filter((item) => plan.carDone.includes(item.id)).length;
   const line = fromChoice && toPort ? `${fromChoice.port.name} → ${toPort.name}` : null;
   const duration =
     fromChoice?.lines.find((l) => l.to.id === toPort?.id)?.route.typical_duration_minutes ?? null;
@@ -985,9 +1002,9 @@ function useSummaries(
     papers: papers.finished
       ? plan.vehicle === "none"
         ? tr("ui.pagePreparerMonVoyage.surPapiersPrets", { ready, length: tasks.length })
-        : tr("ui.pagePreparerMonVoyage.surPapiersPretsVoitureComprise", { v: ready + carReady, v2: tasks.length + carItems.length })
+        : tr("ui.pagePreparerMonVoyage.surPapiersPretsVoitureComprise", { v: ready + carReady, v2: tasks.length + carItemsFor(plan.importCar).length })
       : tr("ui.pagePreparerMonVoyage.votreListeVoyageurParVoyageur"),
-    car: tr("ui.pagePreparerMonVoyage.surFaits", { carReady, length: carItems.length, v: plan.importCar ? tr("ui.pagePreparerMonVoyage.import") : "" }),
+    car: tr("ui.pagePreparerMonVoyage.surFaits", { carReady, length: carItemsFor(plan.importCar).length, v: plan.importCar ? tr("ui.pagePreparerMonVoyage.import") : "" }),
     route: line ? `${line}${duration ? tr("ui.pagePreparerMonVoyage.deTraversee", { formatDuration: formatDuration(duration) }) : ""}` : null,
     // Le même chiffre que le bloc « Votre budget » : bateau et route, arrondi.
     budget:
@@ -1098,7 +1115,7 @@ function MoreLinks({ links }: { links: { href: string; label: string }[] }) {
 
 /* ------------------------------------------------------------ 1. Les quatre questions */
 
-type ProfileQuestion = "when" | "holidays" | "group" | "vehicle";
+type ProfileQuestion = "when" | "holidays" | "group" | "vehicle" | "carFate";
 
 function ProfileStep({
   papers,
@@ -1117,6 +1134,8 @@ function ProfileStep({
     ...(plan.schoolHolidays ? (["holidays"] as const) : []),
     "group",
     "vehicle",
+    // Avec une voiture : revient-elle (vacances) ou reste-t-elle en Algérie (import) ?
+    ...(plan.vehicle !== "none" ? (["carFate"] as const) : []),
   ];
   const index = Math.max(0, profileQuestions.indexOf(question));
   useWizardScreen(index, profileQuestions.length);
@@ -1169,7 +1188,8 @@ function ProfileStep({
                       vehicle: id,
                       done: id === "none" ? plan.done.filter((s) => s !== "car") : plan.done,
                     });
-                    window.setTimeout(next, 180);
+                    // La liste des questions dépend du véhicule choisi : on suit ce choix-là.
+                    window.setTimeout(() => (id === "none" ? onDone() : go("carFate")), 180);
                   }}
                   className={`flex min-h-20 flex-col items-start justify-center gap-1 rounded-xl border p-3 text-left transition-colors ${
                     on
@@ -1190,6 +1210,33 @@ function ProfileStep({
               );
             })}
           </div>
+        </Question>
+      ) : null}
+      {question === "carFate" ? (
+        <Question
+          title={tr("ui.pagePreparerMonVoyage.carFateTitle")}
+          hint={tr("ui.pagePreparerMonVoyage.carFateHint")}
+        >
+          <Options
+            label={tr("ui.pagePreparerMonVoyage.carFateTitle")}
+            value={plan.importCar ? "import" : "vacances"}
+            onChange={(v) => {
+              patch({ importCar: v === "import" });
+              window.setTimeout(onDone, 180);
+            }}
+            options={[
+              {
+                value: "vacances",
+                label: tr("ui.pagePreparerMonVoyage.carFateBack"),
+                hint: tr("ui.pagePreparerMonVoyage.admissionTemporaireLeTempsDes"),
+              },
+              {
+                value: "import",
+                label: tr("ui.pagePreparerMonVoyage.carFateImport"),
+                hint: tr("ui.pagePreparerMonVoyage.carFateImportHint"),
+              },
+            ]}
+          />
         </Question>
       ) : null}
       <WizardNav
@@ -1327,7 +1374,7 @@ function PapersStepBody({
   const allPapersTicked =
     paperTasks.length > 0 &&
     paperTasks.every((task) => papers.done.includes(task.id)) &&
-    (plan.vehicle === "none" || carItems.every((item) => plan.carDone.includes(item.id)));
+    (plan.vehicle === "none" || carItemsFor(plan.importCar).every((item) => plan.carDone.includes(item.id)));
   const box = useRef<HTMLDivElement>(null);
   const toTop = () =>
     requestAnimationFrame(() =>
@@ -1446,6 +1493,35 @@ function DuaNotice() {
   );
 }
 
+/** Ports espagnols d'où Baleària embarque des véhicules à exporter (centre d'aide, lu le 25/11/2026). */
+const EXPORT_PORTS = new Set(["valence", "barcelone", "almeria"]);
+
+/** Exporter sa voiture avec Baleària : heures d'arrivée, ligne fermée en 2027, mesure de l'été 2026. */
+function ExportNotice() {
+  const sources = [formaliteSources["balearia-export"], formaliteSources["balearia-dua"]];
+  return (
+    <div className="mt-3 flex items-start gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm">
+      <Info size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
+      <div className="min-w-0">
+        <p className="font-semibold">{tr("ui.pagePreparerMonVoyage.importNoticeTitle")}</p>
+        <p className="mt-1">{tr("ui.pagePreparerMonVoyage.importNoticeText")}</p>
+        {sources.map((source) => (
+          <a
+            key={source.url}
+            href={source.url}
+            target="_blank"
+            rel="noreferrer"
+            className={`${textLink} mt-1 flex items-center gap-1`}
+          >
+            {tr("ui.pagePreparerMonVoyage.source")}{source.name}, {source.updated}
+            <ExternalLink size={12} aria-hidden />
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function CarPapers({
   plan,
   patch,
@@ -1459,7 +1535,7 @@ function CarPapers({
         ? plan.carDone.filter((x) => x !== id)
         : [...plan.carDone, id],
     });
-  const ready = carItems.filter((item) => plan.carDone.includes(item.id)).length;
+  const ready = carItemsFor(plan.importCar).filter((item) => plan.carDone.includes(item.id)).length;
   // Le port de départ est rangé par identifiant : on lit son slug dans la liste des ports.
   const { data: ports = [] } = useQuery(portsQuery);
   const departureSlug = ports.find((port) => port.id === plan.fromPortId)?.slug ?? null;
@@ -1470,32 +1546,26 @@ function CarPapers({
           <Car size={19} className="text-primary" aria-hidden />{tr("ui.pagePreparerMonVoyage.laVoiture")}
         </h3>
         <span className="text-sm font-semibold text-muted-foreground">
-          {ready}{tr("ui.pagePreparerMonVoyage.sur")}{carItems.length}
+          {ready}{tr("ui.pagePreparerMonVoyage.sur")}{carItemsFor(plan.importCar).length}
         </span>
       </div>
-      <div className="mt-3">
-        <p className="mb-2 text-sm font-semibold">{tr("ui.pagePreparerMonVoyage.elleResteEnAlgerie")}</p>
-        <Options
-          label={tr("ui.pagePreparerMonVoyage.laVoitureResteTElle")}
-          value={plan.importCar ? "import" : "vacances"}
-          onChange={(v) => patch({ importCar: v === "import" })}
-          small
-          options={[
-            {
-              value: "vacances",
-              label: tr("ui.pagePreparerMonVoyage.nonElleRevientAvecMoi"),
-              hint: tr("ui.pagePreparerMonVoyage.admissionTemporaireLeTempsDes"),
-            },
-            {
-              value: "import",
-              label: tr("ui.pagePreparerMonVoyage.ouiJeLImporte"),
-              hint: tr("ui.pagePreparerMonVoyage.vehiculeDeMoinsDe3"),
-            },
-          ]}
-        />
-      </div>
+      {/* Le choix est fait à l'étape 1 (« Votre voiture revient-elle avec vous ? ») : on le rappelle. */}
+      <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+        <span>
+          {plan.importCar
+            ? tr("ui.pagePreparerMonVoyage.carSummaryImport")
+            : tr("ui.pagePreparerMonVoyage.carSummaryBack")}
+        </span>
+        <button
+          type="button"
+          onClick={() => patch({ importCar: !plan.importCar })}
+          className={`${textLink} font-semibold`}
+        >
+          {tr("ui.pagePreparerMonVoyage.changer")}
+        </button>
+      </p>
       {plan.importCar ? (
-        <p className="mt-4 flex items-start gap-2 rounded-xl bg-primary/5 p-3 text-sm">
+        <p className="mt-3 flex items-start gap-2 rounded-xl bg-primary/5 p-3 text-sm">
           <Info size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
           <span>
             {tr("ui.pagePreparerMonVoyage.lImportationSuitSesPropres")}{" "}
@@ -1505,9 +1575,10 @@ function CarPapers({
           </span>
         </p>
       ) : null}
+      {plan.importCar && departureSlug && EXPORT_PORTS.has(departureSlug) ? <ExportNotice /> : null}
       {departureSlug && DUA_PORTS.has(departureSlug) ? <DuaNotice /> : null}
       <ul className="mt-3 grid gap-2">
-        {carItems.map((item) => {
+        {carItemsFor(plan.importCar).map((item) => {
           const done = plan.carDone.includes(item.id);
           return (
             <li
@@ -3201,10 +3272,10 @@ function ReadyDashboard({
   // Les papiers : seulement ce qui se coche (même décompte que la liste), voiture comprise.
   const checkable = tasks.filter((t) => isCheckable(planCategory(t)));
   const withCar = plan.vehicle !== "none";
-  const papersTotal = checkable.length + (withCar ? carItems.length : 0);
+  const papersTotal = checkable.length + (withCar ? carItemsFor(plan.importCar).length : 0);
   const papersReady =
     checkable.filter((t) => papers.done.includes(t.id)).length +
-    (withCar ? carItems.filter((item) => plan.carDone.includes(item.id)).length : 0);
+    (withCar ? carItemsFor(plan.importCar).filter((item) => plan.carDone.includes(item.id)).length : 0);
   const group = people(papers.answers);
   const vehicle = VEHICLES.find((v) => v.id === plan.vehicle);
   const duration =

@@ -27,6 +27,7 @@ import { Route as DecouvrirRouteImport } from './routes/decouvrir'
 import { Route as EspaceCompagnieRouteImport } from './routes/espace-compagnie'
 import { Route as GuideRouteImport } from './routes/guide'
 import { Route as HorairesRouteImport } from './routes/horaires'
+import { Route as ImporterMaVoitureRouteImport } from './routes/importer-ma-voiture'
 import { Route as LignesRouteImport } from './routes/lignes'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as MaBezassRouteImport } from './routes/ma-bezass'
@@ -161,6 +162,11 @@ const GuideRoute = GuideRouteImport.update({
 const HorairesRoute = HorairesRouteImport.update({
   id: '/horaires',
   path: '/horaires',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImporterMaVoitureRoute = ImporterMaVoitureRouteImport.update({
+  id: '/importer-ma-voiture',
+  path: '/importer-ma-voiture',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LignesRoute = LignesRouteImport.update({
@@ -408,6 +414,7 @@ export interface FileRoutesByFullPath {
   '/espace-compagnie': typeof EspaceCompagnieRoute
   '/guide': typeof GuideRouteWithChildren
   '/horaires': typeof HorairesRoute
+  '/importer-ma-voiture': typeof ImporterMaVoitureRoute
   '/lignes': typeof LignesRouteWithChildren
   '/llms.txt': typeof LlmsDottxtRoute
   '/ma-bezass': typeof MaBezassRoute
@@ -470,6 +477,7 @@ export interface FileRoutesByTo {
   '/decouvrir': typeof DecouvrirRoute
   '/espace-compagnie': typeof EspaceCompagnieRoute
   '/horaires': typeof HorairesRoute
+  '/importer-ma-voiture': typeof ImporterMaVoitureRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/ma-bezass': typeof MaBezassRoute
   '/ma-preparation': typeof MaPreparationRoute
@@ -533,6 +541,7 @@ export interface FileRoutesById {
   '/espace-compagnie': typeof EspaceCompagnieRoute
   '/guide': typeof GuideRouteWithChildren
   '/horaires': typeof HorairesRoute
+  '/importer-ma-voiture': typeof ImporterMaVoitureRoute
   '/lignes': typeof LignesRouteWithChildren
   '/llms.txt': typeof LlmsDottxtRoute
   '/ma-bezass': typeof MaBezassRoute
@@ -600,6 +609,7 @@ export interface FileRouteTypes {
     | '/espace-compagnie'
     | '/guide'
     | '/horaires'
+    | '/importer-ma-voiture'
     | '/lignes'
     | '/llms.txt'
     | '/ma-bezass'
@@ -662,6 +672,7 @@ export interface FileRouteTypes {
     | '/decouvrir'
     | '/espace-compagnie'
     | '/horaires'
+    | '/importer-ma-voiture'
     | '/llms.txt'
     | '/ma-bezass'
     | '/ma-preparation'
@@ -724,6 +735,7 @@ export interface FileRouteTypes {
     | '/espace-compagnie'
     | '/guide'
     | '/horaires'
+    | '/importer-ma-voiture'
     | '/lignes'
     | '/llms.txt'
     | '/ma-bezass'
@@ -790,6 +802,7 @@ export interface RootRouteChildren {
   EspaceCompagnieRoute: typeof EspaceCompagnieRoute
   GuideRoute: typeof GuideRouteWithChildren
   HorairesRoute: typeof HorairesRoute
+  ImporterMaVoitureRoute: typeof ImporterMaVoitureRoute
   LignesRoute: typeof LignesRouteWithChildren
   LlmsDottxtRoute: typeof LlmsDottxtRoute
   MaBezassRoute: typeof MaBezassRoute
@@ -951,6 +964,13 @@ declare module '@tanstack/react-router' {
       path: '/horaires'
       fullPath: '/horaires'
       preLoaderRoute: typeof HorairesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/importer-ma-voiture': {
+      id: '/importer-ma-voiture'
+      path: '/importer-ma-voiture'
+      fullPath: '/importer-ma-voiture'
+      preLoaderRoute: typeof ImporterMaVoitureRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lignes': {
@@ -1368,6 +1388,7 @@ const rootRouteChildren: RootRouteChildren = {
   EspaceCompagnieRoute: EspaceCompagnieRoute,
   GuideRoute: GuideRouteWithChildren,
   HorairesRoute: HorairesRoute,
+  ImporterMaVoitureRoute: ImporterMaVoitureRoute,
   LignesRoute: LignesRouteWithChildren,
   LlmsDottxtRoute: LlmsDottxtRoute,
   MaBezassRoute: MaBezassRoute,

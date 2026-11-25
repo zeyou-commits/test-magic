@@ -116,6 +116,7 @@ import {
 } from "@/lib/ferry/companion";
 import { searchItineraryAddress } from "@/lib/ferry/itinerary.functions";
 import { carItemsFor } from "@/lib/ferry/dossier";
+import { IMPORT_PATH } from "@/lib/ferry/importJourney";
 import {
   PAPERS_LAST_DAYS,
   papersDeadlines,
@@ -384,7 +385,7 @@ function Welcome({ onStart, onImport }: { onStart: () => void; onImport: () => v
           </span>
         </Bw504Note>
       </button>
-      {/* Celui qui vient pour importer sa voiture le dit dès l'entrée : le parcours s'adapte. */}
+      {/* Importer une voiture est un autre parcours (achat, export, dédouanement) : sa propre porte. */}
       <button
         type="button"
         onClick={onImport}
@@ -795,11 +796,7 @@ function CompanionPage() {
                 setOpen("profile");
                 requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
               }}
-              onImport={() => {
-                patch({ started: true, importCar: true });
-                setOpen("profile");
-                requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
-              }}
+              onImport={() => void navigate({ to: IMPORT_PATH })}
             />
           ) : (
             <>
@@ -1493,35 +1490,6 @@ function DuaNotice() {
   );
 }
 
-/** Ports espagnols d'où Baleària embarque des véhicules à exporter (centre d'aide, lu le 25/11/2026). */
-const EXPORT_PORTS = new Set(["valence", "barcelone", "almeria"]);
-
-/** Exporter sa voiture avec Baleària : heures d'arrivée, ligne fermée en 2027, mesure de l'été 2026. */
-function ExportNotice() {
-  const sources = [formaliteSources["balearia-export"], formaliteSources["balearia-dua"]];
-  return (
-    <div className="mt-3 flex items-start gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm">
-      <Info size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
-      <div className="min-w-0">
-        <p className="font-semibold">{tr("ui.pagePreparerMonVoyage.importNoticeTitle")}</p>
-        <p className="mt-1">{tr("ui.pagePreparerMonVoyage.importNoticeText")}</p>
-        {sources.map((source) => (
-          <a
-            key={source.url}
-            href={source.url}
-            target="_blank"
-            rel="noreferrer"
-            className={`${textLink} mt-1 flex items-center gap-1`}
-          >
-            {tr("ui.pagePreparerMonVoyage.source")}{source.name}, {source.updated}
-            <ExternalLink size={12} aria-hidden />
-          </a>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function CarPapers({
   plan,
   patch,
@@ -1564,18 +1532,19 @@ function CarPapers({
           {tr("ui.pagePreparerMonVoyage.changer")}
         </button>
       </p>
+      {/* L'importation a son propre parcours : ici, seulement ce qui vaut pour la route. */}
       {plan.importCar ? (
-        <p className="mt-3 flex items-start gap-2 rounded-xl bg-primary/5 p-3 text-sm">
-          <Info size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
-          <span>
-            {tr("ui.pagePreparerMonVoyage.lImportationSuitSesPropres")}{" "}
-            <a href="/vehicules-moins-3-ans" className={textLink}>
-              {tr("ui.pagePreparerMonVoyage.lesConditionsPourImporterUne")}
-            </a>
+        <a
+          href={IMPORT_PATH}
+          className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-br from-[#0b4a32] to-[#0e7a43] p-4 text-white"
+        >
+          <span className="min-w-0">
+            <span className="block font-semibold">{tr("ui.pagePreparerMonVoyage.importJourneyTitle")}</span>
+            <span className="mt-0.5 block text-sm text-white/85">{tr("ui.pagePreparerMonVoyage.importJourneyText")}</span>
           </span>
-        </p>
+          <ArrowRight size={18} className="shrink-0 text-[#f6c445]" aria-hidden />
+        </a>
       ) : null}
-      {plan.importCar && departureSlug && EXPORT_PORTS.has(departureSlug) ? <ExportNotice /> : null}
       {departureSlug && DUA_PORTS.has(departureSlug) ? <DuaNotice /> : null}
       <ul className="mt-3 grid gap-2">
         {carItemsFor(plan.importCar).map((item) => {

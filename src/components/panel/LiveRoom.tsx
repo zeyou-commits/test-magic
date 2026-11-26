@@ -1,5 +1,5 @@
 import { Bw504Note } from "@/components/companion/Bw504Note";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { PinnedInfo } from "./PinnedInfo";
 import { track } from "@/lib/usage";
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -22,6 +22,9 @@ import {
   UserRound,
   Users,
   X,
+  MessageCircle,
+  SmilePlus,
+  ThumbsUp,
 } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
@@ -396,13 +399,35 @@ function LiveChat({
   // Fermer ce salon, puis ouvrir la liste des salons (ou le mien).
   const leaveFor = (event: string) =>
     afterOverlayClose(() => window.dispatchEvent(new Event(event)));
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const online = people.length;
   const named = people.filter((person) => person.card);
   const listRef = useRef<HTMLOListElement>(null);
   const following = useRef(true);
   const lastId = useRef<string | null>(null);
   const lines = [...messages].reverse().filter((message) => !reported.has(message.id));
+  // Fils de discussion façon réseau social : chaque réponse se range sous le message d'origine,
+  // et un fil qui reçoit une réponse redescend en bas (là où l'on suit la conversation).
+  const threads = (() => {
+    const byId = new Map(lines.map((line) => [line.id, line]));
+    const rootOf = (line: Message) => {
+      let current = line;
+      for (let guard = 0; current.reply_to && byId.has(current.reply_to.id) && guard < 50; guard++)
+        current = byId.get(current.reply_to.id)!;
+      return current;
+    };
+    const groups = new Map<string, { root: Message; replies: Message[]; last: string }>();
+    for (const line of lines) {
+      const root = rootOf(line);
+      const group = groups.get(root.id) ?? { root, replies: [], last: root.created_at };
+      if (line !== root) {
+        group.replies.push(line);
+        if (line.created_at > group.last) group.last = line.created_at;
+      }
+      groups.set(root.id, group);
+    }
+    return [...groups.values()].sort((a, b) => (a.last < b.last ? -1 : a.last > b.last ? 1 : 0));
+  })();
   const messagePhotos = useQuery(
     photosQuery(
       "chat",
@@ -410,6 +435,297 @@ function LiveChat({
     ),
   ).data;
   const refresh = () => void client.invalidateQueries({ queryKey: roomKey(kind, room) });
+  const [openThreads, setOpenThreads] = useState<Set<string>>(() => new Set());
+  const renderLine = (message: Message, rootId: string | null) => (
+    <li
+      key={message.id}
+      data-reply={rootId ? "" : undefined}
+      data-me={message.me || undefined}
+      data-mention={
+        message.reply_to?.me ||
+        Boolean(myHandle && message.body.includes(`@[${myHandle}]`)) ||
+        undefined
+      }
+    >
+      <AuthorAvatar author={message.author} size={26} />
+      <div>
+        {message.reply_to && message.reply_to.id !== rootId ? (
+          <p className="bw-chat__quote">
+            <CornerDownRight size={12} aria-hidden />
+            <b>{message.reply_to.me ? tr("ui.liveRoom.vous") : message.reply_to.pseudo}</b>
+            <span>
+              <ChatText body={message.reply_to.body} size={14} />
+            </span>
+          </p>
+        ) : null}
+        <button
+          type="button"
+          className="bw-chat__line"
+          aria-expanded={selected === message.id}
+          onClick={() => setSelected(selected === message.id ? null : message.id)}
+          onDoubleClick={() => {
+            // Comme sur les réseaux sociaux : deux touchers rapides = un cœur.
+            if (emoji === null || emoji?.[message.id]?.mine === "love") return;
+            reactTo(message.id, "love");
+            setSelected(null);
+          }}
+        >
+          {/* Comme sur les réseaux sociaux : le pseudo ouvre le profil (le reste de la ligne, les actions). */}
+          {message.author.official ? (
+            <b>{message.author.pseudo}</b>
+          ) : (
+            <b
+              className="bw-chat__who"
+              onClick={(event) => {
+                event.stopPropagation();
+                showProfile(message.author.handle);
+              }}
+            >
+              {message.me ? tr("ui.liveRoom.vous") : message.author.pseudo}
+            </b>
+          )}
+          <StaffBadge author={message.author} />
+          {/* Le badge de l'équipe dit déjà d'où vient le message. */}
+          {message.place === "staff" && !message.crossing ? null : (
+            <small data-place={message.place}>
+              {message.crossing ?? PLACE[message.place]}
+            </small>
+          )}
+          <span data-big={onlyEmotes(message.body) || undefined}>
+            <ChatText body={message.body} mentions={message.mentions} myHandle={myHandle} />
+          </span>
+          <PhotoStrip
+            photos={messagePhotos?.get(message.id)}
+            label={tr("ui.liveRoom.photoDuMessage")}
+          />
+          {metHere.has(message.author.handle) && !message.me ? (
+            <small className="bw-chat__met">{tr("ui.liveRoom.dejaCroise")}</small>
+          ) : null}
+          {message.same ? (
+            <em>
+              <CheckCheck size={11} aria-hidden /> {message.same}
+            </em>
+          ) : null}
+          {/* L'heure toujours visible, en petit à droite du message. */}
+          <time
+            className="bw-chat__stamp"
+            dateTime={message.created_at}
+            title={new Date(message.created_at).toLocaleString(intlLocale(), { timeZone: "Europe/Paris" })}
+          >
+            {message.edited ? tr("ui.liveRoom.modifie2") : ""}
+            {stamp(message.created_at)}
+          </time>
+        </button>
+        {/* Comme sur LinkedIn : les actions restent visibles sous chaque message, avec leurs compteurs. */}
+        <p className="bw-chat__actions">
+          {emoji === null ? null : (
+            <button
+              type="button"
+              aria-pressed={emoji?.[message.id]?.mine === "like"}
+              onClick={() => reactTo(message.id, "like")}
+            >
+              <ThumbsUp size={14} aria-hidden />
+              {tr("ui.liveRoom.jAime")}
+              {emoji?.[message.id]?.counts.like ? <b>{emoji[message.id]!.counts.like}</b> : null}
+            </button>
+          )}
+          {emoji === null ? null : (
+            <button
+              type="button"
+              aria-expanded={selected === message.id}
+              aria-label={tr("ui.liveRoom.reagirACeMessage")}
+              title={tr("ui.liveRoom.reagirACeMessage")}
+              onClick={() => setSelected(selected === message.id ? null : message.id)}
+            >
+              <SmilePlus size={14} aria-hidden />
+              {tr("ui.liveRoom.reagir")}
+            </button>
+          )}
+          {closed || reader ? null : (
+            <button
+              type="button"
+              onClick={() => {
+                setReplyTo(message);
+                setSelected(null);
+                setOpenThreads((open) => new Set(open).add(rootId ?? message.id));
+                inputRef.current?.focus();
+              }}
+            >
+              <MessageCircle size={14} aria-hidden />
+              {tr("ui.liveRoom.repondre")}
+              {(() => {
+                const count = lines.filter((line) => line.reply_to?.id === message.id).length;
+                return count ? <b>{count}</b> : null;
+              })()}
+            </button>
+          )}
+        </p>
+        {emoji?.[message.id] && Object.keys(emoji[message.id]!.counts).length ? (
+          <p className="bw-chat__reacts">
+            {REACTIONS.filter((item) => item.code !== "like" && emoji[message.id]!.counts[item.code]).map((item) => (
+              <button
+                key={item.code}
+                type="button"
+                aria-pressed={emoji[message.id]!.mine === item.code}
+                aria-label={`${item.label} : ${emoji[message.id]!.counts[item.code]}`}
+                title={item.label}
+                onClick={() => reactTo(message.id, item.code)}
+              >
+                <span aria-hidden>{item.emoji}</span>
+                {emoji[message.id]!.counts[item.code]}
+              </button>
+            ))}
+            <button
+              type="button"
+              className="bw-chat__reacts-who"
+              aria-expanded={whoFor === message.id}
+              aria-label={tr("ui.liveRoom.voirQuiAReagi")}
+              title={tr("ui.liveRoom.voirQuiAReagi")}
+              onClick={() => setWhoFor(whoFor === message.id ? null : message.id)}
+            >
+              <Users size={12} aria-hidden />
+            </button>
+          </p>
+        ) : null}
+        {whoFor === message.id ? (
+          <ul className="bw-chat__reactors" aria-label={tr("ui.liveRoom.quiAReagi")}>
+            {reactors.isPending ? <li role="status">{tr("ui.liveRoom.chargement")}</li> : null}
+            {reactors.isError ? <li role="alert">{tr("ui.liveRoom.listeIndisponible")}</li> : null}
+            {reactors.data?.map((person) => (
+              <li key={person.card.handle}>
+                <button type="button" onClick={() => showProfile(person.card.handle)}>
+                  <TravellerAvatar card={person.card} size={22} mood={false} static />
+                  {person.me ? tr("ui.liveRoom.vous") : person.card.pseudo}
+                  <span aria-hidden>{reactionEmoji(person.emoji)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {selected === message.id ? (
+          <div className="bw-chat__tools">
+            {emoji === null ? null : (
+              <span className="bw-chat__reactrow">
+                <span
+                  className="bw-chat__reactbar"
+                  role="group"
+                  aria-label={tr("ui.liveRoom.reagirACeMessage")}
+                >
+                  {REACTIONS.map((item) => (
+                    <button
+                      key={item.code}
+                      type="button"
+                      aria-pressed={emoji?.[message.id]?.mine === item.code}
+                      aria-label={item.label}
+                      title={item.label}
+                      onClick={() => {
+                        reactTo(message.id, item.code);
+                        setSelected(null);
+                      }}
+                    >
+                      {item.emoji}
+                    </button>
+                  ))}
+                </span>
+              </span>
+            )}
+            {closed || reader ? null : (
+              <button
+                type="button"
+                onClick={() => {
+                  setReplyTo(message);
+                  setSelected(null);
+                  inputRef.current?.focus();
+                }}
+              >
+                <Reply size={13} aria-hidden />
+                {tr("ui.liveRoom.repondre")}
+              </button>
+            )}
+            <button
+              type="button"
+              aria-pressed={message.reacted}
+              disabled={react.isPending}
+              onClick={() => react.mutate(message.id)}
+            >
+              <CheckCheck size={13} aria-hidden />
+              {tr("ui.liveRoom.pareilIci")}
+            </button>
+            {!message.author.official ? (
+              <button type="button" onClick={() => showProfile(message.author.handle)}>
+                <UserRound size={13} aria-hidden />
+                {message.me ? tr("ui.liveRoom.monProfil") : tr("ui.liveRoom.voirLeProfil")}
+              </button>
+            ) : null}
+            {canWrite && !closed && !message.me && !message.author.official ? (
+              <button
+                type="button"
+                onClick={() => {
+                  mention(message.author, false);
+                  setSelected(null);
+                }}
+              >
+                <AtSign size={13} aria-hidden />
+                {tr("ui.liveRoom.mentionner")}
+              </button>
+            ) : null}
+            {canDm && !message.me && !message.author.official ? (
+              <button type="button" onClick={() => setDmTo(message.author)}>
+                <Mail size={13} aria-hidden />
+                {tr("ui.liveRoom.messagePrive")}
+              </button>
+            ) : null}
+            {user && !message.me ? (
+              confirmReport === message.id ? (
+                <span
+                  className="bw-chat__confirm"
+                  role="group"
+                  aria-label={tr("ui.liveRoom.confirmerLeSignalement")}
+                >
+                  {tr("ui.liveRoom.signalerCeMessageAL")}
+                  <button
+                    type="button"
+                    className="bw-chat__confirm-yes"
+                    disabled={report.isPending}
+                    onClick={() => report.mutate(message.id)}
+                  >
+                    {report.isPending
+                      ? tr("ui.liveRoom.envoi")
+                      : tr("ui.liveRoom.ouiSignaler")}
+                  </button>
+                  <button type="button" onClick={() => setConfirmReport(null)}>
+                    {tr("ui.liveRoom.annuler")}
+                  </button>
+                </span>
+              ) : (
+                <button type="button" onClick={() => setConfirmReport(message.id)}>
+                  <Flag size={13} aria-hidden />
+                  {tr("ui.liveRoom.signaler")}
+                </button>
+              )
+            ) : null}
+            {message.me ? (
+              <OwnMessageActions
+                id={message.id}
+                body={message.body}
+                photoPaths={(messagePhotos?.get(message.id) ?? []).map((photo) => photo.path)}
+              />
+            ) : null}
+            {staff && !message.me ? (
+              <StaffTools id={message.id} author={message.author} />
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </li>
+  );
+  // Le champ grandit avec le texte (jusqu'à 6 lignes environ), puis défile.
+  useLayoutEffect(() => {
+    const field = inputRef.current;
+    if (!field) return;
+    field.style.height = "auto";
+    field.style.height = `${Math.min(field.scrollHeight, 140)}px`;
+  }, [text]);
   const toBottom = () => {
     const list = listRef.current;
     if (list) list.scrollTop = list.scrollHeight;
@@ -801,244 +1117,46 @@ function LiveChat({
             </Bw504Note>
           </li>
         )}
-        {lines.map((message) => (
-          <li
-            key={message.id}
-            data-me={message.me || undefined}
-            data-mention={
-              message.reply_to?.me ||
-              Boolean(myHandle && message.body.includes(`@[${myHandle}]`)) ||
-              undefined
-            }
-          >
-            <AuthorAvatar author={message.author} size={26} />
-            <div>
-              {message.reply_to ? (
-                <p className="bw-chat__quote">
-                  <CornerDownRight size={12} aria-hidden />
-                  <b>{message.reply_to.me ? tr("ui.liveRoom.vous") : message.reply_to.pseudo}</b>
-                  <span>
-                    <ChatText body={message.reply_to.body} size={14} />
-                  </span>
-                </p>
-              ) : null}
-              <button
-                type="button"
-                className="bw-chat__line"
-                aria-expanded={selected === message.id}
-                onClick={() => setSelected(selected === message.id ? null : message.id)}
-                onDoubleClick={() => {
-                  // Comme sur les réseaux sociaux : deux touchers rapides = un cœur.
-                  if (emoji === null || emoji?.[message.id]?.mine === "love") return;
-                  reactTo(message.id, "love");
-                  setSelected(null);
-                }}
-              >
-                {/* Comme sur les réseaux sociaux : le pseudo ouvre le profil (le reste de la ligne, les actions). */}
-                {message.author.official ? (
-                  <b>{message.author.pseudo}</b>
-                ) : (
-                  <b
-                    className="bw-chat__who"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      showProfile(message.author.handle);
-                    }}
-                  >
-                    {message.me ? tr("ui.liveRoom.vous") : message.author.pseudo}
-                  </b>
-                )}
-                <StaffBadge author={message.author} />
-                {/* Le badge de l'équipe dit déjà d'où vient le message. */}
-                {message.place === "staff" && !message.crossing ? null : (
-                  <small data-place={message.place}>
-                    {message.crossing ?? PLACE[message.place]}
-                  </small>
-                )}
-                <span data-big={onlyEmotes(message.body) || undefined}>
-                  <ChatText body={message.body} mentions={message.mentions} myHandle={myHandle} />
-                </span>
-                <PhotoStrip
-                  photos={messagePhotos?.get(message.id)}
-                  label={tr("ui.liveRoom.photoDuMessage")}
-                />
-                {metHere.has(message.author.handle) && !message.me ? (
-                  <small className="bw-chat__met">{tr("ui.liveRoom.dejaCroise")}</small>
-                ) : null}
-                {message.same ? (
-                  <em>
-                    <CheckCheck size={11} aria-hidden /> {message.same}
-                  </em>
-                ) : null}
-                {/* L'heure toujours visible, en petit à droite du message. */}
-                <time
-                  className="bw-chat__stamp"
-                  dateTime={message.created_at}
-                  title={new Date(message.created_at).toLocaleString(intlLocale(), { timeZone: "Europe/Paris" })}
-                >
-                  {message.edited ? tr("ui.liveRoom.modifie2") : ""}
-                  {stamp(message.created_at)}
-                </time>
-              </button>
-              {emoji?.[message.id] && Object.keys(emoji[message.id]!.counts).length ? (
-                <p className="bw-chat__reacts">
-                  {REACTIONS.filter((item) => emoji[message.id]!.counts[item.code]).map((item) => (
-                    <button
-                      key={item.code}
-                      type="button"
-                      aria-pressed={emoji[message.id]!.mine === item.code}
-                      aria-label={`${item.label} : ${emoji[message.id]!.counts[item.code]}`}
-                      title={item.label}
-                      onClick={() => reactTo(message.id, item.code)}
-                    >
-                      <span aria-hidden>{item.emoji}</span>
-                      {emoji[message.id]!.counts[item.code]}
-                    </button>
-                  ))}
-                  <button
-                    type="button"
-                    className="bw-chat__reacts-who"
-                    aria-expanded={whoFor === message.id}
-                    aria-label={tr("ui.liveRoom.voirQuiAReagi")}
-                    title={tr("ui.liveRoom.voirQuiAReagi")}
-                    onClick={() => setWhoFor(whoFor === message.id ? null : message.id)}
-                  >
-                    <Users size={12} aria-hidden />
-                  </button>
-                </p>
-              ) : null}
-              {whoFor === message.id ? (
-                <ul className="bw-chat__reactors" aria-label={tr("ui.liveRoom.quiAReagi")}>
-                  {reactors.isPending ? <li role="status">{tr("ui.liveRoom.chargement")}</li> : null}
-                  {reactors.isError ? <li role="alert">{tr("ui.liveRoom.listeIndisponible")}</li> : null}
-                  {reactors.data?.map((person) => (
-                    <li key={person.card.handle}>
-                      <button type="button" onClick={() => showProfile(person.card.handle)}>
-                        <TravellerAvatar card={person.card} size={22} mood={false} static />
-                        {person.me ? tr("ui.liveRoom.vous") : person.card.pseudo}
-                        <span aria-hidden>{reactionEmoji(person.emoji)}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-              {selected === message.id ? (
-                <div className="bw-chat__tools">
-                  {emoji === null ? null : (
-                    <span className="bw-chat__reactrow">
-                      <span
-                        className="bw-chat__reactbar"
-                        role="group"
-                        aria-label={tr("ui.liveRoom.reagirACeMessage")}
-                      >
-                        {REACTIONS.map((item) => (
-                          <button
-                            key={item.code}
-                            type="button"
-                            aria-pressed={emoji?.[message.id]?.mine === item.code}
-                            aria-label={item.label}
-                            title={item.label}
-                            onClick={() => {
-                              reactTo(message.id, item.code);
-                              setSelected(null);
-                            }}
-                          >
-                            {item.emoji}
-                          </button>
-                        ))}
-                      </span>
-                    </span>
-                  )}
-                  {closed || reader ? null : (
+        {threads.map(({ root, replies }) => {
+          const open = openThreads.has(root.id) || replies.length <= 2;
+          const shown = open ? replies : replies.slice(-2);
+          const hidden = replies.length - shown.length;
+          return (
+            <Fragment key={root.id}>
+              {renderLine(root, null)}
+              {replies.length ? (
+                <li className="bw-chat__thread">
+                  {hidden ? (
                     <button
                       type="button"
-                      onClick={() => {
-                        setReplyTo(message);
-                        setSelected(null);
-                        inputRef.current?.focus();
-                      }}
+                      className="bw-chat__thread-more"
+                      onClick={() => setOpenThreads((set) => new Set(set).add(root.id))}
                     >
-                      <Reply size={13} aria-hidden />
-                      {tr("ui.liveRoom.repondre")}
+                      {hidden > 1
+                        ? tr("ui.liveRoom.voirReponsesPrecedentes", { n: hidden })
+                        : tr("ui.liveRoom.voirUneReponsePrecedente")}
                     </button>
-                  )}
-                  <button
-                    type="button"
-                    aria-pressed={message.reacted}
-                    disabled={react.isPending}
-                    onClick={() => react.mutate(message.id)}
-                  >
-                    <CheckCheck size={13} aria-hidden />
-                    {tr("ui.liveRoom.pareilIci")}
-                  </button>
-                  {!message.author.official ? (
-                    <button type="button" onClick={() => showProfile(message.author.handle)}>
-                      <UserRound size={13} aria-hidden />
-                      {message.me ? tr("ui.liveRoom.monProfil") : tr("ui.liveRoom.voirLeProfil")}
-                    </button>
-                  ) : null}
-                  {canWrite && !closed && !message.me && !message.author.official ? (
+                  ) : replies.length > 2 ? (
                     <button
                       type="button"
-                      onClick={() => {
-                        mention(message.author, false);
-                        setSelected(null);
-                      }}
+                      className="bw-chat__thread-more"
+                      onClick={() =>
+                        setOpenThreads((set) => {
+                          const next = new Set(set);
+                          next.delete(root.id);
+                          return next;
+                        })
+                      }
                     >
-                      <AtSign size={13} aria-hidden />
-                      {tr("ui.liveRoom.mentionner")}
+                      {tr("ui.liveRoom.masquerLesReponses")}
                     </button>
                   ) : null}
-                  {canDm && !message.me && !message.author.official ? (
-                    <button type="button" onClick={() => setDmTo(message.author)}>
-                      <Mail size={13} aria-hidden />
-                      {tr("ui.liveRoom.messagePrive")}
-                    </button>
-                  ) : null}
-                  {user && !message.me ? (
-                    confirmReport === message.id ? (
-                      <span
-                        className="bw-chat__confirm"
-                        role="group"
-                        aria-label={tr("ui.liveRoom.confirmerLeSignalement")}
-                      >
-                        {tr("ui.liveRoom.signalerCeMessageAL")}
-                        <button
-                          type="button"
-                          className="bw-chat__confirm-yes"
-                          disabled={report.isPending}
-                          onClick={() => report.mutate(message.id)}
-                        >
-                          {report.isPending
-                            ? tr("ui.liveRoom.envoi")
-                            : tr("ui.liveRoom.ouiSignaler")}
-                        </button>
-                        <button type="button" onClick={() => setConfirmReport(null)}>
-                          {tr("ui.liveRoom.annuler")}
-                        </button>
-                      </span>
-                    ) : (
-                      <button type="button" onClick={() => setConfirmReport(message.id)}>
-                        <Flag size={13} aria-hidden />
-                        {tr("ui.liveRoom.signaler")}
-                      </button>
-                    )
-                  ) : null}
-                  {message.me ? (
-                    <OwnMessageActions
-                      id={message.id}
-                      body={message.body}
-                      photoPaths={(messagePhotos?.get(message.id) ?? []).map((photo) => photo.path)}
-                    />
-                  ) : null}
-                  {staff && !message.me ? (
-                    <StaffTools id={message.id} author={message.author} />
-                  ) : null}
-                </div>
+                  <ol>{shown.map((reply) => renderLine(reply, root.id))}</ol>
+                </li>
               ) : null}
-            </div>
-          </li>
-        ))}
+            </Fragment>
+          );
+        })}
       </ol>
       {unread ? (
         <button type="button" className="bw-chat__unread" onClick={toBottom}>
@@ -1262,11 +1380,19 @@ function LiveChat({
                 />
               </label>
             ) : null}
-            <input
+            <textarea
               ref={inputRef}
+              rows={1}
               value={text}
               maxLength={MAX_MESSAGE}
               onChange={(event) => setText(event.target.value)}
+              onKeyDown={(event) => {
+                // Sur ordinateur : Entrée envoie, Maj+Entrée va à la ligne. Sur téléphone : Entrée va à la ligne.
+                if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
+                if (window.matchMedia("(pointer: coarse)").matches) return;
+                event.preventDefault();
+                submit();
+              }}
               onFocus={nudgePin}
               placeholder={
                 replyTo ? tr("ui.liveRoom.votreReponse") : tr("ui.liveRoom.envoyerUnMessage")

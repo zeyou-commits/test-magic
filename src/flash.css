@@ -10630,7 +10630,8 @@ img[data-logo="dark"] {
 .bw-chat__write form {
   max-width: 100%;
 }
-.bw-chat__write form input:not([type="checkbox"]) {
+.bw-chat__write form input:not([type="checkbox"]),
+.bw-chat__write form textarea {
   width: 0;
 }
 .bw-chat__official input {
@@ -18514,4 +18515,100 @@ body:has(.bw-ticker:not([data-off])) .bw-messages-preview {
     opacity: 1;
     pointer-events: auto;
   }
+}
+
+/* Salon : champ de saisie sur plusieurs lignes, qui grandit avec le texte. */
+.bw-chat__write form {
+  align-items: flex-end;
+  border-radius: 22px;
+}
+.bw-chat__write textarea {
+  flex: 1;
+  min-width: 0;
+  min-height: 38px;
+  max-height: 140px;
+  padding: 8px 0;
+  resize: none;
+  overflow-y: auto;
+  background: transparent;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.375;
+  outline: none;
+}
+
+/* Salon : fils de réponses façon réseau social (réponses en retrait sous le message d'origine). */
+.bw-chat__lines > li.bw-chat__thread {
+  display: block;
+  margin: 0 0 4px 16px;
+  padding: 0 0 0 14px;
+  border-left: 2px solid #d9e9e0;
+  border-radius: 0;
+  background: none;
+  animation: none;
+}
+.bw-chat__thread > ol {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bw-chat__thread > ol > li {
+  display: flex;
+  gap: 7px;
+  padding: 3px 4px;
+  border-radius: 8px;
+}
+.bw-chat__thread > ol > li[data-me] {
+  background: #f1f8f4;
+}
+.bw-chat__thread > ol > li[data-mention] {
+  background: #fff7e3;
+}
+.bw-chat__thread > ol > li > div {
+  flex: 1;
+  min-width: 0;
+}
+.bw-chat__thread-more {
+  display: block;
+  margin: 2px 0 2px 4px;
+  padding: 2px 0;
+  color: #0e6b3b;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.bw-chat__thread-more:hover {
+  text-decoration: underline;
+}
+.bw-chat__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 4px;
+  margin: 1px 0 0 -6px;
+}
+.bw-chat__actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  color: #5b6b66;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.bw-chat__actions button:hover {
+  background: #eef5f1;
+  color: #123f2c;
+}
+.bw-chat__actions button[aria-pressed="true"] {
+  color: #0e6b3b;
+}
+.bw-chat__actions button[aria-pressed="true"] svg {
+  fill: #cfe9da;
+}
+.bw-chat__actions b {
+  color: #1a2e26;
+  font-weight: 700;
 }

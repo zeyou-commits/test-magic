@@ -42,7 +42,10 @@ export function ReportButton({
   initialDetails = "",
   initialReason = "wrong_schedule",
   variant = "button",
+  shown,
 }: {
+  /** Ce que le voyageur a sous les yeux (horaire, navire…), transmis à l'équipe avec le signalement. */
+  shown?: Record<string, string | number | null>;
   targetType: "port" | "route" | "departure" | "review" | "schedule" | "vessel" | "company";
   targetId: string;
   label?: string;
@@ -59,13 +62,26 @@ export function ReportButton({
   const submit = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Connectez-vous pour envoyer un signalement.");
-      const { error } = await supabase.from("reports").insert({
-        target_type: targetType,
-        target_id: targetId,
-        reason,
-        message: details.trim() || null,
-        reporter_id: user.id,
-      });
+      // Contexte pour l'équipe : la page et ce qui était affiché au moment du signalement.
+      const context =
+        typeof window === "undefined"
+          ? null
+          : {
+              page: `${window.location.pathname}${window.location.search}`.slice(0, 300),
+              ...(shown ? { shown } : {}),
+            };
+      const { error } = await (
+        supabase as unknown as import("@supabase/supabase-js").SupabaseClient
+      )
+        .from("reports")
+        .insert({
+          target_type: targetType,
+          target_id: targetId,
+          reason,
+          message: details.trim() || null,
+          reporter_id: user.id,
+          context,
+        });
 
       if (error)
         throw new Error("Le signalement n'a pas pu être envoyé. Réessayez dans quelques instants.");

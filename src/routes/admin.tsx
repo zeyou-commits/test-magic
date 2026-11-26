@@ -66,6 +66,7 @@ import { PushDiagnostic } from "@/components/admin/PushDiagnostic";
 import { MessageCenter } from "@/components/admin/MessageComposer";
 import { storeMessagePrefill, type MessagePrefill } from "@/lib/notifications/messages";
 import { AdminFilterNotice } from "@/components/admin/AdminFilterNotice";
+import { ReportsModeration } from "@/components/admin/ReportReview";
 import {
   adminSearch,
   matchesDepartureScope,
@@ -118,30 +119,6 @@ const reviewStatusLabel: Record<string, string> = {
   hidden: "Masqué",
   deleted: "Supprimé",
 };
-const reportStatusLabel: Record<string, string> = {
-  new: "Nouveau",
-  in_progress: "En cours",
-  resolved: "Traité",
-  rejected: "Écarté",
-};
-const reportTargetLabel: Record<string, string> = {
-  port: "Port",
-  route: "Ligne",
-  departure: "Départ",
-  review: "Avis",
-  schedule: "Calendrier",
-  vessel: "Navire",
-  company: "Compagnie",
-};
-const reportReasonLabel: Record<string, string> = {
-  wrong_schedule: "Horaire inexact",
-  outdated_info: "Information obsolète",
-  missing_info: "Information manquante",
-  vessel_immobilized: "Navire immobilisé",
-  inappropriate: "Contenu inapproprié",
-  other: "Autre",
-};
-
 /** Confirmation simple avant une action définitive. */
 function confirmAction(message: string) {
   return typeof window === "undefined" ? false : window.confirm(message);
@@ -452,7 +429,14 @@ function AdminTabs() {
           <RouteStopsModeration />
         </TabsContent>
         <TabsContent value="reports">
-          <ReportsModeration newOnly={filter === "new"} onClearFilter={clearFilter} />
+          <ReportsModeration
+            newOnly={filter === "new"}
+            onClearFilter={clearFilter}
+            onOpenItem={openItem}
+            renderDepartureEditor={(id, onDone) => (
+              <AlertDepartureEditor departureId={id} onDone={onDone} />
+            )}
+          />
         </TabsContent>
         <TabsContent value="alerts">
           <PlanningAlerts
@@ -739,90 +723,6 @@ function ReviewsModeration({
         </ul>
       )}
     </ModerationSection>
-  );
-}
-
-function ReportsModeration({
-  newOnly,
-  onClearFilter,
-}: {
-  newOnly: boolean;
-  onClearFilter: () => void;
-}) {
-  const queryClient = useQueryClient();
-  const { data: reports = [], isLoading } = useQuery({
-    queryKey: ["admin", "reports", newOnly],
-    queryFn: async () => {
-      let query = supabase.from("reports").select("*").order("created_at", { ascending: false });
-      if (newOnly) query = query.eq("status", "new");
-      const { data, error } = await query;
-      if (error) throw new Error(error.message);
-      return data;
-    },
-  });
-
-  const update = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: "resolved" | "rejected" }) => {
-      const { error } = await supabase
-        .from("reports")
-        .update({ status, handled_at: new Date().toISOString() })
-        .eq("id", id);
-      if (error) throw new Error(error.message);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin", "reports"] });
-      toast.success("Signalement mis à jour.");
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
-
-  return (
-    <Panel>
-      {newOnly && (
-        <AdminFilterNotice label="Nouveaux signalements à traiter" onClear={onClearFilter} />
-      )}
-      {isLoading ? (
-        <p className="text-sm text-muted-foreground">Chargement…</p>
-      ) : reports.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Aucun signalement.</p>
-      ) : (
-        <ul className="divide-y divide-border">
-          {reports.map((report) => (
-            <li key={report.id} className="flex flex-wrap items-start gap-3 py-3">
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">
-                  {reportTargetLabel[report.target_type] ?? report.target_type} ·{" "}
-                  {reportReasonLabel[report.reason] ?? report.reason}
-                  <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">
-                    {reportStatusLabel[report.status] ?? report.status}
-                  </span>
-                </p>
-                {report.message ? (
-                  <p className="mt-1 text-sm text-muted-foreground">{report.message}</p>
-                ) : null}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  disabled={update.isPending}
-                  onClick={() => update.mutate({ id: report.id, status: "resolved" })}
-                >
-                  Marquer traité
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={update.isPending}
-                  onClick={() => update.mutate({ id: report.id, status: "rejected" })}
-                >
-                  Écarter
-                </Button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Panel>
   );
 }
 

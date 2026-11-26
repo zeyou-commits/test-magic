@@ -362,7 +362,18 @@ export function SailingDetail({
           <Calculator className="size-3.5" aria-hidden />
           {tr("ui.sailingCard.budget")}
         </a>
-        <ReportButton targetType="departure" targetId={departure.id} />
+        <ReportButton
+          targetType="departure"
+          targetId={departure.id}
+          shown={{
+            Départ: `${formatShortDay(departure.departure_at, sailing.fromZone)} ${sailing.depTime}`,
+            Arrivée: sailing.arrTime
+              ? `${sailing.arrTime}${sailing.arrDayOffset > 0 ? ` (+${sailing.arrDayOffset} j)` : ""}`
+              : null,
+            Navire: sailing.vessel?.name ?? null,
+            Compagnie: sailing.company?.name ?? null,
+          }}
+        />
         <FollowButton
           kind="departure"
           targetId={departure.id}

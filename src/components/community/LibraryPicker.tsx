@@ -21,6 +21,7 @@ export function LibraryPicker({
   size = 48,
   disabled = false,
   compact = false,
+  emojis,
 }: {
   selected?: string | null;
   onPick: (row: AvatarRow) => void;
@@ -32,6 +33,8 @@ export function LibraryPicker({
   disabled?: boolean;
   /** Version serrée (panneau du salon). */
   compact?: boolean;
+  /** Emojis classiques (salon) : affichés EN PREMIER dans « Tout » et dans la catégorie Réactions, et comptés. */
+  emojis?: { items: readonly string[]; onPick: (emoji: string) => void; label: (emoji: string) => string };
 }) {
   const library = useLibrary();
   const [tab, setTab] = useState(ALL);
@@ -60,6 +63,12 @@ export function LibraryPicker({
 
   const current = library.groups.some((group) => group.id === tab) ? tab : ALL;
   const total = library.rows.length;
+  // La catégorie « Réactions » reçoit aussi les emojis classiques (en tête).
+  const reactionsId = emojis
+    ? library.groups.find((group) => /r[ée]action/i.test(group.label) || /reaction/i.test(group.id))?.id
+    : undefined;
+  const extra = emojis?.items.length ?? 0;
+  const showEmojis = Boolean(emojis) && !query && (current === ALL || current === reactionsId);
 
   return (
     <div className="bw-library" data-compact={compact || undefined}>
@@ -88,12 +97,26 @@ export function LibraryPicker({
               aria-selected={current === group.id}
               onClick={() => setTab(group.id)}
             >
-              {group.label} <small>{group.rows.length}</small>
+              {group.label}{" "}
+              <small>
+                {group.rows.length + (group.id === ALL || group.id === reactionsId ? extra : 0)}
+              </small>
             </button>
           ))}
         </div>
       )}
       <div className="bw-library__scroll">
+        {showEmojis && emojis ? (
+          <section>
+            <div className="bw-library__grid bw-library__emojis">
+              {emojis.items.map((emoji) => (
+                <button key={emoji} type="button" aria-label={emojis.label(emoji)} onClick={() => emojis.onPick(emoji)}>
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : null}
         {library.pending && !total ? <p className="bw-library__empty">{tr("ui.libraryPicker.chargement")}</p> : null}
         {sections.map((section) => (
           <section key={section.id}>

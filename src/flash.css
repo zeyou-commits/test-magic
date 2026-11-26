@@ -18697,3 +18697,11 @@ body:has(.bw-ticker:not([data-off])) .bw-messages-preview {
     animation: none;
   }
 }
+
+/* Salon : emojis classiques en tête du sélecteur (avant les images BledWay). */
+.bw-library__emojis button {
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  line-height: 1;
+}

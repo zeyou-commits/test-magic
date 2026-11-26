@@ -1305,6 +1305,11 @@ function LiveChat({
                   labels={false}
                   size={36}
                   compact
+                  emojis={{
+                    items: UNICODE_EMOTES,
+                    label: (emote) => tr("ui.liveRoom.ajouter", { emote }),
+                    onPick: (emote) => setText((value) => `${value}${emote}`.slice(0, MAX_MESSAGE)),
+                  }}
                 />
               ) : siteEmotes.length ? (
                 <p className="bw-chat__site-emotes">
@@ -1321,6 +1326,7 @@ function LiveChat({
                   ))}
                 </p>
               ) : null}
+              {library.managed ? null : (
               <p className="bw-chat__emotes">
                 {UNICODE_EMOTES.map((emote) => (
                   <button
@@ -1333,6 +1339,7 @@ function LiveChat({
                   </button>
                 ))}
               </p>
+              )}
             </div>
           ) : text || replyTo ? null : (
             <p className="bw-chat__examples">

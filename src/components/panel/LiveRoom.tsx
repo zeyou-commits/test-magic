@@ -23,7 +23,6 @@ import {
   Users,
   X,
   MessageCircle,
-  SmilePlus,
   ThumbsUp,
 } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -436,6 +435,9 @@ function LiveChat({
   ).data;
   const refresh = () => void client.invalidateQueries({ queryKey: roomKey(kind, room) });
   const [openThreads, setOpenThreads] = useState<Set<string>>(() => new Set());
+  const [pickerFor, setPickerFor] = useState<string | null>(null);
+  const pressTimer = useRef<number | undefined>(undefined);
+  const longPress = useRef(false);
   const renderLine = (message: Message, rootId: string | null) => (
     <li
       key={message.id}
@@ -517,29 +519,82 @@ function LiveChat({
           </time>
         </button>
         {/* Comme sur LinkedIn : les actions restent visibles sous chaque message, avec leurs compteurs. */}
-        <p className="bw-chat__actions">
+        {/* Comme sur LinkedIn : un seul bouton « J'aime » ; un toucher = j'aime, survol ou appui long = les 6 réactions. */}
+        <div className="bw-chat__actions">
           {emoji === null ? null : (
-            <button
-              type="button"
-              aria-pressed={emoji?.[message.id]?.mine === "like"}
-              onClick={() => reactTo(message.id, "like")}
+            <span
+              className="bw-chat__react"
+              onPointerEnter={(event) => {
+                if (event.pointerType !== "mouse") return;
+                window.clearTimeout(pressTimer.current);
+                pressTimer.current = window.setTimeout(() => setPickerFor(message.id), 350);
+              }}
+              onPointerLeave={(event) => {
+                if (event.pointerType !== "mouse") return;
+                window.clearTimeout(pressTimer.current);
+                pressTimer.current = window.setTimeout(
+                  () => setPickerFor((current) => (current === message.id ? null : current)),
+                  300,
+                );
+              }}
             >
-              <ThumbsUp size={14} aria-hidden />
-              {tr("ui.liveRoom.jAime")}
-              {emoji?.[message.id]?.counts.like ? <b>{emoji[message.id]!.counts.like}</b> : null}
-            </button>
-          )}
-          {emoji === null ? null : (
-            <button
-              type="button"
-              aria-expanded={selected === message.id}
-              aria-label={tr("ui.liveRoom.reagirACeMessage")}
-              title={tr("ui.liveRoom.reagirACeMessage")}
-              onClick={() => setSelected(selected === message.id ? null : message.id)}
-            >
-              <SmilePlus size={14} aria-hidden />
-              {tr("ui.liveRoom.reagir")}
-            </button>
+              {pickerFor === message.id ? (
+                <span className="bw-chat__picker" role="group" aria-label={tr("ui.liveRoom.reagirACeMessage")}>
+                  {REACTIONS.map((item) => (
+                    <button
+                      key={item.code}
+                      type="button"
+                      aria-pressed={emoji?.[message.id]?.mine === item.code}
+                      aria-label={item.label}
+                      title={item.label}
+                      onClick={() => {
+                        reactTo(message.id, item.code);
+                        setPickerFor(null);
+                      }}
+                    >
+                      {item.emoji}
+                    </button>
+                  ))}
+                </span>
+              ) : null}
+              <button
+                type="button"
+                data-mine={emoji?.[message.id]?.mine ?? undefined}
+                aria-pressed={Boolean(emoji?.[message.id]?.mine)}
+                onContextMenu={(event) => event.preventDefault()}
+                onPointerDown={(event) => {
+                  if (event.pointerType === "mouse") return;
+                  longPress.current = false;
+                  window.clearTimeout(pressTimer.current);
+                  pressTimer.current = window.setTimeout(() => {
+                    longPress.current = true;
+                    setPickerFor(message.id);
+                  }, 450);
+                }}
+                onPointerUp={() => {
+                  if (!longPress.current) window.clearTimeout(pressTimer.current);
+                }}
+                onClick={() => {
+                  if (longPress.current) {
+                    longPress.current = false;
+                    return;
+                  }
+                  setPickerFor(null);
+                  reactTo(message.id, emoji?.[message.id]?.mine ?? "like");
+                }}
+              >
+                {emoji?.[message.id]?.mine ? (
+                  <span aria-hidden className="bw-chat__react-emoji">
+                    {reactionEmoji(emoji[message.id]!.mine!)}
+                  </span>
+                ) : (
+                  <ThumbsUp size={14} aria-hidden />
+                )}
+                {emoji?.[message.id]?.mine
+                  ? REACTIONS.find((item) => item.code === emoji[message.id]!.mine)?.label
+                  : tr("ui.liveRoom.jAime")}
+              </button>
+            </span>
           )}
           {closed || reader ? null : (
             <button
@@ -559,34 +614,32 @@ function LiveChat({
               })()}
             </button>
           )}
-        </p>
-        {emoji?.[message.id] && Object.keys(emoji[message.id]!.counts).length ? (
-          <p className="bw-chat__reacts">
-            {REACTIONS.filter((item) => item.code !== "like" && emoji[message.id]!.counts[item.code]).map((item) => (
+          {(() => {
+            const counts = emoji?.[message.id]?.counts ?? {};
+            const total = Object.values(counts).reduce((sum, n) => sum + (n ?? 0), 0);
+            if (!total) return null;
+            const top = REACTIONS.filter((item) => counts[item.code])
+              .sort((a, b) => (counts[b.code] ?? 0) - (counts[a.code] ?? 0))
+              .slice(0, 3);
+            return (
               <button
-                key={item.code}
                 type="button"
-                aria-pressed={emoji[message.id]!.mine === item.code}
-                aria-label={`${item.label} : ${emoji[message.id]!.counts[item.code]}`}
-                title={item.label}
-                onClick={() => reactTo(message.id, item.code)}
+                className="bw-chat__react-sum"
+                aria-expanded={whoFor === message.id}
+                aria-label={`${tr("ui.liveRoom.voirQuiAReagi")} : ${total}`}
+                title={tr("ui.liveRoom.voirQuiAReagi")}
+                onClick={() => setWhoFor(whoFor === message.id ? null : message.id)}
               >
-                <span aria-hidden>{item.emoji}</span>
-                {emoji[message.id]!.counts[item.code]}
+                <span aria-hidden>
+                  {top.map((item) => (
+                    <i key={item.code}>{item.emoji}</i>
+                  ))}
+                </span>
+                {total}
               </button>
-            ))}
-            <button
-              type="button"
-              className="bw-chat__reacts-who"
-              aria-expanded={whoFor === message.id}
-              aria-label={tr("ui.liveRoom.voirQuiAReagi")}
-              title={tr("ui.liveRoom.voirQuiAReagi")}
-              onClick={() => setWhoFor(whoFor === message.id ? null : message.id)}
-            >
-              <Users size={12} aria-hidden />
-            </button>
-          </p>
-        ) : null}
+            );
+          })()}
+        </div>
         {whoFor === message.id ? (
           <ul className="bw-chat__reactors" aria-label={tr("ui.liveRoom.quiAReagi")}>
             {reactors.isPending ? <li role="status">{tr("ui.liveRoom.chargement")}</li> : null}

@@ -18612,3 +18612,88 @@ body:has(.bw-ticker:not([data-off])) .bw-messages-preview {
   color: #1a2e26;
   font-weight: 700;
 }
+
+/* Salon : bouton de réaction unique façon LinkedIn, palette au survol / appui long, total à droite. */
+.bw-chat__actions {
+  align-items: center;
+}
+.bw-chat__react {
+  position: relative;
+  display: inline-flex;
+}
+.bw-chat__react > button {
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+.bw-chat__actions button[data-mine] {
+  color: #0e6b3b;
+}
+.bw-chat__react-emoji {
+  font-size: 15px;
+  line-height: 1;
+}
+.bw-chat__picker {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: -4px;
+  z-index: 30;
+  display: flex;
+  gap: 2px;
+  padding: 5px 6px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 6px 22px rgba(18, 63, 44, 0.2), 0 0 0 1px rgba(18, 63, 44, 0.06);
+  animation: bw-picker-in 140ms ease-out;
+}
+.bw-chat__actions .bw-chat__picker button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  min-height: 38px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 26px;
+  line-height: 1;
+  transition: transform 120ms ease-out;
+}
+.bw-chat__actions .bw-chat__picker button:hover,
+.bw-chat__actions .bw-chat__picker button:focus-visible {
+  background: none;
+  transform: translateY(-4px) scale(1.25);
+}
+.bw-chat__actions .bw-chat__picker button[aria-pressed="true"] {
+  background: #e3f2ea;
+}
+@keyframes bw-picker-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.92);
+  }
+}
+.bw-chat__actions .bw-chat__react-sum {
+  margin-left: auto;
+  font-weight: 500;
+}
+.bw-chat__react-sum > span {
+  display: inline-flex;
+}
+.bw-chat__react-sum i {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin-left: -5px;
+  border: 1.5px solid #ffffff;
+  border-radius: 50%;
+  background: #f1f5f3;
+  font-size: 11px;
+  font-style: normal;
+}
+.bw-chat__react-sum i:first-child {
+  margin-left: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-chat__picker {
+    animation: none;
+  }
+}

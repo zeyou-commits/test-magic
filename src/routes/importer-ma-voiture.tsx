@@ -47,14 +47,14 @@ export const Route = createFileRoute("/importer-ma-voiture")({
   component: ImportPage,
 });
 
-type StepMeta = { icon: LucideIcon; phase: "before" | "departure" | "algeria"; shared?: "common" | "partly" };
+type StepMeta = { icon: LucideIcon; phase: "before" | "departure" | "algeria" };
 
 const META: Record<ImportStepId, StepMeta> = {
   eligibilite: { icon: ShieldCheck, phase: "before" },
   achat: { icon: Wallet, phase: "before" },
   export: { icon: FileText, phase: "departure" },
-  papiers: { icon: Users, phase: "departure", shared: "common" },
-  traversee: { icon: Ship, phase: "departure", shared: "partly" },
+  papiers: { icon: Users, phase: "departure" },
+  traversee: { icon: Ship, phase: "departure" },
   arrivee: { icon: Landmark, phase: "algeria" },
   immatriculation: { icon: BadgeCheck, phase: "algeria" },
 };
@@ -477,7 +477,7 @@ function ImportPage() {
                 <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t(`phase_${phase}`)}</h2>
                 <ul className="mt-2 grid gap-2">
                   {IMPORT_STEPS.filter((id) => META[id].phase === phase).map((id) => {
-                    const { icon: Icon, shared } = META[id];
+                    const { icon: Icon } = META[id];
                     const done = isDone(id);
                     const n = IMPORT_STEPS.indexOf(id) + 1;
                     return (
@@ -501,11 +501,6 @@ function ImportPage() {
                             </span>
                             <span className="mt-0.5 block text-sm text-muted-foreground">{t(`stepHint_${id}`)}</span>
                           </span>
-                          {shared ? (
-                            <span className="shrink-0 rounded-full bg-sky-100 px-2 py-0.5 text-xs font-bold text-sky-800 dark:bg-sky-950 dark:text-sky-200">
-                              {t(shared === "common" ? "badgeCommon" : "badgePartly")}
-                            </span>
-                          ) : null}
                           <ArrowRight size={16} className="shrink-0 text-primary" aria-hidden />
                         </button>
                       </li>
@@ -514,8 +509,7 @@ function ImportPage() {
                 </ul>
               </section>
             ))}
-            <p className="mt-5 text-sm text-muted-foreground">{t("commonExplain")}</p>
-            <p className="mt-2 text-sm text-muted-foreground">{t("declarative")}</p>
+            <p className="mt-5 text-sm text-muted-foreground">{t("declarative")}</p>
           </>
         ) : (
           <article>

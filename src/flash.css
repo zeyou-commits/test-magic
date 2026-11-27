@@ -18748,3 +18748,77 @@ body:has(.bw-ticker:not([data-off])) .bw-messages-preview {
   font-size: 28px;
   line-height: 1;
 }
+
+/* Discussions sur ordinateur (27/11/2026) : une vraie fenêtre large, pas une colonne de 440 px.
+   En-tête sur toute la largeur, salon général et recherche côte à côte, traversées en 2 ou 3
+   colonnes : on voit 12 à 18 salons d'un coup au lieu de 4. */
+@media (min-width: 1024px) {
+  .bw-room-picker.bw-room-picker--salons[class] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    align-content: stretch;
+    column-gap: 14px;
+    row-gap: 12px;
+    width: min(1080px, calc(100vw - 64px));
+    max-width: none;
+    height: min(88dvh, 880px);
+    padding: 22px 24px 16px;
+  }
+  .bw-room-picker--salons > * {
+    grid-column: 1 / -1;
+  }
+  .bw-room-picker--salons > .bw-room-picker__general {
+    grid-column: 1;
+    min-height: 52px;
+    padding: 7px 12px;
+  }
+  .bw-room-picker--salons > .bw-room-picker__search {
+    grid-column: 2;
+    align-self: stretch;
+    height: auto;
+    min-height: 52px;
+  }
+  .bw-room-picker--salons > .bw-room-picker__general small {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .bw-room-picker--salons .bw-room-picker__hero {
+    padding-bottom: 10px;
+  }
+  .bw-room-picker--salons .bw-room-picker__list section ul {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .bw-room-picker--salons .bw-room-picker__list li button {
+    height: 100%;
+  }
+  .bw-room-picker--salons > .bw-room-picker__ask {
+    justify-self: start;
+    min-height: 38px;
+    padding: 4px 14px;
+  }
+}
+@media (min-width: 1280px) {
+  .bw-room-picker--salons .bw-room-picker__list section ul {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+/* Téléphone : le salon général tient sur deux lignes courtes, la liste gagne de la hauteur. */
+@media (max-width: 639px) {
+  .bw-room-picker--salons > .bw-room-picker__general {
+    min-height: 54px;
+    padding: 7px 10px;
+  }
+  .bw-room-picker--salons > .bw-room-picker__general small {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .bw-room-picker--salons > .bw-room-picker__general .bw-room-picker__general-icon {
+    width: 34px;
+    height: 34px;
+  }
+}

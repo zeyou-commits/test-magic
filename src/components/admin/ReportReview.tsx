@@ -2,13 +2,21 @@ import { useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
-import { Check, ExternalLink, Pencil, ShieldCheck, X } from "lucide-react";
+import { Award, Check, ExternalLink, MessageCircleReply, Pencil, ShieldCheck, X } from "lucide-react";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDateTime } from "@/lib/ferry/format";
 import { portTimeZone } from "@/lib/ferry/time";
 import { AdminFilterNotice } from "./AdminFilterNotice";
+import { textsFor } from "../../../supabase/functions/_shared/emailTexts";
+import {
+  REPORT_DEFAULTS,
+  REPORT_LIMITS,
+  fillReport,
+  reportLang,
+  type ReportOutcome,
+} from "../../../supabase/functions/_shared/reportTemplate";
 
 // Fonction et colonnes du script « signalements_erreurs_detail », absentes des types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -47,9 +55,41 @@ const departureStatusLabel: Record<string, string> = {
   postponed: "Reporté",
 };
 
-/** Réponses toutes faites : ce que l'équipe a décidé, gardé avec le signalement. */
-const RESOLVED_NOTES = ["Horaire corrigé", "Navire corrigé", "Départ annulé ou reporté", "Fiche complétée"];
-const REJECTED_NOTES = ["Test", "Information déjà juste", "Doublon", "Hors sujet", "Impossible à vérifier"];
+type Outcome = ReportOutcome | "dismissed";
+type Decision = "resolved" | "rejected";
+
+/**
+ * Issues possibles d'un signalement. Chacune propose une réponse au voyageur (textes de
+ * reportTemplate.ts, modifiables dans Contenus → E-mails → Signalements), sauf « dismissed »
+ * (test, doublon, hors sujet) qui reste silencieuse par défaut.
+ */
+const OUTCOMES: Record<Decision, { id: Outcome; label: string }[]> = {
+  resolved: [
+    { id: "corrected", label: "Fiche corrigée" },
+    { id: "forwarded", label: "Transmis à la compagnie" },
+  ],
+  rejected: [
+    { id: "dismissed", label: "Test, doublon ou hors sujet" },
+    { id: "already_right", label: "Information déjà juste" },
+    { id: "insufficient", label: "Pas assez d'éléments" },
+  ],
+};
+const outcomeLabel = (id: string | null) =>
+  [...OUTCOMES.resolved, ...OUTCOMES.rejected].find((item) => item.id === id)?.label ?? null;
+const LANG_NAME: Record<string, string> = { fr: "français", ar: "arabe", en: "anglais" };
+
+/** La fiche en quelques mots pour la réponse : « Marseille → Alger · 27/11 » (comme la base). */
+function reportSubject(report: StaffReport) {
+  const label = report.target?.label ?? "";
+  const at = report.target?.departure_at;
+  if (report.target_type !== "departure" || !at) return label;
+  const day = new Intl.DateTimeFormat("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "Europe/Paris",
+  }).format(new Date(at));
+  return label ? `${label} · ${day}` : day;
+}
 
 export type StaffReport = {
   id: string;
@@ -60,9 +100,14 @@ export type StaffReport = {
   status: string;
   context: {
     page?: string;
+    locale?: string;
     shown?: Record<string, string | number | null>;
   } | null;
   resolution_note: string | null;
+  reply_outcome?: string | null;
+  reply_text?: string | null;
+  reply_sent?: boolean | null;
+  replied_at?: string | null;
   created_at: string;
   handled_at: string | null;
   handled_by: string | null;
@@ -94,6 +139,12 @@ export type StaffReport = {
     last_verified_at?: string | null;
     delay_minutes?: number | null;
   } | null;
+};
+
+type DecideResult = {
+  status: Decision | "new";
+  sent?: boolean;
+  badge?: { label?: Record<string, string> } | null;
 };
 
 type Filter = "new" | "done" | "all";
@@ -157,6 +208,19 @@ export function ReportsModeration({
       return (data ?? []) as StaffReport[];
     },
   });
+  // Textes de réponse modifiés dans l'admin (Contenus → E-mails → Signalements).
+  const replies = useQuery({
+    queryKey: ["admin", "settings", "report_replies"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("bw_admin_settings")
+        .select("value")
+        .eq("key", "report_replies")
+        .maybeSingle();
+      return (data as { value?: unknown } | null)?.value ?? null;
+    },
+    staleTime: 5 * 60_000,
+  });
   const reports = (query.data ?? []).filter((report) =>
     current === "all"
       ? true
@@ -204,6 +268,7 @@ export function ReportsModeration({
             <ReportCard
               key={report.id}
               report={report}
+              replyOverrides={replies.data ?? null}
               onOpenItem={onOpenItem}
               renderDepartureEditor={renderDepartureEditor}
             />
@@ -227,16 +292,22 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 
 function ReportCard({
   report,
+  replyOverrides,
   onOpenItem,
   renderDepartureEditor,
 }: {
   report: StaffReport;
+  replyOverrides: unknown;
   onOpenItem: (tab: string, id: string) => void;
   renderDepartureEditor: (id: string, onDone: () => void) => ReactNode;
 }) {
   const client = useQueryClient();
-  const [deciding, setDeciding] = useState<"resolved" | "rejected" | null>(null);
+  const [deciding, setDeciding] = useState<Decision | null>(null);
+  const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [note, setNote] = useState("");
+  const [send, setSend] = useState(false);
+  const [replyTitle, setReplyTitle] = useState("");
+  const [replyBody, setReplyBody] = useState("");
   const [editing, setEditing] = useState(false);
   const target = report.target;
   const open = report.status === "new" || report.status === "in_progress";
@@ -244,31 +315,65 @@ function ReportCard({
   const reporter = report.reporter;
   const link = publicLink(report);
   const shown = report.context?.shown ?? null;
+  const lang = reportLang(report.context?.locale);
+
+  /** Choisit l'issue et prépare la réponse dans la langue du voyageur (modifiable). */
+  const pickOutcome = (id: Outcome) => {
+    setOutcome(id);
+    if (id === "dismissed") {
+      setSend(false);
+      return;
+    }
+    const texts = textsFor(REPORT_DEFAULTS[lang], REPORT_LIMITS, replyOverrides, lang);
+    const vars = { fiche: reportSubject(report) };
+    setReplyTitle(fillReport(texts[`${id}Title`], vars));
+    setReplyBody(fillReport(texts[`${id}Body`], vars));
+    setSend(Boolean(reporter));
+  };
+  const startDeciding = (status: Decision) => {
+    setDeciding(status);
+    pickOutcome(OUTCOMES[status][0]!.id);
+  };
 
   const decide = useMutation({
-    mutationFn: async (status: "resolved" | "rejected" | "new") => {
-      const { error } = await supabase
-        .from("reports")
-        .update({
-          status,
-          resolution_note: status === "new" ? null : note.trim() || null,
-          handled_at: status === "new" ? null : new Date().toISOString(),
-        })
-        .eq("id", report.id);
+    mutationFn: async (status: Decision | "new"): Promise<DecideResult> => {
+      if (status === "new") {
+        // La réponse déjà envoyée reste chez le voyageur ; on rouvre seulement le dossier.
+        const { error } = await supabase
+          .from("reports")
+          .update({ status, resolution_note: null, handled_at: null, reply_outcome: null })
+          .eq("id", report.id);
+        if (error) throw new Error(error.message);
+        return { status };
+      }
+      const { data, error } = await supabase.rpc("bw_report_reply", {
+        p_id: report.id,
+        p_status: status,
+        p_outcome: outcome,
+        p_note: note.trim() || outcomeLabel(outcome),
+        p_send: send,
+        p_title: replyTitle.trim(),
+        p_body: replyBody.trim(),
+        p_url: "/compte#contributions",
+      });
       if (error) throw new Error(error.message);
-      return status;
+      return { status, ...(data as Omit<DecideResult, "status">) };
     },
-    onSuccess: (status) => {
+    onSuccess: ({ status, sent, badge }) => {
       setDeciding(null);
+      setOutcome(null);
       setNote("");
       void client.invalidateQueries({ queryKey: ["admin", "reports"] });
       void client.invalidateQueries({ queryKey: ["admin", "counts"] });
+      const who = reporter?.pseudo ?? reporter?.name ?? "le voyageur";
+      const done = status === "resolved" ? "traité" : "écarté";
       toast.success(
-        status === "resolved"
-          ? "Signalement traité."
-          : status === "rejected"
-            ? "Signalement écarté."
-            : "Signalement remis à traiter.",
+        status === "new"
+          ? "Signalement remis à traiter."
+          : `Signalement ${done}${sent ? ` : réponse envoyée à ${who}` : ", sans réponse au voyageur"}.`,
+        badge?.label?.["fr"]
+          ? { description: `${who} reçoit le badge « ${badge.label["fr"]} » 🏅` }
+          : undefined,
       );
     },
     onError: (error: Error) => toast.error(error.message),
@@ -399,46 +504,124 @@ function ReportCard({
             </span>
           </Row>
         ) : null}
+        {!open ? (
+          <Row label="Réponse au voyageur">
+            {report.reply_sent && report.reply_text ? (
+              <span dir="auto">
+                <q className="whitespace-pre-wrap">{report.reply_text}</q>
+                {report.replied_at ? (
+                  <span className="block text-xs text-muted-foreground">
+                    Envoyée le {paris(report.replied_at)}
+                  </span>
+                ) : null}
+              </span>
+            ) : (
+              <span className="text-muted-foreground">Aucune (décision silencieuse)</span>
+            )}
+          </Row>
+        ) : null}
       </dl>
 
       {editing ? (
         <div className="mt-3 rounded-xl border bg-secondary/40 p-3">
           {renderDepartureEditor(report.target_id, () => {
             setEditing(false);
-            setDeciding("resolved");
+            startDeciding("resolved");
           })}
         </div>
       ) : null}
 
       {open && deciding ? (
-        <div className="mt-3 grid gap-2 rounded-xl border bg-secondary/40 p-3">
-          <p className="text-sm font-semibold">
-            {deciding === "resolved" ? "Qu'avez-vous corrigé ?" : "Pourquoi l'écarter ?"}
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {(deciding === "resolved" ? RESOLVED_NOTES : REJECTED_NOTES).map((text) => (
-              <button
-                key={text}
-                type="button"
-                aria-pressed={note === text}
-                onClick={() => setNote(text)}
-                className={`rounded-full border px-3 py-1 text-xs font-medium ${note === text ? "border-primary bg-primary/10" : "bg-white"}`}
-              >
-                {text}
-              </button>
-            ))}
+        <div className="mt-3 grid gap-3 rounded-xl border bg-secondary/40 p-3">
+          <div className="grid gap-1.5">
+            <p className="text-sm font-semibold">
+              {deciding === "resolved" ? "Qu'avez-vous fait ?" : "Pourquoi l'écarter ?"}
+            </p>
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Issue">
+              {OUTCOMES[deciding].map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  aria-pressed={outcome === item.id}
+                  onClick={() => pickOutcome(item.id)}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium ${outcome === item.id ? "border-primary bg-primary/10" : "bg-white"}`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            {deciding === "resolved" && reporter ? (
+              <p className="flex items-center gap-1 text-xs text-emerald-800">
+                <Award className="size-3.5 shrink-0" aria-hidden />
+                Compte pour son badge Vigie : {reporter.resolved + 1} fiche
+                {reporter.resolved + 1 > 1 ? "s" : ""} corrigée{reporter.resolved + 1 > 1 ? "s" : ""} au
+                total.
+              </p>
+            ) : null}
           </div>
+
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-0.5 size-4 accent-primary"
+              checked={send}
+              disabled={!reporter}
+              onChange={(event) => {
+                if (event.target.checked && outcome === "dismissed") pickOutcome("already_right");
+                else setSend(event.target.checked);
+              }}
+            />
+            <span>
+              <strong>Envoyer un retour au voyageur</strong>
+              <span className="block text-xs text-muted-foreground">
+                {reporter
+                  ? `En ${LANG_NAME[lang]} (langue du site quand il a signalé) : notification sur son téléphone, ou e-mail s'il n'a pas activé les notifications.`
+                  : "Compte supprimé : impossible de lui répondre."}
+              </span>
+            </span>
+          </label>
+          {send ? (
+            <div className="grid gap-1.5">
+              <input
+                value={replyTitle}
+                maxLength={120}
+                dir="auto"
+                onChange={(event) => setReplyTitle(event.target.value)}
+                aria-label="Titre de la réponse"
+                className="h-9 rounded-md border bg-white px-3 text-sm font-semibold"
+              />
+              <Textarea
+                value={replyBody}
+                maxLength={600}
+                rows={3}
+                dir="auto"
+                onChange={(event) => setReplyBody(event.target.value)}
+                aria-label="Texte de la réponse"
+                className="bg-white"
+              />
+              <p className="text-xs text-muted-foreground">
+                Texte proposé, à personnaliser si besoin ({replyBody.length}/600).
+              </p>
+            </div>
+          ) : null}
+
           <Textarea
             value={note}
             maxLength={500}
             rows={2}
             onChange={(event) => setNote(event.target.value)}
-            placeholder="Note pour l'équipe (facultatif)"
+            placeholder="Note pour l'équipe (facultatif, le voyageur ne la voit pas)"
             aria-label="Note de décision"
           />
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" disabled={decide.isPending} onClick={() => decide.mutate(deciding)}>
+            <Button
+              size="sm"
+              disabled={decide.isPending || !outcome || (send && !replyBody.trim())}
+              onClick={() => decide.mutate(deciding)}
+            >
+              {send ? <MessageCircleReply className="size-3.5" /> : null}
               {deciding === "resolved" ? "Valider : traité" : "Valider : écarté"}
+              {send ? " et répondre" : ""}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setDeciding(null)}>
               Annuler
@@ -463,14 +646,14 @@ function ReportCard({
         <span className="flex-1" />
         {open ? (
           <>
-            <Button size="sm" disabled={decide.isPending} onClick={() => setDeciding("resolved")}>
+            <Button size="sm" disabled={decide.isPending} onClick={() => startDeciding("resolved")}>
               <Check className="size-3.5" /> Traité
             </Button>
             <Button
               size="sm"
               variant="ghost"
               disabled={decide.isPending}
-              onClick={() => setDeciding("rejected")}
+              onClick={() => startDeciding("rejected")}
             >
               <X className="size-3.5" /> Écarter
             </Button>

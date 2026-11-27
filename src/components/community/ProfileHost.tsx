@@ -25,6 +25,7 @@ import { EditableAvatar, focusAvatarPicker } from "./EditableAvatar";
 import { MyTravellerEditor } from "./MyTravellerEditor";
 import { TravellerAvatar } from "./TravellerAvatar";
 import { tr } from "@/lib/i18n";
+import { VIGIE_CODES, fixesText, vigieName } from "./VigieBadge";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 
@@ -230,11 +231,19 @@ export function ProfileHost() {
             ) : null}
             {data.badges.length ? (
               <div className="bw-profile__badges" aria-label={tr("ui.profileHost.badges")}>
-                {data.badges.map((badge) => (
-                  <span key={badge.code}>
-                    <Award size={13} aria-hidden /> {badge.label}
-                  </span>
-                ))}
+                {data.badges.map((badge) =>
+                  // Badge Vigie : fiches corrigées grâce à ses signalements, nommé dans la langue affichée.
+                  VIGIE_CODES.includes(badge.code) ? (
+                    <span key={badge.code} className="is-vigie">
+                      <Award size={13} aria-hidden /> {vigieName(badge.code)} ·{" "}
+                      {fixesText(data.fixes ?? 1)}
+                    </span>
+                  ) : (
+                    <span key={badge.code}>
+                      <Award size={13} aria-hidden /> {badge.label}
+                    </span>
+                  ),
+                )}
               </div>
             ) : (
               <p className="bw-profile__empty">{tr("ui.profileHost.lesBadgesArriventAvecLes")}</p>

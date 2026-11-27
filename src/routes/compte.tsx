@@ -23,6 +23,7 @@ import { MyTickets } from "@/components/tickets/MyTickets";
 import { Bell, Heart, MessageSquare, UserRound, LogOut, ArrowLeft } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { tr } from "@/lib/i18n";
+import { VigieProgress } from "@/components/community/VigieBadge";
 
 export const Route = createFileRoute("/compte")({
   head: () => ({
@@ -222,17 +223,29 @@ function MyReports({ userId }: { userId: string }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("reports")
-        .select("id, target_type, reason, message, status, created_at")
+        .select("id, target_type, reason, message, status, created_at, reply_text, reply_sent, replied_at")
         .eq("reporter_id", userId)
         .order("created_at", { ascending: false });
       if (error) throw new Error(error.message);
-      return data;
+      // Colonnes de réponse du script du 27/11/2026, absentes des types générés.
+      return data as unknown as {
+        id: string;
+        target_type: string;
+        reason: string;
+        message: string | null;
+        status: string;
+        created_at: string;
+        reply_text: string | null;
+        reply_sent: boolean | null;
+        replied_at: string | null;
+      }[];
     },
   });
 
   return (
     <Card>
       <h3 className="text-sm font-semibold">{tr("ui.pageCompte.mesSignalements")}</h3>
+      <VigieProgress userId={userId} />
       {isLoading ? (
         <p className="mt-2 text-sm text-muted-foreground">{tr("ui.pageCompte.chargement")}</p>
       ) : reports.length === 0 ? (
@@ -251,6 +264,15 @@ function MyReports({ userId }: { userId: string }) {
                 <p className="mt-1 text-sm text-muted-foreground">{report.message}</p>
               ) : null}
               <p className="mt-1 text-xs text-muted-foreground">{formatDate(report.created_at)}</p>
+              {report.reply_sent && report.reply_text ? (
+                <div className="bw-report-reply" dir="auto">
+                  <p className="text-xs font-semibold">{tr("ui.pageCompte.reponseEquipe")}</p>
+                  <p className="text-sm">{report.reply_text}</p>
+                  {report.replied_at ? (
+                    <p className="text-xs text-muted-foreground">{formatDate(report.replied_at)}</p>
+                  ) : null}
+                </div>
+              ) : null}
             </li>
           ))}
         </ul>

@@ -22,9 +22,12 @@ import {
   Clock,
   Copy,
   MailX,
+  Award,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { VIGIE_LEVELS, vigieLevel } from "../../../supabase/functions/_shared/reportTemplate";
 import { useAuth } from "@/hooks/useAuth";
 import {
   activityLabels,
@@ -1194,6 +1197,8 @@ function UserSheet({
             )}
           </section>
 
+          <ReporterReward userId={userId} />
+
           <section>
             <h3 className="text-sm font-semibold">Téléphones abonnés aux notifications</h3>
             {detail.data?.devices.length ? (
@@ -1374,5 +1379,70 @@ function RoleChangeSummary({
         </p>
       )}
     </div>
+  );
+}
+
+/**
+ * Fiche du compte → signalements d'erreur : envoyés, fiches corrigées grâce à lui (statut
+ * « Traité ») et badge Vigie atteint (paliers à 1, 5, 15 et 50).
+ */
+function ReporterReward({ userId }: { userId: string }) {
+  const { data } = useQuery({
+    queryKey: ["admin", "users", "reports", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("reports")
+        .select("status")
+        .eq("reporter_id", userId);
+      if (error) return null;
+      const rows = data ?? [];
+      return {
+        sent: rows.length,
+        fixed: rows.filter((row) => row.status === "resolved").length,
+        rejected: rows.filter((row) => row.status === "rejected").length,
+        waiting: rows.filter((row) => row.status === "new" || row.status === "in_progress").length,
+      };
+    },
+  });
+  if (!data) return null;
+  const level = vigieLevel(data.fixed);
+  const next = VIGIE_LEVELS.find((item) => item.at > data.fixed);
+  return (
+    <section>
+      <h3 className="text-sm font-semibold">Signalements d'erreur</h3>
+      {data.sent ? (
+        <>
+          <ul className="mt-2 grid gap-1 text-sm">
+            <li className="flex justify-between gap-3">
+              <span>Envoyés</span>
+              <strong className="tabular-nums">{data.sent}</strong>
+            </li>
+            <li className="flex justify-between gap-3">
+              <span>Fiches corrigées grâce à ses signalements</span>
+              <strong className="tabular-nums text-emerald-800">{data.fixed}</strong>
+            </li>
+            {data.rejected ? (
+              <li className="flex justify-between gap-3 text-muted-foreground">
+                <span>Écartés</span>
+                <strong className="tabular-nums">{data.rejected}</strong>
+              </li>
+            ) : null}
+            {data.waiting ? (
+              <li className="flex justify-between gap-3 text-muted-foreground">
+                <span>En attente de décision</span>
+                <strong className="tabular-nums">{data.waiting}</strong>
+              </li>
+            ) : null}
+          </ul>
+          <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900">
+            <Award className="size-3.5" aria-hidden />
+            {level ? `Badge ${level.label.fr}` : "Pas encore de badge Vigie"}
+            {next ? ` · encore ${next.at - data.fixed} pour « ${next.label.fr} »` : " · plus haut palier"}
+          </p>
+        </>
+      ) : (
+        <p className="mt-1 text-sm text-muted-foreground">Aucun signalement envoyé.</p>
+      )}
+    </section>
   );
 }

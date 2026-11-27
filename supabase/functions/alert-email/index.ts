@@ -43,7 +43,7 @@ Deno.serve(async (request) => {
   // Essai depuis la rubrique « E-mails » : un exemple du modèle choisi, à sa propre adresse.
   if (allowed !== true) {
     const body = (await request.json().catch(() => null)) as
-      | { test?: boolean; kind?: string; texts?: unknown }
+      | { test?: boolean; kind?: string; texts?: unknown; title?: string; text?: string }
       | null;
     if (body?.test !== true) return new Response("Unauthorized", { status: 401, headers: CORS });
     const tester = await staffTester(db, token);
@@ -52,7 +52,11 @@ Deno.serve(async (request) => {
     const kind: AlertKind = ALERT_KINDS.includes(body.kind as AlertKind)
       ? (body.kind as AlertKind)
       : "cancel";
-    const mail = alertEmail({ template: kind, name: tester.name, ...ALERT_SAMPLES[kind] }, body.texts);
+    // Réponse à un signalement : l'essai reprend le titre et le texte affichés dans l'admin.
+    const sample = { ...ALERT_SAMPLES[kind] };
+    if (typeof body.title === "string" && body.title.trim()) sample.title = body.title.trim().slice(0, 120);
+    if (typeof body.text === "string" && body.text.trim()) sample.body = body.text.trim().slice(0, 600);
+    const mail = alertEmail({ template: kind, name: tester.name, ...sample }, body.texts);
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },

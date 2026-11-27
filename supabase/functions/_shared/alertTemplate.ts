@@ -2,11 +2,12 @@
 // (réglage bw_admin_settings « email_alerts »). Le titre et le texte de chaque alerte viennent du
 // message lui-même (équipe, veille, rappels) : ici, seul l'habillage autour se modifie.
 // Voix (17/11/2026) : rappels et ouvertures viennent de la 504, au tu ; annulations et nouveaux
-// horaires sont des messages de l'équipe, au vous. {prenom} = pseudo du voyageur.
+// horaires sont des messages de l'équipe, au vous ; la réponse à un signalement (« report », 27/11)
+// est au tu et ne part par e-mail que sans téléphone abonné. {prenom} = pseudo du voyageur.
 import { SITE, escapeHtml, plain, rich, textsFor } from "./emailTexts.ts";
 
 export const ALERT_LANGS = ["fr"] as const;
-export const ALERT_KINDS = ["cancel", "reschedule", "deadline", "opening"] as const;
+export const ALERT_KINDS = ["cancel", "reschedule", "deadline", "opening", "report"] as const;
 export type AlertKind = (typeof ALERT_KINDS)[number];
 
 export type AlertItem = {
@@ -44,6 +45,11 @@ export const ALERT_LIMITS = {
   openingButton: 60,
   openingWhy: 300,
   openingStop: 300,
+  reportEmoji: 8,
+  reportBadge: 40,
+  reportButton: 60,
+  reportWhy: 300,
+  reportStop: 300,
 } as const;
 export type AlertTexts = Record<keyof typeof ALERT_LIMITS, string>;
 
@@ -83,6 +89,13 @@ export const ALERT_DEFAULTS: Record<"fr", AlertTexts> = {
       "Tu reçois cet e-mail parce que tu as demandé une alerte d’ouverture des ventes sur bledway.com.",
     openingStop:
       "Pour ne plus recevoir ces alertes, coupe « Ouverture des traversées » dans Mon compte, rubrique Notifications.",
+    reportEmoji: "🛟",
+    reportBadge: "Réponse de l’équipe",
+    reportButton: "Voir mes signalements",
+    reportWhy:
+      "Tu reçois cet e-mail parce que tu as signalé une erreur sur bledway.com et que ton téléphone ne reçoit pas les notifications.",
+    reportStop:
+      "Tu ne reçois ces réponses que lorsque tu signales une erreur. Pour les recevoir sur ton téléphone, active les notifications dans Mon compte.",
   },
 };
 
@@ -108,6 +121,11 @@ export const ALERT_SAMPLES: Record<AlertKind, { title: string; body: string; url
     body: "La compagnie vient d’ouvrir les ventes pour tes dates : du 5 au 20 juillet.",
     url: "/horaires",
   },
+  report: {
+    title: "Grâce à toi, c’est corrigé ✅",
+    body: "Marseille → Alger · 12/07 : on a vérifié et corrigé la fiche. Merci, tous les voyageurs en profitent !",
+    url: "/compte#contributions",
+  },
 };
 
 export const alertTexts = (overrides?: unknown) =>
@@ -122,7 +140,7 @@ export function alertLink(url: string | null) {
 export function alertEmail(item: AlertItem, overrides?: unknown, texts?: AlertTexts) {
   const t = texts ?? alertTexts(overrides);
   const kind = item.template;
-  const tu = kind === "deadline" || kind === "opening";
+  const tu = kind === "deadline" || kind === "opening" || kind === "report";
   const vars = { prenom: (item.name ?? "").trim() };
   const r = (text: string) => rich(text, "fr", vars);
   const color = tu ? "#0e6b3b" : kind === "cancel" ? "#b42318" : "#b54708";

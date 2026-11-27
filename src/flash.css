@@ -4066,6 +4066,49 @@ button.bw-tavatar:focus-visible {
   margin-inline-start: auto;
   color: #16324a;
 }
+/* Badge Vigie : fiches corrigées grâce aux signalements (27/11/2026). */
+.bw-profile__badges span.is-vigie {
+  background: linear-gradient(135deg, #e3f4ea, #fff3cf);
+  color: #0e5a33;
+  font-weight: 700;
+}
+.bw-vigie {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #eef8f1, #fff8e1);
+  padding: 10px 12px;
+}
+.bw-vigie__icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: #0e6b3b;
+  color: #fff;
+}
+.bw-vigie[data-level="none"] .bw-vigie__icon {
+  background: #c9d6ce;
+}
+.bw-vigie__count {
+  margin-inline-start: 6px;
+  border-radius: 999px;
+  background: #0e6b3b;
+  color: #fff;
+  padding: 1px 8px;
+  font-size: 12px;
+}
+.bw-report-reply {
+  margin-top: 8px;
+  border-inline-start: 3px solid #0e6b3b;
+  border-radius: 8px;
+  background: #f2f8f4;
+  padding: 6px 10px;
+}
 .bw-profile__badges {
   display: flex;
   flex-wrap: wrap;

@@ -101,6 +101,8 @@ export type PublicProfile = TravellerCard & {
   reviews: number;
   /** « Merci » reçus (script du 06/11/2026). */
   thanks?: number;
+  /** Fiches corrigées grâce à ses signalements : badge Vigie (script du 27/11/2026). */
+  fixes?: number;
   trips: number;
   favorite_vessel: string | null;
   favorite_port: string | null;

@@ -23,7 +23,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "@tanstack/react-router";
-import { tr } from "@/lib/i18n";
+import { currentLocale, tr } from "@/lib/i18n";
 
 const reasons = [
   { value: "wrong_schedule", get label() { return tr("ui.reportButton.horaireInexact"); } },
@@ -62,12 +62,13 @@ export function ReportButton({
   const submit = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Connectez-vous pour envoyer un signalement.");
-      // Contexte pour l'équipe : la page et ce qui était affiché au moment du signalement.
+      // Contexte pour l'équipe : la page, ce qui était affiché et la langue (pour lui répondre).
       const context =
         typeof window === "undefined"
           ? null
           : {
               page: `${window.location.pathname}${window.location.search}`.slice(0, 300),
+              locale: currentLocale(),
               ...(shown ? { shown } : {}),
             };
       const { error } = await (

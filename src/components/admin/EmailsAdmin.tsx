@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { BellRing, Mail, PartyPopper, RotateCcw, Send, ShieldCheck } from "lucide-react";
+import { BellRing, Flag, Mail, PartyPopper, RotateCcw, Send, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,13 @@ import {
   alertEmail,
   type AlertKind,
 } from "../../../supabase/functions/_shared/alertTemplate";
+import {
+  REPORT_DEFAULTS,
+  REPORT_LANGS,
+  REPORT_LIMITS,
+  VIGIE_LEVELS,
+  fillReport,
+} from "../../../supabase/functions/_shared/reportTemplate";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 
@@ -77,6 +84,27 @@ const ALERT_LABELS: Record<AlertKind, string> = {
   reschedule: "Nouvel horaire",
   deadline: "Rappel de préparation",
   opening: "Ouverture des ventes",
+  report: "Réponse à un signalement",
+};
+
+/** Les messages envoyés à un voyageur qui a signalé une erreur, dans l'ordre où ils arrivent. */
+const REPORT_MESSAGES: [string, string, string][] = [
+  ["ack", "Accusé de réception", "Automatique, dès l'envoi du signalement. Seulement dans « Mes notifications »."],
+  ["corrected", "Traité : fiche corrigée", "Proposé quand l'équipe corrige la fiche. Compte pour le badge Vigie."],
+  ["forwarded", "Traité : transmis à la compagnie", "Proposé quand l'équipe transmet à la compagnie. Compte pour le badge Vigie."],
+  ["already_right", "Écarté : information déjà juste", "Proposé quand l'information affichée était juste."],
+  ["insufficient", "Écarté : pas assez d'éléments", "Proposé quand l'équipe n'a pas pu vérifier."],
+  ["badge", "Nouveau badge Vigie", "Automatique, à 1, 5, 15 et 50 fiches corrigées."],
+];
+const reportSample = (lang: InviteLang, variant: string, overrides: unknown) => {
+  const texts = textsFor(REPORT_DEFAULTS[lang], REPORT_LIMITS, overrides, lang);
+  const level = VIGIE_LEVELS[1];
+  const vars = { fiche: lang === "ar" ? "مرسيليا → الجزائر · 12/07" : "Marseille → Alger · 12/07", badge: level.label[lang], n: level.at };
+  const key = variant as "ack";
+  return {
+    title: fillReport(texts[`${key}Title`], vars),
+    body: fillReport(texts[`${key}Body`], vars),
+  };
 };
 const alertGroup = (kind: AlertKind, voice: string): Group => ({
   title: ALERT_LABELS[kind],
@@ -195,6 +223,10 @@ const SPECS: Spec[] = [
       alertGroup("reschedule", "Message de l'équipe, au vous."),
       alertGroup("deadline", "Rappel de « Préparer mon voyage », au tu."),
       alertGroup("opening", "Alerte d'ouverture des ventes d'une compagnie, au tu."),
+      alertGroup(
+        "report",
+        "Réponse à un signalement ou nouveau badge, au tu : seulement si le voyageur n'a pas activé les notifications sur son téléphone.",
+      ),
     ],
     variants: {
       label: "Aperçu de l'alerte",
@@ -213,6 +245,52 @@ const SPECS: Spec[] = [
     testNote:
       "L'essai part à votre propre adresse : un exemple de l'alerte affichée, avec les textes en cours.",
     savedToast: "E-mails enregistrés : les prochaines alertes partiront avec ces textes.",
+  },
+  {
+    id: "reports",
+    tab: "Signalements",
+    tabHint: "Réponses et badge Vigie",
+    icon: Flag,
+    setting: "report_replies",
+    title: "Réponses aux voyageurs qui signalent une erreur",
+    description: (
+      <>
+        L'accusé de réception part tout seul. À la clôture (Modération → Erreurs signalées), le
+        texte de l'issue choisie est proposé dans la langue du voyageur et l'équipe peut le modifier
+        avant l'envoi : notification et téléphone, ou e-mail si le voyageur n'a pas activé les
+        notifications. <b>{"{fiche}"}</b> devient la fiche signalée, <b>{"{badge}"}</b> le nom du
+        badge et <b>{"{n}"}</b> le nombre de fiches corrigées. Au tu.
+      </>
+    ),
+    langs: REPORT_LANGS,
+    defaults: REPORT_DEFAULTS,
+    limits: REPORT_LIMITS,
+    groups: REPORT_MESSAGES.map(([key, title, hint]) => ({
+      title,
+      hint,
+      variant: key,
+      fields: [
+        { key: `${key}Title`, label: "Titre" },
+        { key: `${key}Body`, label: "Texte", long: true },
+      ],
+    })),
+    variants: {
+      label: "Aperçu du message",
+      options: REPORT_MESSAGES.map(([key, title]) => [key, title]),
+      initial: "corrected",
+    },
+    render: (lang, variant, overrides, me) =>
+      alertEmail({ template: "report", name: me, url: "/compte#contributions", ...reportSample(lang, variant, overrides) }),
+    test: {
+      fn: "alert-email",
+      body: (lang, variant, texts) => {
+        const sample = reportSample(lang, variant, texts);
+        return { test: true, kind: "report", title: sample.title, text: sample.body };
+      },
+    },
+    testNote:
+      "L'essai part à votre propre adresse : l'e-mail tel qu'un voyageur sans notifications le recevrait, avec le texte affiché.",
+    savedToast: "Textes enregistrés : les prochaines réponses les proposeront.",
   },
   {
     id: "invite",
@@ -362,7 +440,7 @@ export function EmailsAdmin() {
       <div
         role="tablist"
         aria-label="E-mails"
-        className="grid grid-cols-2 gap-2 lg:grid-cols-4"
+        className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5"
       >
         {SPECS.map((spec) => {
           const Icon = spec.icon;

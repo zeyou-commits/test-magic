@@ -53,8 +53,18 @@ describe("Session des actions administrateur", () => {
   });
   it("n'appelle pas l'API sans session", async () => {
     auth.getSession.mockResolvedValue({ data: { session: null }, error: null });
-    await expect(adminRequest("/api/admin-users", {})).rejects.toMatchObject({ status: 401 });
+    auth.refreshSession.mockResolvedValue({ data: { session: null }, error: null });
+    await expect(adminRequest("/api/admin-users", {})).rejects.toMatchObject({
+      status: 401,
+      code: "SESSION_REQUIRED",
+    });
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+  it("renouvelle une session absente un instant avant d'abandonner", async () => {
+    auth.getSession.mockResolvedValue({ data: { session: null }, error: null });
+    fetchMock.mockResolvedValueOnce(Response.json({ ok: true }));
+    expect(await adminRequest("/api/admin-users", {})).toEqual({ ok: true });
+    expect(fetchMock.mock.calls[0]![1].headers.authorization).toBe("Bearer new");
   });
   it("mutualise le renouvellement de deux panneaux simultanés", async () => {
     let renew!: (value: ReturnType<typeof session>) => void;

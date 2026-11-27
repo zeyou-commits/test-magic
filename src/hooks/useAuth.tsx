@@ -53,16 +53,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((_event, next) => {
+    const { data } = supabase.auth.onAuthStateChange((event, next) => {
       setSession(next);
       setLoading(false);
+      // Session retrouvée : les blocs admin restés sur une erreur se rechargent seuls.
+      if (next && (event === "TOKEN_REFRESHED" || event === "SIGNED_IN"))
+        void queryClient.refetchQueries({
+          predicate: (q) => q.queryKey[0] === "admin" && q.state.status === "error",
+        });
     });
     supabase.auth.getSession().then(({ data: sessionData }) => {
       setSession(sessionData.session);
       setLoading(false);
     });
     return () => data.subscription.unsubscribe();
-  }, []);
+  }, [queryClient]);
 
   const userId = session?.user?.id;
 

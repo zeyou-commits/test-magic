@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
+import { track } from "@/lib/usage";
 
 // Tables communautaires pas encore présentes dans les types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -46,6 +47,7 @@ export async function registerPush(userId: string, requestPermission = true): Pr
   if (capability === "prompt") {
     if (!requestPermission) return "prompt";
     if ((await Notification.requestPermission()) !== "granted") return "denied";
+    track("notifications-activees");
   }
   const registration = await navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" });
   await navigator.serviceWorker.ready;

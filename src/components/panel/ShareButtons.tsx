@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Check, Link2, MessageCircle, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { tr } from "@/lib/i18n";
+import { track } from "@/lib/usage";
 
 const SHARE_TITLE = "BledWay — traversées en ferry";
 const PUBLIC_ORIGIN = "https://www.bledway.com";
@@ -77,6 +78,7 @@ export function ShareButtons({
   const copy = async () => {
     const ok = await copyText(stableShareUrl(getUrl?.() ?? window.location.href));
     if (ok) {
+      track("partage", "lien-copie");
       setCopied(true);
       toast.success(tr("ui.shareButtons.lienCopie"));
       window.setTimeout(() => setCopied(false), 2000);
@@ -92,6 +94,7 @@ export function ShareButtons({
         ...(text ? { text } : {}),
         url: stableShareUrl(getUrl?.() ?? window.location.href),
       });
+      track("partage", "appareil");
     } catch {
       // Fenêtre de partage fermée par l'utilisateur.
     }
@@ -151,6 +154,7 @@ export function ShareButtons({
         href="#"
         onClick={(e) => {
           e.preventDefault();
+          track("partage", "whatsapp");
           window.open(
             whatsappUrl(text ?? title, stableShareUrl(getUrl?.() ?? window.location.href)),
             "_blank",

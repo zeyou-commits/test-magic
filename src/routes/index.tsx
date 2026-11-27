@@ -43,6 +43,7 @@ import {
 } from "@/lib/ferry/queries";
 import { capitalizeFirst, formatDateParts } from "@/lib/ferry/format";
 import { emptyFilters, type Filters, type Selection, type RouteLine } from "@/lib/ferry/types";
+import { track } from "@/lib/usage";
 import {
   fleetShortcutInfo,
   sortDockedByDeparture,
@@ -169,6 +170,7 @@ function Index() {
         setSelectionHistory((prev) => [...prev, selection]);
       }
       setSelection(newSelection);
+      trackSelection(newSelection);
       setPanelMode(null);
       if (newSelection.type === "vessel" || newSelection.type === "departure")
         setPanelLevel(peek ? 1 : 2);
@@ -498,6 +500,7 @@ function Index() {
     resetToMap();
     setVoyageOn(true);
     setPanelLevel(2);
+    track("mon-voyage-ouvert");
   };
   const enterVoyageRef = useRef(enterVoyage);
   enterVoyageRef.current = enterVoyage;
@@ -612,6 +615,23 @@ function Index() {
   const voyageRoutes = useMemo(() => (voyageRouteId ? [voyageRouteId] : []), [voyageRouteId]);
   const { data: fleetDepartures = [] } = useQuery(fleetDeparturesQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
+  // Mesure : quelle fiche est ouverte (port, ligne, navire, compagnie), par son nom lisible.
+  const trackSelection = (opened: Selection) => {
+    const departure =
+      opened.type === "departure"
+        ? [...departures, ...fleetDepartures].find((item) => item.id === opened.id)
+        : undefined;
+    const routeId = opened.type === "route" ? opened.id : departure?.route_id;
+    const name =
+      opened.type === "port"
+        ? ports.find((port) => port.id === opened.id)?.name
+        : opened.type === "vessel"
+          ? vessels.find((vessel) => vessel.id === opened.id)?.name
+          : opened.type === "company"
+            ? companies.find((company) => company.id === opened.id)?.name
+            : routes.find((route) => route.id === routeId)?.slug;
+    track("fiche-ouverte", opened.type, { nom: name ?? null });
+  };
   const vesselCards = useMemo(() => {
     const byCompany = new Map(companies.map((c) => [c.id, c]));
     return Object.fromEntries(

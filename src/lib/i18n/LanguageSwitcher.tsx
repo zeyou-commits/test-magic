@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ENABLED_LOCALES, LOCALES, type Locale } from "./config";
 import { useLocale, useT } from "./I18nProvider";
+import { track } from "@/lib/usage";
 
 /** Nom court de chaque langue, écrit dans cette langue. */
 const SHORT: Record<Locale, string> = { fr: "FR", ar: "عربي", en: "EN" };
@@ -77,7 +78,10 @@ export function LanguageToggle({ className = "" }: { className?: string }) {
             className="bw-lang-menu__item"
             data-current={code === locale || undefined}
             onSelect={() => {
-              if (code !== locale) setLocale(code);
+              if (code !== locale) {
+                track("langue-changee", code, { avant: locale });
+                setLocale(code);
+              }
             }}
           >
             <Flag locale={code} />

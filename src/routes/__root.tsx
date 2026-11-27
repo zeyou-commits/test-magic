@@ -26,6 +26,7 @@ import { AppUpdates } from "@/components/layout/AppUpdates";
 import { LocationHelp } from "@/components/layout/LocationHelp";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import { SiteHeader } from "@/components/layout/SiteLayout";
+import { UsageProfile } from "@/components/layout/UsageProfile";
 import { TravelActionProvider } from "@/components/auth/TravelActionProvider";
 import { Bw504Button, Bw504Note } from "@/components/companion/Bw504Note";
 
@@ -281,6 +282,7 @@ function RootComponent() {
               </div>
             )}
             <OfflineBanner />
+            <UsageProfile />
             {proAuth || /^\/(espace-compagnie|rejoindre-compagnie)(\/|$)/.test(pathname) ? null : <AppUpdates />}
             <LocationHelp />
             <ProfileHost />

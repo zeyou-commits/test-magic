@@ -51,6 +51,7 @@ import { OptionIcon, SituationBadge } from "@/components/panel/SituationIcon";
 import { PhotoPicker } from "@/components/photos/Photos";
 import { photosKey, submitPhoto, type PreparedPhoto } from "@/lib/photos/photos";
 import { tr, intlLocale, placeName } from "@/lib/i18n";
+import { track } from "@/lib/usage";
 
 // Suivis du compte (table bw_follows), absente des types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -487,6 +488,10 @@ export function QuickReport({
       return { ...result, withoutPosition: false, byStaff: false };
     },
     onSuccess: async (result, input) => {
+      track("signalement-envoye", input.category ?? undefined, {
+        lieu: situationOf(input.category!).where,
+        sur_place: result.onSite,
+      });
       // Le signalement est parti ; la photo suit (sans position, il n'est pas encore publié : pas de photo).
       if (photos.length && user && input.portId && situationOf(input.category!).where === "port") {
         if (result.withoutPosition)

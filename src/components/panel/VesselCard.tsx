@@ -78,9 +78,13 @@ export function VesselCard({ vessel, routes, ports }: { vessel: Vessel; routes: 
           <Link to="/" search={{ select: "vessel", id: vessel.id } as never} className="inline-flex items-center gap-1 text-primary">
             {tr("ui.vesselCard.voirSurLaCarte")}<ArrowRight size={14} />
           </Link>
-          {dossier ? (
-            <Link to="/bateaux/$slug" params={{ slug: dossier.slug }} className="text-muted-foreground hover:text-primary">
-              {tr("ui.vesselCard.dossierComplet")}
+          {dossier || vessel.status === "active" ? (
+            <Link
+              to="/bateaux/$slug"
+              params={{ slug: dossier?.slug ?? vessel.slug }}
+              className="text-muted-foreground hover:text-primary"
+            >
+              {dossier ? tr("ui.vesselCard.dossierComplet") : tr("ui.vesselCard.ficheNavire")}
             </Link>
           ) : null}
         </div>

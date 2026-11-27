@@ -383,7 +383,13 @@ function LignePage() {
                   <div className="flex items-center gap-3">
                     <CompanyBadge name={company.name} logoUrl={company.logo_url} size={44} />
                     <h3 className="min-w-0 font-display text-lg font-bold text-[#0f2a3d]">
-                      {company.name}
+                      <Link
+                        to="/compagnies/$slug"
+                        params={{ slug: company.slug }}
+                        className="hover:text-[#0e7a43]"
+                      >
+                        {company.name}
+                      </Link>
                     </h3>
                   </div>
                   <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">

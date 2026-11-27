@@ -63,6 +63,8 @@ import { Route as ApiVesselPositionsRouteImport } from './routes/api.vessel-posi
 import { Route as ApiWalletRatesRouteImport } from './routes/api.wallet-rates'
 import { Route as BateauxIndexRouteImport } from './routes/bateaux.index'
 import { Route as BateauxSlugRouteImport } from './routes/bateaux.$slug'
+import { Route as CompagniesIndexRouteImport } from './routes/compagnies.index'
+import { Route as CompagniesSlugRouteImport } from './routes/compagnies.$slug'
 import { Route as CovoiturageIndexRouteImport } from './routes/covoiturage.index'
 import { Route as CovoiturageSlugRouteImport } from './routes/covoiturage.$slug'
 import { Route as GuideIndexRouteImport } from './routes/guide.index'
@@ -71,6 +73,8 @@ import { Route as LignesIndexRouteImport } from './routes/lignes.index'
 import { Route as LignesSlugRouteImport } from './routes/lignes.$slug'
 import { Route as PortsIndexRouteImport } from './routes/ports.index'
 import { Route as PortsSlugRouteImport } from './routes/ports.$slug'
+import { Route as RoutesDuBledIndexRouteImport } from './routes/routes-du-bled.index'
+import { Route as RoutesDuBledSlugRouteImport } from './routes/routes-du-bled.$slug'
 import { Route as SimulateursIndexRouteImport } from './routes/simulateurs.index'
 import { Route as SimulateursSlugRouteImport } from './routes/simulateurs.$slug'
 
@@ -344,6 +348,16 @@ const BateauxSlugRoute = BateauxSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => BateauxRoute,
 } as any)
+const CompagniesIndexRoute = CompagniesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CompagniesRoute,
+} as any)
+const CompagniesSlugRoute = CompagniesSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => CompagniesRoute,
+} as any)
 const CovoiturageIndexRoute = CovoiturageIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -384,6 +398,16 @@ const PortsSlugRoute = PortsSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => PortsRoute,
 } as any)
+const RoutesDuBledIndexRoute = RoutesDuBledIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => RoutesDuBledRoute,
+} as any)
+const RoutesDuBledSlugRoute = RoutesDuBledSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => RoutesDuBledRoute,
+} as any)
 const SimulateursIndexRoute = SimulateursIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -404,7 +428,7 @@ export interface FileRoutesByFullPath {
   '/barometre-prix': typeof BarometrePrixRoute
   '/bateaux': typeof BateauxRouteWithChildren
   '/charte': typeof CharteRoute
-  '/compagnies': typeof CompagniesRoute
+  '/compagnies': typeof CompagniesRouteWithChildren
   '/compte': typeof CompteRoute
   '/conditions-utilisation': typeof ConditionsUtilisationRoute
   '/confidentialite': typeof ConfidentialiteRoute
@@ -428,7 +452,7 @@ export interface FileRoutesByFullPath {
   '/preparer-mon-voyage': typeof PreparerMonVoyageRoute
   '/questions-frequentes': typeof QuestionsFrequentesRoute
   '/rejoindre-compagnie': typeof RejoindreCompagnieRoute
-  '/routes-du-bled': typeof RoutesDuBledRoute
+  '/routes-du-bled': typeof RoutesDuBledRouteWithChildren
   '/simulateurs': typeof SimulateursRouteWithChildren
   '/sitemap-maritime.xml': typeof SitemapMaritimeDotxmlRoute
   '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
@@ -448,17 +472,21 @@ export interface FileRoutesByFullPath {
   '/api/vessel-positions': typeof ApiVesselPositionsRoute
   '/api/wallet-rates': typeof ApiWalletRatesRoute
   '/bateaux/$slug': typeof BateauxSlugRoute
+  '/compagnies/$slug': typeof CompagniesSlugRoute
   '/covoiturage/$slug': typeof CovoiturageSlugRoute
   '/guide/$slug': typeof GuideSlugRoute
   '/lignes/$slug': typeof LignesSlugRoute
   '/ports/$slug': typeof PortsSlugRoute
+  '/routes-du-bled/$slug': typeof RoutesDuBledSlugRoute
   '/simulateurs/$slug': typeof SimulateursSlugRoute
   '/actualites/': typeof ActualitesIndexRoute
   '/bateaux/': typeof BateauxIndexRoute
+  '/compagnies/': typeof CompagniesIndexRoute
   '/covoiturage/': typeof CovoiturageIndexRoute
   '/guide/': typeof GuideIndexRoute
   '/lignes/': typeof LignesIndexRoute
   '/ports/': typeof PortsIndexRoute
+  '/routes-du-bled/': typeof RoutesDuBledIndexRoute
   '/simulateurs/': typeof SimulateursIndexRoute
 }
 export interface FileRoutesByTo {
@@ -469,7 +497,6 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/barometre-prix': typeof BarometrePrixRoute
   '/charte': typeof CharteRoute
-  '/compagnies': typeof CompagniesRoute
   '/compte': typeof CompteRoute
   '/conditions-utilisation': typeof ConditionsUtilisationRoute
   '/confidentialite': typeof ConfidentialiteRoute
@@ -489,7 +516,6 @@ export interface FileRoutesByTo {
   '/preparer-mon-voyage': typeof PreparerMonVoyageRoute
   '/questions-frequentes': typeof QuestionsFrequentesRoute
   '/rejoindre-compagnie': typeof RejoindreCompagnieRoute
-  '/routes-du-bled': typeof RoutesDuBledRoute
   '/sitemap-maritime.xml': typeof SitemapMaritimeDotxmlRoute
   '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -508,17 +534,21 @@ export interface FileRoutesByTo {
   '/api/vessel-positions': typeof ApiVesselPositionsRoute
   '/api/wallet-rates': typeof ApiWalletRatesRoute
   '/bateaux/$slug': typeof BateauxSlugRoute
+  '/compagnies/$slug': typeof CompagniesSlugRoute
   '/covoiturage/$slug': typeof CovoiturageSlugRoute
   '/guide/$slug': typeof GuideSlugRoute
   '/lignes/$slug': typeof LignesSlugRoute
   '/ports/$slug': typeof PortsSlugRoute
+  '/routes-du-bled/$slug': typeof RoutesDuBledSlugRoute
   '/simulateurs/$slug': typeof SimulateursSlugRoute
   '/actualites': typeof ActualitesIndexRoute
   '/bateaux': typeof BateauxIndexRoute
+  '/compagnies': typeof CompagniesIndexRoute
   '/covoiturage': typeof CovoiturageIndexRoute
   '/guide': typeof GuideIndexRoute
   '/lignes': typeof LignesIndexRoute
   '/ports': typeof PortsIndexRoute
+  '/routes-du-bled': typeof RoutesDuBledIndexRoute
   '/simulateurs': typeof SimulateursIndexRoute
 }
 export interface FileRoutesById {
@@ -531,7 +561,7 @@ export interface FileRoutesById {
   '/barometre-prix': typeof BarometrePrixRoute
   '/bateaux': typeof BateauxRouteWithChildren
   '/charte': typeof CharteRoute
-  '/compagnies': typeof CompagniesRoute
+  '/compagnies': typeof CompagniesRouteWithChildren
   '/compte': typeof CompteRoute
   '/conditions-utilisation': typeof ConditionsUtilisationRoute
   '/confidentialite': typeof ConfidentialiteRoute
@@ -555,7 +585,7 @@ export interface FileRoutesById {
   '/preparer-mon-voyage': typeof PreparerMonVoyageRoute
   '/questions-frequentes': typeof QuestionsFrequentesRoute
   '/rejoindre-compagnie': typeof RejoindreCompagnieRoute
-  '/routes-du-bled': typeof RoutesDuBledRoute
+  '/routes-du-bled': typeof RoutesDuBledRouteWithChildren
   '/simulateurs': typeof SimulateursRouteWithChildren
   '/sitemap-maritime.xml': typeof SitemapMaritimeDotxmlRoute
   '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
@@ -575,17 +605,21 @@ export interface FileRoutesById {
   '/api/vessel-positions': typeof ApiVesselPositionsRoute
   '/api/wallet-rates': typeof ApiWalletRatesRoute
   '/bateaux/$slug': typeof BateauxSlugRoute
+  '/compagnies/$slug': typeof CompagniesSlugRoute
   '/covoiturage/$slug': typeof CovoiturageSlugRoute
   '/guide/$slug': typeof GuideSlugRoute
   '/lignes/$slug': typeof LignesSlugRoute
   '/ports/$slug': typeof PortsSlugRoute
+  '/routes-du-bled/$slug': typeof RoutesDuBledSlugRoute
   '/simulateurs/$slug': typeof SimulateursSlugRoute
   '/actualites/': typeof ActualitesIndexRoute
   '/bateaux/': typeof BateauxIndexRoute
+  '/compagnies/': typeof CompagniesIndexRoute
   '/covoiturage/': typeof CovoiturageIndexRoute
   '/guide/': typeof GuideIndexRoute
   '/lignes/': typeof LignesIndexRoute
   '/ports/': typeof PortsIndexRoute
+  '/routes-du-bled/': typeof RoutesDuBledIndexRoute
   '/simulateurs/': typeof SimulateursIndexRoute
 }
 export interface FileRouteTypes {
@@ -643,17 +677,21 @@ export interface FileRouteTypes {
     | '/api/vessel-positions'
     | '/api/wallet-rates'
     | '/bateaux/$slug'
+    | '/compagnies/$slug'
     | '/covoiturage/$slug'
     | '/guide/$slug'
     | '/lignes/$slug'
     | '/ports/$slug'
+    | '/routes-du-bled/$slug'
     | '/simulateurs/$slug'
     | '/actualites/'
     | '/bateaux/'
+    | '/compagnies/'
     | '/covoiturage/'
     | '/guide/'
     | '/lignes/'
     | '/ports/'
+    | '/routes-du-bled/'
     | '/simulateurs/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -664,7 +702,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/barometre-prix'
     | '/charte'
-    | '/compagnies'
     | '/compte'
     | '/conditions-utilisation'
     | '/confidentialite'
@@ -684,7 +721,6 @@ export interface FileRouteTypes {
     | '/preparer-mon-voyage'
     | '/questions-frequentes'
     | '/rejoindre-compagnie'
-    | '/routes-du-bled'
     | '/sitemap-maritime.xml'
     | '/sitemap-pages.xml'
     | '/sitemap.xml'
@@ -703,17 +739,21 @@ export interface FileRouteTypes {
     | '/api/vessel-positions'
     | '/api/wallet-rates'
     | '/bateaux/$slug'
+    | '/compagnies/$slug'
     | '/covoiturage/$slug'
     | '/guide/$slug'
     | '/lignes/$slug'
     | '/ports/$slug'
+    | '/routes-du-bled/$slug'
     | '/simulateurs/$slug'
     | '/actualites'
     | '/bateaux'
+    | '/compagnies'
     | '/covoiturage'
     | '/guide'
     | '/lignes'
     | '/ports'
+    | '/routes-du-bled'
     | '/simulateurs'
   id:
     | '__root__'
@@ -769,17 +809,21 @@ export interface FileRouteTypes {
     | '/api/vessel-positions'
     | '/api/wallet-rates'
     | '/bateaux/$slug'
+    | '/compagnies/$slug'
     | '/covoiturage/$slug'
     | '/guide/$slug'
     | '/lignes/$slug'
     | '/ports/$slug'
+    | '/routes-du-bled/$slug'
     | '/simulateurs/$slug'
     | '/actualites/'
     | '/bateaux/'
+    | '/compagnies/'
     | '/covoiturage/'
     | '/guide/'
     | '/lignes/'
     | '/ports/'
+    | '/routes-du-bled/'
     | '/simulateurs/'
   fileRoutesById: FileRoutesById
 }
@@ -792,7 +836,7 @@ export interface RootRouteChildren {
   BarometrePrixRoute: typeof BarometrePrixRoute
   BateauxRoute: typeof BateauxRouteWithChildren
   CharteRoute: typeof CharteRoute
-  CompagniesRoute: typeof CompagniesRoute
+  CompagniesRoute: typeof CompagniesRouteWithChildren
   CompteRoute: typeof CompteRoute
   ConditionsUtilisationRoute: typeof ConditionsUtilisationRoute
   ConfidentialiteRoute: typeof ConfidentialiteRoute
@@ -816,7 +860,7 @@ export interface RootRouteChildren {
   PreparerMonVoyageRoute: typeof PreparerMonVoyageRoute
   QuestionsFrequentesRoute: typeof QuestionsFrequentesRoute
   RejoindreCompagnieRoute: typeof RejoindreCompagnieRoute
-  RoutesDuBledRoute: typeof RoutesDuBledRoute
+  RoutesDuBledRoute: typeof RoutesDuBledRouteWithChildren
   SimulateursRoute: typeof SimulateursRouteWithChildren
   SitemapMaritimeDotxmlRoute: typeof SitemapMaritimeDotxmlRoute
   SitemapPagesDotxmlRoute: typeof SitemapPagesDotxmlRoute
@@ -1218,6 +1262,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BateauxSlugRouteImport
       parentRoute: typeof BateauxRoute
     }
+    '/compagnies/': {
+      id: '/compagnies/'
+      path: '/'
+      fullPath: '/compagnies/'
+      preLoaderRoute: typeof CompagniesIndexRouteImport
+      parentRoute: typeof CompagniesRoute
+    }
+    '/compagnies/$slug': {
+      id: '/compagnies/$slug'
+      path: '/$slug'
+      fullPath: '/compagnies/$slug'
+      preLoaderRoute: typeof CompagniesSlugRouteImport
+      parentRoute: typeof CompagniesRoute
+    }
     '/covoiturage/': {
       id: '/covoiturage/'
       path: '/'
@@ -1274,6 +1332,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortsSlugRouteImport
       parentRoute: typeof PortsRoute
     }
+    '/routes-du-bled/': {
+      id: '/routes-du-bled/'
+      path: '/'
+      fullPath: '/routes-du-bled/'
+      preLoaderRoute: typeof RoutesDuBledIndexRouteImport
+      parentRoute: typeof RoutesDuBledRoute
+    }
+    '/routes-du-bled/$slug': {
+      id: '/routes-du-bled/$slug'
+      path: '/$slug'
+      fullPath: '/routes-du-bled/$slug'
+      preLoaderRoute: typeof RoutesDuBledSlugRouteImport
+      parentRoute: typeof RoutesDuBledRoute
+    }
     '/simulateurs/': {
       id: '/simulateurs/'
       path: '/'
@@ -1303,6 +1375,20 @@ const BateauxRouteChildren: BateauxRouteChildren = {
 
 const BateauxRouteWithChildren =
   BateauxRoute._addFileChildren(BateauxRouteChildren)
+
+interface CompagniesRouteChildren {
+  CompagniesSlugRoute: typeof CompagniesSlugRoute
+  CompagniesIndexRoute: typeof CompagniesIndexRoute
+}
+
+const CompagniesRouteChildren: CompagniesRouteChildren = {
+  CompagniesSlugRoute: CompagniesSlugRoute,
+  CompagniesIndexRoute: CompagniesIndexRoute,
+}
+
+const CompagniesRouteWithChildren = CompagniesRoute._addFileChildren(
+  CompagniesRouteChildren,
+)
 
 interface CovoiturageRouteChildren {
   CovoiturageSlugRoute: typeof CovoiturageSlugRoute
@@ -1355,6 +1441,20 @@ const PortsRouteChildren: PortsRouteChildren = {
 
 const PortsRouteWithChildren = PortsRoute._addFileChildren(PortsRouteChildren)
 
+interface RoutesDuBledRouteChildren {
+  RoutesDuBledSlugRoute: typeof RoutesDuBledSlugRoute
+  RoutesDuBledIndexRoute: typeof RoutesDuBledIndexRoute
+}
+
+const RoutesDuBledRouteChildren: RoutesDuBledRouteChildren = {
+  RoutesDuBledSlugRoute: RoutesDuBledSlugRoute,
+  RoutesDuBledIndexRoute: RoutesDuBledIndexRoute,
+}
+
+const RoutesDuBledRouteWithChildren = RoutesDuBledRoute._addFileChildren(
+  RoutesDuBledRouteChildren,
+)
+
 interface SimulateursRouteChildren {
   SimulateursSlugRoute: typeof SimulateursSlugRoute
   SimulateursIndexRoute: typeof SimulateursIndexRoute
@@ -1378,7 +1478,7 @@ const rootRouteChildren: RootRouteChildren = {
   BarometrePrixRoute: BarometrePrixRoute,
   BateauxRoute: BateauxRouteWithChildren,
   CharteRoute: CharteRoute,
-  CompagniesRoute: CompagniesRoute,
+  CompagniesRoute: CompagniesRouteWithChildren,
   CompteRoute: CompteRoute,
   ConditionsUtilisationRoute: ConditionsUtilisationRoute,
   ConfidentialiteRoute: ConfidentialiteRoute,
@@ -1402,7 +1502,7 @@ const rootRouteChildren: RootRouteChildren = {
   PreparerMonVoyageRoute: PreparerMonVoyageRoute,
   QuestionsFrequentesRoute: QuestionsFrequentesRoute,
   RejoindreCompagnieRoute: RejoindreCompagnieRoute,
-  RoutesDuBledRoute: RoutesDuBledRoute,
+  RoutesDuBledRoute: RoutesDuBledRouteWithChildren,
   SimulateursRoute: SimulateursRouteWithChildren,
   SitemapMaritimeDotxmlRoute: SitemapMaritimeDotxmlRoute,
   SitemapPagesDotxmlRoute: SitemapPagesDotxmlRoute,

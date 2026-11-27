@@ -3,6 +3,7 @@ import { vesselDossiers } from "@/content/vessels";
 import { carpoolPlaces } from "@/content/carpool";
 import { toolsCatalog } from "@/content/tools";
 import { EDITORIAL_DATE } from "./site";
+import { bledRoutePages, routesData } from "@/lib/routesDuBled/pages";
 export const editorialPaths = [
   "/guide",
   "/decouvrir",
@@ -55,4 +56,5 @@ export const staticSitemapEntries: { path: string; lastmod: string | null; live?
   ...livePaths.map((path) => ({ path, lastmod: null, live: true })),
   ...Object.entries(fixedPageDates).map(([path, lastmod]) => ({ path, lastmod })),
   ...editorialPaths.map((path) => ({ path, lastmod: articleDate.get(path) ?? EDITORIAL_DATE })),
+  ...bledRoutePages.map(({ slug }) => ({ path: `/routes-du-bled/${slug}`, lastmod: routesData.version })),
 ];

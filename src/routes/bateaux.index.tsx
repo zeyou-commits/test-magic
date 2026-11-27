@@ -79,7 +79,7 @@ function Boats() {
       <CollectionSchema
         path="/bateaux"
         name="Flotte des ferries Europe ↔ Algérie"
-        items={vesselDossiers.map((v) => ({ name: v.name, path: `/bateaux/${v.slug}` }))}
+        items={publicVessels.map((v) => ({ name: v.name, path: `/bateaux/${v.slug}` }))}
       />
       <ShowcaseHero
         overline={tr("ui.pageBateauxIndex.navires")}
@@ -145,7 +145,15 @@ function Boats() {
               <header className="mb-5 flex flex-wrap items-center gap-4">
                 <CompanyBadge name={company.name} logoUrl={company.logo_url} size={56} />
                 <div className="min-w-0 flex-1">
-                  <h2 className="font-display text-2xl font-bold">{company.name}</h2>
+                  <h2 className="font-display text-2xl font-bold">
+                    <Link
+                      to="/compagnies/$slug"
+                      params={{ slug: company.slug }}
+                      className="hover:text-[#0e7a43]"
+                    >
+                      {company.name}
+                    </Link>
+                  </h2>
                   <p className="text-sm text-muted-foreground">
                     {list.length}
                     {tr("ui.pageBateauxIndex.navire")}

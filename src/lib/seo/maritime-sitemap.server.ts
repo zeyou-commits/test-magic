@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { newsFeedItems, newsPath } from "@/lib/ferry/newsFeed";
+import { vesselDossiers } from "@/content/vessels";
 import {
   maritimeLastmods,
   type SitemapDeparture,
@@ -25,7 +26,7 @@ export async function maritimeEntries() {
     throw new Error("Catalogue trop volumineux : partitionner le sitemap maritime");
   }
   try {
-    const [ports, routes, departures, news] = await Promise.all([
+    const [ports, routes, departures, news, companies, vessels] = await Promise.all([
       readAll<SitemapPort>((from, to) =>
         supabase
           .from("ports")
@@ -55,10 +56,34 @@ export async function maritimeEntries() {
           .abortSignal(controller.signal),
       ).catch(() => [] as SitemapDeparture[]),
       newsFeedItems().catch(() => []),
+      readAll<{ slug: string; updated_at: string }>((from, to) =>
+        supabase
+          .from("companies")
+          .select("slug, updated_at")
+          .eq("status", "active")
+          .order("slug")
+          .range(from, to)
+          .abortSignal(controller.signal),
+      ).catch(() => [] as { slug: string; updated_at: string }[]),
+      readAll<{ slug: string; updated_at: string }>((from, to) =>
+        supabase
+          .from("vessels")
+          .select("slug, updated_at")
+          .eq("status", "active")
+          .order("slug")
+          .range(from, to)
+          .abortSignal(controller.signal),
+      ).catch(() => [] as { slug: string; updated_at: string }[]),
     ]);
+    // Les navires à dossier rédigé sont déjà dans le sitemap des pages.
+    const dossiers = new Set(vesselDossiers.map((v) => v.slug));
     return [
       ...maritimeLastmods({ ports, routes, departures }),
       ...news.map((item) => ({ path: newsPath(item), lastmod: item.starts_at })),
+      ...companies.map((c) => ({ path: `/compagnies/${encodeURIComponent(c.slug)}`, lastmod: c.updated_at })),
+      ...vessels
+        .filter((v) => !dossiers.has(v.slug))
+        .map((v) => ({ path: `/bateaux/${encodeURIComponent(v.slug)}`, lastmod: v.updated_at })),
     ];
   } finally {
     clearTimeout(timeout);

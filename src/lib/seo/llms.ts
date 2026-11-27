@@ -1,6 +1,7 @@
 import { articles } from "@/content/articles";
 import { toolsCatalog } from "@/content/tools";
 import { vesselDossiers } from "@/content/vessels";
+import { bledRoutePages } from "@/lib/routesDuBled/pages";
 import { absoluteUrl } from "./site";
 import { PITCH, TICKETING } from "./pitch";
 import { benchmarkFor, durationEstimate, generalFaq } from "./answers";
@@ -14,7 +15,15 @@ export type LlmsData = {
     typical_duration_minutes: number | null;
     company_ids: string[];
   }[];
-  companies: { id: string; name: string }[];
+  companies: { id: string; name: string; slug?: string; status?: string }[];
+  vessels?: {
+    slug: string;
+    name: string;
+    company_id: string | null;
+    status: string;
+    build_year?: number | null;
+    passenger_capacity?: number | null;
+  }[];
 };
 
 const link = (label: string, path: string, note?: string) =>
@@ -78,7 +87,34 @@ export function llmsText(data: LlmsData | null) {
     "## Guide",
     articles.map((a) => link(a.title, `/guide/${a.slug}`, a.answer)).join("\n"),
     "## Navires",
-    vesselDossiers.map((v) => link(v.name, `/bateaux/${v.slug}`, v.company)).join("\n"),
+    (data?.vessels?.length
+      ? data.vessels
+          .filter((v) => v.status === "active")
+          .map((v) =>
+            link(
+              v.name,
+              `/bateaux/${v.slug}`,
+              [
+                data.companies.find((c) => c.id === v.company_id)?.name,
+                v.build_year ? `en service depuis ${v.build_year}` : null,
+                v.passenger_capacity ? `${v.passenger_capacity} passagers` : null,
+              ]
+                .filter(Boolean)
+                .join(", "),
+            ),
+          )
+      : vesselDossiers.map((v) => link(v.name, `/bateaux/${v.slug}`, v.company))
+    ).join("\n"),
+    "## Routes du bled (itinéraires en voiture, haltes relevées sur OpenStreetMap)",
+    bledRoutePages
+      .map(({ slug, route }) =>
+        link(
+          route.name,
+          `/routes-du-bled/${slug}`,
+          `${route.km} km, ${route.stops.length} haltes : carburant, prière, repas, hôtels`,
+        ),
+      )
+      .join("\n"),
     "## Simulateurs",
     toolsCatalog.map((t) => link(t.title, `/simulateurs/${t.slug}`, t.description)).join("\n"),
   ];
@@ -104,6 +140,13 @@ export function llmsText(data: LlmsData | null) {
           );
         })
         .sort()
+        .join("\n"),
+      "## Compagnies",
+      data.companies
+        .filter((c) => c.slug && c.status !== "inactive")
+        .map((c) =>
+          link(c.name, `/compagnies/${c.slug}`, "lignes, flotte, rythme des départs, liens officiels"),
+        )
         .join("\n"),
       "## Ports",
       data.ports.map((p) => link(p.name, `/ports/${p.slug}`, p.country_name)).join("\n"),

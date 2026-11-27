@@ -1560,6 +1560,26 @@ export function SearchPanel({
             {...(onTrafficPreview ? { onPreview: onTrafficPreview } : {})}
           />
         ) : null}
+        {/* Portes vers les pages de référence, servies dans le HTML de l'accueil : les moteurs et
+            les robots qui ne lancent pas le JavaScript y trouvent les lignes, ports et guides. */}
+        {!editing && homeMode ? (
+          <nav aria-label={tr("ui.searchPanel.explorerBledway")} className="bw-home-explore px-4 pb-4 md:px-5">
+            {(
+              [
+                ["/lignes", tr("ui.searchPanel.explorerLignes")],
+                ["/ports", tr("ui.searchPanel.explorerPorts")],
+                ["/compagnies", tr("ui.searchPanel.explorerCompagnies")],
+                ["/bateaux", tr("ui.searchPanel.explorerNavires")],
+                ["/guide", tr("ui.searchPanel.explorerGuides")],
+                ["/questions-frequentes", tr("ui.searchPanel.explorerQuestions")],
+              ] as const
+            ).map(([href, label]) => (
+              <a key={href} href={href}>
+                {label}
+              </a>
+            ))}
+          </nav>
+        ) : null}
         {wideBar}
         {/* RÉSULTATS */}
         <section

@@ -1642,6 +1642,7 @@ export const ui = {
     changerMonAvatar: "Changer mon avatar",
   },
   pagePreparerMonVoyage: {
+    titrePage: "Préparer son voyage en Algérie pas à pas",
     lesEtapesDuVoyage: "Les étapes du voyage",
     ici: "Ici",
     salutTontonOnChargeLa: "Salut tonton ! On charge la 504 ?",
@@ -2063,6 +2064,7 @@ export const ui = {
     votreCompagnie: "votre compagnie",
   },
   pagePapiersVoyageAlgerie: {
+    titrePage: "Papiers pour voyager en Algérie : visa, enfants, consulat",
     uneQuestionParEcranSans: "Une question par écran, sans compte. Vos réponses restent sur cet appareil et reprennent dans",
     preparerMonVoyage: "Préparer mon voyage",
     reglesReluesLe: ". Règles relues le ",
@@ -2311,7 +2313,7 @@ export const ui = {
   },
   pageDecouvrir: {
     decouvrirBledway: "Découvrir BledWay",
-    decouvrirBledwayLeFerryVers: "Découvrir BledWay : le ferry vers l'Algérie, de la préparation à l'arrivée",
+    decouvrirBledwayLeFerryVers: "Ferry vers l'Algérie, du départ à l'arrivée | Découvrir BledWay",
     lignesEtPortsEntreL: "Lignes et ports entre l'Europe et l'Algérie, navires, guides pour les papiers, la voiture et le budget, questions fréquentes : tout ce que BledWay vous aide à préparer.",
   },
   searchBox: {
@@ -4704,7 +4706,7 @@ export const ui = {
     trouver: "Trouver",
     voir: "Voir",
     chargementDeLaCarte: "Chargement de la carte…",
-    bledwayLeWazeDuFerry: "BledWay — le Waze du ferry vers l'Algérie, en direct",
+    bledwayLeWazeDuFerry: "Ferry Algérie en direct : le Waze du ferry | BledWay",
     navire: "Navire",
     port: "Port",
     precedent: "Précédent",
@@ -6753,6 +6755,13 @@ export const ui = {
     previsionOpenMeteoRelueToutes: "Prévision Open-Meteo, relue toutes les 30 min. Une information de confort : seule la compagnie confirme le départ.",
   },
   searchPanel: {
+    explorerBledway: "Explorer BledWay",
+    explorerLignes: "Lignes",
+    explorerPorts: "Ports",
+    explorerCompagnies: "Compagnies",
+    explorerNavires: "Navires",
+    explorerGuides: "Guides",
+    explorerQuestions: "Questions fréquentes",
     onPrend: "On prend ",
     laRouteDuBled: "la route du bled",
     reservezPreparezSuivez: "Réservez, préparez et suivez votre traversée.",
@@ -7595,7 +7604,7 @@ export const ui = {
     carteZoomPc: "Ctrl + molette pour zoomer la carte",
     carteZoomMac: "⌘ + molette pour zoomer la carte",
     carteZoomMobile: "Deux doigts pour déplacer la carte",
-    routesDuBledVotreTrajet: "Routes du bled : votre trajet en voiture jusqu'au bled, porte à porte | BledWay",
+    routesDuBledVotreTrajet: "Routes du bled : en voiture jusqu'au port et au bled | BledWay",
     partezDeVotreAdresseOu: "Partez de votre adresse ou de votre position, choisissez votre village en Algérie : la carte trace votre trajet jusqu'au port puis au bled, avec les pauses, où manger, prier et dormir.",
     lyon: "Lyon",
     tlemcen: "Tlemcen",

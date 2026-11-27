@@ -84,6 +84,8 @@ function PapersPage() {
         />
       ) : (
         <section className="mx-auto max-w-2xl py-6 md:py-10" aria-labelledby="question">
+          {/* Titre de la page pour les lecteurs d'écran et les moteurs : l'écran montre une question. */}
+          <h1 className="sr-only">{tr("ui.pagePapiersVoyageAlgerie.titrePage")}</h1>
           {/* Les mêmes questions que l'étape Papiers de « Préparer mon voyage », une par écran,
               et les mêmes réponses (enregistrées sur l'appareil) : commencer ici ou là-bas revient
               au même. */}

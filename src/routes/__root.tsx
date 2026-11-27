@@ -124,6 +124,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { title: tr("ui.pageRoot.bledwayLeWazeDuFerry") },
+      // Codes de Search Console et de Bing Webmaster Tools (seo.config.json) : rien tant qu'ils sont vides.
+      ...(seoConfig.verification.google
+        ? [{ name: "google-site-verification", content: seoConfig.verification.google }]
+        : []),
+      ...(seoConfig.verification.bing
+        ? [{ name: "msvalidate.01", content: seoConfig.verification.bing }]
+        : []),
       {
         name: "description",
         content:
@@ -163,6 +170,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               email: seoConfig.contactEmail,
               description:
                 PITCH,
+              // Profils officiels (Play Store, réseaux) : à remplir dans seo.config.json une fois en ligne.
+              ...(seoConfig.sameAs.length ? { sameAs: seoConfig.sameAs } : {}),
             },
             {
               "@type": "WebApplication",

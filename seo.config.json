@@ -3,5 +3,10 @@
   "name": "BledWay",
   "language": "fr",
   "editorialDate": "2026-10-17",
-  "contactEmail": "contact@bledway.com"
+  "contactEmail": "contact@bledway.com",
+  "sameAs": [],
+  "verification": {
+    "google": "",
+    "bing": ""
+  }
 }

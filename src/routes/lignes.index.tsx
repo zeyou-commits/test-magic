@@ -34,7 +34,7 @@ import { portTimeZone } from "@/lib/ferry/time";
 import type { Departure, RouteLine } from "@/lib/ferry/types";
 import { tr } from "@/lib/i18n";
 
-const title = "Lignes de ferry Europe ↔ Algérie : horaires, durées, prix, compagnies | BledWay";
+const title = "Lignes de ferry Europe ↔ Algérie : horaires, durées, prix | BledWay";
 const description =
   "Toutes les lignes de ferry entre l'Europe et l'Algérie, dans les deux sens : prochains départs, durée, départs par semaine, prix repères et compagnies. Marseille, Sète, Alicante, Barcelone, Alger, Oran…";
 

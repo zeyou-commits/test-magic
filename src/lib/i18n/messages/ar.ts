@@ -1503,6 +1503,7 @@ export const ar: PartialMessages = {
       "changerMonAvatar": "غيّر صورتي الرمزية"
     },
     "pagePreparerMonVoyage": {
+      "titrePage": "تحضير سفرك إلى الجزائر خطوة بخطوة",
       "lesEtapesDuVoyage": "مراحل الرحلة",
       "ici": "هنا",
       "salutTontonOnChargeLa": "أهلًا يا عمّي! نحمّل الـ504؟",
@@ -1922,6 +1923,7 @@ export const ar: PartialMessages = {
       "votreCompagnie": "شركتك"
     },
     "pagePapiersVoyageAlgerie": {
+      "titrePage": "وثائق السفر إلى الجزائر: التأشيرة، الأطفال، القنصلية",
       "uneQuestionParEcranSans": "سؤال واحد في كل شاشة، دون حساب. إجاباتك تبقى على هذا الجهاز وتُستأنف في",
       "preparerMonVoyage": "تحضير رحلتي",
       "reglesReluesLe": ". القواعد رُوجعت في ",
@@ -6285,6 +6287,13 @@ export const ar: PartialMessages = {
       "previsionOpenMeteoRelueToutes": "توقعات Open-Meteo، تُحدَّث كل 30 دقيقة. معلومة للراحة فقط: الشركة وحدها تؤكد المغادرة."
     },
     "searchPanel": {
+      "explorerBledway": "استكشف BledWay",
+      "explorerLignes": "الخطوط",
+      "explorerPorts": "الموانئ",
+      "explorerCompagnies": "الشركات",
+      "explorerNavires": "السفن",
+      "explorerGuides": "الأدلة",
+      "explorerQuestions": "أسئلة شائعة",
       "onPrend": "هيا نأخذ ",
       "laRouteDuBled": "طريق البلاد",
       "reservezPreparezSuivez": "احجز، حضّر وتابع رحلتك البحرية.",

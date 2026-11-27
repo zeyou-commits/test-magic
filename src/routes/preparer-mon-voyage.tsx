@@ -376,6 +376,8 @@ function Welcome({ onStart, onImport }: { onStart: () => void; onImport: () => v
   if (intro) return <PrepareIntro onBack={() => setIntro(false)} onGo={onStart} />;
   return (
     <div>
+      {/* Titre de la page pour les lecteurs d'écran et les moteurs : l'écran d'accueil montre la 504. */}
+      <h1 className="sr-only">{tr("ui.pagePreparerMonVoyage.titrePage")}</h1>
       {/* L'action d'abord (la 504 et « Commencer »), les photos d'Algérie ensuite. */}
       <button type="button" onClick={onStart} className="bw-prep-start">
         <Bw504Note title={tr("ui.pagePreparerMonVoyage.salutTontonOnChargeLa")}>

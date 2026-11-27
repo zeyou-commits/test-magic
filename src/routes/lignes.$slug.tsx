@@ -33,6 +33,7 @@ import {
   type Fact,
 } from "@/components/editorial/Showcase";
 import { confirmNote, lineFaq, lineSummary } from "@/lib/seo/answers";
+import { departureDays } from "@/lib/seo/lineSchedule";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import {
   companiesQuery,
@@ -84,9 +85,9 @@ export const Route = createFileRoute("/lignes/$slug")({
       };
     }
     const { from, to, duration, operators, price } = loaderData;
-    const title = tr("ui.pageLignesSlug.ferryHorairesDureePrixCompagnies", { from, to });
+    const title = tr("ui.lineSeo.titre", { from, to });
     const description = [
-      tr("ui.pageLignesSlug.ferry", { from, to }),
+      tr("ui.lineSeo.descriptionDebut", { from, to }),
       duration ? tr("ui.pageLignesSlug.environDeTraversee", { duration }) : null,
       operators.length ? operators.join(", ") : null,
       price ? tr("ui.pageLignesSlug.repereDesAPiedAvec", { foot: price.foot, car: price.car }) : null,
@@ -215,6 +216,24 @@ function LignePage() {
     route.typical_duration_minutes,
     operators.map((company) => company.name),
   );
+  const days = departureDays(lineDepartures, timeZone);
+  const nextLabel = next ? formatDate(next.departure_at, timeZone) : null;
+  // Réponse d'abord : programme, durée et prix en une phrase, avant le détail.
+  const lead = [
+    pace && nextLabel
+      ? tr(pace.kind === "average" ? "ui.lineSeo.leadProgramme" : "ui.lineSeo.leadProgrammeSemaine", {
+          n: pace.value,
+          s: pace.value > 1 ? "s" : "",
+          date: nextLabel,
+        })
+      : tr("ui.lineSeo.leadSansProgramme"),
+    range || route.typical_duration_minutes
+      ? tr("ui.lineSeo.leadDuree", { duree: range ?? formatDuration(route.typical_duration_minutes) })
+      : null,
+    benchmark ? tr("ui.lineSeo.leadPrix", { foot: benchmark.foot, car: benchmark.withCar }) : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
   const terminal = (port: typeof from) =>
     port
       ? {
@@ -295,7 +314,12 @@ function LignePage() {
       <ShowcaseHero
         overline={tr("ui.pageLignesSlug.ligneMaritime", { v: from?.country_name ?? "", v2: to?.country_name ?? "" })}
         title={tr("ui.pageLignesSlug.ferry2", { fromName, toName })}
-        intro={<p>{summary}</p>}
+        intro={
+          <>
+            <p className="font-medium text-[#0f2a3d]">{lead}</p>
+            <p className="mt-2">{summary}</p>
+          </>
+        }
         chips={
           <>
             {next ? (
@@ -346,7 +370,7 @@ function LignePage() {
         <SectionTitle
           id="prochains-departs"
           overline={tr("ui.pageLignesSlug.calendrier")}
-          title={tr("ui.pageLignesSlug.prochainsDeparts")}
+          title={tr("ui.lineSeo.programmeTitre", { from: fromName, to: toName })}
           aside={
             stats.lastAt ? tr("ui.pageLignesSlug.publiesJusquAu", { date: formatDate(stats.lastAt, timeZone) }) : undefined
           }
@@ -429,7 +453,7 @@ function LignePage() {
 
       {fares ? (
         <section className="mt-12" aria-labelledby="prix-saison">
-          <SectionTitle id="prix-saison" overline={tr("ui.pageLignesSlug.budget")} title={tr("ui.pageLignesSlug.combienCaCouteSelonLa")}>
+          <SectionTitle id="prix-saison" overline={tr("ui.pageLignesSlug.budget")} title={tr("ui.lineSeo.prixTitre", { from: fromName, to: toName })}>
             {tr("ui.pageLignesSlug.estimationBledwayDUnAller")}
           </SectionTitle>
           <div className="mt-5 overflow-hidden rounded-3xl border border-border bg-card">
@@ -569,6 +593,11 @@ function LignePage() {
           minutes: route.typical_duration_minutes,
           operators: operators.map((company) => company.name),
           hasReverse: Boolean(reverse),
+          schedule: {
+            perWeek: pace?.kind === "average" ? pace.value : null,
+            days,
+            next: nextLabel,
+          },
         })}
       />
 

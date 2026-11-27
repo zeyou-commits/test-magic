@@ -62,10 +62,32 @@ export function lineFaq(input: {
   minutes: number | null;
   operators: string[];
   hasReverse: boolean;
+  /** Programme publié : départs par semaine, jours de départ, prochain départ (date déjà formatée). */
+  schedule?: { perWeek: number | null; days: string[]; next: string | null };
 }): Faq[] {
   const { from, to, minutes, operators } = input;
   const faq: Faq[] = [];
   const duration = durationEstimate(minutes);
+  if (input.schedule) {
+    const { perWeek, days, next } = input.schedule;
+    faq.push({
+      q: tr("ui.lineSeo.programmeQ", { from, to }),
+      a: next
+        ? [
+            perWeek ? tr("ui.lineSeo.programmeRythme", { n: perWeek, s: perWeek > 1 ? "s" : "" }) : null,
+            days.length === 7
+              ? tr("ui.lineSeo.programmeTousLesJours")
+              : days.length
+                ? tr("ui.lineSeo.programmeJours", { days: new Intl.ListFormat(intlLocale(), { type: "conjunction" }).format(days) })
+                : null,
+            tr("ui.lineSeo.programmeProchain", { date: next }),
+            tr("ui.lineSeo.programmeConfirmer"),
+          ]
+            .filter(Boolean)
+            .join(" ")
+        : tr("ui.lineSeo.programmeAucun"),
+    });
+  }
   if (duration) {
     faq.push({
       q: tr("ui.libSeoAnswers.combienDeTempsDureLe", { from, to }),
@@ -83,6 +105,12 @@ export function lineFaq(input: {
     faq.push({
       q: tr("ui.libSeoAnswers.combienCouteLeFerry", { from, to }),
       a: tr("ui.libSeoAnswers.reperesDAllerSimpleReleves", { foot: benchmark.foot, withCar: benchmark.withCar }),
+    });
+  }
+  if (operators.length) {
+    faq.push({
+      q: tr("ui.lineSeo.billetQ", { from, to }),
+      a: tr("ui.lineSeo.billetR", { list: list(operators) }),
     });
   }
   faq.push({

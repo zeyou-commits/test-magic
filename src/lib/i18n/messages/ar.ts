@@ -4,6 +4,26 @@ import type { PartialMessages } from "./fr";
 
 export const ar: PartialMessages = {
   "ui": {
+    "lineSeo": {
+      "titre": "عبّارة {from} – {to}: البرنامج والمدة والسعر | BledWay",
+      "descriptionDebut": "باخرة {from} ← {to}: برنامج الرحلات",
+      "leadProgramme": "البرنامج: حوالي {n} رحلات في الأسبوع، والرحلة القادمة يوم {date}.",
+      "leadProgrammeSemaine": "البرنامج: {n} رحلات منشورة خلال الأيام السبعة القادمة، والرحلة القادمة يوم {date}.",
+      "leadSansProgramme": "البرنامج: لا توجد رحلات منشورة حاليًا على هذا الخط.",
+      "leadDuree": "مدة العبور: {duree}.",
+      "leadPrix": "السعر المرجعي لذهاب فقط: حوالي {foot} € دون سيارة، و{car} € مع سيارة.",
+      "programmeTitre": "برنامج البواخر {from} ← {to}",
+      "prixTitre": "سعر التذكرة {from} ← {to} حسب الموسم",
+      "programmeQ": "ما هو برنامج البواخر {from} ← {to}؟",
+      "programmeRythme": "تضم البرامج المنشورة في المتوسط {n} رحلات في الأسبوع.",
+      "programmeTousLesJours": "توجد رحلات كل أيام الأسبوع.",
+      "programmeJours": "تنطلق البواخر يوم {days}.",
+      "programmeProchain": "الرحلة القادمة: {date}، بالتوقيت المحلي للميناء.",
+      "programmeConfirmer": "يُؤكَّد البرنامج لدى الشركة قبل الحجز.",
+      "programmeAucun": "لا توجد رحلات منشورة حاليًا. تفتح الشركات رزنامتها حسب المواسم: تُحدَّث الصفحة فور صدور برنامج.",
+      "billetQ": "أين أشتري تذكرة باخرة {from} ← {to}؟",
+      "billetR": "تُشترى التذكرة من الموقع الرسمي لـ {list} أو لدى وكالة. BledWay يقارن الرحلات ويحيل إلى الشركة، ولا يبيع التذاكر."
+    },
     "catalogFaq": {
       "et": "و",
       "quellesLignesCompagnie": "ما هي الخطوط التي تؤمّنها {name} بين أوروبا والجزائر؟",

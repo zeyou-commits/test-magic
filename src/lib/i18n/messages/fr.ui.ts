@@ -1,5 +1,25 @@
 // Textes de l'interface (ui), rangés par composant. Généré puis relu : modifier le texte ici change l'écran.
 export const ui = {
+  lineSeo: {
+    titre: "Ferry {from} – {to} : programme, durée et prix | BledWay",
+    descriptionDebut: "Bateau {from} → {to} : programme des départs",
+    leadProgramme: "Programme : environ {n} départ{s} par semaine, prochain départ le {date}.",
+    leadProgrammeSemaine: "Programme : {n} départ{s} publié{s} sur les 7 prochains jours, prochain départ le {date}.",
+    leadSansProgramme: "Programme : aucun départ publié pour le moment sur cette ligne.",
+    leadDuree: "Durée de la traversée : {duree}.",
+    leadPrix: "Prix repère d'un aller simple : environ {foot} € à pied, {car} € avec une voiture.",
+    programmeTitre: "Programme des bateaux {from} → {to}",
+    prixTitre: "Prix du billet {from} → {to} selon la saison",
+    programmeQ: "Quel est le programme des bateaux {from} → {to} ?",
+    programmeRythme: "Les programmes publiés comptent en moyenne {n} départ{s} par semaine.",
+    programmeTousLesJours: "Il y a des départs tous les jours de la semaine.",
+    programmeJours: "Les bateaux partent le {days}.",
+    programmeProchain: "Prochain départ le {date}, à l'heure locale du port.",
+    programmeConfirmer: "Le programme se confirme auprès de la compagnie avant de réserver.",
+    programmeAucun: "Aucun départ n'est publié pour le moment. Les compagnies ouvrent leurs calendriers par saison : la page se met à jour dès qu'un programme paraît.",
+    billetQ: "Où acheter un billet de bateau {from} → {to} ?",
+    billetR: "Le billet s'achète sur le site officiel de {list} ou en agence. BledWay compare les départs et renvoie vers la compagnie ; il ne vend pas de billets.",
+  },
   catalogFaq: {
     et: "et",
     quellesLignesCompagnie: "Quelles lignes {name} assure-t-elle entre l'Europe et l'Algérie ?",
@@ -203,7 +223,7 @@ export const ui = {
   libSeoAnswers: {
     laTraverseeEnFerryDure: "La traversée en ferry {from} → {to} dure {duration} (durée typique, estimation).",
     compagnieRenseigneeSurCetteLigne: "Compagnie{v} renseignée{v2} sur cette ligne : {list}.",
-    combienDeTempsDureLe: "Combien de temps dure le ferry {from} → {to} ?",
+    combienDeTempsDureLe: "Combien de temps dure la traversée en ferry {from} → {to} ?",
     comptezDeTraverseeCEst: "Comptez {duration} de traversée. C'est une durée typique, donnée à titre d'estimation : la durée réelle dépend du départ et du navire. Vérifiez-la sur votre billet.",
     quellesCompagniesAssurent: "Quelles compagnies assurent {from} → {to} ?",
     bledwayRenseigneSurCetteLigne: "BledWay renseigne {list} sur cette ligne. L'offre varie selon la saison : confirmez le départ auprès de la compagnie.",

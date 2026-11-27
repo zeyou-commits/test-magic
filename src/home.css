@@ -5105,6 +5105,33 @@ body:has(.bw-home--app) {
   .bw-home--landing-m .bw-map-panel {
     display: none;
   }
+  /* Avant que l'accueil choisisse sa forme (HTML du serveur, premiers rendus) : la même page,
+     pour que « Réserver une traversée » s'affiche sans attendre le JavaScript. */
+  html:has(.bw-home--boot),
+  body:has(.bw-home--boot) {
+    height: auto;
+    overflow: visible;
+  }
+  .bw-home--app.bw-home--boot {
+    height: auto;
+    overflow: visible;
+    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+  }
+  .bw-home--boot .bw-map-stage,
+  .bw-home--boot .bw-map-stage[data-panel-open="true"] {
+    height: 55svh;
+    min-height: 340px;
+    margin: 12px 8px 0;
+    border-radius: 22px;
+  }
+  .bw-home--boot .bw-map-panel {
+    display: none;
+  }
+}
+@media (min-width: 768px) {
+  .bw-home--boot .bw-home-card {
+    display: none;
+  }
 }
 .bw-home-card {
   display: grid;

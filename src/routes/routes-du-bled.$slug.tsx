@@ -28,7 +28,9 @@ import { intlLocale, placeName, tr } from "@/lib/i18n";
 
 export const Route = createFileRoute("/routes-du-bled/$slug")({
   loader: async ({ context, params }) => {
-    const page = bledRoutePage(params.slug);
+    // Import à la demande : les relevés des routes (≈ 80 Ko) ne pèsent pas sur les autres pages.
+    const { bledRoutePage: findPage } = await import("@/lib/routesDuBled/pages");
+    const page = findPage(params.slug);
     if (!page) throw notFound();
     await Promise.all([
       context.queryClient.ensureQueryData(portsQuery).catch(() => null),

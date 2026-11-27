@@ -49,6 +49,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { ITINERARY_CHOOSE_EVENT, type ItineraryMapPreview } from "@/lib/ferry/itinerary";
 import { JOURNEY_REFRAME_EVENT } from "@/lib/ferry/journeyFilm";
 import { tr } from "@/lib/i18n";
+import { slimBaseStyle } from "./baseStyle";
 
 type FleetFrame = {
   type: "FeatureCollection";
@@ -591,12 +592,19 @@ export default function FerryMap({
 
     const map = new MapLibreMap({
       container,
-      style: MAP_STYLE,
       bounds:
         typeof window !== "undefined" && window.innerWidth >= 768
           ? DESKTOP_OVERVIEW_BOUNDS
           : OVERVIEW_BOUNDS,
-      fitBoundsOptions: { padding: viewPadding() },
+      // Au montage, « isMobile » n'est pas encore connu : sur téléphone, on cadre déjà avec les
+      // marges du téléphone, sinon la carte part de très loin (grosses tuiles du monde) avant de
+      // se recadrer.
+      fitBoundsOptions: {
+        padding:
+          typeof window !== "undefined" && window.innerWidth < 768
+            ? { top: 88, right: 16, bottom: 12, left: 16 }
+            : viewPadding(),
+      },
       // La carte est physiquement cantonnée à la Méditerranée occidentale :
       // impossible de faire glisser hors de cette zone.
       maxBounds: LIMIT_BOUNDS,
@@ -623,6 +631,8 @@ export default function FerryMap({
       scrollZoom: true,
     });
     map.touchZoomRotate.disableRotation();
+    // Fond allégé dès le départ : les couches jamais affichées ne sont ni téléchargées ni décodées.
+    map.setStyle(MAP_STYLE, { transformStyle: (_previous, next) => slimBaseStyle(next) });
 
     // Crédits OpenFreeMap / OpenStreetMap affichés dans la légende (bouton « i » unique).
 

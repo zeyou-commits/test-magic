@@ -214,11 +214,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", href: "/favicon-64.png?v=bw", type: "image/png", sizes: "64x64" },
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png?v=bw", sizes: "180x180" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      // Inter est servie par le site (licence OFL, public/fonts) : plus de feuille Google Fonts qui
+      // bloque le premier affichage. Le jeu latin, utilisé par toutes les pages, part en premier.
       {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
+        rel: "preload",
+        href: "/fonts/inter-latin-var.woff2",
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
       },
     ],
   }),

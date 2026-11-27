@@ -30,6 +30,7 @@ import {
   useState,
 } from "react";
 import { ClientOnly, createFileRoute, useRouterState } from "@tanstack/react-router";
+import { useAfterIdle } from "@/hooks/useAfterIdle";
 import { useQuery } from "@tanstack/react-query";
 import { SidePanel } from "@/components/panel/SidePanel";
 import {
@@ -384,6 +385,9 @@ function Index() {
 
   // « Mon voyage » : la frise, l'étape et le salon par-dessus la carte complète (flotte et ports).
   const isMobile = useIsMobile();
+  // Le formulaire d'abord : carte, défilé des salons et invitations se montent une fois la page
+  // au repos (au plus tard 2 s après l'hydratation).
+  const afterIdle = useAfterIdle();
   const { trip: voyageTrip, ready: voyageReady } = useVoyageTrip();
   const [salonOpen, setSalonOpen] = useState(
     () => typeof window !== "undefined" && window.innerWidth >= 1280,
@@ -417,6 +421,9 @@ function Index() {
   // null tant que la largeur n'est pas mesurée (rendu serveur, premier rendu).
   const [phoneBrowser, setPhoneBrowser] = useState<boolean | null>(null);
   const [mobileHome, setMobileHome] = useState(false);
+  // Tant que l'accueil n'a pas choisi sa forme (rendu serveur, premiers rendus), le téléphone
+  // affiche déjà la carte Réserver par CSS : elle est dans le HTML, sans attendre le JavaScript.
+  const [homeDecided, setHomeDecided] = useState(false);
   const mobileBrowser = phoneBrowser === true;
   const mobileBrowserRef = useRef(mobileBrowser);
   mobileBrowserRef.current = mobileBrowser;
@@ -434,6 +441,7 @@ function Index() {
   useEffect(() => {
     if (phoneBrowser === null || mobileHomeDone.current) return;
     mobileHomeDone.current = true;
+    setHomeDecided(true);
     if (!phoneBrowser) return;
     if (panelMode !== null || selection || voyageOn) return;
     const action = window.sessionStorage.getItem("bledway:open-home-action");
@@ -445,6 +453,7 @@ function Index() {
     setMobileHome(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phoneBrowser]);
+  const homeBooting = !homeDecided && phoneBrowser !== false;
   const mobileLanding =
     mobileBrowser &&
     mobileHome &&
@@ -1678,7 +1687,7 @@ function Index() {
 
   return (
     <div
-      className={`bw-home ${landing ? "bw-home--landing" : "bw-home--app"}${mobileLanding ? " bw-home--landing-m" : ""}`}
+      className={`bw-home ${landing ? "bw-home--landing" : "bw-home--app"}${mobileLanding ? " bw-home--landing-m" : ""}${homeBooting && !mobileLanding ? " bw-home--boot" : ""}`}
     >
       <a href="#contenu" className="bw-skip-link">
         {tr("ui.pageIndex.allerAuContenu")}
@@ -1686,7 +1695,7 @@ function Index() {
       <SiteHeader />
       <main id="contenu" tabIndex={-1}>
         <h1 className="sr-only">{tr("ui.pageIndex.ferriesEuropeMaghrebCarteDes")}</h1>
-        {mobileLanding ? (
+        {mobileLanding || homeBooting ? (
           <HomeSearchCard
             filters={filters}
             onFiltersChange={setFilters}
@@ -1791,6 +1800,8 @@ function Index() {
               hidden={Boolean(voyage)}
               className={`${collapsed ? "hidden md:block" : "min-h-0 flex-1"} md:h-full ${panelShown ? "" : "md:invisible md:pointer-events-none"}`}
             >
+              {/* Frontière d'hydratation : le volet s'hydrate dans sa propre tâche. */}
+              <Suspense fallback={null}>
               <SidePanel
                 noticeId={
                   noticeTarget.id &&
@@ -1848,6 +1859,7 @@ function Index() {
                   }));
                 }}
               />
+              </Suspense>
             </div>
             {voyage ? (
               <div
@@ -2125,18 +2137,22 @@ function Index() {
                 onOpenChange={setVoyagePicker}
               />
             ) : null}
-            <RoomInvite onSelect={(next) => handleSelectRef.current(next)} />
-            <RoomGuestAccept />
-            <GeneralRoomHost />
+            {afterIdle ? (
+              <>
+                <RoomInvite onSelect={(next) => handleSelectRef.current(next)} />
+                <RoomGuestAccept />
+                <GeneralRoomHost />
+              </>
+            ) : null}
             {/* Carte en direct : les messages des salons défilent, comme dans un jeu en ligne. */}
-            {(liveMap || landing) && !voyage && !selection ? (
+            {afterIdle && (liveMap || landing) && !voyage && !selection ? (
               <ChatTicker
                 inline={landing}
                 onSelect={(next) => handleSelectRef.current(next)}
               />
             ) : null}
             {/* Ma traversée pas encore sur la carte : chrono flottant. */}
-            {voyage ? null : (
+            {voyage || !afterIdle ? null : (
               <MyTripMapChip fleet={fleet} onOpen={(next) => handleSelectRef.current(next)} />
             )}
             {/* Accueil PC, avant toute recherche affichée : les navires sur l'eau, en un clic. */}
@@ -2333,6 +2349,7 @@ function Index() {
                 </section>
               </div>
             ) : null}
+            {afterIdle ? (
             <ClientOnly fallback={<MapFallback />}>
               <Suspense fallback={<MapFallback />}>
                 <FerryMap
@@ -2387,6 +2404,9 @@ function Index() {
                 />
               </Suspense>
             </ClientOnly>
+            ) : (
+              <MapFallback />
+            )}
           </div>
           {voyage ? (
             <Dialog open={salonDialog} onOpenChange={setSalonDialog}>
@@ -2407,6 +2427,7 @@ function Index() {
         {/* Ordinateur, Réserver : la présentation des services sous le module. Ailleurs (direct,
             téléphone), écran d'application : le récit reste sur « Découvrir » (/decouvrir). */}
         {landing ? (
+          <Suspense fallback={null}>
           <HomeServices
             ports={ports}
             routes={routes}
@@ -2417,9 +2438,14 @@ function Index() {
                 ?.scrollIntoView({ behavior: "smooth" });
             }}
           />
+          </Suspense>
         ) : null}
       </main>
-      {landing ? <SiteFooter /> : null}
+      {landing ? (
+        <Suspense fallback={null}>
+          <SiteFooter />
+        </Suspense>
+      ) : null}
     </div>
   );
 }

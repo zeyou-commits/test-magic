@@ -4,6 +4,28 @@ import type { PartialMessages } from "./fr";
 
 export const ar: PartialMessages = {
   "ui": {
+    "trafficSnapshot": {
+      "titre": "حالة الحركة",
+      "situationAu": "الوضع بتاريخ {date} على الساعة {time} (بتوقيت باريس)، حسب المواعيد المنشورة.",
+      "enCours": "{n} رحلة جارية حسب المواعيد",
+      "aucuneEnCours": "لا توجد رحلة جارية حسب المواعيد",
+      "restantAujourdhui": "{n} رحلة مبرمجة متبقية اليوم",
+      "demain": "{n} غدًا",
+      "septJours": "{n} خلال الأيام السبعة القادمة",
+      "prochainVers": "الرحلة القادمة نحو الجزائر",
+      "prochainDepuis": "الرحلة القادمة من الجزائر",
+      "traversee": "{day} على الساعة {time} (بالتوقيت المحلي): {from} → {to}، {company}",
+      "arriveePrevue": "الوصول المتوقع {day} على الساعة {time}",
+      "perturbations": "الاضطرابات المنشورة خلال 7 أيام",
+      "aucunePerturbation": "لا إلغاء ولا تأجيل ولا تغيير في المواعيد منشور خلال 7 أيام.",
+      "annulee": "ملغاة",
+      "reportee": "مؤجلة",
+      "retard": "تأخير مُبلَّغ عنه بـ {n} دقيقة",
+      "modifie": "موعد معدَّل",
+      "etAutres": "و{n} أخرى",
+      "avertissement": "الرحلات «الجارية» مستنتجة من المواعيد، وليس من إشارة السفينة. تأكّد دائمًا من موعد رحلتك لدى الشركة.",
+      "voirDetail": "عرض كل الرحلات والوصول"
+    },
     "libSeoAnswers": {
       "laTraverseeEnFerryDure": "تستغرق الرحلة البحرية بالعبّارة {from} → {to} مدة {duration} (مدة معتادة، تقديرية).",
       "compagnieRenseigneeSurCetteLigne": "الشركات المسجّلة{v}{v2} على هذا الخط: {list}.",

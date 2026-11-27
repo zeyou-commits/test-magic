@@ -98,6 +98,7 @@ import { GO_HOME_EVENT, OPEN_VOYAGE_EVENT, useVoyageTrip } from "@/lib/ferry/voy
 import { readItineraryChoice } from "@/lib/ferry/travelProfile";
 import { tr, placeName } from "@/lib/i18n";
 import { openRoutesDuBled } from "@/lib/routesDuBled/lien";
+import { loadTrafficSnapshot } from "@/lib/ferry/trafficSnapshot";
 
 const FerryMap = lazy(() => import("@/components/map/FerryMap"));
 
@@ -105,11 +106,14 @@ export const Route = createFileRoute("/")({
   // Les lignes phares de l'accueil doivent figurer dans le HTML servi :
   // le navigateur reçoit les mêmes données pour hydrater sans écart.
   loader: async ({ context }) => {
-    const [ports, routes] = await Promise.all([
+    const [ports, routes, companies] = await Promise.all([
       context.queryClient.ensureQueryData(portsQuery),
       context.queryClient.ensureQueryData(routesQuery),
+      context.queryClient.ensureQueryData(companiesQuery),
     ]);
-    return { ports, routes };
+    // Point du trafic daté, servi dans le HTML de l'accueil (lu par SearchPanel).
+    const snapshot = await loadTrafficSnapshot({ routes, ports, companies });
+    return { ports, routes, snapshot };
   },
   head: () =>
     seoHead(

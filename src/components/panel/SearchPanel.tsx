@@ -3,6 +3,8 @@ import { BookingReturnNote } from "@/components/companion/BookingReturnNote";
 import { vesselCompanyIds } from "@/lib/ferry/filterSync";
 import { track } from "@/lib/usage";
 import { HomeTraffic } from "./HomeTraffic";
+import { useMatch } from "@tanstack/react-router";
+import { TrafficSnapshot } from "@/components/board/TrafficSnapshot";
 import { useMyTrip } from "@/lib/ferry/myTrip";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -136,6 +138,8 @@ export function SearchPanel({
   onFocusRoute,
   onOpenItinerary,
 }: SearchPanelProps) {
+  // Point du trafic calculé par le chargeur de l'accueil (absent ailleurs).
+  const homeSnapshot = useMatch({ from: "/", shouldThrow: false })?.loaderData?.snapshot ?? null;
   const { trip } = useMyTrip();
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: routes = [] } = useQuery(routesQuery);
@@ -1562,6 +1566,11 @@ export function SearchPanel({
         ) : null}
         {/* Portes vers les pages de référence, servies dans le HTML de l'accueil : les moteurs et
             les robots qui ne lancent pas le JavaScript y trouvent les lignes, ports et guides. */}
+        {!editing && homeMode && homeSnapshot ? (
+          <div className="px-4 pb-3 md:px-5">
+            <TrafficSnapshot snapshot={homeSnapshot} compact />
+          </div>
+        ) : null}
         {!editing && homeMode ? (
           <nav aria-label={tr("ui.searchPanel.explorerBledway")} className="bw-home-explore px-4 pb-4 md:px-5">
             {(

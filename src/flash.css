@@ -18383,6 +18383,76 @@ body:has(.bw-ticker:not([data-off])) .bw-messages-preview {
   clear: both;
 }
 
+/* Point du trafic daté (/horaires et accueil), calculé au rendu (27/11/2026). */
+.bw-snapshot {
+  border: 1px solid rgb(18 63 44 / 0.12);
+  border-radius: 16px;
+  background: #fff;
+  padding: 16px 18px;
+  color: #123f2c;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.bw-snapshot__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+}
+.bw-snapshot__stamp {
+  margin: 2px 0 8px;
+  color: rgb(18 63 44 / 0.7);
+  font-size: 13px;
+}
+.bw-snapshot__counts {
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+.bw-snapshot__subtitle {
+  margin: 12px 0 4px;
+  font-size: 14px;
+  font-weight: 800;
+}
+.bw-snapshot__list {
+  margin: 0;
+  padding-inline-start: 18px;
+  list-style: disc;
+}
+.bw-snapshot__next {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 0;
+}
+.bw-snapshot__next dt {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.bw-snapshot__next dd {
+  margin: 0;
+}
+.bw-snapshot__note {
+  margin: 12px 0 0;
+  color: rgb(18 63 44 / 0.7);
+  font-size: 12px;
+}
+.bw-snapshot__more {
+  display: inline-block;
+  margin-top: 10px;
+  color: #087d46;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.bw-snapshot--compact {
+  padding: 12px 14px;
+  font-size: 13px;
+}
+.bw-snapshot--compact .bw-snapshot__title {
+  font-size: 15px;
+}
+
 /* Accueil : portes vers les pages de référence, sous les prochains mouvements (27/11/2026). */
 .bw-home-explore {
   display: flex;

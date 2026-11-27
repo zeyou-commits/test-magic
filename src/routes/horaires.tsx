@@ -35,7 +35,9 @@ import { buildSailings, type Sailing } from "@/lib/ferry/trips";
 import type { Company } from "@/lib/ferry/types";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import { useVesselAlerts } from "@/lib/ferry/vesselAlerts";
-import { breadcrumbSchema, seoHead } from "@/lib/seo/site";
+import { absoluteUrl, breadcrumbSchema, jsonLdString, seoHead } from "@/lib/seo/site";
+import { loadTrafficSnapshot } from "@/lib/ferry/trafficSnapshot";
+import { TrafficSnapshot } from "@/components/board/TrafficSnapshot";
 import { Breadcrumbs } from "@/components/editorial/Editorial";
 import { tr, intlLocale, placeName } from "@/lib/i18n";
 
@@ -85,14 +87,39 @@ export const Route = createFileRoute("/horaires")({
     return result;
   },
   loader: async ({ context }) => {
-    await Promise.all([
+    const [, routes, ports, companies] = await Promise.all([
       context.queryClient.ensureQueryData(upcomingDeparturesQuery()),
       context.queryClient.ensureQueryData(routesQuery),
       context.queryClient.ensureQueryData(portsQuery),
       context.queryClient.ensureQueryData(companiesQuery),
     ]);
+    return { snapshot: await loadTrafficSnapshot({ routes, ports, companies }) };
   },
-  head: () => seoHead(title, description, "/horaires"),
+  head: ({ loaderData }) => {
+    const head = seoHead(title, description, "/horaires");
+    const at = loaderData?.snapshot?.at;
+    return at
+      ? {
+          ...head,
+          // Date du point du trafic : la page change à chaque horaire publié.
+          scripts: [
+            {
+              type: "application/ld+json",
+              children: jsonLdString({
+                "@context": "https://schema.org",
+                "@type": "WebPage",
+                "@id": absoluteUrl("/horaires#page"),
+                url: absoluteUrl("/horaires"),
+                name: title,
+                inLanguage: "fr",
+                dateModified: at,
+                isPartOf: { "@id": absoluteUrl("/#site") },
+              }),
+            },
+          ],
+        }
+      : head;
+  },
   component: BoardPage,
 });
 
@@ -238,6 +265,7 @@ function Chip({
 function BoardPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
+  const { snapshot } = Route.useLoaderData();
   const { data: upcoming } = useSuspenseQuery(upcomingDeparturesQuery());
   const { data: routes } = useSuspenseQuery(routesQuery);
   const { data: ports } = useSuspenseQuery(portsQuery);
@@ -775,6 +803,12 @@ function BoardPage() {
             </aside>
           ) : null}
         </div>
+        {/* Point du trafic daté, calculé au rendu : le résumé que lisent les moteurs et les IA. */}
+        {snapshot ? (
+          <div className="mt-8">
+            <TrafficSnapshot snapshot={snapshot} />
+          </div>
+        ) : null}
       </main>
       <SiteFooter />
     </>

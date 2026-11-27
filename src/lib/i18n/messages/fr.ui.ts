@@ -1,5 +1,27 @@
 // Textes de l'interface (ui), rangés par composant. Généré puis relu : modifier le texte ici change l'écran.
 export const ui = {
+  trafficSnapshot: {
+    titre: "Point du trafic",
+    situationAu: "Situation au {date} à {time} (heure de Paris), d'après les horaires publiés.",
+    enCours: "{n} traversée{s} en cours d'après l'horaire",
+    aucuneEnCours: "Aucune traversée en cours d'après l'horaire",
+    restantAujourdhui: "{n} départ{s} encore prévu{s} aujourd'hui",
+    demain: "{n} demain",
+    septJours: "{n} sur les 7 prochains jours",
+    prochainVers: "Prochain départ vers l'Algérie",
+    prochainDepuis: "Prochain départ depuis l'Algérie",
+    traversee: "{day} à {time} (heure locale) : {from} → {to}, {company}",
+    arriveePrevue: "arrivée prévue {day} à {time}",
+    perturbations: "Perturbations publiées sur 7 jours",
+    aucunePerturbation: "Aucune annulation, aucun report ni horaire modifié publié sur 7 jours.",
+    annulee: "annulée",
+    reportee: "reportée",
+    retard: "retard signalé de {n} min",
+    modifie: "horaire modifié",
+    etAutres: "et {n} autre{s}",
+    avertissement: "Les traversées « en cours » sont déduites de l'horaire, pas d'un signal du navire. Confirmez toujours votre départ auprès de la compagnie.",
+    voirDetail: "Voir tous les départs et arrivées",
+  },
   libMapLocale: {
     zoomIn: "Zoom in",
     zoomOut: "Zoom out",

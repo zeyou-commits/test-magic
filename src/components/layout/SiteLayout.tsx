@@ -245,7 +245,7 @@ export function SiteHeader() {
               aria-label={t("menu.myTripLabel")}
             >
               <Ship size={16} aria-hidden />
-              {t("nav.myTrip")}
+              <span className="bw-my-trip-pill__label">{t("nav.myTrip")}</span>
             </Link>
           ) : null}
           <LanguageToggle />

@@ -60,7 +60,7 @@ export function ArticlePage({ article }: { article: Article }) {
             <EditorialHero label={tr("ui.articlePage.dossierPratique")} title={article.title} intro={article.description} />
             <p className="mb-6 text-sm text-muted-foreground">
               {tr("ui.articlePage.bledwayDossierDocumentaire")}{" "}
-              <time dateTime={EDITORIAL_DATE}>{tr("ui.articlePage.misAJourLe")}{displayDate(EDITORIAL_DATE)}</time>
+              <time dateTime={article.updated ?? EDITORIAL_DATE}>{tr("ui.articlePage.misAJourLe")}{displayDate(article.updated ?? EDITORIAL_DATE)}</time>
             </p>
           </>
         )}
@@ -93,7 +93,7 @@ export function ArticlePage({ article }: { article: Article }) {
           ) : null}
           {article.line ? <LineBooking line={article.line} /> : null}
           <FaqSection faq={article.faq} path={`/guide/${article.slug}`} />
-          <SourceList ids={article.sources} />
+          <SourceList ids={article.sources} checked={article.updated ?? EDITORIAL_DATE} />
         </ReadingLayout>
       </article>
       <section className="mt-12 border-t pt-6">

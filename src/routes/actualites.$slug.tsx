@@ -20,10 +20,11 @@ import {
   newsIdFromSlug,
   newsPath,
   newsSlug,
+  isIndexableNews,
 } from "@/lib/ferry/newsFeed";
 import { companiesQuery, portsQuery, routesQuery, vesselsQuery } from "@/lib/ferry/queries";
 import { portTimeZone } from "@/lib/ferry/time";
-import { absoluteUrl, jsonLdString, seoHead } from "@/lib/seo/site";
+import { absoluteUrl, jsonLdString, seoHead, withNoindex } from "@/lib/seo/site";
 import { tr } from "@/lib/i18n";
 
 export const Route = createFileRoute("/actualites/$slug")({
@@ -36,11 +37,14 @@ export const Route = createFileRoute("/actualites/$slug")({
     const id = newsIdFromSlug(params.slug);
     const item = items.find((entry) => entry.id === id);
     if (!item) throw notFound();
-    return { title: item.title, summary: item.summary, path: newsPath(item) };
+    return { title: item.title, summary: item.summary, path: newsPath(item), indexable: isIndexableNews(item) };
   },
   head: ({ loaderData }) =>
     loaderData
-      ? seoHead(`${loaderData.title} | BledWay`, loaderData.summary, loaderData.path, true)
+      ? withNoindex(
+          seoHead(`${loaderData.title} | BledWay`, loaderData.summary, loaderData.path, true),
+          !loaderData.indexable,
+        )
       : {},
   component: NewsArticlePage,
 });

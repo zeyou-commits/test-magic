@@ -3,6 +3,7 @@ export const ui = {
   lineSeo: {
     titre: "Ferry {from} – {to} : programme, durée et prix | BledWay",
     descriptionDebut: "Bateau {from} → {to} : programme des départs",
+    nCompagnies: "{n} compagnies",
     leadProgramme: "Programme : environ {n} départ{s} par semaine, prochain départ le {date}.",
     leadProgrammeSemaine: "Programme : {n} départ{s} publié{s} sur les 7 prochains jours, prochain départ le {date}.",
     leadSansProgramme: "Programme : aucun départ publié pour le moment sur cette ligne.",

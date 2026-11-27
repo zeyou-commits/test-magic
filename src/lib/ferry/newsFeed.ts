@@ -24,6 +24,18 @@ export function isPublicNews(
   );
 }
 
+/**
+ * Une annonce de l'équipe sur la phase de test (« bêta test, ne tenez pas compte des informations »)
+ * reste dans le fil pour les voyageurs, mais hors du sitemap et de l'index : elle n'apprend rien
+ * aux moteurs et leur dit que les informations du site ne sont pas fiables.
+ */
+export function isIndexableNews(
+  item: Pick<NewsItem, "title" | "summary" | "source_url"> & Partial<Pick<NewsItem, "origin">>,
+) {
+  if (!isPublicNews(item)) return false;
+  return !(item.origin === "bledway" && /b[eê]ta|\btest\b/i.test(`${item.title} ${item.summary}`));
+}
+
 const slugify = (text: string) =>
   text
     .normalize("NFD")

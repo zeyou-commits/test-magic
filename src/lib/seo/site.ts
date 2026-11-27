@@ -31,6 +31,27 @@ export function fitDescription(text: string) {
   return `${cut.slice(0, cut.lastIndexOf(" ")).replace(/[\s,;:.]+$/, "")}…`;
 }
 
+/**
+ * Description complète sans « … » : les morceaux sont pris par ordre d'importance (le premier
+ * toujours), chacun sous sa forme la plus longue qui tient encore, puis remis dans leur ordre.
+ */
+export function fitParts(
+  parts: { rank: number; options: string[] }[],
+  separator = " · ",
+  max = MAX_DESCRIPTION,
+) {
+  const kept = new Map<number, string>();
+  const length = () => [...kept.values()].join(separator).length + 1;
+  for (const [index, part] of [...parts.entries()].sort((a, b) => a[1].rank - b[1].rank)) {
+    for (const option of part.options) {
+      kept.set(index, option);
+      if (kept.size === 1 || length() <= max) break;
+      kept.delete(index);
+    }
+  }
+  return `${[...kept.entries()].sort((a, b) => a[0] - b[0]).map(([, text]) => text).join(separator)}.`;
+}
+
 /** Image de partage propre à une page (sinon le logo BledWay). */
 export type ShareImage = { path: string; width: number; height: number; alt: string };
 
@@ -65,6 +86,11 @@ export function seoHead(
     ],
     links: [{ rel: "canonical", href: url }],
   };
+}
+
+/** Garde la page lisible et ses liens suivis, mais hors de l'index des moteurs quand `noindex` est vrai. */
+export function withNoindex<T extends { meta: Record<string, string>[] }>(head: T, noindex: boolean): T {
+  return noindex ? { ...head, meta: [...head.meta, { name: "robots", content: "noindex, follow" }] } : head;
 }
 
 export function breadcrumbSchema(items: { name: string; path: string }[]) {

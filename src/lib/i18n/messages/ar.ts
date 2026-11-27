@@ -6,6 +6,7 @@ export const ar: PartialMessages = {
   "ui": {
     "lineSeo": {
       "titre": "عبّارة {from} – {to}: البرنامج والمدة والسعر | BledWay",
+      "nCompagnies": "{n} شركات",
       "descriptionDebut": "باخرة {from} ← {to}: برنامج الرحلات",
       "leadProgramme": "البرنامج: حوالي {n} رحلات في الأسبوع، والرحلة القادمة يوم {date}.",
       "leadProgrammeSemaine": "البرنامج: {n} رحلات منشورة خلال الأيام السبعة القادمة، والرحلة القادمة يوم {date}.",

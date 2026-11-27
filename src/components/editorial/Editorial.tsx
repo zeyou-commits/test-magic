@@ -183,13 +183,14 @@ export function FaqSchema({ faq, path }: { faq: { q: string; a: string; note?: s
     />
   );
 }
-export function SourceList({ ids }: { ids: string[] }) {
+/** `checked` : date de la dernière révision de la page et de ses sources (sinon la date éditoriale). */
+export function SourceList({ ids, checked = EDITORIAL_DATE }: { ids: string[]; checked?: string }) {
   return (
     <section id="sources" className="mt-10 scroll-mt-20 border-t pt-6">
       <h2 className="font-display text-xl font-bold">{tr("ui.editorial.sourcesEtVerification")}</h2>
       <p className="mt-2 text-sm text-muted-foreground">
         {tr("ui.editorial.selectionDocumentaireMiseAJour")}{" "}
-        <time dateTime={EDITORIAL_DATE}>{displayDate(EDITORIAL_DATE)}</time>{tr("ui.editorial.lesReglesAccesEtServices")}
+        <time dateTime={checked}>{displayDate(checked)}</time>{tr("ui.editorial.lesReglesAccesEtServices")}
       </p>
       <ul className="mt-4 space-y-4">
         {ids.map((id) => {

@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { newsFeedItems, newsPath } from "@/lib/ferry/newsFeed";
+import { isIndexableNews, newsFeedItems, newsPath } from "@/lib/ferry/newsFeed";
 import { vesselDossiers } from "@/content/vessels";
 import {
   maritimeLastmods,
@@ -79,7 +79,7 @@ export async function maritimeEntries() {
     const dossiers = new Set(vesselDossiers.map((v) => v.slug));
     return [
       ...maritimeLastmods({ ports, routes, departures }),
-      ...news.map((item) => ({ path: newsPath(item), lastmod: item.starts_at })),
+      ...news.filter(isIndexableNews).map((item) => ({ path: newsPath(item), lastmod: item.starts_at })),
       ...companies.map((c) => ({ path: `/compagnies/${encodeURIComponent(c.slug)}`, lastmod: c.updated_at })),
       ...vessels
         .filter((v) => !dossiers.has(v.slug))

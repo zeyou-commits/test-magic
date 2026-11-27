@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isPublicNews, newsCompanyIds, newsIdFromSlug, newsPath } from "./newsFeed";
+import { isIndexableNews, isPublicNews, newsCompanyIds, newsIdFromSlug, newsPath } from "./newsFeed";
 
 const id = "3ed1cf29-b8a5-4ee4-9b89-fee896950f88";
 
@@ -26,6 +26,13 @@ describe("fil d'actualités", () => {
     };
     expect(isPublicNews(annonce)).toBe(true);
     expect(isPublicNews({ ...annonce, summary: "À vérifier : départs à contrôler" })).toBe(false);
+  });
+
+  it("garde l'annonce de bêta test hors de l'index, pas les autres actualités", () => {
+    const beta = { title: "Version Bêta Test", summary: "Le site est en bêta test.", source_url: null, origin: "bledway" as const };
+    expect(isIndexableNews(beta)).toBe(false);
+    expect(isIndexableNews({ ...beta, title: "Nouveau : les salons", summary: "Discutez à bord." })).toBe(true);
+    expect(isIndexableNews({ title: "Agence fermée", summary: "Inondations", source_url: "https://a.example/x" })).toBe(true);
   });
 
   it("donne une adresse lisible, dont l'identifiant se relit", () => {

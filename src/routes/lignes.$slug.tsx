@@ -18,7 +18,7 @@ import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { VesselCard } from "@/components/panel/VesselCard";
 import { durationRange } from "@/components/panel/LineOverview";
 import { BookingLink } from "@/components/panel/shared";
-import { absoluteUrl, seoHead } from "@/lib/seo/site";
+import { absoluteUrl, fitParts, seoHead } from "@/lib/seo/site";
 import { Breadcrumbs, FaqSection, StructuredData } from "@/components/editorial/Editorial";
 import {
   DepartureRows,
@@ -86,16 +86,26 @@ export const Route = createFileRoute("/lignes/$slug")({
     }
     const { from, to, duration, operators, price } = loaderData;
     const title = tr("ui.lineSeo.titre", { from, to });
-    const description = [
-      tr("ui.lineSeo.descriptionDebut", { from, to }),
-      duration ? tr("ui.pageLignesSlug.environDeTraversee", { duration }) : null,
-      operators.length ? operators.join(", ") : null,
-      price ? tr("ui.pageLignesSlug.repereDesAPiedAvec", { foot: price.foot, car: price.car }) : null,
-      tr("ui.pageLignesSlug.prochainsDepartsDates"),
-    ]
-      .filter(Boolean)
-      .join(" · ");
-    return seoHead(title, `${description}.`, `/lignes/${loaderData.slug}`);
+    // Ordre d'importance : ligne, durée, prix, compagnies (sinon leur nombre), départs datés.
+    const description = fitParts(
+      [
+        { rank: 0, options: [tr("ui.lineSeo.descriptionDebut", { from, to })] },
+        { rank: 1, options: duration ? [tr("ui.pageLignesSlug.environDeTraversee", { duration })] : [] },
+        {
+          rank: 3,
+          options:
+            operators.length > 1
+              ? [operators.join(", "), tr("ui.lineSeo.nCompagnies", { n: operators.length })]
+              : operators,
+        },
+        {
+          rank: 2,
+          options: price ? [tr("ui.pageLignesSlug.repereDesAPiedAvec", { foot: price.foot, car: price.car })] : [],
+        },
+        { rank: 4, options: [tr("ui.pageLignesSlug.prochainsDepartsDates")] },
+      ].filter((part) => part.options.length),
+    );
+    return seoHead(title, description, `/lignes/${loaderData.slug}`);
   },
   component: LignePage,
 });

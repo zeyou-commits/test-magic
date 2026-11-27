@@ -40,6 +40,38 @@ export function routeArc(from: Port, to: Port, steps = 40): LngLat[] {
   return forward ? points : points.reverse();
 }
 
+/**
+ * Trajet qui passe par la position réelle d'un navire en mer : une seule courbe douce
+ * du port de départ au port d'arrivée, qui touche le navire là où il se trouve.
+ * Renvoie null si le navire est trop près d'un port pour que le détour ait un sens.
+ */
+export function routeThrough(from: Port, to: Port, via: LngLat, steps = 48): LngLat[] | null {
+  const a: LngLat = [from.longitude, from.latitude];
+  const b: LngLat = [to.longitude, to.latitude];
+  const done = Math.hypot(via[0] - a[0], via[1] - a[1]);
+  const left = Math.hypot(b[0] - via[0], b[1] - via[1]);
+  if (done + left === 0) return null;
+  const share = done / (done + left);
+  if (share < 0.06 || share > 0.94) return null;
+  // Bézier quadratique qui passe par le navire au paramètre « part du trajet faite ».
+  const t = Math.min(0.85, Math.max(0.15, share));
+  const u = 1 - t;
+  const control: LngLat = [
+    (via[0] - u * u * a[0] - t * t * b[0]) / (2 * u * t),
+    (via[1] - u * u * a[1] - t * t * b[1]) / (2 * u * t),
+  ];
+  const points: LngLat[] = [];
+  for (let i = 0; i <= steps; i += 1) {
+    const s = i / steps;
+    const r = 1 - s;
+    points.push([
+      r * r * a[0] + 2 * r * s * control[0] + s * s * b[0],
+      r * r * a[1] + 2 * r * s * control[1] + s * s * b[1],
+    ]);
+  }
+  return points;
+}
+
 /** Position le long d'une polyligne, t entre 0 et 1. */
 export function pointAlong(points: LngLat[], t: number): LngLat {
   const clamped = Math.min(1, Math.max(0, t));

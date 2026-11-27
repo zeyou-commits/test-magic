@@ -21,7 +21,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import type { Port, RouteLine, Selection } from "@/lib/ferry/types";
 import { formatDuration } from "@/lib/ferry/format";
 import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
-import { routeArc } from "@/lib/ferry/geo";
+import { routeArc, routeThrough } from "@/lib/ferry/geo";
 import { shipAnchor, type FleetShip } from "@/lib/ferry/fleet";
 import { LABEL_SIZE_STOPS, labelSize, placeAlongLines, placeLabels, type Box } from "./labelPlacement";
 import {
@@ -231,8 +231,13 @@ function routeFeatures(
   dateActive: Set<string>,
   focus: Set<string>,
   selection: Selection | null,
+  bend: RouteBend | null = null,
 ) {
   const visibleRoutes = routes.filter((route) => visible.has(route.id));
+  const bentRoute = bend ? routes.find((route) => route.id === bend.routeId) : undefined;
+  const bentPair = bentRoute
+    ? [bentRoute.departure_port_id, bentRoute.arrival_port_id].sort().join("::")
+    : null;
   const pairGroups = new Map<string, RouteLine[]>();
 
   visibleRoutes.forEach((route) => {
@@ -308,11 +313,55 @@ function routeFeatures(
         },
         geometry: {
           type: "LineString" as const,
-          coordinates: routeArc(from, to),
+          coordinates: bentCoordinates(route, pairKey, from, to) ?? routeArc(from, to),
         },
       };
     })
     .filter((feature): feature is NonNullable<typeof feature> => feature !== null);
+
+  /** Le trait de la traversée suivie passe par la position réelle de son navire. */
+  function bentCoordinates(route: RouteLine, pairKey: string, from: Port, to: Port) {
+    if (!bend || !bentRoute || pairKey !== bentPair) return null;
+    const start = route.departure_port_id === bentRoute.departure_port_id ? from : to;
+    const end = start === from ? to : from;
+    const points = routeThrough(start, end, bend.via);
+    if (!points) return null;
+    return start === from ? points : points.reverse();
+  }
+}
+
+/** Traversée dont le trait est redessiné pour passer par le navire suivi. */
+interface RouteBend {
+  routeId: string;
+  via: [number, number];
+}
+
+/** Au-delà, la position AIS est trop ancienne pour tordre le trait de la ligne. */
+const BEND_MAX_AGE_MINUTES = 180;
+
+/** Le navire suivi en mer avec une position AIS récente, s'il y en a un. */
+function followedShipBend(
+  fleet: FleetShip[],
+  selection: Selection | null,
+  selectedVesselId: string | null,
+  focusShipId: string | null,
+): RouteBend | null {
+  const ship = fleet.find(
+    (item) =>
+      item.id === focusShipId ||
+      (selectedVesselId !== null && item.vesselId === selectedVesselId) ||
+      (selection?.type === "vessel" && item.vesselId === selection.id) ||
+      (selection?.type === "departure" && item.departureId === selection.id),
+  );
+  const live = ship?.live;
+  if (!ship || !live || ship.portId || ship.state !== "sea" || live.phase !== "sea") return null;
+  if (live.demo || live.ageMinutes > BEND_MAX_AGE_MINUTES) return null;
+  // Arrondi à ~1 km : le trait n'est pas redessiné à chaque petit mouvement.
+  const round = (value: number) => Math.round(value * 100) / 100;
+  return {
+    routeId: ship.routeId,
+    via: [round(live.position.longitude), round(live.position.latitude)],
+  };
 }
 
 /** Le nom du port collé à son point, de chaque côté possible. */
@@ -2635,6 +2684,14 @@ export default function FerryMap({
     desktopLeftInset,
   ]);
 
+  // Navire suivi en mer : son trait passe par sa position réelle (clé stable, redessin rare).
+  const followedBend = hoverRouteId
+    ? null
+    : followedShipBend(fleet, selection, selectedVesselId, focusShipId);
+  const bendKey = followedBend ? `${followedBend.routeId}|${followedBend.via.join(",")}` : "";
+  const followedBendRef = useRef(followedBend);
+  followedBendRef.current = followedBend;
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -2653,6 +2710,7 @@ export default function FerryMap({
         new Set(dateActiveRouteIds),
         focus,
         hoverRouteId ? { type: "route", id: hoverRouteId } : selection,
+        followedBendRef.current,
       );
       routeFeaturesRef.current = features;
       source.setData({ type: "FeatureCollection", features });
@@ -2670,6 +2728,7 @@ export default function FerryMap({
     selection,
     hoverRouteId,
     mapReady,
+    bendKey,
   ]);
 
   // Positions à leur vitesse réelle ; ne pas relancer le placement des symboles à l'arrêt.

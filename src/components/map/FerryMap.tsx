@@ -2467,7 +2467,10 @@ export default function FerryMap({
       }
     }
     return undefined;
-  }, [selection, mapReady]);
+    // Seulement quand on choisit autre chose : l'objet `selection` est recréé à chaque actualisation
+    // des données, et le cadrage repartait toutes les minutes (le zoom du voyageur était perdu).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selection?.type, selection?.id, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;

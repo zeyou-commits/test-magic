@@ -18641,6 +18641,37 @@ body:has(.bw-ticker:not([data-off])) .bw-messages-preview {
   min-height: 26px;
   font-size: 11.5px;
 }
+/* PC et tablette : le bandeau fait partie de l'en-tête, sous la navigation. Il ne recouvre plus
+   rien (formulaire Réserver, cartes, titres). Sa place est réservée dès le HTML du serveur
+   (::after de même hauteur et même couleur), pour qu'il n'y ait pas de saut à son arrivée ; la
+   réserve tombe si le visiteur l'a fermé (data-rail-off, posé avant l'affichage) ou s'il n'y a
+   rien à montrer. */
+@media (min-width: 768px) {
+  .bw-header > .bw-top-rail,
+  .bw-header > .bw-top-rail[data-away]:not(:focus-within) {
+    position: static;
+    width: auto;
+    transform: none;
+    border-radius: 0;
+    box-shadow: none;
+    opacity: 1;
+    pointer-events: auto;
+    transition: none;
+  }
+  .bw-header > .bw-top-rail .bw-news-rail {
+    min-height: 40px;
+  }
+  /* Ancres : s'arrêter sous l'en-tête et le bandeau. */
+  html:not([data-rail-off]) {
+    scroll-padding-top: 128px;
+  }
+  html:not([data-rail-off]) .bw-header:not(:has(> .bw-top-rail, > .bw-top-rail-none))::after {
+    content: "";
+    display: block;
+    height: 40px;
+    background: linear-gradient(90deg, #0d3b4f, #125a55);
+  }
+}
 /* Fiche de la carte en plein écran (téléphone) : l'en-tête disparaît, le bandeau reprend sa place en
    haut et la fiche se cale dessous (--bw-ticker-h). */
 @media (max-width: 767px) {

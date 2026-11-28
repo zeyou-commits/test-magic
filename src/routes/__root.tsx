@@ -141,6 +141,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:site_name", content: "BledWay" },
     ],
     scripts: [
+      // Fil d'actualités fermé il y a moins de 24 h : pas de place réservée sous l'en-tête (évite un
+      // vide puis un saut). Même règle que isDismissed (horodatage avant « # »).
+      {
+        children:
+          'try{var s=localStorage.getItem("bledway:news-rail-dismissed"),t=s?Number(s.split("#")[0]):0;if(t&&Date.now()-t<864e5)document.documentElement.setAttribute("data-rail-off","")}catch(e){}',
+      },
       // Mesure d'audience Umami : sans cookie ; seulement sur le vrai site (pas en local ni en aperçu).
       {
         src: "https://cloud.umami.is/script.js",
@@ -233,7 +239,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="fr">
+    <html lang="fr" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>

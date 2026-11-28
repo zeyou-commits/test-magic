@@ -39,7 +39,8 @@ export function AlertTicker() {
     select: (state) => state.location.pathname.startsWith("/actualites"),
   });
   // Sur les pages Actualités, le bandeau répéterait ce qui est déjà affiché juste dessous.
-  return onNewsPages ? null : <AlertTickerBar />;
+  // Le témoin sans bandeau retire aussi la place réservée sous l'en-tête (PC).
+  return onNewsPages ? <i className="bw-top-rail-none" hidden /> : <AlertTickerBar />;
 }
 
 /**
@@ -180,6 +181,12 @@ function AlertTickerBar() {
   const settled =
     ready && newsResult.status !== "pending" && incidentsResult.status !== "pending";
   const hidden = settled && !showAlerts && !showRail;
+  // Rien à montrer (ou fermé) : la place réservée sous l'en-tête disparaît.
+  useEffect(() => {
+    if (!settled) return;
+    if (hidden) document.documentElement.setAttribute("data-rail-off", "");
+    else document.documentElement.removeAttribute("data-rail-off");
+  }, [settled, hidden]);
   // En attendant : rien. Le bandeau flotte sous l'en-tête et ne décale pas la page en arrivant.
   if (!settled) return null;
   if (hidden) return null;

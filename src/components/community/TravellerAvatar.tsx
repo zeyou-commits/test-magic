@@ -21,6 +21,7 @@ export function TravellerAvatar({
   mood = true,
   moodLabel = false,
   static: isStatic = false,
+  departureId,
 }: {
   card: Pick<TravellerCard, "handle" | "pseudo" | "avatar" | "color" | "mood" | "photo">;
   size?: number;
@@ -29,6 +30,8 @@ export function TravellerAvatar({
   /** Bulle d'humeur avec son texte (grands avatars). */
   moodLabel?: boolean;
   static?: boolean;
+  /** Traversée commune : la fiche propose son salon et ses passagers. */
+  departureId?: string;
 }) {
   const image = useAvatarImage(card.avatar);
   const body = (
@@ -89,7 +92,7 @@ export function TravellerAvatar({
       aria-label={tr("ui.travellerAvatar.profilDe", { pseudo: card.pseudo, v: card.mood ? ` · ${card.mood.label}` : "" })}
       onClick={(event) => {
         event.stopPropagation();
-        openTravellerProfile(card.handle);
+        openTravellerProfile(card.handle, departureId);
       }}
     >
       {body}

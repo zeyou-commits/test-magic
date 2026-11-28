@@ -3,6 +3,7 @@ import { useVesselAlerts } from "@/lib/ferry/vesselAlerts";
 import { useTravelMarkers } from "./useTravelMarkers";
 import { bringTooltipToFront } from "./tooltipStack";
 import { usePresenceMarkers } from "./usePresenceMarkers";
+import { useAboardTravellers } from "./useAboardTravellers";
 import { useMyTripMarker } from "./useMyTripMarker";
 import { useChatPins } from "./useChatPins";
 import { useJourneyFilm } from "./useJourneyFilm";
@@ -514,6 +515,7 @@ export default function FerryMap({
     clearShipHoverRef.current(),
   );
   usePresenceMarkers(mapRef, mapReady, ports, fleet, onSelect, onOpenPanel);
+  useAboardTravellers(mapRef, mapReady, fleet);
   useMyTripMarker(mapRef, mapReady, fleet, onSelect, onOpenPanel);
   const isMobile = useIsMobile();
   // Les salons en pastilles (une par navire ou port) ; le fil se referme quand une fiche occupe l'écran.

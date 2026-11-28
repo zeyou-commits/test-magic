@@ -1,5 +1,16 @@
 // Textes de l'interface (ui), rangés par composant. Généré puis relu : modifier le texte ici change l'écran.
 export const ui = {
+  aboardTravellers: {
+    profil: "Profil de {pseudo}, à bord du {ship}",
+    vous: "Vous",
+    autres: "{n} autres voyageurs à bord du {ship}",
+  },
+  tripShortcuts: {
+    salon: "Salon de la traversée",
+    aussiABord: "Aussi à bord",
+    seulABord: "Seul·e voyageur·se BledWay visible à bord pour l'instant.",
+    vous: "Vous",
+  },
   lineSeo: {
     titre: "Ferry {from} – {to} : programme, durée et prix | BledWay",
     descriptionDebut: "Bateau {from} → {to} : programme des départs",

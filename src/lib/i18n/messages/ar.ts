@@ -4,6 +4,17 @@ import type { PartialMessages } from "./fr";
 
 export const ar: PartialMessages = {
   "ui": {
+    "aboardTravellers": {
+      "profil": "الملف الشخصي لـ {pseudo}، على متن {ship}",
+      "vous": "أنت",
+      "autres": "{n} مسافرين آخرين على متن {ship}"
+    },
+    "tripShortcuts": {
+      "salon": "صالون الرحلة",
+      "aussiABord": "على متن السفينة أيضًا",
+      "seulABord": "المسافر الوحيد الظاهر على متن السفينة حاليًا.",
+      "vous": "أنت"
+    },
     "lineSeo": {
       "titre": "عبّارة {from} – {to}: البرنامج والمدة والسعر | BledWay",
       "nCompagnies": "{n} شركات",

@@ -20,6 +20,7 @@ import { DmRequest, PrivateMessages } from "@/components/panel/PrivateMessages";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { OPEN_PROFILE_EVENT, publicProfileQuery } from "@/lib/community/travellers";
+import { TripShortcuts } from "./TripShortcuts";
 import { dmInboxQuery } from "@/lib/ferry/privateMessages";
 import { EditableAvatar, focusAvatarPicker } from "./EditableAvatar";
 import { MyTravellerEditor } from "./MyTravellerEditor";
@@ -183,6 +184,14 @@ export function ProfileHost() {
                 </div>
               ) : null}
             </div>
+            {target?.departureId ? (
+              <TripShortcuts
+                departureId={target.departureId}
+                handle={data.handle}
+                onRoom={close}
+                onOpen={(next) => setTarget({ handle: next, departureId: target.departureId })}
+              />
+            ) : null}
             <dl className="bw-profile__stats">
               <div>
                 <dt>

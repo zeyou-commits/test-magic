@@ -174,7 +174,7 @@ export function VesselPresence({
             <>
               {shown.map((traveller) => (
                 <li key={traveller.handle}>
-                  <TravellerAvatar card={traveller} size={36} />
+                  <TravellerAvatar card={traveller} size={36} departureId={departureId} />
                   {traveller.me ? tr("ui.tripPresence.vous") : traveller.pseudo}
                 </li>
               ))}
